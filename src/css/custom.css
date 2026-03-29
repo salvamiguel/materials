@@ -1,0 +1,168 @@
+/*
+ * Custom CSS for Materials — matching salvamiguel.com style guide
+ * Fonts: Syne (display), JetBrains Mono (code), Inter (body)
+ * Palette: #0D0D0D bg, #4AFFA0 accent, #1A1A1A surface
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@600;700;800&display=swap');
+
+/* ── Light mode ── */
+:root {
+  --ifm-color-primary: #00A35C;
+  --ifm-color-primary-dark: #009252;
+  --ifm-color-primary-darker: #008A4E;
+  --ifm-color-primary-darkest: #007140;
+  --ifm-color-primary-light: #00B466;
+  --ifm-color-primary-lighter: #00BC6A;
+  --ifm-color-primary-lightest: #00D578;
+
+  --ifm-background-color: #F5F3EE;
+  --ifm-background-surface-color: #FFFFFF;
+  --ifm-font-color-base: #0D0D0D;
+
+  --ifm-font-family-base: 'Inter', system-ui, sans-serif;
+  --ifm-heading-font-family: 'Syne', system-ui, sans-serif;
+  --ifm-font-family-monospace: 'JetBrains Mono', monospace;
+
+  --ifm-code-font-size: 90%;
+  --ifm-heading-font-weight: 700;
+  --ifm-h1-font-size: 2.2rem;
+
+  --docusaurus-highlighted-code-line-bg: rgba(0, 163, 92, 0.1);
+}
+
+/* ── Dark mode ── */
+[data-theme='dark'] {
+  --ifm-color-primary: #4AFFA0;
+  --ifm-color-primary-dark: #27FF8E;
+  --ifm-color-primary-darker: #16FF85;
+  --ifm-color-primary-darkest: #00E86C;
+  --ifm-color-primary-light: #6DFFB2;
+  --ifm-color-primary-lighter: #7EFFBA;
+  --ifm-color-primary-lightest: #B2FFD5;
+
+  --ifm-background-color: #0D0D0D;
+  --ifm-background-surface-color: #1A1A1A;
+  --ifm-font-color-base: #F0EDE8;
+
+  --docusaurus-highlighted-code-line-bg: rgba(74, 255, 160, 0.1);
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--ifm-heading-font-family);
+}
+
+/* ── Navbar ── */
+.navbar {
+  background: var(--ifm-background-surface-color);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.navbar__title {
+  font-family: 'Syne', system-ui, sans-serif;
+  font-weight: 700;
+}
+
+/* ── Sidebar ── */
+.menu__link {
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  background: rgba(74, 255, 160, 0.08);
+}
+
+/* ── Footer ── */
+.footer--dark {
+  background: #0D0D0D;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Code blocks ── */
+.prism-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  border-radius: 8px;
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  border-radius: 4px;
+}
+
+/* ── Demo wrapper ── */
+.demo-wrapper {
+  border: 1px solid var(--ifm-color-primary);
+  border-radius: 10px;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  background: var(--ifm-background-surface-color);
+}
+
+.demo-header {
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+}
+
+.demo-badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ifm-color-primary);
+  background: rgba(74, 255, 160, 0.08);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.demo-header h3 {
+  margin: 0.4rem 0 0.2rem;
+  font-size: 1.1rem;
+}
+
+.demo-header p {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.demo-body {
+  padding: 1.25rem;
+}
+
+/* ── Smooth scrolling ── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Table styling ── */
+table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th {
+  font-family: 'Syne', system-ui, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+}
+
+/* ── Admonitions ── */
+.alert {
+  border-radius: 8px;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
