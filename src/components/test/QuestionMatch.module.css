@@ -1,0 +1,136 @@
+.matchContainer {
+  display: flex;
+  gap: 3rem;
+  position: relative;
+  justify-content: space-between;
+}
+
+.matchColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1;
+}
+
+.matchLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.5;
+  margin-bottom: 0.2rem;
+}
+
+.matchBox {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.8rem;
+  border: 1.5px solid rgba(128, 128, 128, 0.3);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  min-height: 40px;
+}
+
+.matchBox:hover {
+  border-color: var(--ifm-color-primary);
+}
+
+.matchBoxConnected {
+  border-color: var(--ifm-color-primary);
+  background: rgba(74, 255, 160, 0.06);
+  color: var(--ifm-color-primary);
+}
+
+.matchBoxActive {
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 0 12px rgba(74, 255, 160, 0.3);
+}
+
+.matchBoxCorrect {
+  border-color: var(--ifm-color-primary);
+  background: rgba(74, 255, 160, 0.08);
+}
+
+.matchBoxIncorrect {
+  border-color: #e74c3c;
+  background: rgba(231, 76, 60, 0.08);
+}
+
+.circle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(128, 128, 128, 0.4);
+  background: var(--ifm-background-surface-color);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.circleLeft {
+  right: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.circleRight {
+  left: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.circleFilled {
+  background: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+}
+
+.svgOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.matchLine {
+  stroke: var(--ifm-color-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.matchLineIncorrect {
+  stroke: #e74c3c;
+}
+
+.matchHint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  opacity: 0.5;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+@media (max-width: 480px) {
+  .matchContainer {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .circle {
+    display: none;
+  }
+
+  .svgOverlay {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matchBox,
+  .circle {
+    transition: none;
+  }
+}
