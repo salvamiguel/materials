@@ -1,8 +1,1571 @@
 ---
 sidebar_position: 6
 title: "Módulos"
+description: "Diseño, creación y consumo de módulos Terraform reutilizables."
 ---
 
-# Módulos
+import CloudTabs from '@site/src/components/shared/CloudTabs';
+import { CloudTab } from '@site/src/components/shared/CloudTabs';
 
-Contenido pendiente.
+
+# Módulos y Reutilización
+
+Hasta ahora hemos trabajado con configuraciones Terraform contenidas en un único directorio. Esto funciona para proyectos pequeños, pero a medida que la infraestructura crece, mantener todo en un solo lugar se vuelve inmanejable. Los módulos son la herramienta fundamental de Terraform para organizar, reutilizar y estandarizar configuraciones de infraestructura.
+
+---
+
+## 1. Qué es un módulo
+
+Un **módulo** en Terraform es, en su forma más simple, un directorio que contiene archivos `.tf`. Cualquier conjunto de archivos Terraform en un directorio constituye un módulo. Cuando ejecutas `terraform plan` o `terraform apply`, estás ejecutando un módulo: el **root module**.
+
+### Root module vs. child modules
+
+- **Root module**: es el directorio de trabajo donde ejecutas los comandos de Terraform. Contiene tu configuración principal y es el punto de entrada de toda la ejecución.
+- **Child modules**: son módulos que el root module (u otros módulos) invocan mediante el bloque `module`. Pueden estar en subdirectorios locales, en un registry o en un repositorio Git remoto.
+
+### La analogía con funciones
+
+Piensa en los módulos como **funciones en programación**:
+
+| Concepto en programación | Equivalente en Terraform |
+|---|---|
+| Parámetros de entrada | `variable` (input variables) |
+| Cuerpo de la función | Recursos y data sources en `main.tf` |
+| Valor de retorno | `output` (output values) |
+| Llamada a función | Bloque `module` |
+
+Al igual que una buena función, un buen módulo tiene una interfaz clara, una responsabilidad definida y puede invocarse múltiples veces con distintos argumentos.
+
+### Ventajas de usar módulos
+
+- **Reutilización**: escribe la lógica una vez, úsala en múltiples entornos y proyectos.
+- **Encapsulación**: oculta la complejidad interna. El consumidor del módulo solo necesita conocer las variables de entrada y los outputs.
+- **Estandarización**: establece patrones aprobados por el equipo. Si todos usan el mismo módulo de red, todas las redes siguen las mismas convenciones.
+- **Testing**: un módulo aislado es más fácil de probar que una configuración monolítica.
+- **Colaboración**: distintos equipos pueden mantener distintos módulos de forma independiente.
+
+---
+
+## 2. Estructura de un módulo
+
+Terraform no impone una estructura de archivos dentro de un módulo, pero la comunidad ha establecido una convención clara que deberías seguir:
+
+```
+modules/webapp/
+├── main.tf          # Recursos principales
+├── variables.tf     # Input variables
+├── outputs.tf       # Output values
+├── versions.tf      # Required providers y versiones de Terraform
+└── README.md        # Documentación del módulo
+```
+
+### Responsabilidad de cada archivo
+
+- **`main.tf`**: contiene los recursos y data sources que el módulo gestiona. En módulos más grandes, puedes dividir los recursos en varios archivos (`networking.tf`, `compute.tf`, etc.), pero `main.tf` siempre debe existir como punto de entrada principal.
+- **`variables.tf`**: declara todas las input variables del módulo. Cada variable debe tener `description` y `type` definidos.
+- **`outputs.tf`**: expone valores que otros módulos o el root module pueden consumir. Piensa en los outputs como la API pública de tu módulo.
+- **`versions.tf`**: especifica la versión mínima de Terraform y los providers requeridos.
+- **`README.md`**: documenta el propósito del módulo, sus variables, outputs y ejemplos de uso.
+
+:::tip
+Mantén cada módulo **pequeño y enfocado** en una sola responsabilidad. Un módulo que crea una red no debería crear también instancias de cómputo. Aplica el principio de single responsibility: si necesitas describir tu módulo con "y" (por ejemplo, "crea una red **y** despliega una aplicación"), probablemente deberías dividirlo en dos módulos.
+:::
+
+### Ejemplo de versions.tf
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+terraform {
+  required_version = ">= 1.5.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+terraform {
+  required_version = ">= 1.5.0"
+
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 5.0"
+    }
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+terraform {
+  required_version = ">= 1.5.0"
+
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+  }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+Este archivo garantiza que cualquier persona que use el módulo tenga una versión compatible de Terraform y del provider correspondiente.
+
+---
+
+## 3. Crear un módulo: ejemplo práctico
+
+Vamos a construir un módulo completo que despliega una **webapp** compuesta por reglas de firewall y una instancia de cómputo. Este es un ejemplo didáctico que ilustra todos los conceptos fundamentales.
+
+import LabActions from '@site/src/components/shared/LabActions';
+
+<LabActions
+  repo="https://github.com/salvamiguel/materials"
+  title="Explora el código del ejemplo"
+  codespace={false}
+  devcontainer={true}
+  fork={false}
+/>
+
+### modules/webapp/variables.tf
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+variable "app_name" {
+  type        = string
+  description = "Nombre de la aplicación. Se usa como prefijo en los nombres de los recursos."
+}
+
+variable "instance_type" {
+  type        = string
+  default     = "t2.micro"
+  description = "Tipo de instancia EC2."
+}
+
+variable "allowed_ports" {
+  type        = list(number)
+  default     = [80, 443]
+  description = "Lista de puertos TCP permitidos en el security group."
+}
+
+variable "ami_id" {
+  type        = string
+  description = "ID de la AMI para la instancia EC2."
+}
+
+variable "subnet_id" {
+  type        = string
+  description = "ID del subnet donde desplegar la instancia."
+}
+
+variable "vpc_id" {
+  type        = string
+  description = "ID de la VPC para el security group."
+}
+
+variable "tags" {
+  type        = map(string)
+  default     = {}
+  description = "Tags adicionales para aplicar a todos los recursos."
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+variable "app_name" {
+  type        = string
+  description = "Nombre de la aplicación. Se usa como prefijo en los nombres de los recursos."
+}
+
+variable "machine_type" {
+  type        = string
+  default     = "e2-micro"
+  description = "Tipo de máquina de Compute Engine."
+}
+
+variable "allowed_ports" {
+  type        = list(number)
+  default     = [80, 443]
+  description = "Lista de puertos TCP permitidos en la firewall rule."
+}
+
+variable "image" {
+  type        = string
+  description = "Imagen para la instancia (ej: debian-cloud/debian-12)."
+}
+
+variable "network" {
+  type        = string
+  description = "Nombre o self_link de la red VPC."
+}
+
+variable "subnetwork" {
+  type        = string
+  description = "Nombre o self_link del subnetwork donde desplegar la instancia."
+}
+
+variable "zone" {
+  type        = string
+  description = "Zona de GCP para la instancia."
+}
+
+variable "labels" {
+  type        = map(string)
+  default     = {}
+  description = "Labels adicionales para aplicar a todos los recursos."
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+variable "app_name" {
+  type        = string
+  description = "Nombre de la aplicación. Se usa como prefijo en los nombres de los recursos."
+}
+
+variable "vm_size" {
+  type        = string
+  default     = "Standard_B1s"
+  description = "Tamaño de la máquina virtual."
+}
+
+variable "allowed_ports" {
+  type        = list(number)
+  default     = [80, 443]
+  description = "Lista de puertos TCP permitidos en el Network Security Group."
+}
+
+variable "resource_group_name" {
+  type        = string
+  description = "Nombre del Resource Group."
+}
+
+variable "location" {
+  type        = string
+  description = "Región de Azure para los recursos."
+}
+
+variable "subnet_id" {
+  type        = string
+  description = "ID del subnet donde desplegar la VM."
+}
+
+variable "admin_username" {
+  type        = string
+  default     = "adminuser"
+  description = "Nombre del usuario administrador de la VM."
+}
+
+variable "tags" {
+  type        = map(string)
+  default     = {}
+  description = "Tags adicionales para aplicar a todos los recursos."
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+Observa que cada variable tiene `type` y `description`. Las variables con `default` son opcionales para el consumidor del módulo; las que no tienen `default` son obligatorias.
+
+### modules/webapp/main.tf
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+locals {
+  common_tags = merge(
+    {
+      Application = var.app_name
+      ManagedBy   = "terraform"
+    },
+    var.tags
+  )
+}
+
+resource "aws_security_group" "webapp" {
+  name        = "${var.app_name}-sg"
+  description = "Security group para ${var.app_name}"
+  vpc_id      = var.vpc_id
+
+  dynamic "ingress" {
+    for_each = var.allowed_ports
+    content {
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${var.app_name}-sg"
+  })
+}
+
+resource "aws_instance" "webapp" {
+  ami                    = var.ami_id
+  instance_type          = var.instance_type
+  subnet_id              = var.subnet_id
+  vpc_security_group_ids = [aws_security_group.webapp.id]
+
+  tags = merge(local.common_tags, {
+    Name = "${var.app_name}-instance"
+  })
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+locals {
+  common_labels = merge(
+    {
+      application = var.app_name
+      managed-by  = "terraform"
+    },
+    var.labels
+  )
+}
+
+resource "google_compute_firewall" "webapp" {
+  name    = "${var.app_name}-allow-web"
+  network = var.network
+
+  dynamic "allow" {
+    for_each = var.allowed_ports
+    content {
+      protocol = "tcp"
+      ports    = [allow.value]
+    }
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["${var.app_name}-webapp"]
+}
+
+resource "google_compute_instance" "webapp" {
+  name         = "${var.app_name}-instance"
+  machine_type = var.machine_type
+  zone         = var.zone
+  tags         = ["${var.app_name}-webapp"]
+  labels       = local.common_labels
+
+  boot_disk {
+    initialize_params {
+      image = var.image
+    }
+  }
+
+  network_interface {
+    network    = var.network
+    subnetwork = var.subnetwork
+
+    access_config {
+      # IP pública efímera
+    }
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+locals {
+  common_tags = merge(
+    {
+      Application = var.app_name
+      ManagedBy   = "terraform"
+    },
+    var.tags
+  )
+}
+
+resource "azurerm_network_security_group" "webapp" {
+  name                = "${var.app_name}-nsg"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = local.common_tags
+
+  dynamic "security_rule" {
+    for_each = { for idx, port in var.allowed_ports : idx => port }
+    content {
+      name                       = "allow-${security_rule.value}"
+      priority                   = 100 + security_rule.key
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = security_rule.value
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    }
+  }
+}
+
+resource "azurerm_network_interface" "webapp" {
+  name                = "${var.app_name}-nic"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = local.common_tags
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = var.subnet_id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+resource "azurerm_network_interface_security_group_association" "webapp" {
+  network_interface_id      = azurerm_network_interface.webapp.id
+  network_security_group_id = azurerm_network_security_group.webapp.id
+}
+
+resource "azurerm_linux_virtual_machine" "webapp" {
+  name                            = "${var.app_name}-vm"
+  location                        = var.location
+  resource_group_name             = var.resource_group_name
+  size                            = var.vm_size
+  admin_username                  = var.admin_username
+  network_interface_ids           = [azurerm_network_interface.webapp.id]
+  disable_password_authentication = true
+  tags                            = local.common_tags
+
+  admin_ssh_key {
+    username   = var.admin_username
+    public_key = file("~/.ssh/id_rsa.pub")
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+El módulo usa un bloque `dynamic` para crear reglas de firewall a partir de la lista de puertos. También emplea `locals` para centralizar los tags/labels comunes, evitando repetición.
+
+### modules/webapp/outputs.tf
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+output "instance_id" {
+  value       = aws_instance.webapp.id
+  description = "ID de la instancia EC2 creada."
+}
+
+output "public_ip" {
+  value       = aws_instance.webapp.public_ip
+  description = "IP pública de la instancia EC2."
+}
+
+output "private_ip" {
+  value       = aws_instance.webapp.private_ip
+  description = "IP privada de la instancia EC2."
+}
+
+output "security_group_id" {
+  value       = aws_security_group.webapp.id
+  description = "ID del security group creado."
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+output "instance_id" {
+  value       = google_compute_instance.webapp.instance_id
+  description = "ID de la instancia de Compute Engine creada."
+}
+
+output "public_ip" {
+  value       = google_compute_instance.webapp.network_interface[0].access_config[0].nat_ip
+  description = "IP pública de la instancia."
+}
+
+output "private_ip" {
+  value       = google_compute_instance.webapp.network_interface[0].network_ip
+  description = "IP privada de la instancia."
+}
+
+output "firewall_rule_id" {
+  value       = google_compute_firewall.webapp.id
+  description = "ID de la firewall rule creada."
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+output "vm_id" {
+  value       = azurerm_linux_virtual_machine.webapp.id
+  description = "ID de la VM creada."
+}
+
+output "private_ip" {
+  value       = azurerm_network_interface.webapp.private_ip_address
+  description = "IP privada de la VM."
+}
+
+output "nsg_id" {
+  value       = azurerm_network_security_group.webapp.id
+  description = "ID del Network Security Group creado."
+}
+
+output "network_interface_id" {
+  value       = azurerm_network_interface.webapp.id
+  description = "ID de la network interface creada."
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+Los outputs exponen los datos que otros módulos o el root module necesitarán. Siempre incluye `description` para documentar qué representa cada output.
+
+---
+
+## 4. Consumir un módulo
+
+Una vez que tienes un módulo creado, invocarlo desde el root module es directo.
+
+### Bloque module
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+module "webapp" {
+  source = "./modules/webapp"
+
+  app_name      = "mi-app"
+  instance_type = "t3.small"
+  allowed_ports = [80, 443, 8080]
+  ami_id        = "ami-0c55b159cbfafe1f0"
+  subnet_id     = aws_subnet.public.id
+  vpc_id        = aws_vpc.main.id
+
+  tags = {
+    Environment = "production"
+    Team        = "platform"
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+module "webapp" {
+  source = "./modules/webapp"
+
+  app_name      = "mi-app"
+  machine_type  = "e2-small"
+  allowed_ports = [80, 443, 8080]
+  image         = "debian-cloud/debian-12"
+  network       = google_compute_network.main.self_link
+  subnetwork    = google_compute_subnetwork.public.self_link
+  zone          = "europe-west1-b"
+
+  labels = {
+    environment = "production"
+    team        = "platform"
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+module "webapp" {
+  source = "./modules/webapp"
+
+  app_name            = "mi-app"
+  vm_size             = "Standard_B2s"
+  allowed_ports       = [80, 443, 8080]
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  subnet_id           = azurerm_subnet.public.id
+
+  tags = {
+    Environment = "production"
+    Team        = "platform"
+  }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+El argumento `source` indica dónde encontrar el módulo. Los demás argumentos corresponden a las variables definidas en `variables.tf`. Las variables sin `default` son obligatorias: si no las proporcionas, Terraform lanzará un error.
+
+### Acceder a outputs
+
+Para usar los valores que el módulo expone, utiliza la sintaxis `module.<NOMBRE>.<OUTPUT>`:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+# En otro recurso del root module
+resource "aws_route53_record" "webapp" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "app.example.com"
+  type    = "A"
+  ttl     = 300
+  records = [module.webapp.public_ip]
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+# En otro recurso del root module
+resource "google_dns_record_set" "webapp" {
+  name         = "app.example.com."
+  type         = "A"
+  ttl          = 300
+  managed_zone = google_dns_managed_zone.main.name
+  rrdatas      = [module.webapp.public_ip]
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+# En otro recurso del root module
+resource "azurerm_dns_a_record" "webapp" {
+  name                = "app"
+  zone_name           = azurerm_dns_zone.main.name
+  resource_group_name = azurerm_resource_group.main.name
+  ttl                 = 300
+  records             = [module.webapp.private_ip]
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+También puedes exponer outputs del child module como outputs del root module:
+
+```hcl
+output "webapp_ip" {
+  value       = module.webapp.public_ip
+  description = "IP pública de la webapp."
+}
+```
+
+### Meta-argumentos en modules
+
+Los bloques `module` soportan varios meta-argumentos que amplían su funcionalidad:
+
+**`count`** -- crear múltiples instancias del módulo:
+
+```hcl
+module "webapp" {
+  source = "./modules/webapp"
+  count  = 3
+
+  app_name = "app-${count.index}"
+  # ... demás argumentos según el provider
+}
+
+# Acceso: module.webapp[0].public_ip
+```
+
+**`for_each`** -- crear instancias basadas en un map o set:
+
+```hcl
+variable "apps" {
+  default = {
+    frontend = { ports = [80, 443] }
+    backend  = { ports = [8080] }
+    admin    = { ports = [443, 8443] }
+  }
+}
+
+module "webapp" {
+  source   = "./modules/webapp"
+  for_each = var.apps
+
+  app_name      = each.key
+  allowed_ports = each.value.ports
+  # ... demás argumentos según el provider
+}
+
+# Acceso: module.webapp["frontend"].public_ip
+```
+
+**`depends_on`** -- establecer dependencias explícitas:
+
+```hcl
+module "webapp" {
+  source = "./modules/webapp"
+  # ...
+
+  depends_on = [module.network]
+}
+```
+
+**`providers`** -- pasar configuraciones de provider específicas:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+module "webapp_eu" {
+  source = "./modules/webapp"
+  # ...
+
+  providers = {
+    aws = aws.europe
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+module "webapp_eu" {
+  source = "./modules/webapp"
+  # ...
+
+  providers = {
+    google = google.europe
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+module "webapp_eu" {
+  source = "./modules/webapp"
+  # ...
+
+  providers = {
+    azurerm = azurerm.europe
+  }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+:::info
+Usa `for_each` en lugar de `count` siempre que sea posible. Con `count`, si eliminas un elemento del medio de la lista, Terraform recreará los elementos posteriores. Con `for_each` y claves estables, cada instancia se identifica por su clave, no por su posición.
+:::
+
+---
+
+## 5. Fuentes de módulos
+
+Terraform soporta múltiples fuentes para cargar módulos. La elección depende de tu flujo de trabajo y del grado de compartición que necesites.
+
+### Módulos locales
+
+La forma más sencilla. El módulo vive en un subdirectorio del mismo repositorio:
+
+```hcl
+module "vpc" {
+  source = "./modules/vpc"
+  # ...
+}
+```
+
+Ventajas: simplicidad, sin dependencias externas, cambios atómicos con el resto del código.
+
+### Terraform Registry
+
+El [Terraform Registry](https://registry.terraform.io/) es el repositorio público de módulos de la comunidad. Contiene módulos verificados y mantenidos activamente.
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "5.5.1"
+
+  name = "mi-vpc"
+  cidr = "10.0.0.0/16"
+
+  azs             = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+  enable_nat_gateway = true
+  single_nat_gateway = true
+
+  tags = {
+    Environment = "production"
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+module "vpc" {
+  source  = "terraform-google-modules/network/google"
+  version = "9.0.0"
+
+  project_id   = var.project_id
+  network_name = "mi-vpc"
+
+  subnets = [
+    {
+      subnet_name   = "private-subnet"
+      subnet_ip     = "10.0.1.0/24"
+      subnet_region = "europe-west1"
+    },
+    {
+      subnet_name   = "public-subnet"
+      subnet_ip     = "10.0.101.0/24"
+      subnet_region = "europe-west1"
+    },
+  ]
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+module "vnet" {
+  source  = "Azure/vnet/azurerm"
+  version = "4.1.0"
+
+  resource_group_name = azurerm_resource_group.main.name
+  vnet_location       = azurerm_resource_group.main.location
+  use_for_each        = true
+  vnet_name           = "mi-vnet"
+  address_space       = ["10.0.0.0/16"]
+
+  subnet_names    = ["private-subnet", "public-subnet"]
+  subnet_prefixes = ["10.0.1.0/24", "10.0.101.0/24"]
+
+  tags = {
+    Environment = "production"
+  }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+Estos módulos oficiales crean una red completa con subnets, routing y todo lo necesario, en pocas líneas. Sin módulos, esta configuración requeriría cientos de líneas de HCL.
+
+Para explorar módulos disponibles:
+
+```bash
+# Buscar módulos en el registry desde la CLI
+terraform providers
+# O visita https://registry.terraform.io/browse/modules
+```
+
+### GitHub
+
+Puedes referenciar módulos directamente desde repositorios de GitHub:
+
+```hcl
+module "vpc" {
+  source = "github.com/mi-org/terraform-modules//modules/vpc?ref=v2.1.0"
+}
+```
+
+La doble barra `//` separa el repositorio de la ruta al subdirectorio dentro del repositorio. El parámetro `ref` especifica el tag, branch o commit.
+
+### Git genérico
+
+Para repositorios Git que no están en GitHub, usa el prefijo `git::`:
+
+```hcl
+module "vpc" {
+  source = "git::https://gitlab.com/mi-org/terraform-modules.git//vpc?ref=v1.0.0"
+}
+
+# Con SSH
+module "vpc" {
+  source = "git::ssh://git@gitlab.com/mi-org/terraform-modules.git//vpc?ref=v1.0.0"
+}
+```
+
+### Otros sources
+
+Terraform también soporta:
+- **S3 bucket**: `source = "s3::https://s3-eu-west-1.amazonaws.com/bucket/vpc.zip"`
+- **GCS bucket**: `source = "gcs::https://www.googleapis.com/storage/v1/bucket/vpc.zip"`
+- **HTTP URL**: `source = "https://example.com/modules/vpc.zip"`
+
+:::info
+**Siempre** especifica la versión al usar módulos remotos. Sin versión fija, Terraform descargará la última versión disponible, lo que puede introducir breaking changes inesperados. Usa `version` para el Registry y `ref` para fuentes Git.
+:::
+
+Después de añadir o cambiar un `source`, es necesario ejecutar:
+
+```bash
+terraform init
+```
+
+Este comando descarga los módulos referenciados y los almacena en el directorio `.terraform/modules/`.
+
+---
+
+## 6. Inputs con validación y tipos complejos
+
+Las variables de un módulo pueden ir mucho más allá de tipos primitivos. Terraform permite definir estructuras complejas con validaciones que atrapan errores antes de que lleguen a la API del provider.
+
+### Variables con tipo object
+
+```hcl
+variable "database" {
+  type = object({
+    engine            = string
+    engine_version    = string
+    instance_class    = string
+    allocated_storage = number
+  })
+
+  description = "Configuración de la base de datos RDS."
+
+  validation {
+    condition     = contains(["mysql", "postgres"], var.database.engine)
+    error_message = "Engine debe ser mysql o postgres."
+  }
+
+  validation {
+    condition     = var.database.allocated_storage >= 20
+    error_message = "El almacenamiento mínimo es 20 GB."
+  }
+}
+```
+
+Este patrón agrupa configuraciones relacionadas en un solo objeto, haciendo la interfaz del módulo más limpia y evitando una explosión de variables individuales.
+
+Uso desde el consumidor:
+
+```hcl
+module "rds" {
+  source = "./modules/rds"
+
+  database = {
+    engine            = "postgres"
+    engine_version    = "15.4"
+    instance_class    = "db.t3.micro"
+    allocated_storage = 20
+  }
+}
+```
+
+### Variables con tipo map de objects
+
+Para escenarios donde necesitas crear múltiples recursos con configuraciones distintas:
+
+```hcl
+variable "security_group_rules" {
+  type = map(object({
+    port        = number
+    protocol    = string
+    cidr_blocks = list(string)
+  }))
+
+  default = {
+    http = {
+      port        = 80
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+    https = {
+      port        = 443
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+}
+```
+
+### Variables con optional()
+
+A partir de Terraform 1.3, puedes marcar atributos de un object como opcionales y asignarles valores por defecto:
+
+```hcl
+variable "app_config" {
+  type = object({
+    name        = string
+    replicas    = optional(number, 1)
+    environment = optional(string, "production")
+    labels      = optional(map(string), {})
+  })
+
+  description = "Configuración de la aplicación con valores opcionales."
+}
+```
+
+El consumidor solo necesita proporcionar `name`; el resto toma valores por defecto:
+
+```hcl
+module "app" {
+  source = "./modules/app"
+
+  app_config = {
+    name = "mi-servicio"
+    # replicas, environment y labels usan sus defaults
+  }
+}
+```
+
+### Validaciones avanzadas
+
+```hcl
+variable "environment" {
+  type        = string
+  description = "Entorno de despliegue."
+
+  validation {
+    condition     = contains(["dev", "staging", "production"], var.environment)
+    error_message = "Environment debe ser dev, staging o production."
+  }
+}
+
+variable "cidr_block" {
+  type        = string
+  description = "CIDR block para la red."
+
+  validation {
+    condition     = can(cidrhost(var.cidr_block, 0))
+    error_message = "El valor debe ser un CIDR block válido (ej: 10.0.0.0/16)."
+  }
+}
+```
+
+:::tip
+Las validaciones son tu primera línea de defensa. Es mucho mejor que Terraform falle durante `plan` con un mensaje claro que esperar un error críptico del API del provider durante `apply`.
+:::
+
+---
+
+## 7. Composición de módulos
+
+El verdadero poder de los módulos aparece cuando los **compones**: el root module orquesta varios child modules, pasando outputs de uno como inputs de otro.
+
+### Patrón de composición
+
+Imagina un proyecto con tres componentes: red, aplicación y base de datos. Cada uno es un módulo independiente, y el root module los conecta.
+
+```
+proyecto/
+├── main.tf              # Root module: orquesta los child modules
+├── variables.tf         # Variables globales del proyecto
+├── outputs.tf           # Outputs del proyecto
+├── terraform.tfvars     # Valores concretos
+└── modules/
+    ├── network/
+    │   ├── main.tf
+    │   ├── variables.tf
+    │   └── outputs.tf
+    ├── webapp/
+    │   ├── main.tf
+    │   ├── variables.tf
+    │   └── outputs.tf
+    └── database/
+        ├── main.tf
+        ├── variables.tf
+        └── outputs.tf
+```
+
+### Root module (main.tf)
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+module "vpc" {
+  source = "./modules/network"
+
+  vpc_cidr    = var.vpc_cidr
+  environment = var.environment
+}
+
+module "webapp" {
+  source = "./modules/webapp"
+
+  app_name      = var.app_name
+  instance_type = var.instance_type
+  ami_id        = var.ami_id
+  subnet_id     = module.vpc.public_subnet_id
+  vpc_id        = module.vpc.vpc_id
+  allowed_ports = [80, 443]
+
+  tags = {
+    Environment = var.environment
+  }
+}
+
+module "rds" {
+  source = "./modules/database"
+
+  database = {
+    engine            = "postgres"
+    engine_version    = "15.4"
+    instance_class    = "db.t3.micro"
+    allocated_storage = 20
+  }
+
+  subnet_ids              = module.vpc.private_subnet_ids
+  vpc_id                  = module.vpc.vpc_id
+  allowed_security_groups = [module.webapp.security_group_id]
+
+  tags = {
+    Environment = var.environment
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+module "network" {
+  source = "./modules/network"
+
+  network_cidr = var.network_cidr
+  environment  = var.environment
+  project_id   = var.project_id
+  region       = var.region
+}
+
+module "compute" {
+  source = "./modules/webapp"
+
+  app_name      = var.app_name
+  machine_type  = var.machine_type
+  image         = var.image
+  network       = module.network.network_self_link
+  subnetwork    = module.network.public_subnet_self_link
+  zone          = var.zone
+  allowed_ports = [80, 443]
+
+  labels = {
+    environment = var.environment
+  }
+}
+
+module "cloud_sql" {
+  source = "./modules/database"
+
+  database_version = "POSTGRES_15"
+  tier             = "db-f1-micro"
+  project_id       = var.project_id
+  region           = var.region
+  network          = module.network.network_self_link
+
+  labels = {
+    environment = var.environment
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+module "vnet" {
+  source = "./modules/network"
+
+  address_space       = var.address_space
+  environment         = var.environment
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+}
+
+module "vm" {
+  source = "./modules/webapp"
+
+  app_name            = var.app_name
+  vm_size             = var.vm_size
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  subnet_id           = module.vnet.public_subnet_id
+  allowed_ports       = [80, 443]
+
+  tags = {
+    Environment = var.environment
+  }
+}
+
+module "sql_database" {
+  source = "./modules/database"
+
+  server_name         = "${var.app_name}-sqlserver"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  subnet_id           = module.vnet.private_subnet_id
+  sku_name            = "GP_Standard_D2s_v3"
+
+  tags = {
+    Environment = var.environment
+  }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+Observa cómo fluyen los datos:
+1. El módulo de **red** se crea primero y expone los identificadores de red y subnets.
+2. El módulo de **webapp** consume la subnet pública y la red del módulo de red.
+3. El módulo de **base de datos** consume las subnets privadas de la red y las referencias de seguridad de la webapp.
+
+Terraform analiza estas dependencias automáticamente y determina el orden correcto de creación.
+
+### Outputs del root module
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+output "webapp_url" {
+  value       = "http://${module.webapp.public_ip}"
+  description = "URL de la aplicación web."
+}
+
+output "database_endpoint" {
+  value       = module.rds.endpoint
+  description = "Endpoint de la base de datos."
+  sensitive   = true
+}
+
+output "vpc_id" {
+  value       = module.vpc.vpc_id
+  description = "ID de la VPC creada."
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+output "webapp_url" {
+  value       = "http://${module.compute.public_ip}"
+  description = "URL de la aplicación web."
+}
+
+output "database_connection" {
+  value       = module.cloud_sql.connection_name
+  description = "Nombre de conexión de Cloud SQL."
+  sensitive   = true
+}
+
+output "network_id" {
+  value       = module.network.network_self_link
+  description = "Self link de la red VPC creada."
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+output "webapp_url" {
+  value       = "http://${module.vm.private_ip}"
+  description = "URL de la aplicación web."
+}
+
+output "database_fqdn" {
+  value       = module.sql_database.fqdn
+  description = "FQDN del servidor SQL."
+  sensitive   = true
+}
+
+output "vnet_id" {
+  value       = module.vnet.vnet_id
+  description = "ID de la VNet creada."
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+### Múltiples entornos con la misma composición
+
+Una vez que tienes la composición, puedes reutilizarla para distintos entornos usando diferentes `.tfvars`:
+
+```bash
+# Desplegar en desarrollo
+terraform apply -var-file="environments/dev.tfvars"
+
+# Desplegar en producción
+terraform apply -var-file="environments/prod.tfvars"
+```
+
+Donde `dev.tfvars` y `prod.tfvars` contienen valores distintos para las mismas variables:
+
+```hcl
+# environments/dev.tfvars
+environment   = "dev"
+instance_type = "t3.small"
+vpc_cidr      = "10.0.0.0/16"
+
+# environments/prod.tfvars
+environment   = "production"
+instance_type = "t3.xlarge"
+vpc_cidr      = "10.1.0.0/16"
+```
+
+---
+
+## 8. Versionado de módulos
+
+Cuando un módulo se comparte entre equipos o proyectos, el versionado es esencial. Sin él, un cambio en el módulo puede romper todas las configuraciones que lo consumen.
+
+### Git tags
+
+La forma más directa de versionar un módulo en un repositorio Git es mediante tags:
+
+```bash
+# Crear una versión
+git tag v1.0.0
+git push origin v1.0.0
+
+# Crear una versión con mensaje
+git tag -a v1.1.0 -m "Añade soporte para múltiples subnets"
+git push origin v1.1.0
+```
+
+El consumidor referencia la versión exacta:
+
+```hcl
+module "vpc" {
+  source = "git::https://github.com/mi-org/terraform-vpc.git?ref=v1.0.0"
+}
+```
+
+### Terraform Registry y version constraints
+
+Cuando el módulo está publicado en el Terraform Registry, usa el atributo `version`:
+
+```hcl
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "5.5.1"
+  # ...
+}
+```
+
+Los constraints de versión siguen la misma sintaxis que los providers:
+
+| Constraint | Significado |
+|---|---|
+| `= 5.5.1` | Exactamente la versión 5.5.1 |
+| `>= 5.0.0` | Versión 5.0.0 o superior |
+| `~> 5.5.0` | Versión >= 5.5.0 y < 5.6.0 (patch updates) |
+| `~> 5.0` | Versión >= 5.0.0 y < 6.0.0 (minor updates) |
+| `>= 5.0.0, < 6.0.0` | Rango explícito |
+
+### Semantic versioning (SemVer)
+
+Los módulos deberían seguir [Semantic Versioning](https://semver.org/):
+
+- **MAJOR** (v2.0.0): cambios que rompen compatibilidad (eliminar una variable, cambiar un tipo de output).
+- **MINOR** (v1.1.0): nueva funcionalidad compatible hacia atrás (añadir una variable con default).
+- **PATCH** (v1.0.1): corrección de bugs sin cambiar la interfaz.
+
+:::warning
+**Nunca** apuntes a `main` o `master` en producción. Un cambio que un compañero pushee al branch principal puede romper tu infraestructura en el próximo `terraform apply`. Siempre usa tags o versiones fijas. Incluso en desarrollo, es recomendable usar una referencia concreta para evitar sorpresas.
+:::
+
+### Estrategia de actualización
+
+Cuando necesites actualizar un módulo:
+
+```bash
+# 1. Cambia la versión en tu configuración
+# version = "5.5.1" -> version = "5.6.0"
+
+# 2. Descarga la nueva versión
+terraform init -upgrade
+
+# 3. Revisa los cambios que se aplicarían
+terraform plan
+
+# 4. Si todo es correcto, aplica
+terraform apply
+```
+
+---
+
+## 9. Buenas prácticas
+
+Estas convenciones han sido establecidas por la comunidad de Terraform y facilitan la adopción, mantenimiento y colaboración en módulos compartidos.
+
+### Naming
+
+Sigue la convención de nomenclatura del Terraform Registry:
+
+```
+terraform-<PROVIDER>-<NAME>
+```
+
+Ejemplos:
+- `terraform-aws-vpc`
+- `terraform-google-kubernetes-engine`
+- `terraform-azurerm-storage-account`
+
+Esta convención permite que el Registry detecte automáticamente el provider principal del módulo.
+
+### Documentación
+
+Cada módulo debe incluir un `README.md` con:
+- Descripción del propósito del módulo.
+- Requisitos previos (versión de Terraform, providers).
+- Tabla de variables con descripciones y valores por defecto.
+- Tabla de outputs.
+- Al menos un ejemplo de uso completo.
+
+Herramientas como [terraform-docs](https://terraform-docs.io/) generan esta documentación automáticamente a partir de los archivos `.tf`:
+
+```bash
+# Instalar terraform-docs
+brew install terraform-docs
+
+# Generar documentación
+terraform-docs markdown table ./modules/webapp > ./modules/webapp/README.md
+```
+
+### Parametrización
+
+No hardcodees valores dentro de un módulo. Todo lo que pueda variar entre usos debe ser una variable:
+
+```hcl
+# Mal: valor hardcodeado
+resource "aws_instance" "web" {
+  instance_type = "t3.large"
+  # ...
+}
+
+# Bien: parametrizado
+resource "aws_instance" "web" {
+  instance_type = var.instance_type
+  # ...
+}
+```
+
+Proporciona `default` solo cuando existe un valor sensato para la mayoría de los casos de uso.
+
+### Outputs completos
+
+Expón como output todo lo que otro módulo pueda necesitar. Es mejor tener outputs de más que de menos. Si alguien que consume tu módulo tiene que hacer un `terraform state show` para obtener un atributo, probablemente falta un output:
+
+```hcl
+# Exponemos todo lo relevante del recurso
+output "instance_id" {
+  value       = aws_instance.web.id
+  description = "ID de la instancia."
+}
+
+output "instance_arn" {
+  value       = aws_instance.web.arn
+  description = "ARN de la instancia."
+}
+
+output "public_ip" {
+  value       = aws_instance.web.public_ip
+  description = "IP pública."
+}
+
+output "private_ip" {
+  value       = aws_instance.web.private_ip
+  description = "IP privada."
+}
+```
+
+### Mantener módulos genéricos
+
+Un módulo debe ser reutilizable en distintos contextos. Evita asumir detalles del entorno:
+
+- No asumas nombres de redes, regiones o cuentas del provider.
+- No incluyas configuración de backend (el root module se encarga).
+- No declares bloques `provider` dentro del módulo (usa `required_providers` en su lugar).
+
+### Checklist de calidad
+
+Antes de publicar o compartir un módulo, verifica:
+
+- [ ] Todas las variables tienen `type` y `description`.
+- [ ] Todos los outputs tienen `description`.
+- [ ] Existe `versions.tf` con las versiones mínimas requeridas.
+- [ ] No hay valores hardcodeados que deberían ser variables.
+- [ ] El módulo funciona de forma aislada (no depende de recursos externos no declarados).
+- [ ] Existe un `README.md` con al menos un ejemplo de uso.
+- [ ] Sigue la convención de naming `terraform-<PROVIDER>-<NAME>`.
+- [ ] Los cambios respetan semantic versioning.
+
+---
+
+## 10. Resumen
+
+Los módulos son el mecanismo fundamental de Terraform para construir infraestructura mantenible a escala. Estos son los puntos clave de esta unidad:
+
+- Un **módulo** es un directorio con archivos `.tf`. El directorio donde ejecutas Terraform es el **root module**; los que invocas con el bloque `module` son **child modules**.
+- La estructura estándar incluye `main.tf`, `variables.tf`, `outputs.tf` y `versions.tf`.
+- Los módulos se **consumen** con el bloque `module`, pasando valores a las variables de entrada y accediendo a los resultados mediante `module.<nombre>.<output>`.
+- Los meta-argumentos `count`, `for_each`, `depends_on` y `providers` permiten crear múltiples instancias de un módulo y controlar dependencias.
+- Las **fuentes** pueden ser locales, del Terraform Registry, de GitHub o de cualquier repositorio Git. Siempre fija la versión en entornos de producción.
+- Las **validaciones** en variables atrapan errores antes de que lleguen al provider, mejorando la experiencia del consumidor del módulo.
+- La **composición** de módulos permite orquestar infraestructura compleja conectando outputs de un módulo como inputs de otro.
+- El **versionado** con SemVer y Git tags protege a los consumidores de breaking changes inesperados.
+- Las **buenas prácticas** (naming, documentación, parametrización, outputs completos) son tan importantes como el código en sí.
+
+Con una buena estrategia de módulos, tu infraestructura Terraform se convierte en una librería de componentes reutilizables que todo el equipo puede consumir con confianza.

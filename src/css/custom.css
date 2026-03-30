@@ -107,7 +107,9 @@ code {
 }
 
 .demo-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.7rem;
   font-weight: 600;
@@ -157,6 +159,109 @@ th {
 /* ── Admonitions ── */
 .alert {
   border-radius: 8px;
+}
+
+/* ── Cloud provider tabs ── */
+.cloud-tabs {
+  margin: 1rem 0;
+  border: 1px solid rgba(128, 128, 128, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cloud-tabs__nav {
+  display: flex;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--ifm-background-surface-color);
+  border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+}
+
+.cloud-tabs__tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ifm-font-color-base);
+  opacity: 0.5;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.cloud-tabs__tab:hover {
+  opacity: 0.8;
+}
+
+.cloud-tabs__tab--active {
+  opacity: 1;
+  color: var(--ifm-color-primary);
+  border-bottom-color: var(--ifm-color-primary);
+}
+
+.cloud-tabs__icon {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.cloud-tabs__content {
+  padding: 0;
+}
+
+.cloud-tabs__content pre,
+.cloud-tabs__content .prism-code {
+  margin: 0;
+  border-radius: 0;
+}
+
+.cloud-tabs__content > div {
+  margin: 0;
+}
+
+.cloud-tabs__content .theme-code-block {
+  margin: 0;
+  border-radius: 0;
+}
+
+/* ── Generated index (category landing pages) ── */
+.generatedIndexPage_vN6x .cards_LuU3,
+[class*='generatedIndexPage'] [class*='cards'] {
+  gap: 1rem;
+}
+
+.generatedIndexPage_vN6x .card,
+[class*='generatedIndexPage'] .card {
+  border: 1px solid rgba(128, 128, 128, 0.15);
+  border-radius: 10px;
+  padding: 1.25rem;
+  background: var(--ifm-background-surface-color);
+  transition: border-color 0.15s ease;
+}
+
+.generatedIndexPage_vN6x .card:hover,
+[class*='generatedIndexPage'] .card:hover {
+  border-color: var(--ifm-color-primary);
+}
+
+.generatedIndexPage_vN6x .card h2,
+[class*='generatedIndexPage'] .card h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.4rem;
+}
+
+.generatedIndexPage_vN6x .card p,
+[class*='generatedIndexPage'] .card p {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin: 0;
 }
 
 /* ── Reduced motion ── */

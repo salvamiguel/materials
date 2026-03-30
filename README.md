@@ -1,41 +1,34 @@
-# Website
+# Materials — DevOps · Cloud · Automation
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+Apuntes, demos interactivas y laboratorios para los cursos y módulos que imparto en Másters y charlas.
 
-## Installation
+Publicado en **[salvamiguel.github.io/materials](https://salvamiguel.github.io/materials/)**.
+
+## Contenido
+
+| Módulo | Horas | Contenido |
+|--------|-------|-----------|
+| Terraform | 20h | IaC, providers, state, módulos, workspaces |
+| GitOps | 14h | ArgoCD, pull vs push, rollback, multi-entorno |
+| Scripting | 6h | Bash, pipes, cron, error handling, Python vs Bash |
+
+## Desarrollo local
 
 ```bash
-yarn
+bun install
+bun start
 ```
-
-## Local Development
-
-```bash
-yarn start
-```
-
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
 
 ## Build
 
 ```bash
-yarn build
+bun run build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+Genera contenido estático en el directorio `build`.
 
-## Deployment
+## Stack
 
-Using SSH:
-
-```bash
-USE_SSH=true yarn deploy
-```
-
-Not using SSH:
-
-```bash
-GIT_USER=<Your GitHub username> yarn deploy
-```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+- [Docusaurus 3](https://docusaurus.io/) con MDX
+- TypeScript
+- Desplegado con GitHub Pages

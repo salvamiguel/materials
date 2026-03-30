@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
+import { VscChecklist } from 'react-icons/vsc';
 import type { TestConfig, Question, UserAnswer, TestResult, QuestionResult } from './types';
 import { useTestStorage } from './hooks/useTestStorage';
 import { useTestTimer } from './hooks/useTestTimer';
@@ -11,6 +12,7 @@ type TestState = 'idle' | 'in-progress' | 'time-up' | 'results';
 
 interface TestProps {
   config: TestConfig;
+  onClose?: () => void;
 }
 
 function selectQuestions(questions: Question[], count: number): Question[] {
@@ -81,7 +83,7 @@ function calculatePoints(q: Question, ua: UserAnswer): number {
   }
 }
 
-export default function Test({ config }: TestProps) {
+export default function Test({ config, onClose }: TestProps) {
   const { session, bestResult, saveSession, clearSession, addResult, clearAll } = useTestStorage(config.id);
 
   const [state, setState] = useState<TestState>('idle');
@@ -97,6 +99,7 @@ export default function Test({ config }: TestProps) {
   });
   const [result, setResult] = useState<TestResult | null>(null);
   const [timeUpWarning, setTimeUpWarning] = useState(false);
+  const [confirmedQuestions, setConfirmedQuestions] = useState<Set<string>>(new Set());
   const questionStartRef = useRef<number>(Date.now());
 
   const timerInitialMs = session?.status === 'in-progress'
@@ -152,6 +155,7 @@ export default function Test({ config }: TestProps) {
     questionStartRef.current = Date.now();
     setState('in-progress');
     setTimeUpWarning(false);
+    setConfirmedQuestions(new Set());
   }
 
   function handleAnswer(ua: UserAnswer) {
@@ -175,6 +179,10 @@ export default function Test({ config }: TestProps) {
   function navigate(direction: number) {
     const newIndex = currentIndex + direction;
     if (newIndex < 0 || newIndex >= selectedQuestions.length) return;
+    // Mark current question as confirmed (enables feedback on revisit)
+    if (currentQuestion && answers[currentQuestion.id]) {
+      setConfirmedQuestions(prev => new Set(prev).add(currentQuestion.id));
+    }
     setCurrentIndex(newIndex);
     questionStartRef.current = Date.now();
 
@@ -218,12 +226,12 @@ export default function Test({ config }: TestProps) {
   }
 
   const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
-  const showFeedback = currentAnswer !== undefined && state === 'in-progress';
+  const showFeedback = currentQuestion !== undefined && confirmedQuestions.has(currentQuestion.id) && state === 'in-progress';
 
   return (
     <div className="demo-wrapper">
       <div className="demo-header">
-        <span className="demo-badge">✎ Test</span>
+        <span className="demo-badge"><VscChecklist /> Test</span>
         <h3>{config.title}</h3>
       </div>
       <div className={`demo-body ${styles.testWrapper}`}>
@@ -313,6 +321,7 @@ export default function Test({ config }: TestProps) {
             questions={selectedQuestions}
             onRetry={handleRetry}
             onReset={handleReset}
+            onClose={onClose}
           />
         )}
       </div>

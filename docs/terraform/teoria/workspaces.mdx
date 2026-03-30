@@ -1,8 +1,1688 @@
 ---
 sidebar_position: 7
-title: "Workspaces"
+title: "Workspaces y patrones avanzados"
+description: "Workspaces, construcciones avanzadas de HCL, funciones built-in y Terraform en CI/CD."
 ---
 
-# Workspaces
+import CloudTabs from '@site/src/components/shared/CloudTabs';
+import { CloudTab } from '@site/src/components/shared/CloudTabs';
 
-Contenido pendiente.
+# Workspaces y patrones avanzados
+
+En esta unidad vamos a explorar las capacidades avanzadas de Terraform que nos permiten escalar nuestras configuraciones de infraestructura. Desde la gestion de multiples entornos con workspaces hasta la integracion en pipelines de CI/CD, estos conceptos son fundamentales para trabajar con Terraform en entornos profesionales.
+
+---
+
+## 1. Workspaces
+
+### Que son los workspaces
+
+Un workspace en Terraform es una **instancia aislada de state** dentro del mismo directorio de configuracion. Cuando ejecutamos `terraform init` por primera vez, Terraform crea automaticamente un workspace llamado `default`. Cada workspace mantiene su propio fichero de estado, lo que significa que los recursos gestionados en un workspace son completamente independientes de los gestionados en otro.
+
+El caso de uso principal de los workspaces es **gestionar multiples entornos** (dev, staging, prod) utilizando exactamente la misma configuracion de Terraform, pero con diferentes valores y un state separado para cada uno.
+
+### Comandos de gestion
+
+Los comandos basicos para trabajar con workspaces son los siguientes:
+
+```bash
+# Listar todos los workspaces disponibles
+terraform workspace list
+
+# Crear un nuevo workspace (y cambiar a el automaticamente)
+terraform workspace new dev
+
+# Cambiar al workspace de produccion
+terraform workspace select prod
+
+# Mostrar el workspace activo
+terraform workspace show
+
+# Eliminar un workspace (debe estar vacio de recursos)
+terraform workspace delete staging
+```
+
+Cuando creamos un nuevo workspace, Terraform genera un subdirectorio dentro de `terraform.tfstate.d/` con el nombre del workspace. El workspace `default` utiliza el fichero `terraform.tfstate` en la raiz del directorio.
+
+### La variable terraform.workspace
+
+Terraform expone una variable especial llamada `terraform.workspace` que contiene el nombre del workspace actualmente seleccionado. Esta variable es extremadamente util para parametrizar nuestras configuraciones segun el entorno.
+
+import WorkspacesSim from '@site/src/components/demos/terraform/WorkspacesSim';
+
+<WorkspacesSim />
+
+### Ejemplo practico: parametrizar entornos con workspaces
+
+Veamos un ejemplo completo donde utilizamos el workspace para determinar el tamano de las instancias, el numero de replicas y las etiquetas de los recursos:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+locals {
+  environment = terraform.workspace
+
+  instance_type = {
+    dev     = "t2.micro"
+    staging = "t2.small"
+    prod    = "t2.medium"
+  }
+
+  instance_count = {
+    dev     = 1
+    staging = 2
+    prod    = 3
+  }
+}
+
+resource "aws_instance" "app" {
+  count         = local.instance_count[local.environment]
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = local.instance_type[local.environment]
+
+  tags = {
+    Name        = "app-${local.environment}-${count.index}"
+    Environment = local.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+resource "aws_db_instance" "main" {
+  instance_class    = local.environment == "prod" ? "db.r5.large" : "db.t3.micro"
+  allocated_storage = local.environment == "prod" ? 100 : 20
+  multi_az          = local.environment == "prod" ? true : false
+
+  tags = {
+    Environment = local.environment
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+locals {
+  environment = terraform.workspace
+
+  machine_type = {
+    dev     = "e2-micro"
+    staging = "e2-small"
+    prod    = "e2-medium"
+  }
+
+  instance_count = {
+    dev     = 1
+    staging = 2
+    prod    = 3
+  }
+}
+
+resource "google_compute_instance" "app" {
+  count        = local.instance_count[local.environment]
+  name         = "app-${local.environment}-${count.index}"
+  machine_type = local.machine_type[local.environment]
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+    }
+  }
+
+  network_interface {
+    network = "default"
+  }
+
+  labels = {
+    environment = local.environment
+    managed_by  = "terraform"
+  }
+}
+
+resource "google_sql_database_instance" "main" {
+  name             = "main-${local.environment}"
+  database_version = "POSTGRES_15"
+
+  settings {
+    tier              = local.environment == "prod" ? "db-custom-4-16384" : "db-f1-micro"
+    disk_size         = local.environment == "prod" ? 100 : 20
+    availability_type = local.environment == "prod" ? "REGIONAL" : "ZONAL"
+
+    user_labels = {
+      environment = local.environment
+    }
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+locals {
+  environment = terraform.workspace
+
+  vm_size = {
+    dev     = "Standard_B1s"
+    staging = "Standard_B2s"
+    prod    = "Standard_D2s_v3"
+  }
+
+  instance_count = {
+    dev     = 1
+    staging = 2
+    prod    = 3
+  }
+}
+
+resource "azurerm_linux_virtual_machine" "app" {
+  count               = local.instance_count[local.environment]
+  name                = "app-${local.environment}-${count.index}"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  size                = local.vm_size[local.environment]
+  admin_username      = "adminuser"
+
+  network_interface_ids = [
+    azurerm_network_interface.app[count.index].id,
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+
+  tags = {
+    Environment = local.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+resource "azurerm_mssql_database" "main" {
+  name      = "main-${local.environment}"
+  server_id = azurerm_mssql_server.main.id
+  sku_name  = local.environment == "prod" ? "S3" : "Basic"
+  max_size_gb = local.environment == "prod" ? 100 : 2
+
+  tags = {
+    Environment = local.environment
+  }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+Con esta configuracion, el flujo de trabajo seria:
+
+```bash
+# Desplegar en desarrollo
+terraform workspace select dev
+terraform plan
+terraform apply
+
+# Desplegar en produccion
+terraform workspace select prod
+terraform plan
+terraform apply
+```
+
+### Workspaces vs directorios separados
+
+:::info[Workspaces vs directorios separados]
+Ambas estrategias son validas para gestionar multiples entornos, pero tienen trade-offs diferentes:
+
+**Workspaces** son ideales cuando:
+- La configuracion es identica entre entornos (solo cambian variables).
+- El equipo es pequeno y la coordinacion es sencilla.
+- Se quiere evitar duplicacion de codigo.
+
+**Directorios separados** son preferibles cuando:
+- Los entornos tienen diferencias significativas en arquitectura.
+- Se necesita control granular de permisos por entorno.
+- Se quiere poder hacer `plan` o `apply` en un entorno sin riesgo de afectar otro.
+- El equipo es grande y multiples personas trabajan en paralelo.
+
+En la practica, muchos equipos profesionales prefieren directorios separados con modulos compartidos, ya que ofrece mayor aislamiento y reduce el riesgo de errores.
+:::
+
+---
+
+## 2. for_each
+
+### Iteracion sobre maps y sets
+
+El meta-argumento `for_each` permite crear multiples instancias de un recurso iterando sobre un `map` o un `set` de strings. A diferencia de `count`, cada instancia se identifica por su clave, no por un indice numerico, lo que proporciona estabilidad ante cambios en la coleccion.
+
+Dentro del bloque del recurso, tenemos acceso a dos valores especiales:
+
+- `each.key` -- la clave del elemento actual del map (o el valor si es un set).
+- `each.value` -- el valor del elemento actual del map.
+
+### Ejemplo con map
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+variable "instances" {
+  description = "Mapa de instancias a crear con su configuracion"
+  type = map(object({
+    instance_type = string
+    ami           = string
+  }))
+  default = {
+    web = {
+      instance_type = "t3.micro"
+      ami           = "ami-0c55b159cbfafe1f0"
+    }
+    api = {
+      instance_type = "t3.small"
+      ami           = "ami-0c55b159cbfafe1f0"
+    }
+    worker = {
+      instance_type = "t3.medium"
+      ami           = "ami-0c55b159cbfafe1f0"
+    }
+  }
+}
+
+resource "aws_instance" "servers" {
+  for_each      = var.instances
+  ami           = each.value.ami
+  instance_type = each.value.instance_type
+
+  tags = {
+    Name = each.key
+    Role = each.key
+  }
+}
+
+# Acceder a una instancia especifica por su clave
+output "web_server_ip" {
+  value = aws_instance.servers["web"].public_ip
+}
+
+# Acceder a todas las IPs
+output "all_ips" {
+  value = { for name, instance in aws_instance.servers : name => instance.public_ip }
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+variable "instances" {
+  description = "Mapa de instancias a crear con su configuracion"
+  type = map(object({
+    machine_type = string
+    image        = string
+  }))
+  default = {
+    web = {
+      machine_type = "e2-micro"
+      image        = "ubuntu-os-cloud/ubuntu-2204-lts"
+    }
+    api = {
+      machine_type = "e2-small"
+      image        = "ubuntu-os-cloud/ubuntu-2204-lts"
+    }
+    worker = {
+      machine_type = "e2-medium"
+      image        = "ubuntu-os-cloud/ubuntu-2204-lts"
+    }
+  }
+}
+
+resource "google_compute_instance" "servers" {
+  for_each     = var.instances
+  name         = each.key
+  machine_type = each.value.machine_type
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = each.value.image
+    }
+  }
+
+  network_interface {
+    network = "default"
+  }
+
+  labels = {
+    role = each.key
+  }
+}
+
+# Acceder a una instancia especifica por su clave
+output "web_server_ip" {
+  value = google_compute_instance.servers["web"].network_interface[0].network_ip
+}
+
+# Acceder a todas las IPs
+output "all_ips" {
+  value = { for name, instance in google_compute_instance.servers : name => instance.network_interface[0].network_ip }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+variable "instances" {
+  description = "Mapa de instancias a crear con su configuracion"
+  type = map(object({
+    vm_size = string
+  }))
+  default = {
+    web = {
+      vm_size = "Standard_B1s"
+    }
+    api = {
+      vm_size = "Standard_B2s"
+    }
+    worker = {
+      vm_size = "Standard_D2s_v3"
+    }
+  }
+}
+
+resource "azurerm_linux_virtual_machine" "servers" {
+  for_each            = var.instances
+  name                = each.key
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  size                = each.value.vm_size
+  admin_username      = "adminuser"
+
+  network_interface_ids = [
+    azurerm_network_interface.servers[each.key].id,
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+
+  tags = {
+    Role = each.key
+  }
+}
+
+# Acceder a una instancia especifica por su clave
+output "web_server_ip" {
+  value = azurerm_linux_virtual_machine.servers["web"].private_ip_address
+}
+
+# Acceder a todas las IPs
+output "all_ips" {
+  value = { for name, vm in azurerm_linux_virtual_machine.servers : name => vm.private_ip_address }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+### Ejemplo con set de strings
+
+```hcl
+variable "subnet_ids" {
+  type = set(string)
+  default = ["subnet-abc123", "subnet-def456", "subnet-ghi789"]
+}
+
+resource "aws_instance" "distributed" {
+  for_each  = var.subnet_ids
+  subnet_id = each.value
+  # Cuando se itera sobre un set, each.key == each.value
+}
+```
+
+### Ejemplo con toset y una lista
+
+Cuando tenemos una lista y queremos usar `for_each`, debemos convertirla a set con `toset()`:
+
+```hcl
+variable "users" {
+  type    = list(string)
+  default = ["alice", "bob", "charlie"]
+}
+
+resource "aws_iam_user" "team" {
+  for_each = toset(var.users)
+  name     = each.value
+}
+```
+
+### Diferencia entre for_each y count
+
+| Caracteristica | `count` | `for_each` |
+|---|---|---|
+| Identificador | Indice numerico (0, 1, 2...) | Clave del map o valor del set |
+| Reordenamiento | Puede causar destroy/create | Estable ante cambios |
+| Referencia | `resource.name[0]` | `resource.name["key"]` |
+| Uso ideal | Recursos identicos, condicionales | Recursos con identidad propia |
+
+:::tip[Preferir for_each sobre count]
+Siempre que los elementos tengan **identidad propia** (un nombre, un ID, un rol), usa `for_each` en lugar de `count`. Con `count`, si eliminamos el segundo elemento de una lista de cinco, los elementos 3, 4 y 5 cambian de indice, lo que provoca que Terraform destruya y recree esos recursos innecesariamente. Con `for_each`, solo se elimina el recurso correspondiente a la clave eliminada.
+:::
+
+---
+
+## 3. count
+
+### Crear N instancias de un recurso
+
+El meta-argumento `count` es la forma mas sencilla de crear multiples copias de un recurso. Terraform asigna un indice numerico (empezando en 0) a cada instancia.
+
+```hcl
+variable "instance_count" {
+  type    = number
+  default = 3
+}
+
+resource "aws_instance" "cluster" {
+  count         = var.instance_count
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t3.micro"
+
+  tags = {
+    Name = "cluster-node-${count.index}"
+  }
+}
+
+# Acceder a una instancia especifica
+output "first_instance_ip" {
+  value = aws_instance.cluster[0].public_ip
+}
+
+# Acceder a todas las IPs
+output "all_instance_ips" {
+  value = aws_instance.cluster[*].public_ip
+}
+```
+
+### Patron condicional con count
+
+Uno de los usos mas frecuentes de `count` es la **creacion condicional** de recursos. Si `count = 0`, el recurso no se crea. Si `count = 1`, se crea una unica instancia:
+
+```hcl
+variable "create_monitoring" {
+  description = "Si es true, se crea la infraestructura de monitoring"
+  type        = bool
+  default     = false
+}
+
+resource "aws_cloudwatch_dashboard" "main" {
+  count          = var.create_monitoring ? 1 : 0
+  dashboard_name = "main-dashboard"
+  dashboard_body = file("dashboard.json")
+}
+
+resource "aws_sns_topic" "alerts" {
+  count = var.create_monitoring ? 1 : 0
+  name  = "infra-alerts"
+}
+
+# Al referenciar un recurso condicional, debemos usar [0]
+output "dashboard_arn" {
+  value = var.create_monitoring ? aws_cloudwatch_dashboard.main[0].dashboard_arn : null
+}
+```
+
+### Limitaciones de count
+
+Es importante entender las limitaciones de `count` para evitar problemas:
+
+1. **Dependencia del indice**: los recursos se identifican por su posicion numerica. Si eliminamos un elemento del medio de la lista, todos los indices posteriores cambian.
+
+2. **Reordering causa destroy/create**: cambiar el orden de los elementos puede provocar que Terraform destruya y recree recursos innecesariamente, lo cual es particularmente peligroso con bases de datos o recursos con datos persistentes.
+
+3. **No se puede usar con `for_each`**: un recurso puede tener `count` o `for_each`, pero no ambos.
+
+```hcl
+# PROBLEMA: si eliminamos "web" de la lista,
+# "api" pasa de indice 1 a 0 y "worker" de 2 a 1
+# Terraform destruira y recreara ambos
+variable "server_names" {
+  default = ["web", "api", "worker"]
+}
+
+resource "aws_instance" "servers" {
+  count = length(var.server_names)
+  tags = {
+    Name = var.server_names[count.index]
+  }
+}
+```
+
+En este caso, seria mucho mejor usar `for_each` con `toset(var.server_names)`.
+
+---
+
+## 4. Dynamic blocks
+
+### Generar bloques repetidos dentro de un recurso
+
+Los dynamic blocks permiten generar bloques de configuracion repetidos dentro de un recurso de forma programatica. Son utiles cuando un recurso necesita multiples bloques del mismo tipo (como reglas de un security group, tags, o configuraciones de disco).
+
+### Ejemplo: security group con multiples reglas de ingress
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+variable "ingress_rules" {
+  description = "Lista de reglas de ingress para el security group"
+  type = list(object({
+    port        = number
+    protocol    = string
+    cidr_blocks = list(string)
+    description = string
+  }))
+  default = [
+    {
+      port        = 80
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+      description = "HTTP"
+    },
+    {
+      port        = 443
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+      description = "HTTPS"
+    },
+    {
+      port        = 22
+      protocol    = "tcp"
+      cidr_blocks = ["10.0.0.0/8"]
+      description = "SSH desde red interna"
+    }
+  ]
+}
+
+resource "aws_security_group" "main" {
+  name        = "main-sg"
+  description = "Security group principal"
+  vpc_id      = aws_vpc.main.id
+
+  dynamic "ingress" {
+    for_each = var.ingress_rules
+    content {
+      from_port   = ingress.value.port
+      to_port     = ingress.value.port
+      protocol    = ingress.value.protocol
+      cidr_blocks = ingress.value.cidr_blocks
+      description = ingress.value.description
+    }
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+variable "allow_rules" {
+  description = "Lista de reglas de firewall permitidas"
+  type = list(object({
+    port        = number
+    protocol    = string
+    source_ranges = list(string)
+    description = string
+  }))
+  default = [
+    {
+      port          = 80
+      protocol      = "tcp"
+      source_ranges = ["0.0.0.0/0"]
+      description   = "HTTP"
+    },
+    {
+      port          = 443
+      protocol      = "tcp"
+      source_ranges = ["0.0.0.0/0"]
+      description   = "HTTPS"
+    },
+    {
+      port          = 22
+      protocol      = "tcp"
+      source_ranges = ["10.0.0.0/8"]
+      description   = "SSH desde red interna"
+    }
+  ]
+}
+
+resource "google_compute_firewall" "main" {
+  name    = "main-firewall"
+  network = google_compute_network.main.name
+
+  dynamic "allow" {
+    for_each = var.allow_rules
+    content {
+      protocol = allow.value.protocol
+      ports    = [allow.value.port]
+    }
+  }
+
+  source_ranges = distinct(flatten([
+    for rule in var.allow_rules : rule.source_ranges
+  ]))
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+variable "security_rules" {
+  description = "Lista de reglas de seguridad para el NSG"
+  type = list(object({
+    port        = number
+    protocol    = string
+    source_address_prefix = string
+    description = string
+  }))
+  default = [
+    {
+      port                  = 80
+      protocol              = "Tcp"
+      source_address_prefix = "*"
+      description           = "HTTP"
+    },
+    {
+      port                  = 443
+      protocol              = "Tcp"
+      source_address_prefix = "*"
+      description           = "HTTPS"
+    },
+    {
+      port                  = 22
+      protocol              = "Tcp"
+      source_address_prefix = "10.0.0.0/8"
+      description           = "SSH desde red interna"
+    }
+  ]
+}
+
+resource "azurerm_network_security_group" "main" {
+  name                = "main-nsg"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+
+  dynamic "security_rule" {
+    for_each = var.security_rules
+    content {
+      name                       = lower(security_rule.value.description)
+      priority                   = 100 + security_rule.key * 10
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = security_rule.value.protocol
+      source_port_range          = "*"
+      destination_port_range     = security_rule.value.port
+      source_address_prefix      = security_rule.value.source_address_prefix
+      destination_address_prefix = "*"
+    }
+  }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+### Anatomia de un dynamic block
+
+La estructura de un dynamic block tiene tres partes:
+
+```hcl
+dynamic "NOMBRE_DEL_BLOQUE" {
+  for_each = COLECCION_A_ITERAR
+  content {
+    # Acceder a cada elemento con NOMBRE_DEL_BLOQUE.value
+    # Acceder a la clave con NOMBRE_DEL_BLOQUE.key
+  }
+}
+```
+
+Se puede cambiar el nombre del iterador con el argumento `iterator` si se necesita mayor claridad o para evitar conflictos:
+
+```hcl
+dynamic "ingress" {
+  for_each = var.ingress_rules
+  iterator = rule
+  content {
+    from_port   = rule.value.port
+    to_port     = rule.value.port
+    protocol    = rule.value.protocol
+    cidr_blocks = rule.value.cidr_blocks
+  }
+}
+```
+
+### Dynamic blocks anidados
+
+Es posible anidar dynamic blocks, aunque esto debe hacerse con cuidado:
+
+```hcl
+variable "load_balancer_config" {
+  type = list(object({
+    name     = string
+    listeners = list(object({
+      port     = number
+      protocol = string
+    }))
+  }))
+}
+
+resource "aws_lb" "main" {
+  for_each = { for lb in var.load_balancer_config : lb.name => lb }
+  name     = each.key
+
+  dynamic "subnet_mapping" {
+    for_each = var.subnet_ids
+    content {
+      subnet_id = subnet_mapping.value
+    }
+  }
+}
+```
+
+:::warning[No abusar de dynamic blocks]
+Los dynamic blocks son una herramienta poderosa, pero su uso excesivo puede reducir significativamente la **legibilidad** de la configuracion. Antes de usar un dynamic block, preguntate si la repeticion manual de los bloques seria mas clara. Reserva los dynamic blocks para casos donde la lista de bloques es verdaderamente variable o extensa. Recuerda que el codigo de infraestructura debe ser facil de auditar.
+:::
+
+---
+
+## 5. Expresiones condicionales
+
+### Operador ternario
+
+Terraform soporta el operador ternario clasico para evaluar condiciones inline:
+
+```hcl
+# Sintaxis: condicion ? valor_si_true : valor_si_false
+
+instance_type = var.environment == "prod" ? "t3.large" : "t3.micro"
+```
+
+### Ejemplos practicos
+
+Las expresiones condicionales son especialmente utiles para ajustar la configuracion segun el entorno o las necesidades:
+
+```hcl
+variable "environment" {
+  type    = string
+  default = "dev"
+}
+
+variable "enable_monitoring" {
+  type    = bool
+  default = true
+}
+
+resource "aws_instance" "app" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = var.environment == "prod" ? "t3.large" : "t3.micro"
+
+  # Activar monitoring detallado solo en produccion
+  monitoring = var.environment == "prod" ? true : false
+
+  # Asignar IP publica solo en dev
+  associate_public_ip_address = var.environment == "dev" ? true : false
+
+  # Elegir subnet segun el entorno
+  subnet_id = var.environment == "prod" ? var.private_subnet_id : var.public_subnet_id
+
+  root_block_device {
+    volume_size = var.environment == "prod" ? 100 : 20
+    volume_type = var.environment == "prod" ? "gp3" : "gp2"
+    encrypted   = var.environment == "prod" ? true : false
+  }
+}
+```
+
+### Combinar condicionales con count
+
+El patron mas comun es usar el operador ternario con `count` para crear o no un recurso:
+
+```hcl
+variable "environment" {
+  type = string
+}
+
+# Solo crear el bastion host en entornos que no sean produccion
+resource "aws_instance" "bastion" {
+  count         = var.environment != "prod" ? 1 : 0
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t3.micro"
+
+  tags = {
+    Name = "bastion-${var.environment}"
+  }
+}
+
+# Solo crear CloudFront en produccion
+resource "aws_cloudfront_distribution" "cdn" {
+  count   = var.environment == "prod" ? 1 : 0
+  enabled = true
+  # ... configuracion completa
+}
+```
+
+### Condicionales con cadenas vacias y null
+
+```hcl
+# Usar null para omitir argumentos opcionales
+resource "aws_instance" "web" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t3.micro"
+
+  # Si no se proporciona key_name, el argumento se omite
+  key_name = var.ssh_key_name != "" ? var.ssh_key_name : null
+}
+```
+
+---
+
+## 6. Funciones built-in
+
+### Funciones en Terraform
+
+Terraform incluye un amplio conjunto de **funciones built-in** que permiten transformar y combinar valores dentro de las configuraciones. Es importante saber que Terraform **no soporta funciones custom** definidas por el usuario; solo se pueden usar las funciones que vienen integradas en el lenguaje.
+
+### Funciones de String
+
+```hcl
+# Convertir a mayusculas/minusculas
+upper("hello")          # "HELLO"
+lower("Hello World")    # "hello world"
+
+# Formatear cadenas (similar a printf)
+format("Hello, %s!", "world")           # "Hello, world!"
+format("instance-%03d", 5)              # "instance-005"
+
+# Unir y separar
+join(", ", ["a", "b", "c"])             # "a, b, c"
+split(",", "a,b,c")                     # ["a", "b", "c"]
+
+# Reemplazar
+replace("hello world", "world", "terraform")  # "hello terraform"
+
+# Eliminar espacios en blanco
+trimspace("  hello  ")                  # "hello"
+
+# Subcadenas
+substr("hello world", 0, 5)            # "hello"
+```
+
+### Funciones de Collection
+
+```hcl
+# Longitud
+length(["a", "b", "c"])                # 3
+length({a = 1, b = 2})                 # 2
+
+# Buscar en un map con valor por defecto
+lookup({env = "prod", region = "eu"}, "env", "dev")        # "prod"
+lookup({env = "prod", region = "eu"}, "missing", "default") # "default"
+
+# Combinar maps (los ultimos sobreescriben)
+merge({a = 1, b = 2}, {b = 3, c = 4})  # {a = 1, b = 3, c = 4}
+
+# Aplanar listas anidadas
+flatten([["a", "b"], ["c"], ["d", "e"]])  # ["a", "b", "c", "d", "e"]
+
+# Obtener claves y valores de un map
+keys({a = 1, b = 2, c = 3})            # ["a", "b", "c"]
+values({a = 1, b = 2, c = 3})          # [1, 2, 3]
+
+# Crear un map a partir de dos listas
+zipmap(["name", "age"], ["Alice", 30])  # {name = "Alice", age = 30}
+
+# Concatenar listas
+concat(["a", "b"], ["c", "d"])          # ["a", "b", "c", "d"]
+
+# Filtrar elementos (con expresion for)
+[for s in ["a", "b", "c", "d"] : s if s != "c"]  # ["a", "b", "d"]
+```
+
+### Funciones numericas
+
+```hcl
+min(5, 3, 8, 1)     # 1
+max(5, 3, 8, 1)     # 8
+ceil(4.3)            # 5
+floor(4.7)           # 4
+abs(-15)             # 15
+```
+
+### Funciones de Filesystem
+
+```hcl
+# Leer el contenido de un fichero
+file("${path.module}/config.json")
+
+# Renderizar un template con variables
+templatefile("${path.module}/userdata.sh.tpl", {
+  db_host = "mydb.example.com"
+  db_port = 5432
+})
+
+# Comprobar si un fichero existe
+fileexists("${path.module}/optional-config.json")
+
+# Obtener partes de una ruta
+basename("/home/user/config.json")      # "config.json"
+dirname("/home/user/config.json")       # "/home/user"
+```
+
+### Funciones de Encoding
+
+```hcl
+# JSON
+jsonencode({name = "app", port = 8080})
+jsondecode("{\"name\": \"app\", \"port\": 8080}")
+
+# Base64
+base64encode("hello world")
+base64decode("aGVsbG8gd29ybGQ=")
+
+# YAML
+yamlencode({name = "app", replicas = 3})
+```
+
+### Funciones de Network
+
+```hcl
+# Calcular subnets a partir de un CIDR
+# cidrsubnet(prefix, newbits, netnum)
+cidrsubnet("10.0.0.0/16", 8, 1)    # "10.0.1.0/24"
+cidrsubnet("10.0.0.0/16", 8, 2)    # "10.0.2.0/24"
+cidrsubnet("10.0.0.0/16", 8, 3)    # "10.0.3.0/24"
+
+# Obtener una IP especifica dentro de un CIDR
+cidrhost("10.0.1.0/24", 5)         # "10.0.1.5"
+```
+
+### Funciones de Date
+
+```hcl
+# Timestamp actual en formato RFC3339
+timestamp()                          # "2026-03-29T10:30:00Z"
+
+# Formatear una fecha
+formatdate("DD MMM YYYY hh:mm ZZZ", timestamp())  # "29 Mar 2026 10:30 UTC"
+```
+
+### Ejemplo practico con templatefile
+
+El uso de `templatefile` es uno de los patrones mas utiles. Permite separar scripts complejos de la configuracion de Terraform:
+
+```hcl
+# Fichero: userdata.sh.tpl
+#!/bin/bash
+set -euo pipefail
+
+echo "Configurando aplicacion..."
+echo "DB_HOST=${db_host}" >> /etc/app/config.env
+echo "DB_PORT=${db_port}" >> /etc/app/config.env
+echo "APP_ENV=${environment}" >> /etc/app/config.env
+
+systemctl start app
+```
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+# Fichero: main.tf
+resource "aws_instance" "web" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t3.micro"
+
+  user_data = templatefile("${path.module}/userdata.sh.tpl", {
+    db_host     = module.database.endpoint
+    db_port     = 5432
+    environment = var.environment
+  })
+
+  tags = {
+    Name = "web-${var.environment}"
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+# Fichero: main.tf
+resource "google_compute_instance" "web" {
+  name         = "web-${var.environment}"
+  machine_type = "e2-micro"
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+    }
+  }
+
+  network_interface {
+    network = "default"
+  }
+
+  metadata_startup_script = templatefile("${path.module}/userdata.sh.tpl", {
+    db_host     = module.database.endpoint
+    db_port     = 5432
+    environment = var.environment
+  })
+
+  labels = {
+    name = "web-${var.environment}"
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+# Fichero: main.tf
+resource "azurerm_linux_virtual_machine" "web" {
+  name                = "web-${var.environment}"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  size                = "Standard_B1s"
+  admin_username      = "adminuser"
+
+  network_interface_ids = [
+    azurerm_network_interface.web.id,
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+
+  custom_data = base64encode(templatefile("${path.module}/userdata.sh.tpl", {
+    db_host     = module.database.endpoint
+    db_port     = 5432
+    environment = var.environment
+  }))
+
+  tags = {
+    Name = "web-${var.environment}"
+  }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+### terraform console
+
+El comando `terraform console` abre una sesion interactiva donde podemos probar funciones y expresiones antes de incluirlas en nuestra configuracion:
+
+```bash
+$ terraform console
+
+> upper("hello")
+"HELLO"
+
+> cidrsubnet("10.0.0.0/16", 8, 1)
+"10.0.1.0/24"
+
+> merge({a = 1}, {b = 2})
+{
+  "a" = 1
+  "b" = 2
+}
+
+> formatdate("YYYY-MM-DD", timestamp())
+"2026-03-29"
+```
+
+Este comando es invaluable para experimentar con funciones complejas como `cidrsubnet` o para depurar expresiones que no se comportan como esperamos.
+
+---
+
+## 7. Provisioners
+
+### Que son los provisioners
+
+Los provisioners son mecanismos que permiten **ejecutar scripts o comandos** en recursos despues de su creacion (o antes de su destruccion). Terraform ofrece dos tipos principales:
+
+- **local-exec**: ejecuta un comando en la maquina donde se ejecuta Terraform.
+- **remote-exec**: ejecuta un comando en el recurso remoto via SSH o WinRM.
+
+### Ejemplo con local-exec
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+resource "aws_instance" "web" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t3.micro"
+
+  provisioner "local-exec" {
+    command = "echo ${self.public_ip} >> inventory.txt"
+  }
+
+  provisioner "local-exec" {
+    command = "ansible-playbook -i '${self.public_ip},' playbook.yml"
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+resource "google_compute_instance" "web" {
+  name         = "web-server"
+  machine_type = "e2-micro"
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+    }
+  }
+
+  network_interface {
+    network = "default"
+    access_config {}
+  }
+
+  provisioner "local-exec" {
+    command = "echo ${self.network_interface[0].access_config[0].nat_ip} >> inventory.txt"
+  }
+
+  provisioner "local-exec" {
+    command = "ansible-playbook -i '${self.network_interface[0].access_config[0].nat_ip},' playbook.yml"
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+resource "azurerm_linux_virtual_machine" "web" {
+  name                = "web-server"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  size                = "Standard_B1s"
+  admin_username      = "adminuser"
+
+  network_interface_ids = [
+    azurerm_network_interface.web.id,
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+
+  provisioner "local-exec" {
+    command = "echo ${self.public_ip_address} >> inventory.txt"
+  }
+
+  provisioner "local-exec" {
+    command = "ansible-playbook -i '${self.public_ip_address},' playbook.yml"
+  }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+### Ejemplo con remote-exec
+
+```hcl
+resource "aws_instance" "web" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t3.micro"
+  key_name      = aws_key_pair.deploy.key_name
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file("~/.ssh/deploy_key")
+    host        = self.public_ip
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt-get update",
+      "sudo apt-get install -y nginx",
+      "sudo systemctl start nginx"
+    ]
+  }
+}
+```
+
+### Provisioners en la destruccion
+
+Se puede configurar un provisioner para que se ejecute cuando el recurso se destruye:
+
+```hcl
+resource "aws_instance" "web" {
+  # ...
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "echo 'Instancia ${self.id} destruida' >> destruction.log"
+  }
+}
+```
+
+### Control de errores
+
+Por defecto, si un provisioner falla, Terraform marca el recurso como **tainted** y lo intentara recrear en el siguiente `apply`. Se puede cambiar este comportamiento:
+
+```hcl
+provisioner "local-exec" {
+  command    = "some-command-that-might-fail"
+  on_failure = continue  # Ignorar el error y continuar
+}
+```
+
+:::danger[Los provisioners son un ULTIMO RECURSO]
+HashiCorp recomienda explicitamente **evitar los provisioners** siempre que sea posible. Las razones son:
+
+1. **No son declarativos**: rompen el modelo declarativo de Terraform. No se puede hacer un `plan` de lo que ejecutara un provisioner.
+2. **No son idempotentes**: si un script falla a mitad de ejecucion y se reintenta, puede dejar el sistema en un estado inconsistente.
+3. **Acoplan la configuracion**: mezclan la provision de infraestructura con la configuracion del software, que deberian ser responsabilidades separadas.
+4. **Dificultan la depuracion**: los errores en provisioners son mas dificiles de diagnosticar y reproducir.
+:::
+
+### Alternativas a los provisioners
+
+Para la gran mayoria de casos, existen alternativas superiores:
+
+| Necesidad | Alternativa recomendada |
+|---|---|
+| Configurar una instancia EC2 al arrancar | `user_data` con cloud-init |
+| Crear una AMI preconfigurada | Packer |
+| Configuracion post-provision | Ansible, Chef, Puppet |
+| Ejecutar un script local tras crear un recurso | `null_resource` + `local-exec` (si no hay otra opcion) |
+| Notificar a un sistema externo | Webhooks o integraciones nativas del provider |
+
+### Cuando es aceptable usar provisioners
+
+Los provisioners son aceptables en escenarios muy especificos:
+
+- **Bootstrap inicial** de un cluster donde no hay otra forma de inyectar la configuracion.
+- **Integracion con herramientas legacy** que no tienen provider de Terraform.
+- **Pruebas de concepto rapidas** donde la velocidad de desarrollo importa mas que la robustez.
+
+Incluso en estos casos, se deberia planificar la migracion a una solucion mas robusta.
+
+---
+
+## 8. Terraform en CI/CD
+
+### Por que integrar Terraform en pipelines
+
+Ejecutar Terraform manualmente desde la maquina de un desarrollador presenta varios problemas en entornos profesionales:
+
+- **Inconsistencia**: diferentes desarrolladores pueden tener diferentes versiones de Terraform o providers.
+- **Falta de auditoria**: no queda registro de quien aplico que cambio y cuando.
+- **Sin revision**: los cambios se aplican sin que otro miembro del equipo los revise.
+- **Riesgo de errores**: un `terraform apply` accidental en produccion puede ser catastrofico.
+
+La integracion en CI/CD resuelve todos estos problemas al proporcionar un entorno controlado, reproducible y auditable.
+
+### Pipeline tipico
+
+El flujo estandar de Terraform en un pipeline de CI/CD sigue estos pasos:
+
+1. **fmt** -- Verificar que el codigo esta formateado correctamente.
+2. **validate** -- Validar la sintaxis y la configuracion.
+3. **plan** -- Generar y mostrar el plan de ejecucion.
+4. **approval** -- (Solo en produccion) Aprobacion manual por parte del equipo.
+5. **apply** -- Aplicar los cambios.
+
+### Ejemplo completo con GitHub Actions
+
+```yaml
+name: Terraform
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  TF_VERSION: "1.7.0"
+  WORKING_DIR: "./infrastructure"
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  terraform:
+    name: "Terraform Plan & Apply"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-1
+
+      - name: Terraform Format
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out=plan.tfplan -no-color
+        continue-on-error: true
+
+      - name: Comment Plan on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `#### Terraform Plan
+            \`\`\`
+            ${{ steps.plan.outputs.stdout }}
+            \`\`\`
+            `;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply plan.tfplan
+```
+
+:::tip[Aprobacion manual en produccion]
+En entornos de produccion, es fundamental anadir un paso de aprobacion manual antes del `apply`. En GitHub Actions, esto se puede conseguir con **environments** que requieran revision:
+
+```yaml
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    # ... pasos de plan
+
+  apply:
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: production  # Requiere aprobacion manual
+    steps:
+      # ... pasos de apply
+```
+
+Configura el environment `production` en los settings del repositorio para requerir la aprobacion de uno o mas revisores antes de que el job se ejecute.
+:::
+
+### Gestion de secrets en CI/CD
+
+La gestion segura de credenciales es critica cuando Terraform se ejecuta en un pipeline. Existen varias estrategias:
+
+**OIDC (OpenID Connect) -- Recomendado**
+
+La forma mas segura de autenticarse con proveedores cloud desde GitHub Actions es mediante OIDC. No se almacenan credenciales de larga duracion:
+
+```yaml
+- name: Configure AWS Credentials
+  uses: aws-actions/configure-aws-credentials@v4
+  with:
+    role-to-assume: arn:aws:iam::123456789012:role/github-actions
+    aws-region: eu-west-1
+```
+
+**Environment secrets**
+
+Para valores que no pueden usar OIDC, GitHub Actions permite definir secrets a nivel de environment:
+
+```yaml
+- name: Terraform Init
+  env:
+    TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+    TF_VAR_api_key: ${{ secrets.API_KEY }}
+  run: terraform init
+```
+
+**Nunca almacenar secrets en el state**
+
+Recuerda que el state de Terraform puede contener valores sensibles en texto plano. Es imprescindible:
+
+- Usar un backend remoto con cifrado (S3 + KMS, por ejemplo).
+- Restringir el acceso al state con politicas IAM.
+- No guardar el state en el repositorio.
+
+---
+
+## 9. Patrones empresariales
+
+### Workspaces vs directorios: cuando usar cada uno
+
+La decision entre workspaces y directorios separados por entorno es una de las mas debatidas en la comunidad de Terraform:
+
+**Usar workspaces cuando:**
+
+- Los entornos son practicamente identicos y solo difieren en tamanos o cantidades.
+- Se trabaja con un equipo pequeno donde la coordinacion es sencilla.
+- Se quiere un flujo de trabajo simple sin duplicacion de codigo.
+
+**Usar directorios separados cuando:**
+
+- Los entornos tienen diferencias arquitectonicas significativas (por ejemplo, produccion tiene multi-AZ y dev no).
+- Se necesitan diferentes niveles de acceso por entorno.
+- Se quiere poder hacer deploy de un entorno sin riesgo de afectar otros.
+- El equipo es grande y multiples ingenieros trabajan simultaneamente.
+
+### Monorepo vs multi-repo
+
+**Monorepo** (toda la infraestructura en un unico repositorio):
+
+- Ventajas: vision global, refactoring mas facil, dependencias entre modulos mas claras.
+- Desventajas: el repositorio puede crecer mucho, los pipelines de CI/CD son mas complejos, los permisos son menos granulares.
+
+**Multi-repo** (un repositorio por componente o equipo):
+
+- Ventajas: ownership claro, pipelines independientes, permisos granulares.
+- Desventajas: duplicacion de configuracion, mas dificil mantener la consistencia, dependencias entre repos son mas complicadas.
+
+### Estructura de directorio recomendada
+
+Para proyectos de tamano mediano-grande, la siguiente estructura ofrece un buen equilibrio entre modularidad y simplicidad:
+
+```
+infrastructure/
+├── modules/                    # Modulos reutilizables
+│   ├── vpc/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   ├── eks/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── rds/
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
+├── environments/               # Configuracion por entorno
+│   ├── dev/
+│   │   ├── main.tf            # Llama a los modulos
+│   │   ├── variables.tf
+│   │   ├── terraform.tfvars   # Valores especificos de dev
+│   │   └── backend.tf         # Backend config para dev
+│   ├── staging/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── terraform.tfvars
+│   │   └── backend.tf
+│   └── prod/
+│       ├── main.tf
+│       ├── variables.tf
+│       ├── terraform.tfvars
+│       └── backend.tf
+└── global/                     # Recursos compartidos entre entornos
+    ├── iam/
+    │   ├── main.tf
+    │   ├── variables.tf
+    │   └── outputs.tf
+    └── dns/
+        ├── main.tf
+        ├── variables.tf
+        └── outputs.tf
+```
+
+Los principios clave de esta estructura son:
+
+1. **Modulos en `/modules`**: contienen la logica reutilizable. No tienen valores hardcodeados; todo se recibe via variables.
+2. **Entornos en `/environments`**: cada entorno tiene su propia configuracion que instancia los modulos con los valores apropiados. Cada entorno tiene su propio state.
+3. **Global en `/global`**: recursos que son compartidos entre todos los entornos (IAM roles, DNS zones, etc.). Tienen su propio state separado.
+
+Un ejemplo de como un entorno instancia los modulos:
+
+```hcl
+# environments/dev/main.tf
+module "vpc" {
+  source = "../../modules/vpc"
+
+  cidr_block         = "10.0.0.0/16"
+  availability_zones = ["eu-west-1a", "eu-west-1b"]
+  environment        = "dev"
+}
+
+module "eks" {
+  source = "../../modules/eks"
+
+  vpc_id             = module.vpc.vpc_id
+  subnet_ids         = module.vpc.private_subnet_ids
+  cluster_version    = "1.28"
+  node_instance_type = "t3.medium"
+  desired_capacity   = 2
+  environment        = "dev"
+}
+
+module "rds" {
+  source = "../../modules/rds"
+
+  vpc_id            = module.vpc.vpc_id
+  subnet_ids        = module.vpc.database_subnet_ids
+  instance_class    = "db.t3.micro"
+  allocated_storage = 20
+  multi_az          = false
+  environment       = "dev"
+}
+```
+
+:::info[No hay una unica respuesta correcta]
+La estructura ideal depende del contexto de cada equipo: tamano del equipo, complejidad de la infraestructura, requisitos de seguridad y normativa, y herramientas complementarias que se utilicen. Lo importante es elegir una estructura, documentarla, y mantener la consistencia a lo largo del tiempo. Es mejor una estructura simple que todo el equipo entiende que una estructura "perfecta" que nadie sigue.
+:::
+
+### Checklist para proyectos empresariales
+
+Independientemente de la estructura elegida, un proyecto de Terraform empresarial deberia cumplir con estos requisitos:
+
+- **Backend remoto** con cifrado y locking (S3 + DynamoDB, Terraform Cloud, etc.).
+- **State separado** por entorno y por componente de infraestructura.
+- **Modulos versionados** para garantizar la reproducibilidad.
+- **Pipeline de CI/CD** que ejecute plan en PRs y apply solo tras aprobacion.
+- **Politica de branching** clara (por ejemplo, trunk-based development).
+- **Code review obligatorio** para cualquier cambio en infraestructura.
+- **Documentacion** de decisiones arquitectonicas y convenciones del equipo.
+
+---
+
+## 10. Resumen
+
+Los conceptos cubiertos en esta unidad son fundamentales para trabajar con Terraform a escala profesional:
+
+- **Workspaces** permiten gestionar multiples entornos con la misma configuracion, cada uno con su propio state aislado. Son utiles para casos simples, pero los directorios separados ofrecen mayor control en proyectos complejos.
+
+- **for_each** es la forma preferida de crear multiples instancias de un recurso cuando los elementos tienen identidad propia. Proporciona estabilidad ante cambios en la coleccion, al contrario que `count`.
+
+- **count** es util para crear N copias identicas de un recurso y, especialmente, para el patron condicional `count = condition ? 1 : 0`.
+
+- **Dynamic blocks** permiten generar bloques repetidos dentro de un recurso de forma programatica, aunque no se debe abusar de ellos por razones de legibilidad.
+
+- **Expresiones condicionales** con el operador ternario permiten adaptar la configuracion segun variables o el entorno.
+
+- **Funciones built-in** ofrecen un amplio repertorio para manipular strings, colecciones, numeros, ficheros y datos de red. El comando `terraform console` es invaluable para experimentar con ellas.
+
+- **Provisioners** ejecutan scripts en los recursos, pero deben evitarse en favor de alternativas como user_data, Packer o Ansible.
+
+- **CI/CD** proporciona consistencia, auditoria y control de cambios. Un pipeline tipico sigue el flujo fmt, validate, plan, approval, apply.
+
+- **Patrones empresariales** como la estructura de directorios con modulos compartidos, el uso de backends remotos y las politicas de code review son esenciales para gestionar infraestructura a escala.
+
+Estos patrones y herramientas, combinados con los fundamentos de las unidades anteriores, proporcionan una base solida para gestionar infraestructura como codigo en entornos reales de produccion.

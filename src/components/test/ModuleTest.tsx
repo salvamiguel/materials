@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { VscChecklist } from 'react-icons/vsc';
 import type { ModuleTestEntry, TestResult } from './types';
 import Test from './Test';
 import styles from './ModuleTest.module.css';
@@ -43,7 +44,7 @@ export default function ModuleTest({ title = 'Tests del módulo', tests }: Modul
   return (
     <div className="demo-wrapper">
       <div className="demo-header">
-        <span className="demo-badge">✎ Tests</span>
+        <span className="demo-badge"><VscChecklist /> Tests</span>
         <h3>{title}</h3>
       </div>
       <div className="demo-body">
@@ -58,31 +59,36 @@ export default function ModuleTest({ title = 'Tests del módulo', tests }: Modul
         </div>
 
         <div className={styles.testList}>
-          {testStatuses.map(t => (
-            <div key={t.id}>
-              <div
-                className={`${styles.testItem} ${t.passed ? styles.testItemPassed : t.best && !t.passed ? styles.testItemFailed : ''}`}
-                onClick={() => handleToggle(t.id)}
-              >
-                <div>
-                  <div className={styles.testItemTitle}>{t.title}</div>
-                  <div className={styles.testItemMeta}>
-                    {t.best
-                      ? `${Math.round(t.best.score * 10) / 10}/${t.best.maxScore}`
-                      : 'Sin intentos'}
+          {testStatuses.map(t => {
+            if (expandedId && expandedId !== t.id) return null;
+            return (
+              <div key={t.id}>
+                {!expandedId && (
+                  <div
+                    className={`${styles.testItem} ${t.passed ? styles.testItemPassed : t.best && !t.passed ? styles.testItemFailed : ''}`}
+                    onClick={() => handleToggle(t.id)}
+                  >
+                    <div>
+                      <div className={styles.testItemTitle}>{t.title}</div>
+                      <div className={styles.testItemMeta}>
+                        {t.best
+                          ? `${Math.round(t.best.score * 10) / 10}/${t.best.maxScore}`
+                          : 'Sin intentos'}
+                      </div>
+                    </div>
+                    <div className={`${styles.testItemStatus} ${t.passed ? styles.statusPassed : t.best ? styles.statusFailed : styles.statusPending}`}>
+                      {t.passed ? 'Aprobado' : t.best ? 'Suspendido' : 'Pendiente'}
+                    </div>
                   </div>
-                </div>
-                <div className={`${styles.testItemStatus} ${t.passed ? styles.statusPassed : t.best ? styles.statusFailed : styles.statusPending}`}>
-                  {t.passed ? 'Aprobado' : t.best ? 'Suspendido' : 'Pendiente'}
-                </div>
+                )}
+                {expandedId === t.id && (
+                  <div className={styles.expandedTest}>
+                    <Test config={t.config} onClose={() => handleToggle(t.id)} />
+                  </div>
+                )}
               </div>
-              {expandedId === t.id && (
-                <div className={styles.expandedTest}>
-                  <Test config={t.config} />
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

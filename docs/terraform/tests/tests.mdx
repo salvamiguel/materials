@@ -5,12 +5,18 @@ description: "Ejercicios prácticos y tests para evaluar tus conocimientos en Te
 ---
 
 import ModuleTest from '@site/src/components/test/ModuleTest';
-import { testIntroduction } from './test-data';
+import { testIntroduction, testProviders, testPlanApply, testVariables, testState, testWorkspaces, testModulos } from './test-data';
 
 # Tests de Terraform
 
 Evalúa tus conocimientos con estos tests interactivos. Tu progreso se guarda automáticamente en el navegador.
 
-<ModuleTest tests={[
+<ModuleTest title='Terraform' tests={[
   { id: 'tf-intro', title: 'Introducción a Terraform', config: testIntroduction },
+  { id: 'tf-providers', title: 'Providers y Resources', config: testProviders },
+  { id: 'tf-plan-apply', title: 'Plan, Apply y Destroy', config: testPlanApply },
+  { id: 'tf-variables', title: 'Variables en Terraform', config: testVariables },
+  { id: 'tf-state', title: 'Estado en Terraform', config: testState },
+  { id: 'tf-workspaces', title: 'Workspaces y Patrones Avanzados', config: testWorkspaces },
+  { id: 'tf-modulos', title: 'Módulos y Reutilización', config: testModulos },
 ]} />

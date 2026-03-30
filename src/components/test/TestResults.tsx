@@ -8,6 +8,7 @@ interface TestResultsProps {
   questions: Question[];
   onRetry: () => void;
   onReset: () => void;
+  onClose?: () => void;
 }
 
 function formatScore(score: number, maxScore: number, pointsType: PointsType): string {
@@ -21,7 +22,7 @@ function formatTime(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-export default function TestResults({ result, config, questions, onRetry, onReset }: TestResultsProps) {
+export default function TestResults({ result, config, questions, onRetry, onReset, onClose }: TestResultsProps) {
   const [showReview, setShowReview] = useState(false);
   const scoreDisplay = formatScore(result.score, result.maxScore, config.pointsType);
 
@@ -70,6 +71,11 @@ export default function TestResults({ result, config, questions, onRetry, onRese
         <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={onRetry}>
           Reintentar
         </button>
+        {onClose && (
+          <button className={`${styles.btn} ${styles.btnSecondary}`} onClick={onClose}>
+            ← Volver
+          </button>
+        )}
       </div>
 
       {showReview && (

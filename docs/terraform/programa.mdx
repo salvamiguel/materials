@@ -1,0 +1,59 @@
+---
+sidebar_position: 0
+title: "Programa del módulo"
+description: "Visión general del módulo de Terraform: unidades didácticas, requisitos previos y herramientas necesarias."
+---
+
+# Programa del módulo de Terraform
+
+Este módulo aborda **Terraform** como herramienta de referencia para **Infrastructure as Code (IaC)**. La carga lectiva es de **10 horas** en formato entre semana (S1 4 h + S2 4 h + S6 2 h) o de **8 horas** en formato fin de semana (S1 4 h + S2 4 h). El recorrido parte de los fundamentos de **HCL** y avanza hasta patrones avanzados: modules, remote state, workspaces y pipelines de CI/CD.
+
+---
+
+## Unidades didácticas
+
+| Unidad | Título | Páginas | Horas |
+|--------|--------|---------|-------|
+| UD 1 | Fundamentos de IaC y Terraform | [Introducción a Terraform](./intro) | 2 h |
+| UD 2 | Recursos, Providers y Configuración | [Providers y Resources](./providers-resources), [Variables](./variables), [Plan, Apply y Destroy](./plan-apply-destroy) | 2 h |
+| UD 3 | Estado y Ciclo de Vida | [Estado (State)](./state) | 2 h |
+| UD 4 | Módulos y Reutilización | [Módulos](./modulos) | 2 h |
+| UD 5 | Terraform Avanzado | [Workspaces y patrones avanzados](./workspaces) | 2 h |
+
+---
+
+## Requisitos previos
+
+:::info Antes de empezar
+
+- Fundamentos de programación (variables, bucles, funciones).
+- Familiaridad básica con línea de comandos (terminal Linux/macOS o WSL).
+- Conceptos básicos de redes (IP, DNS, puertos, HTTP).
+- Noción general de servicios cloud (instancias, redes virtuales, almacenamiento).
+- Conocimientos básicos de control de versiones con Git.
+
+:::
+
+---
+
+## Herramientas necesarias
+
+| Herramienta | Versión mínima | Notas |
+|-------------|----------------|-------|
+| Terraform CLI | >= 1.6 | Instalación desde [terraform.io](https://developer.hashicorp.com/terraform/install) |
+| Visual Studio Code | Última estable | Con la extensión **HashiCorp Terraform** |
+| Git | >= 2.30 | Control de versiones |
+| Docker Desktop | >= 4.0 | Para labs con providers locales |
+| AWS CLI v2 | Última estable | Opcional, necesario solo para labs con AWS |
+| Terminal bash o zsh | -- | Incluida en macOS/Linux; en Windows usar WSL |
+
+---
+
+## Recursos de referencia
+
+- [Terraform Language Documentation](https://developer.hashicorp.com/terraform/language)
+- [Terraform CLI Documentation](https://developer.hashicorp.com/terraform/cli)
+- [Terraform Registry](https://registry.terraform.io)
+- [HashiCorp Learn Tutorials](https://developer.hashicorp.com/terraform/tutorials)
+
+

@@ -215,14 +215,15 @@ export default function VariablePlayground() {
     const allLines = evalResult.planText.split('\n');
     let idx = 0;
     const interval = setInterval(() => {
-      if (idx < allLines.length) {
-        setVisiblePlanLines(prev => [...prev, allLines[idx]]);
-        idx++;
-        if (planRef.current) planRef.current.scrollTop = planRef.current.scrollHeight;
-      } else {
+      if (idx >= allLines.length) {
         clearInterval(interval);
         setPlanAnimating(false);
+        return;
       }
+      const line = allLines[idx] ?? '';
+      idx++;
+      setVisiblePlanLines(prev => [...prev, line]);
+      if (planRef.current) planRef.current.scrollTop = planRef.current.scrollHeight;
     }, 60);
     return () => clearInterval(interval);
   }, [planAnimating, evalResult]);
@@ -347,18 +348,19 @@ export default function VariablePlayground() {
 
             {activeTab === 'plan' && (
               <div ref={planRef} style={{ margin: 0 }}>
-                {visiblePlanLines.length > 0 ? visiblePlanLines.map((line, i) => (
-                  <div key={i} style={{
-                    color: line.trim().startsWith('+') ? colors.green :
-                           line.trim().startsWith('#') ? colors.gutter :
-                           line.startsWith('Plan:') ? colors.cyan :
-                           line.startsWith('Outputs:') ? colors.blue :
+                {visiblePlanLines.length > 0 ? visiblePlanLines.map((line, i) => {
+                  const l = (line ?? '');
+                  return (<div key={i} style={{
+                    color: l.trim().startsWith('+') ? colors.green :
+                           l.trim().startsWith('#') ? colors.gutter :
+                           l.startsWith('Plan:') ? colors.cyan :
+                           l.startsWith('Outputs:') ? colors.blue :
                            colors.text,
                     whiteSpace: 'pre',
                   }}>
-                    {line || '\u00A0'}
-                  </div>
-                )) : (
+                    {l || '\u00A0'}
+                  </div>);
+                }) : (
                   <span style={{ color: colors.gutter, fontStyle: 'italic' }}>
                     {diagnostics.some(d => d.severity === 'error')
                       ? 'Corrige los errores para ver el plan'
