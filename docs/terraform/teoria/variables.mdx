@@ -1,8 +1,1957 @@
 ---
-sidebar_position: 5
+sidebar_position: 3
 title: "Variables"
+description: "Variables de entrada, outputs, locals y tipos de datos en Terraform."
 ---
 
-# Variables
+import CloudTabs from '@site/src/components/shared/CloudTabs';
+import { CloudTab } from '@site/src/components/shared/CloudTabs';
+import VariablePlayground from '@site/src/components/demos/terraform/VariablePlayground';
 
-Contenido pendiente.
+# Variables en Terraform
+
+Uno de los principios fundamentales de la infraestructura como código es la **reutilización**. Si cada configuración de Terraform estuviera escrita con valores fijos (hardcoded), tendríamos que duplicar archivos completos cada vez que quisiéramos desplegar un entorno diferente. Las variables resuelven este problema: permiten parametrizar las configuraciones para que el mismo código sirva para desarrollo, staging y producción, cambiando únicamente los valores de entrada.
+
+En esta sección estudiaremos los tres mecanismos que Terraform ofrece para gestionar valores dinámicos: **input variables**, **output values** y **local values**. Veremos cómo declararlos, qué tipos de datos soportan, cómo asignarles valores y cuáles son las buenas prácticas de organización.
+
+<VariablePlayground />
+
+---
+
+## 1. Input Variables
+
+### Propósito
+
+Las input variables son el mecanismo principal para **parametrizar** una configuración de Terraform. En lugar de escribir valores fijos en los recursos, declaramos variables que actúan como parámetros de entrada. Esto permite:
+
+- Reutilizar el mismo código para múltiples entornos (dev, staging, prod).
+- Compartir módulos entre equipos sin necesidad de modificar el código fuente.
+- Separar la **definición** de la infraestructura de los **valores** específicos de cada despliegue.
+
+### Sintaxis de declaración
+
+Una variable se declara con el bloque `variable`, que acepta varios argumentos opcionales:
+
+```hcl
+variable "nombre" {
+  type        = <tipo>
+  default     = <valor_por_defecto>
+  description = "Descripción de la variable"
+  validation {
+    condition     = <expresión_booleana>
+    error_message = "Mensaje de error"
+  }
+  sensitive   = <bool>
+  nullable    = <bool>
+}
+```
+
+| Argumento     | Descripción                                                                 | Obligatorio |
+|---------------|-----------------------------------------------------------------------------|:-----------:|
+| `type`        | Restringe el tipo de dato aceptado                                          | No*         |
+| `default`     | Valor por defecto si no se proporciona uno                                  | No          |
+| `description` | Documentación de la variable (aparece en `terraform plan` y en la documentación generada) | No          |
+| `validation`  | Reglas de validación personalizadas                                         | No          |
+| `sensitive`   | Oculta el valor en la salida de plan/apply                                  | No          |
+| `nullable`    | Controla si la variable puede ser `null` (por defecto `true`)               | No          |
+
+:::info Sobre type
+Aunque `type` no es técnicamente obligatorio, se considera una **mala práctica** omitirlo. Sin type constraint, Terraform acepta cualquier valor, lo que puede producir errores difíciles de depurar en tiempo de ejecución. Siempre declara el tipo explícitamente.
+:::
+
+### Referencia a variables
+
+Dentro de la configuración, las variables se referencian con el prefijo `var.`:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+resource "aws_instance" "web" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+  tags          = var.tags
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+resource "google_compute_instance" "web" {
+  name         = "web-server"
+  machine_type = var.machine_type
+  zone         = var.zone
+  labels       = var.tags
+
+  boot_disk {
+    initialize_params {
+      image = var.image_id
+    }
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+resource "azurerm_linux_virtual_machine" "web" {
+  name                = "web-server"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  size                = var.vm_size
+  tags                = var.tags
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+---
+
+### Tipos primitivos
+
+Terraform soporta tres tipos primitivos:
+
+#### string
+
+Cadenas de texto. Es el tipo más común.
+
+```hcl
+variable "instance_type" {
+  type        = string
+  default     = "t2.micro"
+  description = "Tipo de instancia EC2"
+}
+
+variable "region" {
+  type        = string
+  default     = "eu-west-1"
+  description = "Región de AWS donde desplegar la infraestructura"
+}
+```
+
+Uso:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+provider "aws" {
+  region = var.region
+}
+
+resource "aws_instance" "web" {
+  instance_type = var.instance_type
+  # ...
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+provider "google" {
+  region = var.region
+}
+
+resource "google_compute_instance" "web" {
+  machine_type = var.instance_type
+  # ...
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_linux_virtual_machine" "web" {
+  size = var.instance_type
+  # ...
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+#### number
+
+Valores numéricos, tanto enteros como decimales.
+
+```hcl
+variable "instance_count" {
+  type        = number
+  default     = 2
+  description = "Número de instancias a crear"
+}
+
+variable "disk_size_gb" {
+  type        = number
+  default     = 50
+  description = "Tamaño del disco en GB"
+}
+```
+
+Uso:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+resource "aws_instance" "web" {
+  count         = var.instance_count
+  instance_type = var.instance_type
+  # ...
+
+  root_block_device {
+    volume_size = var.disk_size_gb
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+resource "google_compute_instance" "web" {
+  count        = var.instance_count
+  machine_type = var.instance_type
+  # ...
+
+  boot_disk {
+    initialize_params {
+      size = var.disk_size_gb
+    }
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+resource "azurerm_linux_virtual_machine" "web" {
+  count = var.instance_count
+  size  = var.instance_type
+  # ...
+
+  os_disk {
+    disk_size_gb = var.disk_size_gb
+  }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+#### bool
+
+Valores booleanos: `true` o `false`.
+
+```hcl
+variable "enable_monitoring" {
+  type        = bool
+  default     = false
+  description = "Habilitar monitoring detallado en las instancias"
+}
+```
+
+Uso:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+resource "aws_instance" "web" {
+  monitoring = var.enable_monitoring
+  # ...
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+resource "google_compute_instance" "web" {
+  # En GCP el monitoring se habilita mediante el agente de operaciones
+  metadata = {
+    enable-osconfig = var.enable_monitoring ? "TRUE" : "FALSE"
+  }
+  # ...
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+resource "azurerm_linux_virtual_machine" "web" {
+  # En Azure el monitoring se configura con una extensión
+  # ...
+}
+
+resource "azurerm_virtual_machine_extension" "monitoring" {
+  count                = var.enable_monitoring ? 1 : 0
+  virtual_machine_id   = azurerm_linux_virtual_machine.web.id
+  name                 = "monitoring-agent"
+  publisher            = "Microsoft.Azure.Monitor"
+  type                 = "AzureMonitorLinuxAgent"
+  type_handler_version = "1.0"
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+---
+
+### Tipos complejos
+
+Los tipos complejos permiten agrupar múltiples valores en una sola variable. Terraform distingue entre **tipos de colección** (todos los elementos del mismo tipo) y **tipos estructurales** (elementos de tipos diferentes).
+
+#### list(type)
+
+Una lista ordenada de valores del mismo tipo. Los elementos se acceden por índice (empezando en 0).
+
+```hcl
+variable "allowed_ports" {
+  type        = list(number)
+  default     = [80, 443, 8080]
+  description = "Puertos permitidos en el security group"
+}
+
+variable "availability_zones" {
+  type        = list(string)
+  default     = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
+  description = "Zonas de disponibilidad a utilizar"
+}
+```
+
+Uso:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+# Acceso por índice
+resource "aws_subnet" "primary" {
+  availability_zone = var.availability_zones[0]
+  # ...
+}
+
+# Iteración con count
+resource "aws_security_group_rule" "allow_ports" {
+  count     = length(var.allowed_ports)
+  from_port = var.allowed_ports[count.index]
+  to_port   = var.allowed_ports[count.index]
+  # ...
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+# Acceso por índice
+resource "google_compute_subnetwork" "primary" {
+  region = var.availability_zones[0]
+  # ...
+}
+
+# Iteración con count
+resource "google_compute_firewall" "allow_ports" {
+  count   = length(var.allowed_ports)
+  name    = "allow-port-${var.allowed_ports[count.index]}"
+  network = google_compute_network.main.name
+
+  allow {
+    protocol = "tcp"
+    ports    = [var.allowed_ports[count.index]]
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+# Acceso por índice
+resource "azurerm_subnet" "primary" {
+  name             = "primary"
+  virtual_network_name = azurerm_virtual_network.main.name
+  # ...
+}
+
+# Iteración con count
+resource "azurerm_network_security_rule" "allow_ports" {
+  count                       = length(var.allowed_ports)
+  name                        = "allow-port-${var.allowed_ports[count.index]}"
+  priority                    = 100 + count.index
+  destination_port_range      = var.allowed_ports[count.index]
+  network_security_group_name = azurerm_network_security_group.main.name
+  # ...
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+#### set(type)
+
+Similar a `list`, pero sin orden y sin elementos duplicados. Útil cuando el orden no importa y se necesita garantizar unicidad.
+
+```hcl
+variable "allowed_cidrs" {
+  type        = set(string)
+  default     = ["10.0.0.0/8", "172.16.0.0/12"]
+  description = "Bloques CIDR permitidos"
+}
+```
+
+Uso:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+# Iteración con for_each (los sets son ideales para for_each)
+resource "aws_security_group_rule" "allow_cidrs" {
+  for_each    = var.allowed_cidrs
+  cidr_blocks = [each.value]
+  # ...
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+# Iteración con for_each
+resource "google_compute_firewall" "allow_cidrs" {
+  for_each      = var.allowed_cidrs
+  name          = "allow-cidr-${replace(each.value, "/", "-")}"
+  network       = google_compute_network.main.name
+  source_ranges = [each.value]
+
+  allow {
+    protocol = "tcp"
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+# Iteración con for_each
+resource "azurerm_network_security_rule" "allow_cidrs" {
+  for_each                    = var.allowed_cidrs
+  name                        = "allow-cidr-${replace(each.value, "/", "-")}"
+  source_address_prefix       = each.value
+  network_security_group_name = azurerm_network_security_group.main.name
+  # ...
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+#### map(type)
+
+Una colección de pares clave-valor donde todas las claves son strings y todos los valores son del mismo tipo.
+
+```hcl
+variable "tags" {
+  type = map(string)
+  default = {
+    Environment = "dev"
+    Team        = "platform"
+  }
+  description = "Tags comunes para todos los recursos"
+}
+
+variable "instance_types" {
+  type = map(string)
+  default = {
+    dev     = "t2.micro"
+    staging = "t3.medium"
+    prod    = "t3.large"
+  }
+  description = "Tipo de instancia por entorno"
+}
+```
+
+Uso:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+resource "aws_instance" "web" {
+  instance_type = var.instance_types[var.environment]
+  tags          = var.tags
+  # ...
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+resource "google_compute_instance" "web" {
+  machine_type = var.instance_types[var.environment]
+  labels       = var.tags
+  # ...
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+resource "azurerm_linux_virtual_machine" "web" {
+  size = var.instance_types[var.environment]
+  tags = var.tags
+  # ...
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+#### object
+
+Un tipo estructural que define un esquema con atributos nombrados, cada uno con su propio tipo. Es el tipo más expresivo y permite modelar configuraciones complejas.
+
+```hcl
+variable "server_config" {
+  type = object({
+    name          = string
+    instance_type = string
+    ami           = string
+    monitoring    = bool
+  })
+  description = "Configuración completa del servidor"
+
+  default = {
+    name          = "web-server"
+    instance_type = "t2.micro"
+    ami           = "ami-0c55b159cbfafe1f0"
+    monitoring    = false
+  }
+}
+```
+
+Uso:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+resource "aws_instance" "server" {
+  ami           = var.server_config.ami
+  instance_type = var.server_config.instance_type
+  monitoring    = var.server_config.monitoring
+
+  tags = {
+    Name = var.server_config.name
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+resource "google_compute_instance" "server" {
+  name         = var.server_config.name
+  machine_type = var.server_config.instance_type
+
+  boot_disk {
+    initialize_params {
+      image = var.server_config.ami
+    }
+  }
+
+  labels = {
+    name = var.server_config.name
+  }
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+resource "azurerm_linux_virtual_machine" "server" {
+  name = var.server_config.name
+  size = var.server_config.instance_type
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "18.04-LTS"
+    version   = "latest"
+  }
+
+  tags = {
+    Name = var.server_config.name
+  }
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+Se pueden anidar tipos complejos dentro de un `object`:
+
+```hcl
+variable "vpc_config" {
+  type = object({
+    cidr_block = string
+    subnets = list(object({
+      cidr_block        = string
+      availability_zone = string
+      public            = bool
+    }))
+    enable_dns = bool
+  })
+
+  description = "Configuración completa de la VPC"
+
+  default = {
+    cidr_block = "10.0.0.0/16"
+    subnets = [
+      {
+        cidr_block        = "10.0.1.0/24"
+        availability_zone = "eu-west-1a"
+        public            = true
+      },
+      {
+        cidr_block        = "10.0.2.0/24"
+        availability_zone = "eu-west-1b"
+        public            = false
+      }
+    ]
+    enable_dns = true
+  }
+}
+```
+
+#### tuple([...])
+
+Similar a `list`, pero cada elemento puede tener un tipo diferente. La longitud es fija y definida por el esquema.
+
+```hcl
+variable "rule" {
+  type        = tuple([string, number, bool])
+  default     = ["allow", 443, true]
+  description = "Regla definida como [acción, puerto, habilitada]"
+}
+```
+
+Uso:
+
+```hcl
+# Acceso por índice
+locals {
+  action  = var.rule[0]  # "allow"
+  port    = var.rule[1]  # 443
+  enabled = var.rule[2]  # true
+}
+```
+
+:::info tuple vs object
+En la práctica, `object` es casi siempre preferible a `tuple` porque los atributos tienen nombres descriptivos. Usa `tuple` solo cuando el orden sea significativo y el esquema sea muy simple.
+:::
+
+---
+
+### Tabla resumen de tipos
+
+| Tipo              | Categoría    | Descripción                                    | Ejemplo de valor                           |
+|-------------------|--------------|------------------------------------------------|--------------------------------------------|
+| `string`          | Primitivo    | Cadena de texto                                | `"t2.micro"`                               |
+| `number`          | Primitivo    | Valor numérico                                 | `42`                                       |
+| `bool`            | Primitivo    | Booleano                                       | `true`                                     |
+| `list(type)`      | Colección    | Lista ordenada, mismo tipo                     | `["a", "b", "c"]`                          |
+| `set(type)`       | Colección    | Conjunto sin orden, sin duplicados             | `["a", "b"]`                               |
+| `map(type)`       | Colección    | Pares clave-valor, mismo tipo de valor         | map con pares clave = valor              |
+| `object()`        | Estructural  | Atributos nombrados, tipos heterogéneos        | atributos con tipos mixtos               |
+| `tuple([...])`    | Estructural  | Lista de longitud fija, tipos heterogéneos     | `["allow", 443, true]`                     |
+
+---
+
+## 2. Asignación de valores a variables
+
+Terraform ofrece múltiples formas de asignar valores a las variables. Comprender el **orden de precedencia** es fundamental para evitar sorpresas.
+
+### Orden de precedencia
+
+Cuando un mismo valor se define en múltiples lugares, Terraform aplica el siguiente orden de precedencia (de menor a mayor prioridad):
+
+```
+1. default         (valor por defecto en la declaración)
+2. terraform.tfvars (archivo automático)
+3. *.auto.tfvars   (archivos automáticos, orden alfabético)
+4. -var-file       (flag en línea de comandos)
+5. -var            (flag en línea de comandos)
+6. TF_VAR_         (variable de entorno)
+```
+
+Es decir, una variable de entorno `TF_VAR_` **siempre gana** sobre cualquier otro mecanismo. Y un `-var` en la línea de comandos tiene más prioridad que un archivo `.tfvars`.
+
+### Archivo terraform.tfvars
+
+Terraform carga automáticamente el archivo `terraform.tfvars` (o `terraform.tfvars.json`) si existe en el directorio de trabajo. No necesita ningún flag adicional.
+
+```hcl
+# terraform.tfvars
+region         = "eu-west-1"
+instance_type  = "t3.medium"
+instance_count = 3
+environment    = "staging"
+
+tags = {
+  Environment = "staging"
+  Team        = "platform"
+  CostCenter  = "CC-1234"
+}
+```
+
+### Archivos .auto.tfvars
+
+Cualquier archivo con extensión `.auto.tfvars` o `.auto.tfvars.json` se carga automáticamente, en orden alfabético. Esto es útil para separar variables por categoría:
+
+```bash
+# Estructura de ejemplo
+.
+├── main.tf
+├── variables.tf
+├── network.auto.tfvars
+├── compute.auto.tfvars
+└── tags.auto.tfvars
+```
+
+```hcl
+# network.auto.tfvars
+vpc_cidr           = "10.0.0.0/16"
+public_subnet_cidr = "10.0.1.0/24"
+```
+
+```hcl
+# compute.auto.tfvars
+instance_type  = "t3.medium"
+instance_count = 2
+```
+
+### Archivos .tfvars personalizados con -var-file
+
+Para archivos con nombres diferentes, se usa el flag `-var-file`:
+
+```bash
+# Archivo por entorno
+terraform plan -var-file="environments/prod.tfvars"
+terraform apply -var-file="environments/prod.tfvars"
+```
+
+```hcl
+# environments/prod.tfvars
+environment    = "prod"
+instance_type  = "t3.large"
+instance_count = 5
+enable_monitoring = true
+
+tags = {
+  Environment = "prod"
+  Team        = "platform"
+  CostCenter  = "CC-5678"
+}
+```
+
+```hcl
+# environments/dev.tfvars
+environment    = "dev"
+instance_type  = "t2.micro"
+instance_count = 1
+enable_monitoring = false
+
+tags = {
+  Environment = "dev"
+  Team        = "platform"
+}
+```
+
+Este patrón es uno de los más utilizados en la práctica: el mismo código, diferentes archivos `.tfvars` por entorno.
+
+### Flag -var en la línea de comandos
+
+Para valores puntuales o para sobreescribir un valor concreto:
+
+```bash
+terraform plan -var="instance_type=t3.xlarge"
+terraform apply -var="instance_type=t3.xlarge" -var="instance_count=10"
+```
+
+Para tipos complejos, se pasa el valor como JSON:
+
+```bash
+terraform plan -var='tags={"Environment":"prod","Team":"ops"}'
+```
+
+### Variables de entorno: TF_VAR_
+
+Terraform busca automáticamente variables de entorno con el prefijo `TF_VAR_`. El nombre de la variable (sin el prefijo) debe coincidir con el nombre declarado en la configuración.
+
+```bash
+export TF_VAR_region="eu-west-1"
+export TF_VAR_instance_type="t3.medium"
+export TF_VAR_instance_count=3
+
+terraform plan
+```
+
+Este mecanismo es especialmente útil en **pipelines de CI/CD**, donde los valores se inyectan como secrets o variables de entorno del pipeline.
+
+```bash
+# Ejemplo en GitHub Actions
+env:
+  TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+  TF_VAR_environment: "prod"
+```
+
+:::tip Estrategia recomendada para gestionar valores
+Usa `terraform.tfvars` para los valores por defecto de tu entorno de trabajo habitual (normalmente desarrollo). Usa archivos `-var-file` para los overrides de cada entorno (staging, prod). Reserva las variables de entorno `TF_VAR_` para valores sensibles que no deben quedar en archivos, como contraseñas o tokens.
+:::
+
+### Variables interactivas
+
+Si una variable no tiene valor por defecto y no se proporciona por ningún mecanismo, Terraform preguntará interactivamente durante `plan` o `apply`:
+
+```bash
+$ terraform plan
+
+var.environment
+  Entorno de despliegue
+
+  Enter a value: dev
+```
+
+:::warning
+Las variables interactivas no funcionan en pipelines de CI/CD. Asegúrate de que todas las variables sin default tengan un valor asignado por algún mecanismo antes de ejecutar Terraform en entornos automatizados.
+:::
+
+---
+
+## 3. Validación de variables
+
+A partir de Terraform 0.13, es posible definir reglas de validación dentro del bloque `variable`. Esto permite detectar errores **antes** de que Terraform intente crear o modificar recursos, ahorrando tiempo y evitando despliegues parciales fallidos.
+
+### Sintaxis
+
+```hcl
+variable "nombre" {
+  type = string
+
+  validation {
+    condition     = <expresión_booleana_que_usa_var.nombre>
+    error_message = "Mensaje descriptivo del error."
+  }
+}
+```
+
+El bloque `validation` contiene:
+
+- **`condition`**: una expresión que debe evaluar a `true` para que el valor sea válido. Debe referenciar `var.<nombre>`.
+- **`error_message`**: el mensaje que se muestra al usuario cuando la condición falla.
+
+Se pueden definir **múltiples bloques** `validation` en una misma variable.
+
+### Validación con contains
+
+Verificar que el valor pertenece a un conjunto de opciones válidas:
+
+```hcl
+variable "environment" {
+  type        = string
+  description = "Entorno de despliegue"
+
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "El environment debe ser dev, staging o prod."
+  }
+}
+```
+
+Si alguien intenta usar `environment = "test"`:
+
+```
+Error: Invalid value for variable
+
+  on variables.tf line 1:
+   1: variable "environment" {
+
+El environment debe ser dev, staging o prod.
+```
+
+### Validación con regex
+
+Verificar que una cadena cumple un patrón determinado:
+
+```hcl
+variable "project_name" {
+  type        = string
+  description = "Nombre del proyecto (solo minúsculas, números y guiones)"
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9-]{2,28}[a-z0-9]$", var.project_name))
+    error_message = "El nombre del proyecto debe tener entre 4 y 30 caracteres, empezar con letra minúscula, y solo contener minúsculas, números y guiones."
+  }
+}
+```
+
+### Validación con length
+
+Verificar la longitud de una cadena o colección:
+
+```hcl
+variable "db_password" {
+  type        = string
+  sensitive   = true
+  description = "Contraseña de la base de datos"
+
+  validation {
+    condition     = length(var.db_password) >= 12
+    error_message = "La contraseña debe tener al menos 12 caracteres."
+  }
+
+  validation {
+    condition     = can(regex("[A-Z]", var.db_password)) && can(regex("[0-9]", var.db_password))
+    error_message = "La contraseña debe contener al menos una mayúscula y un número."
+  }
+}
+```
+
+Observa cómo se usan **dos bloques `validation`** para verificar diferentes aspectos del mismo valor. Ambas condiciones deben cumplirse.
+
+### Validación con rangos numéricos
+
+Verificar que un valor numérico está dentro de un rango aceptable:
+
+```hcl
+variable "instance_count" {
+  type        = number
+  description = "Número de instancias a desplegar"
+
+  validation {
+    condition     = var.instance_count >= 1 && var.instance_count <= 20
+    error_message = "El número de instancias debe estar entre 1 y 20."
+  }
+}
+
+variable "disk_size_gb" {
+  type        = number
+  description = "Tamaño del disco en GB"
+
+  validation {
+    condition     = var.disk_size_gb >= 20 && var.disk_size_gb <= 1000
+    error_message = "El tamaño del disco debe estar entre 20 y 1000 GB."
+  }
+}
+```
+
+### Validación de tipos complejos
+
+También se pueden validar valores dentro de tipos complejos:
+
+```hcl
+variable "subnets" {
+  type = list(object({
+    cidr_block = string
+    public     = bool
+  }))
+
+  validation {
+    condition     = length(var.subnets) >= 2
+    error_message = "Debes definir al menos 2 subnets para alta disponibilidad."
+  }
+
+  validation {
+    condition     = alltrue([for s in var.subnets : can(cidrhost(s.cidr_block, 0))])
+    error_message = "Todos los cidr_block deben ser bloques CIDR válidos."
+  }
+}
+```
+
+### Tabla resumen de funciones de validación
+
+| Función            | Uso                                          | Ejemplo                                              |
+|--------------------|----------------------------------------------|------------------------------------------------------|
+| `contains(l, v)`  | Valor pertenece a una lista                  | `contains(["a", "b"], var.x)`                        |
+| `can(expr)`        | La expresión no produce error                | `can(regex("^[a-z]+$", var.x))`                      |
+| `regex(p, s)`      | Coincidencia con expresión regular           | `regex("^[a-z]+$", var.x)`                           |
+| `length(v)`        | Longitud de string, lista o mapa             | `length(var.x) >= 3`                                 |
+| `alltrue(l)`       | Todos los elementos de la lista son `true`   | `alltrue([for x in var.l : x > 0])`                  |
+| `anytrue(l)`       | Al menos un elemento es `true`               | `anytrue([for x in var.l : x > 0])`                  |
+
+---
+
+## 4. Variables sensibles
+
+Cuando una variable contiene información confidencial (contraseñas, tokens, claves de API), se debe marcar como `sensitive`:
+
+```hcl
+variable "db_password" {
+  type        = string
+  sensitive   = true
+  description = "Contraseña del usuario root de la base de datos"
+}
+
+variable "api_key" {
+  type        = string
+  sensitive   = true
+  description = "API key del servicio de monitorización"
+}
+```
+
+### Comportamiento
+
+Cuando una variable se marca como `sensitive = true`, Terraform oculta su valor en toda la salida de `plan` y `apply`:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```bash
+$ terraform plan
+
+  # aws_db_instance.main will be created
+  + resource "aws_db_instance" "main" {
+      + password = (sensitive value)
+      + username = "admin"
+      ...
+    }
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```bash
+$ terraform plan
+
+  # google_sql_database_instance.main will be created
+  + resource "google_sql_database_instance" "main" {
+      + root_password = (sensitive value)
+      + name          = "mydb"
+      ...
+    }
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```bash
+$ terraform plan
+
+  # azurerm_mssql_server.main will be created
+  + resource "azurerm_mssql_server" "main" {
+      + administrator_login_password = (sensitive value)
+      + administrator_login          = "admin"
+      ...
+    }
+```
+
+</CloudTab>
+</CloudTabs>
+
+El valor `(sensitive value)` reemplaza al valor real en toda la salida. Esto incluye:
+
+- La salida de `terraform plan`.
+- La salida de `terraform apply`.
+- Los outputs que referencien ese valor (a menos que también se marquen como `sensitive`).
+
+### Propagación de sensitive
+
+Si un output utiliza una variable sensible, Terraform exige que el output también se marque como `sensitive`:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+output "db_connection_string" {
+  value     = "postgresql://admin:${var.db_password}@${aws_db_instance.main.endpoint}/mydb"
+  sensitive = true
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+output "db_connection_string" {
+  value     = "postgresql://admin:${var.db_password}@${google_sql_database_instance.main.public_ip_address}/mydb"
+  sensitive = true
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+output "db_connection_string" {
+  value     = "postgresql://admin:${var.db_password}@${azurerm_mssql_server.main.fully_qualified_domain_name}/mydb"
+  sensitive = true
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+Si no lo marcas, Terraform producirá un error:
+
+```
+Error: Output refers to sensitive values
+
+  Output "db_connection_string" includes a sensitive value.
+  Use sensitive = true to suppress this warning.
+```
+
+:::warning El atributo sensitive NO cifra el valor en el state
+Es fundamental entender que `sensitive = true` es únicamente una protección de la **salida en terminal**. El valor se almacena **en texto plano** dentro del archivo de estado (state). Si usas un backend local (`terraform.tfstate`), cualquiera con acceso al archivo puede leer el valor. Por esta razón, en entornos de producción siempre debes:
+
+1. Usar un **remote backend** con cifrado (como S3 con server-side encryption).
+2. Restringir el acceso al state mediante IAM policies o equivalentes.
+3. Nunca hacer commit del archivo `terraform.tfstate` al repositorio.
+:::
+
+### Buenas prácticas para valores sensibles
+
+```hcl
+# variables.tf
+variable "db_password" {
+  type        = string
+  sensitive   = true
+  description = "Contraseña de la base de datos"
+  # No definir default para valores sensibles
+}
+```
+
+```bash
+# Asignar mediante variable de entorno (no queda en archivos)
+export TF_VAR_db_password="mi_password_seguro_123"
+terraform apply
+```
+
+```bash
+# O mediante un archivo .tfvars que NO se commitea
+echo 'db_password = "mi_password_seguro_123"' > secrets.tfvars
+terraform apply -var-file="secrets.tfvars"
+```
+
+```gitignore
+# .gitignore
+*.tfstate
+*.tfstate.*
+secrets.tfvars
+```
+
+---
+
+## 5. Output Values
+
+### Propósito
+
+Los output values cumplen dos funciones principales:
+
+1. **Mostrar información al usuario** tras un `apply`: IPs, DNS names, IDs de recursos creados.
+2. **Exponer valores para otros módulos**: cuando se usan módulos, los outputs son la interfaz pública del módulo.
+
+### Sintaxis
+
+```hcl
+output "nombre" {
+  value       = <expresión>
+  description = "Descripción del output"
+  sensitive   = <bool>
+}
+```
+
+### Ejemplos básicos
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+output "instance_ip" {
+  value       = aws_instance.web.public_ip
+  description = "IP pública del servidor web"
+}
+
+output "instance_id" {
+  value       = aws_instance.web.id
+  description = "ID de la instancia EC2"
+}
+
+output "db_endpoint" {
+  value       = aws_db_instance.main.endpoint
+  description = "Endpoint de conexión a la base de datos"
+}
+
+output "lb_dns_name" {
+  value       = aws_lb.main.dns_name
+  description = "DNS del balanceador de carga"
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+output "instance_ip" {
+  value       = google_compute_instance.web.network_interface[0].access_config[0].nat_ip
+  description = "IP pública del servidor web"
+}
+
+output "instance_id" {
+  value       = google_compute_instance.web.instance_id
+  description = "ID de la instancia de Compute Engine"
+}
+
+output "db_endpoint" {
+  value       = google_sql_database_instance.main.public_ip_address
+  description = "IP de conexión a la base de datos"
+}
+
+output "lb_ip" {
+  value       = google_compute_global_forwarding_rule.main.ip_address
+  description = "IP del balanceador de carga"
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+output "instance_ip" {
+  value       = azurerm_public_ip.web.ip_address
+  description = "IP pública del servidor web"
+}
+
+output "instance_id" {
+  value       = azurerm_linux_virtual_machine.web.id
+  description = "ID de la máquina virtual"
+}
+
+output "db_endpoint" {
+  value       = azurerm_mssql_server.main.fully_qualified_domain_name
+  description = "FQDN de conexión a la base de datos"
+}
+
+output "lb_ip" {
+  value       = azurerm_public_ip.lb.ip_address
+  description = "IP del balanceador de carga"
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+Tras ejecutar `terraform apply`, los outputs se muestran al final:
+
+```bash
+Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+db_endpoint = "mydb.abc123.eu-west-1.rds.amazonaws.com:5432"
+instance_id = "i-0a1b2c3d4e5f67890"
+instance_ip = "52.18.123.45"
+lb_dns_name = "my-lb-1234567890.eu-west-1.elb.amazonaws.com"
+```
+
+### Consultar outputs
+
+Después del `apply`, los outputs se almacenan en el state y se pueden consultar en cualquier momento:
+
+```bash
+# Ver todos los outputs
+terraform output
+
+# Ver un output específico
+terraform output instance_ip
+
+# Obtener el valor sin comillas (útil para scripts)
+terraform output -raw instance_ip
+
+# Obtener en formato JSON (útil para procesamiento programático)
+terraform output -json
+```
+
+### Outputs con tipos complejos
+
+Los outputs pueden devolver cualquier tipo de dato:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+output "instance_ips" {
+  value       = aws_instance.web[*].public_ip
+  description = "IPs públicas de todas las instancias"
+}
+
+output "subnet_info" {
+  value = {
+    for subnet in aws_subnet.main :
+    subnet.availability_zone => {
+      id         = subnet.id
+      cidr_block = subnet.cidr_block
+    }
+  }
+  description = "Información de las subnets por zona de disponibilidad"
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+output "instance_ips" {
+  value       = google_compute_instance.web[*].network_interface[0].access_config[0].nat_ip
+  description = "IPs públicas de todas las instancias"
+}
+
+output "subnet_info" {
+  value = {
+    for subnet in google_compute_subnetwork.main :
+    subnet.region => {
+      id         = subnet.id
+      cidr_block = subnet.ip_cidr_range
+    }
+  }
+  description = "Información de las subnets por región"
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+output "instance_ips" {
+  value       = azurerm_public_ip.web[*].ip_address
+  description = "IPs públicas de todas las instancias"
+}
+
+output "subnet_info" {
+  value = {
+    for subnet in azurerm_subnet.main :
+    subnet.name => {
+      id         = subnet.id
+      cidr_block = subnet.address_prefixes[0]
+    }
+  }
+  description = "Información de las subnets por nombre"
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+### Outputs en módulos
+
+Cuando trabajas con módulos, los outputs son la **interfaz pública** que expone el módulo al código que lo consume. Solo los valores declarados como outputs son accesibles desde fuera del módulo.
+
+Supongamos un módulo `modules/vpc`:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+# modules/vpc/outputs.tf
+output "vpc_id" {
+  value       = aws_vpc.main.id
+  description = "ID de la VPC creada"
+}
+
+output "public_subnet_ids" {
+  value       = aws_subnet.public[*].id
+  description = "IDs de las subnets públicas"
+}
+
+output "private_subnet_ids" {
+  value       = aws_subnet.private[*].id
+  description = "IDs de las subnets privadas"
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+# modules/vpc/outputs.tf
+output "network_id" {
+  value       = google_compute_network.main.id
+  description = "ID de la VPC creada"
+}
+
+output "public_subnet_ids" {
+  value       = google_compute_subnetwork.public[*].id
+  description = "IDs de las subnets públicas"
+}
+
+output "private_subnet_ids" {
+  value       = google_compute_subnetwork.private[*].id
+  description = "IDs de las subnets privadas"
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+# modules/vpc/outputs.tf
+output "vnet_id" {
+  value       = azurerm_virtual_network.main.id
+  description = "ID de la VNet creada"
+}
+
+output "public_subnet_ids" {
+  value       = azurerm_subnet.public[*].id
+  description = "IDs de las subnets públicas"
+}
+
+output "private_subnet_ids" {
+  value       = azurerm_subnet.private[*].id
+  description = "IDs de las subnets privadas"
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+El código que consume el módulo accede a los outputs con `module.<nombre>.<output>`:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+# main.tf
+module "network" {
+  source = "./modules/vpc"
+
+  vpc_cidr    = "10.0.0.0/16"
+  environment = var.environment
+}
+
+resource "aws_instance" "web" {
+  subnet_id = module.network.public_subnet_ids[0]
+  # ...
+}
+
+resource "aws_db_instance" "main" {
+  db_subnet_group_name = aws_db_subnet_group.main.name
+  # ...
+}
+
+resource "aws_db_subnet_group" "main" {
+  subnet_ids = module.network.private_subnet_ids
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+# main.tf
+module "network" {
+  source = "./modules/vpc"
+
+  vpc_cidr    = "10.0.0.0/16"
+  environment = var.environment
+}
+
+resource "google_compute_instance" "web" {
+  network_interface {
+    subnetwork = module.network.public_subnet_ids[0]
+  }
+  # ...
+}
+
+resource "google_sql_database_instance" "main" {
+  settings {
+    ip_configuration {
+      private_network = module.network.network_id
+    }
+  }
+  # ...
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+# main.tf
+module "network" {
+  source = "./modules/vpc"
+
+  vnet_cidr   = "10.0.0.0/16"
+  environment = var.environment
+}
+
+resource "azurerm_linux_virtual_machine" "web" {
+  network_interface_ids = [azurerm_network_interface.web.id]
+  # ...
+}
+
+resource "azurerm_network_interface" "web" {
+  ip_configuration {
+    subnet_id = module.network.public_subnet_ids[0]
+  }
+}
+
+resource "azurerm_mssql_server" "main" {
+  # ...
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+:::info
+Los outputs de un módulo son como el **valor de retorno** de una función en programación. El módulo encapsula su implementación interna y expone solo lo que otros necesitan.
+:::
+
+---
+
+## 6. Local Values
+
+### Propósito
+
+Los local values (o simplemente **locals**) son valores intermedios calculados a partir de variables, atributos de recursos u otras expresiones. Su propósito principal es:
+
+- **Evitar repetición** (principio DRY): definir un valor una vez y referenciarlo en múltiples lugares.
+- **Simplificar expresiones** complejas asignándoles un nombre descriptivo.
+- **Calcular valores derivados** que no tiene sentido recibir como input.
+
+### Sintaxis
+
+Los locals se declaran dentro de un bloque `locals`:
+
+```hcl
+locals {
+  nombre1 = <expresión>
+  nombre2 = <expresión>
+}
+```
+
+Se referencian con el prefijo `local.` (en singular, sin la s):
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+resource "aws_instance" "web" {
+  tags = local.common_tags
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+resource "google_compute_instance" "web" {
+  labels = local.common_tags
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+resource "azurerm_linux_virtual_machine" "web" {
+  tags = local.common_tags
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+### Ejemplo: tags comunes
+
+Este es el uso más habitual de locals: definir un conjunto de tags que se aplican a todos los recursos:
+
+```hcl
+locals {
+  common_tags = {
+    Project     = var.project_name
+    Environment = var.environment
+    ManagedBy   = "terraform"
+    Owner       = var.team_name
+    CreatedAt   = timestamp()
+  }
+  name_prefix = "${var.project_name}-${var.environment}"
+}
+```
+
+Uso:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+resource "aws_instance" "web" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-web"
+    Role = "webserver"
+  })
+}
+
+resource "aws_db_instance" "main" {
+  # ...
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-db"
+    Role = "database"
+  })
+}
+
+resource "aws_s3_bucket" "assets" {
+  bucket = "${local.name_prefix}-assets"
+  tags   = local.common_tags
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+resource "google_compute_instance" "web" {
+  name         = "${local.name_prefix}-web"
+  machine_type = var.instance_type
+
+  labels = merge(local.common_tags, {
+    name = "${local.name_prefix}-web"
+    role = "webserver"
+  })
+}
+
+resource "google_sql_database_instance" "main" {
+  name = "${local.name_prefix}-db"
+  # ...
+  settings {
+    user_labels = merge(local.common_tags, {
+      name = "${local.name_prefix}-db"
+      role = "database"
+    })
+  }
+}
+
+resource "google_storage_bucket" "assets" {
+  name   = "${local.name_prefix}-assets"
+  labels = local.common_tags
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+resource "azurerm_linux_virtual_machine" "web" {
+  name = "${local.name_prefix}-web"
+  size = var.instance_type
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-web"
+    Role = "webserver"
+  })
+}
+
+resource "azurerm_mssql_server" "main" {
+  name = "${local.name_prefix}-db"
+  # ...
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-db"
+    Role = "database"
+  })
+}
+
+resource "azurerm_storage_account" "assets" {
+  name = replace("${local.name_prefix}-assets", "-", "")
+  tags = local.common_tags
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+Sin locals, tendríamos que repetir el bloque de tags en cada recurso, con el riesgo de inconsistencias cuando alguien olvida actualizar uno de ellos.
+
+### Ejemplo: cálculos derivados
+
+```hcl
+variable "environment" {
+  type = string
+}
+
+variable "base_cidr" {
+  type    = string
+  default = "10.0.0.0/16"
+}
+
+locals {
+  is_production = var.environment == "prod"
+
+  instance_type   = local.is_production ? "t3.large" : "t2.micro"
+  instance_count  = local.is_production ? 3 : 1
+  enable_multi_az = local.is_production
+
+  # Calcular CIDRs de subnets a partir del CIDR base
+  public_subnets = [
+    cidrsubnet(var.base_cidr, 8, 1),
+    cidrsubnet(var.base_cidr, 8, 2),
+  ]
+  private_subnets = [
+    cidrsubnet(var.base_cidr, 8, 10),
+    cidrsubnet(var.base_cidr, 8, 11),
+  ]
+}
+```
+
+### Cuándo usar locals vs variables
+
+La distinción es sencilla:
+
+| Aspecto          | Input Variable                        | Local Value                              |
+|------------------|---------------------------------------|------------------------------------------|
+| **Propósito**    | Valor proporcionado desde fuera       | Valor calculado internamente             |
+| **Quién lo define** | El usuario del módulo/configuración | El autor del módulo/configuración        |
+| **Referencia**   | `var.nombre`                          | `local.nombre`                           |
+| **Modificable**  | Sí, mediante tfvars, CLI, env vars    | No, se calcula automáticamente           |
+
+**Regla general**: si el valor debe ser configurable por quien usa el módulo, es una variable. Si es un valor derivado o interno, es un local.
+
+Ejemplo incorrecto (usar variable para valor derivado):
+
+```hcl
+# MAL: esto debería ser un local
+variable "name_prefix" {
+  default = "myproject-dev"
+}
+```
+
+Ejemplo correcto:
+
+```hcl
+# BIEN: se calcula a partir de otras variables
+locals {
+  name_prefix = "${var.project_name}-${var.environment}"
+}
+```
+
+:::tip Usa locals para DRY, no para lógica compleja
+Los locals son ideales para eliminar repetición y dar nombres descriptivos a expresiones. Sin embargo, si te encuentras encadenando muchos locals con lógica condicional compleja, probablemente necesitas reestructurar tu configuración o extraer un módulo. El objetivo es claridad, no crear una capa de abstracción difícil de seguir.
+:::
+
+---
+
+## 7. Organización de archivos
+
+### Convención de nombres
+
+Terraform carga **todos los archivos `.tf`** del directorio de trabajo y los trata como una sola configuración. El nombre de los archivos es irrelevante para Terraform, pero existe una convención ampliamente adoptada:
+
+```bash
+.
+├── main.tf              # Recursos principales
+├── variables.tf         # Declaración de input variables
+├── outputs.tf           # Declaración de outputs
+├── providers.tf         # Configuración de providers
+├── terraform.tfvars     # Valores por defecto (no sensibles)
+├── versions.tf          # Versiones requeridas de Terraform y providers
+├── locals.tf            # Local values (opcional, puede ir en main.tf)
+├── data.tf              # Data sources (opcional)
+└── .gitignore           # Excluir state, secrets, etc.
+```
+
+### Descripción de cada archivo
+
+**`variables.tf`**: contiene todas las declaraciones de variables. No contiene valores, solo la estructura:
+
+```hcl
+# variables.tf
+variable "region" {
+  type        = string
+  default     = "eu-west-1"
+  description = "Región de AWS"
+}
+
+variable "environment" {
+  type        = string
+  description = "Entorno de despliegue"
+
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Debe ser dev, staging o prod."
+  }
+}
+
+variable "instance_type" {
+  type        = string
+  default     = "t2.micro"
+  description = "Tipo de instancia EC2"
+}
+```
+
+**`outputs.tf`**: contiene todas las declaraciones de outputs:
+
+<CloudTabs>
+<CloudTab provider="aws">
+
+```hcl
+# outputs.tf
+output "instance_ip" {
+  value       = aws_instance.web.public_ip
+  description = "IP pública del servidor"
+}
+
+output "vpc_id" {
+  value       = aws_vpc.main.id
+  description = "ID de la VPC"
+}
+```
+
+</CloudTab>
+<CloudTab provider="gcp">
+
+```hcl
+# outputs.tf
+output "instance_ip" {
+  value       = google_compute_instance.web.network_interface[0].access_config[0].nat_ip
+  description = "IP pública del servidor"
+}
+
+output "network_id" {
+  value       = google_compute_network.main.id
+  description = "ID de la VPC"
+}
+```
+
+</CloudTab>
+<CloudTab provider="azure">
+
+```hcl
+# outputs.tf
+output "instance_ip" {
+  value       = azurerm_public_ip.web.ip_address
+  description = "IP pública del servidor"
+}
+
+output "vnet_id" {
+  value       = azurerm_virtual_network.main.id
+  description = "ID de la VNet"
+}
+```
+
+</CloudTab>
+</CloudTabs>
+
+**`terraform.tfvars`**: contiene los valores para las variables. Este archivo se carga automáticamente:
+
+```hcl
+# terraform.tfvars
+region        = "eu-west-1"
+environment   = "dev"
+instance_type = "t2.micro"
+```
+
+**`versions.tf`**: especifica las versiones requeridas:
+
+```hcl
+# versions.tf
+terraform {
+  required_version = ">= 1.5.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+```
+
+### Proyecto con múltiples entornos
+
+Para proyectos reales con varios entornos, una estructura habitual es:
+
+```bash
+.
+├── main.tf
+├── variables.tf
+├── outputs.tf
+├── providers.tf
+├── versions.tf
+├── locals.tf
+├── environments/
+│   ├── dev.tfvars
+│   ├── staging.tfvars
+│   └── prod.tfvars
+├── modules/
+│   ├── vpc/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── compute/
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
+└── .gitignore
+```
+
+Despliegue:
+
+```bash
+# Desarrollo
+terraform plan -var-file="environments/dev.tfvars"
+terraform apply -var-file="environments/dev.tfvars"
+
+# Producción
+terraform plan -var-file="environments/prod.tfvars"
+terraform apply -var-file="environments/prod.tfvars"
+```
+
+### Buenas prácticas de organización
+
+1. **Separar declaraciones de valores**: las declaraciones de variables van en `variables.tf`, los valores en `terraform.tfvars` o archivos por entorno.
+
+2. **Un recurso lógico por archivo** (en proyectos grandes): si la configuración crece, considera separar por recurso (`network.tf`, `compute.tf`, `database.tf`) en lugar de tener todo en `main.tf`.
+
+3. **Nunca commitear secrets**: añade al `.gitignore` los archivos que contengan valores sensibles.
+
+4. **Documentar todas las variables**: usa siempre `description` en variables y outputs. Es la documentación viva del módulo.
+
+5. **Usar tipos explícitos**: declara siempre el `type` de cada variable.
+
+6. **Valores por defecto razonables**: proporciona defaults cuando tenga sentido (regiones, tipos de instancia de desarrollo), pero no para valores que deben ser explícitos (nombres de proyecto, contraseñas).
+
+---
+
+## 8. Resumen
+
+Las variables son el mecanismo fundamental para hacer que las configuraciones de Terraform sean reutilizables y mantenibles. Los puntos clave de esta sección:
+
+- **Input variables** (`var.nombre`) parametrizan la configuración. Declara siempre el tipo y la descripción.
+- **Tipos primitivos** (`string`, `number`, `bool`) cubren la mayoría de casos simples. **Tipos complejos** (`list`, `map`, `object`) permiten modelar configuraciones más elaboradas.
+- **La precedencia de asignación** va de menor a mayor: default, terraform.tfvars, *.auto.tfvars, -var-file, -var, TF_VAR_. Conocer este orden evita sorpresas.
+- **Las validaciones** (`validation`) permiten detectar errores tempranamente, antes de que Terraform intente crear recursos.
+- **`sensitive = true`** oculta valores en la salida pero **no los cifra en el state**. Usa remote backends con cifrado para proteger el estado.
+- **Output values** (`output`) exponen información al usuario y sirven como interfaz pública de los módulos.
+- **Local values** (`local.nombre`) eliminan repetición y simplifican expresiones. Usa locals para valores derivados, no para valores configurables.
+- **Sigue las convenciones** de organización: `variables.tf`, `outputs.tf`, `terraform.tfvars`. La consistencia facilita la colaboración.
