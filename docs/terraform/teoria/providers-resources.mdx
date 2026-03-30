@@ -12,35 +12,35 @@ import { CloudTab } from '@site/src/components/shared/CloudTabs';
 
 # Providers y Resources
 
-En el capitulo anterior vimos que Terraform es una herramienta declarativa de Infrastructure as Code. Ahora vamos a profundizar en los dos bloques fundamentales de cualquier configuracion Terraform: los **providers** (que conectan Terraform con el mundo exterior) y los **resources** (que definen la infraestructura que queremos crear).
+En el capítulo anterior vimos que Terraform es una herramienta declarativa de Infrastructure as Code. Ahora vamos a profundizar en los dos bloques fundamentales de cualquier configuración Terraform: los **providers** (que conectan Terraform con el mundo exterior) y los **resources** (que definen la infraestructura que queremos crear).
 
 ---
 
 ## 1. Providers
 
-### Que son los providers
+### Qué son los providers
 
-Un provider es un **plugin** que permite a Terraform interactuar con una API externa. Cada provider traduce los bloques de configuracion HCL en llamadas a la API del servicio correspondiente. Sin providers, Terraform no sabria como comunicarse con AWS, Azure, Google Cloud, Docker ni ningun otro servicio.
+Un provider es un **plugin** que permite a Terraform interactuar con una API externa. Cada provider traduce los bloques de configuración HCL en llamadas a la API del servicio correspondiente. Sin providers, Terraform no sabría cómo comunicarse con AWS, Azure, Google Cloud, Docker ni ningún otro servicio.
 
 Cuando ejecutas `terraform init`, Terraform descarga e instala los providers necesarios en el directorio `.terraform/` de tu proyecto. A partir de ese momento, Terraform puede crear, leer, actualizar y eliminar recursos en el servicio correspondiente.
 
 :::info
-Terraform por si solo no sabe nada de AWS, Azure ni ningun otro servicio. Todo el conocimiento especifico de cada plataforma lo aportan los providers. Es una arquitectura de plugins que hace a Terraform enormemente extensible.
+Terraform por sí solo no sabe nada de AWS, Azure ni ningún otro servicio. Todo el conocimiento específico de cada plataforma lo aportan los providers. Es una arquitectura de plugins que hace a Terraform enormemente extensible.
 :::
 
 ### Terraform Registry
 
 El [Terraform Registry](https://registry.terraform.io/) es el repositorio central donde se publican los providers. Existen tres niveles de confianza:
 
-| Nivel | Descripcion | Ejemplo |
+| Nivel | Descripción | Ejemplo |
 |-------|-------------|---------|
 | **Official** | Mantenidos por HashiCorp | `hashicorp/aws`, `hashicorp/azurerm` |
 | **Partner** | Mantenidos por empresas asociadas | `mongodb/mongodbatlas`, `datadog/datadog` |
 | **Community** | Mantenidos por la comunidad | Diversos providers de nicho |
 
-En el Registry puedes consultar la documentacion de cada provider, ver las versiones disponibles, los resources y data sources que ofrece, y ejemplos de uso. Es la referencia principal cuando trabajas con Terraform.
+En el Registry puedes consultar la documentación de cada provider, ver las versiones disponibles, los resources y data sources que ofrece, y ejemplos de uso. Es la referencia principal cuando trabajas con Terraform.
 
-### Configuracion basica de un provider
+### Configuración básica de un provider
 
 Para usar un provider, lo declaras en un bloque `provider`:
 
@@ -75,7 +75,7 @@ provider "azurerm" {
 </CloudTab>
 </CloudTabs>
 
-Este bloque le dice a Terraform: "quiero trabajar con AWS en la region de Irlanda". Cada provider tiene sus propios argumentos de configuracion. En el caso de AWS, el argumento `region` es obligatorio, mientras que las credenciales se suelen gestionar mediante variables de entorno (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) o perfiles de configuracion de AWS CLI.
+Este bloque le dice a Terraform: "quiero trabajar con AWS en la región de Irlanda". Cada provider tiene sus propios argumentos de configuración. En el caso de AWS, el argumento `region` es obligatorio, mientras que las credenciales se suelen gestionar mediante variables de entorno (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) o perfiles de configuración de AWS CLI.
 
 :::warning
 Nunca escribas credenciales directamente en los archivos `.tf`. Usa variables de entorno, AWS CLI profiles, o mecanismos como Vault. Si las credenciales acaban en un repositorio Git, se consideran comprometidas y deben rotarse inmediatamente.
@@ -83,7 +83,7 @@ Nunca escribas credenciales directamente en los archivos `.tf`. Usa variables de
 
 ### Bloque required_providers
 
-Dentro del bloque `terraform {}`, debes especificar los providers que tu configuracion necesita y, opcionalmente, sus restricciones de version:
+Dentro del bloque `terraform {}`, debes especificar los providers que tu configuración necesita y, opcionalmente, sus restricciones de versión:
 
 <CloudTabs>
 <CloudTab provider="aws">
@@ -148,27 +148,27 @@ terraform {
 </CloudTab>
 </CloudTabs>
 
-El campo `source` sigue el formato `namespace/provider`. Si no lo especificas, Terraform asume el namespace `hashicorp` por defecto, pero es buena practica ser explicito.
+El campo `source` sigue el formato `namespace/provider`. Si no lo especificas, Terraform asume el namespace `hashicorp` por defecto, pero es buena práctica ser explícito.
 
 ### Versionado de providers
 
-Controlar la version del provider es critico para la estabilidad de tu infraestructura. Terraform soporta varias expresiones de version constraint:
+Controlar la versión del provider es crítico para la estabilidad de tu infraestructura. Terraform soporta varias expresiones de version constraint:
 
 | Operador | Significado | Ejemplo |
 |----------|-------------|---------|
-| `= 5.0.0` | Version exacta | Solo la 5.0.0 |
+| `= 5.0.0` | Versión exacta | Solo la 5.0.0 |
 | `>= 5.0` | Mayor o igual | 5.0, 5.1, 6.0... |
 | `~> 5.0` | Compatible con (pessimistic) | >= 5.0, < 6.0 |
 | `~> 5.0.1` | Compatible con patch | >= 5.0.1, < 5.1.0 |
 | `>= 5.0, < 5.5` | Rango combinado | Desde 5.0 hasta 5.4.x |
 
 :::tip
-El operador `~>` es el mas comun y recomendado. `~> 5.0` permite actualizaciones menores (5.1, 5.2...) pero no mayores (6.0), lo que equilibra estabilidad y actualizaciones de seguridad.
+El operador `~>` es el más común y recomendado. `~> 5.0` permite actualizaciones menores (5.1, 5.2...) pero no mayores (6.0), lo que equilibra estabilidad y actualizaciones de seguridad.
 :::
 
 Cuando ejecutas `terraform init`, Terraform genera un archivo `.terraform.lock.hcl` que registra las versiones exactas descargadas. Este archivo **debe versionarse en Git** para garantizar que todo el equipo trabaja con las mismas versiones.
 
-### Provider alias: multiples configuraciones
+### Provider alias: múltiples configuraciones
 
 En ocasiones necesitas usar el mismo provider con configuraciones diferentes. Por ejemplo, desplegar recursos en dos regiones distintas. Para esto se utiliza el argumento `alias`:
 
@@ -352,15 +352,15 @@ resource "azurerm_linux_virtual_machine" "web_secondary" {
 </CloudTabs>
 
 :::info
-Los casos mas habituales para usar alias son:
-- Desplegar en multiples regiones
-- Gestionar recursos en multiples cuentas de AWS
+Los casos más habituales para usar alias son:
+- Desplegar en múltiples regiones
+- Gestionar recursos en múltiples cuentas de AWS
 - Usar diferentes perfiles de credenciales
 :::
 
-### Providers mas comunes
+### Providers más comunes
 
-Estos son los providers que encontraras con mas frecuencia en el ecosistema Terraform:
+Estos son los providers que encontrarás con más frecuencia en el ecosistema Terraform:
 
 | Provider | Uso principal |
 |----------|---------------|
@@ -371,17 +371,17 @@ Estos son los providers que encontraras con mas frecuencia en el ecosistema Terr
 | [hashicorp/kubernetes](https://registry.terraform.io/providers/hashicorp/kubernetes/latest) | <SiKubernetes /> Clusters de Kubernetes |
 | [hashicorp/local](https://registry.terraform.io/providers/hashicorp/local/latest) | <FaFile /> Archivos en el sistema local |
 | [hashicorp/null](https://registry.terraform.io/providers/hashicorp/null/latest) | Recursos sin infraestructura real (provisioners, triggers) |
-| [hashicorp/random](https://registry.terraform.io/providers/hashicorp/random/latest) | Generacion de valores aleatorios (IDs, passwords, etc.) |
+| [hashicorp/random](https://registry.terraform.io/providers/hashicorp/random/latest) | Generación de valores aleatorios (IDs, passwords, etc.) |
 
-Los providers `local`, `null` y `random` merecen atencion especial porque no representan infraestructura cloud, pero son extremadamente utiles como utilidades auxiliares en configuraciones reales.
+Los providers `local`, `null` y `random` merecen atención especial porque no representan infraestructura cloud, pero son extremadamente útiles como utilidades auxiliares en configuraciones reales.
 
 ---
 
 ## 2. Resources
 
-### Que es un resource
+### Qué es un resource
 
-Un resource es el **bloque fundamental** de Terraform. Cada resource representa un objeto de infraestructura: una instancia EC2, un bucket S3, un security group, un registro DNS, una base de datos... Cuando Terraform aplica tu configuracion, traduce cada bloque resource en las llamadas API necesarias para crear, modificar o destruir ese objeto.
+Un resource es el **bloque fundamental** de Terraform. Cada resource representa un objeto de infraestructura: una instancia EC2, un bucket S3, un security group, un registro DNS, una base de datos... Cuando Terraform aplica tu configuración, traduce cada bloque resource en las llamadas API necesarias para crear, modificar o destruir ese objeto.
 
 ### Sintaxis de un resource
 
@@ -393,18 +393,18 @@ resource "tipo_de_resource" "nombre_local" {
 ```
 
 - **tipo_de_resource**: identifica que recurso del provider quieres crear. El prefijo antes del primer `_` indica el provider (por ejemplo, `aws_instance` pertenece al provider `aws`).
-- **nombre_local**: un identificador que usas dentro de tu configuracion Terraform para referirte a este recurso. No tiene relacion con el nombre real del recurso en la nube.
+- **nombre_local**: un identificador que usas dentro de tu configuración Terraform para referirte a este recurso. No tiene relación con el nombre real del recurso en la nube.
 
-La combinacion de tipo y nombre local debe ser unica en toda tu configuracion. Es decir, no puedes tener dos `resource "aws_instance" "web"` en el mismo proyecto.
+La combinación de tipo y nombre local debe ser única en toda tu configuración. Es decir, no puedes tener dos `resource "aws_instance" "web"` en el mismo proyecto.
 
 ### Ciclo de vida de un resource
 
-Terraform gestiona cada resource a traves de cuatro operaciones fundamentales, conocidas como CRUD:
+Terraform gestiona cada resource a través de cuatro operaciones fundamentales, conocidas como CRUD:
 
-1. **Create** -- Cuando el resource existe en tu configuracion pero no en el state (ni en la infraestructura real), Terraform lo crea.
-2. **Read** -- En cada `terraform plan` y `terraform apply`, Terraform consulta el estado actual del resource en la API del provider para compararlo con la configuracion deseada.
-3. **Update** -- Si hay diferencias entre la configuracion deseada y el estado actual, Terraform aplica los cambios necesarios. Algunos cambios son in-place (se modifica el recurso existente) y otros son destructivos (se destruye y recrea el recurso).
-4. **Delete** -- Cuando eliminas un resource de tu configuracion, Terraform lo destruye en la infraestructura real.
+1. **Create** -- Cuando el resource existe en tu configuración pero no en el state (ni en la infraestructura real), Terraform lo crea.
+2. **Read** -- En cada `terraform plan` y `terraform apply`, Terraform consulta el estado actual del resource en la API del provider para compararlo con la configuración deseada.
+3. **Update** -- Si hay diferencias entre la configuración deseada y el estado actual, Terraform aplica los cambios necesarios. Algunos cambios son in-place (se modifica el recurso existente) y otros son destructivos (se destruye y recrea el recurso).
+4. **Delete** -- Cuando eliminas un resource de tu configuración, Terraform lo destruye en la infraestructura real.
 
 :::danger
 Algunos cambios en resources provocan un **destroy + create** (en lugar de un update in-place). Por ejemplo, cambiar la AMI de una instancia EC2 destruye la instancia antigua y crea una nueva. Revisa siempre el `terraform plan` antes de aplicar para detectar estos casos. En el plan aparecen marcados como `# forces replacement`.
@@ -572,11 +572,11 @@ Al ejecutar `terraform apply`, Terraform:
 1. Contacta con la API de AWS en `eu-west-1`
 2. Crea una instancia EC2 con la AMI y tipo especificados
 3. Aplica los tags indicados
-4. Guarda el estado resultante (incluyendo el ID de la instancia, la IP publica, etc.) en el archivo de state
+4. Guarda el estado resultante (incluyendo el ID de la instancia, la IP pública, etc.) en el archivo de state
 
 ### Atributos computados vs configurados
 
-Los **atributos configurados** son los que tu defines en el bloque resource (como `ami`, `instance_type`, `tags`). Los **atributos computados** son valores que el provider genera y devuelve tras crear el recurso. Tu no los defines, pero puedes leerlos:
+Los **atributos configurados** son los que tú defines en el bloque resource (como `ami`, `instance_type`, `tags`). Los **atributos computados** son valores que el provider genera y devuelve tras crear el recurso. Tú no los defines, pero puedes leerlos:
 
 ```hcl
 resource "aws_instance" "web" {
@@ -595,7 +595,7 @@ Estos atributos computados son la base de las referencias entre recursos.
 
 ### Referencias entre resources
 
-Para conectar recursos entre si, usas la sintaxis `tipo.nombre.atributo`:
+Para conectar recursos entre sí, usas la sintaxis `tipo.nombre.atributo`:
 
 ```hcl
 resource "aws_eip" "web_ip" {
@@ -613,9 +613,9 @@ En este ejemplo, `aws_instance.web.id` hace referencia al atributo computado `id
 
 ## 3. Dependencias
 
-### Dependencias implicitas
+### Dependencias implícitas
 
-Cuando un resource referencia un atributo de otro resource, Terraform detecta automaticamente la dependencia. No necesitas hacer nada adicional:
+Cuando un resource referencia un atributo de otro resource, Terraform detecta automáticamente la dependencia. No necesitas hacer nada adicional:
 
 <CloudTabs>
 <CloudTab provider="aws">
@@ -749,16 +749,16 @@ resource "azurerm_linux_virtual_machine" "web" {
 </CloudTab>
 </CloudTabs>
 
-Terraform construye automaticamente la cadena de dependencias:
+Terraform construye automáticamente la cadena de dependencias:
 
 ```mermaid
 graph LR
     A[VPC / Network] --> B[Subnet] --> C[Instance / VM]
 ```
 
-Creara los recursos en ese orden y los destruira en orden inverso.
+Creará los recursos en ese orden y los destruirá en orden inverso.
 
-### Dependencias explicitas: depends_on
+### Dependencias explícitas: depends_on
 
 En ocasiones, existe una dependencia entre recursos que Terraform no puede detectar por referencias de atributos. Para estos casos, usas `depends_on`:
 
@@ -792,11 +792,11 @@ resource "aws_instance" "app" {
 
 :::warning
 Usa `depends_on` solo cuando realmente no haya forma de expresar la dependencia mediante referencias de atributos. Abusar de `depends_on` tiene efectos negativos:
-- Dificulta la lectura del codigo (las dependencias reales quedan ocultas)
-- Puede forzar a Terraform a serializar operaciones que podria paralelizar
-- Puede generar ciclos de dependencia dificiles de depurar
+- Dificulta la lectura del código (las dependencias reales quedan ocultas)
+- Puede forzar a Terraform a serializar operaciones que podría paralelizar
+- Puede generar ciclos de dependencia difíciles de depurar
 
-En la mayoria de los casos, si necesitas `depends_on`, es una senal de que tu diseno podria mejorarse.
+En la mayoría de los casos, si necesitas `depends_on`, es una señal de que tu diseño podría mejorarse.
 :::
 
 ### Grafo de dependencias (DAG)
@@ -814,12 +814,12 @@ terraform graph | dot -Tpng > grafo.png
 ```
 
 El DAG permite a Terraform:
-- Determinar el **orden correcto** de creacion y destruccion
-- **Paralelizar** operaciones que no tienen dependencias entre si
-- Detectar **ciclos de dependencia** (y rechazar la configuracion si los hay)
+- Determinar el **orden correcto** de creación y destrucción
+- **Paralelizar** operaciones que no tienen dependencias entre sí
+- Detectar **ciclos de dependencia** (y rechazar la configuración si los hay)
 
 :::tip
-Si tu `terraform plan` tarda demasiado, revisa el grafo de dependencias. Un arbol de dependencias demasiado profundo impide la paralelizacion. A veces, reorganizar la configuracion puede reducir significativamente los tiempos de apply.
+Si tu `terraform plan` tarda demasiado, revisa el grafo de dependencias. Un árbol de dependencias demasiado profundo impide la paralelización. A veces, reorganizar la configuración puede reducir significativamente los tiempos de apply.
 :::
 
 import TerraformDagViz from '@site/src/components/demos/terraform/TerraformDagViz';
@@ -830,13 +830,13 @@ import TerraformDagViz from '@site/src/components/demos/terraform/TerraformDagVi
 
 ## 4. Data Sources
 
-### Que son los data sources
+### Qué son los data sources
 
-Un data source permite **consultar informacion** de recursos que ya existen en tu infraestructura sin que Terraform los gestione. Es una operacion de solo lectura: Terraform consulta la API del provider, obtiene los datos y los pone a disposicion del resto de tu configuracion.
+Un data source permite **consultar información** de recursos que ya existen en tu infraestructura sin que Terraform los gestione. Es una operación de solo lectura: Terraform consulta la API del provider, obtiene los datos y los pone a disposición del resto de tu configuración.
 
 La diferencia fundamental con un resource es clara:
 - **resource**: Terraform crea, modifica y destruye el objeto.
-- **data source**: Terraform solo lee informacion del objeto. No lo modifica ni lo destruye jamas.
+- **data source**: Terraform solo lee información del objeto. No lo modifica ni lo destruye jamás.
 
 ### Sintaxis
 
@@ -846,9 +846,9 @@ data "tipo_de_data_source" "nombre_local" {
 }
 ```
 
-### Ejemplo: consultar la imagen mas reciente
+### Ejemplo: consultar la imagen más reciente
 
-Uno de los usos mas habituales es obtener la imagen de maquina mas reciente de una distribucion:
+Uno de los usos más habituales es obtener la imagen de máquina más reciente de una distribución:
 
 <CloudTabs>
 <CloudTab provider="aws">
@@ -950,7 +950,7 @@ resource "azurerm_linux_virtual_machine" "web" {
 
 Observa la sintaxis de referencia: `data.aws_ami.ubuntu.id`. El prefijo `data.` distingue las referencias a data sources de las referencias a resources.
 
-### Cuando usar data sources
+### Cuándo usar data sources
 
 Los data sources son la herramienta correcta en estos escenarios:
 
@@ -958,14 +958,14 @@ Los data sources son la herramienta correcta en estos escenarios:
 |-------------|---------|
 | AMIs recientes | `data "aws_ami"` para evitar hardcodear IDs que cambian |
 | Infraestructura existente | `data "aws_vpc"` para referenciar una VPC creada por otro equipo |
-| Zonas de disponibilidad | `data "aws_availability_zones"` para listar las AZs de una region |
+| Zonas de disponibilidad | `data "aws_availability_zones"` para listar las AZs de una región |
 | Datos de la cuenta | `data "aws_caller_identity"` para obtener el account ID |
 | Certificados | `data "aws_acm_certificate"` para buscar un certificado SSL existente |
-| Politicas IAM gestionadas | `data "aws_iam_policy"` para referenciar policies de AWS |
+| Políticas IAM gestionadas | `data "aws_iam_policy"` para referenciar policies de AWS |
 
 ### Ejemplo: VPC existente con subnets
 
-Un patron muy comun es consultar una VPC creada previamente (quiza por otro equipo o stack) y crear recursos dentro de ella:
+Un patrón muy común es consultar una VPC creada previamente (quizá por otro equipo o stack) y crear recursos dentro de ella:
 
 ```hcl
 data "aws_vpc" "existing" {
@@ -999,7 +999,7 @@ resource "aws_instance" "app" {
 ```
 
 :::info
-Los data sources se evaluan durante la fase de **plan**, no durante apply. Esto significa que si la infraestructura consultada no existe en el momento de ejecutar `terraform plan`, obtendras un error. Tenlo en cuenta cuando trabajes con recursos que aun no se han creado.
+Los data sources se evalúan durante la fase de **plan**, no durante apply. Esto significa que si la infraestructura consultada no existe en el momento de ejecutar `terraform plan`, obtendrás un error. Tenlo en cuenta cuando trabajes con recursos que aún no se han creado.
 :::
 
 ---
@@ -1010,7 +1010,7 @@ Los meta-argumentos son argumentos especiales que Terraform soporta en cualquier
 
 ### count
 
-El meta-argumento `count` permite crear **multiples instancias** del mismo resource. El valor de `count` indica cuantas copias se crean:
+El meta-argumento `count` permite crear **múltiples instancias** del mismo resource. El valor de `count` indica cuántas copias se crean:
 
 ```hcl
 resource "aws_instance" "worker" {
@@ -1024,9 +1024,9 @@ resource "aws_instance" "worker" {
 }
 ```
 
-Este bloque crea tres instancias EC2: `worker-0`, `worker-1` y `worker-2`. Dentro del bloque, `count.index` contiene el indice de la instancia actual (empezando en 0).
+Este bloque crea tres instancias EC2: `worker-0`, `worker-1` y `worker-2`. Dentro del bloque, `count.index` contiene el índice de la instancia actual (empezando en 0).
 
-Para referenciar una instancia especifica creada con `count`, usas la sintaxis de indice:
+Para referenciar una instancia específica creada con `count`, usas la sintaxis de índice:
 
 ```hcl
 output "first_worker_ip" {
@@ -1039,12 +1039,12 @@ output "all_worker_ips" {
 ```
 
 :::warning
-`count` tiene una limitacion importante: si eliminas un elemento del medio de la lista (por ejemplo, pasas de 3 a 2), Terraform reindexara los elementos y puede destruir y recrear recursos innecesariamente. Para listas de recursos heterogeneos, usa `for_each` en su lugar.
+`count` tiene una limitación importante: si eliminas un elemento del medio de la lista (por ejemplo, pasas de 3 a 2), Terraform reindexará los elementos y puede destruir y recrear recursos innecesariamente. Para listas de recursos heterogéneos, usa `for_each` en su lugar.
 :::
 
 ### for_each
 
-El meta-argumento `for_each` permite crear multiples instancias de un resource usando un **map o set** en lugar de un numero:
+El meta-argumento `for_each` permite crear múltiples instancias de un resource usando un **map o set** en lugar de un número:
 
 ```hcl
 resource "aws_instance" "servers" {
@@ -1064,9 +1064,9 @@ resource "aws_instance" "servers" {
 }
 ```
 
-Dentro del bloque, `each.key` y `each.value` proporcionan acceso a la clave y valor del elemento actual. Las instancias se identifican por clave (no por indice), lo que hace que las operaciones de eliminacion y adicion sean mucho mas predecibles que con `count`.
+Dentro del bloque, `each.key` y `each.value` proporcionan acceso a la clave y valor del elemento actual. Las instancias se identifican por clave (no por índice), lo que hace que las operaciones de eliminación y adición sean mucho más predecibles que con `count`.
 
-Para referenciar una instancia especifica:
+Para referenciar una instancia específica:
 
 ```hcl
 output "web_ip" {
@@ -1075,12 +1075,12 @@ output "web_ip" {
 ```
 
 :::info
-`for_each` se profundiza en detalle en el capitulo de workspaces, donde veremos patrones avanzados como iterar sobre modulos y combinar `for_each` con expresiones `for`.
+`for_each` se profundiza en detalle en el capítulo de workspaces, donde veremos patrones avanzados como iterar sobre módulos y combinar `for_each` con expresiones `for`.
 :::
 
 ### provider
 
-El meta-argumento `provider` permite seleccionar un provider con alias para un resource especifico:
+El meta-argumento `provider` permite seleccionar un provider con alias para un resource específico:
 
 ```hcl
 resource "aws_instance" "replica" {
@@ -1094,7 +1094,7 @@ Si no especificas `provider`, Terraform usa el provider por defecto (el que no t
 
 ### depends_on
 
-Ya lo hemos visto en la seccion de dependencias. Permite declarar dependencias explicitas que Terraform no puede inferir:
+Ya lo hemos visto en la sección de dependencias. Permite declarar dependencias explícitas que Terraform no puede inferir:
 
 ```hcl
 resource "aws_instance" "app" {
@@ -1107,11 +1107,11 @@ resource "aws_instance" "app" {
 }
 ```
 
-`depends_on` acepta una lista de referencias a otros resources o modulos.
+`depends_on` acepta una lista de referencias a otros resources o módulos.
 
 ### lifecycle
 
-El bloque `lifecycle` permite personalizar como Terraform gestiona el ciclo de vida de un resource:
+El bloque `lifecycle` permite personalizar cómo Terraform gestiona el ciclo de vida de un resource:
 
 ```hcl
 resource "aws_instance" "critical" {
@@ -1130,29 +1130,29 @@ Los argumentos disponibles en `lifecycle` son:
 
 | Argumento | Efecto |
 |-----------|--------|
-| `create_before_destroy` | Crea el recurso nuevo antes de destruir el anterior. Util para zero-downtime deployments. |
-| `prevent_destroy` | Terraform rechaza cualquier plan que implique destruir este recurso. Proteccion contra borrados accidentales. |
-| `ignore_changes` | Lista de atributos que Terraform debe ignorar al comparar el estado deseado con el real. Util cuando otros procesos modifican tags u otros atributos fuera de Terraform. |
+| `create_before_destroy` | Crea el recurso nuevo antes de destruir el anterior. Útil para zero-downtime deployments. |
+| `prevent_destroy` | Terraform rechaza cualquier plan que implique destruir este recurso. Protección contra borrados accidentales. |
+| `ignore_changes` | Lista de atributos que Terraform debe ignorar al comparar el estado deseado con el real. Útil cuando otros procesos modifican tags u otros atributos fuera de Terraform. |
 | `replace_triggered_by` | Fuerza el reemplazo del recurso cuando los recursos o atributos indicados cambian. |
 
 :::tip
-`prevent_destroy = true` es una practica recomendada para recursos criticos como bases de datos de produccion. Si alguien intenta un `terraform destroy` o modifica la configuracion de forma que implique destruccion, Terraform se detendra con un error antes de ejecutar nada.
+`prevent_destroy = true` es una práctica recomendada para recursos críticos como bases de datos de producción. Si alguien intenta un `terraform destroy` o modifica la configuración de forma que implique destrucción, Terraform se detendrá con un error antes de ejecutar nada.
 :::
 
 :::info
-El bloque `lifecycle` se profundiza en el capitulo de state, donde veremos como interactua con `terraform state mv`, imports y otros comandos de gestion de estado.
+El bloque `lifecycle` se profundiza en el capítulo de state, donde veremos cómo interactúa con `terraform state mv`, imports y otros comandos de gestión de estado.
 :::
 
 ---
 
 ## 6. Resumen
 
-Puntos clave de este capitulo:
+Puntos clave de este capítulo:
 
 - Los **providers** son plugins que conectan Terraform con APIs externas. Se configuran en el bloque `provider {}` y se versionan en `required_providers`.
-- Usa el operador `~>` para version constraints y versiona siempre el archivo `.terraform.lock.hcl`.
-- Los **resources** son los bloques que definen la infraestructura real. Cada resource tiene atributos configurados (los que tu defines) y atributos computados (los que devuelve el provider).
-- Las **dependencias implicitas** se crean automaticamente cuando un resource referencia atributos de otro. Usa `depends_on` solo como ultimo recurso.
+- Usa el operador `~>` para versión constraints y versiona siempre el archivo `.terraform.lock.hcl`.
+- Los **resources** son los bloques que definen la infraestructura real. Cada resource tiene atributos configurados (los que tú defines) y atributos computados (los que devuelve el provider).
+- Las **dependencias implícitas** se crean automáticamente cuando un resource referencia atributos de otro. Usa `depends_on` solo como último recurso.
 - Los **data sources** permiten consultar infraestructura existente sin gestionarla. Recuerda el prefijo `data.` en las referencias.
 - Los **meta-argumentos** (`count`, `for_each`, `provider`, `depends_on`, `lifecycle`) son funcionalidades del core de Terraform disponibles en cualquier resource, independientemente del provider.
 - Revisa siempre el `terraform plan` antes de aplicar, especialmente para detectar operaciones de destroy + create inesperadas.

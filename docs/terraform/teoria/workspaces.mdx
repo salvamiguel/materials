@@ -9,21 +9,21 @@ import { CloudTab } from '@site/src/components/shared/CloudTabs';
 
 # Workspaces y patrones avanzados
 
-En esta unidad vamos a explorar las capacidades avanzadas de Terraform que nos permiten escalar nuestras configuraciones de infraestructura. Desde la gestion de multiples entornos con workspaces hasta la integracion en pipelines de CI/CD, estos conceptos son fundamentales para trabajar con Terraform en entornos profesionales.
+En esta unidad vamos a explorar las capacidades avanzadas de Terraform que nos permiten escalar nuestras configuraciones de infraestructura. Desde la gestión de múltiples entornos con workspaces hasta la integración en pipelines de CI/CD, estos conceptos son fundamentales para trabajar con Terraform en entornos profesionales.
 
 ---
 
 ## 1. Workspaces
 
-### Que son los workspaces
+### Qué son los workspaces
 
-Un workspace en Terraform es una **instancia aislada de state** dentro del mismo directorio de configuracion. Cuando ejecutamos `terraform init` por primera vez, Terraform crea automaticamente un workspace llamado `default`. Cada workspace mantiene su propio fichero de estado, lo que significa que los recursos gestionados en un workspace son completamente independientes de los gestionados en otro.
+Un workspace en Terraform es una **instancia aislada de state** dentro del mismo directorio de configuración. Cuando ejecutamos `terraform init` por primera vez, Terraform crea automáticamente un workspace llamado `default`. Cada workspace mantiene su propio fichero de estado, lo que significa que los recursos gestionados en un workspace son completamente independientes de los gestionados en otro.
 
-El caso de uso principal de los workspaces es **gestionar multiples entornos** (dev, staging, prod) utilizando exactamente la misma configuracion de Terraform, pero con diferentes valores y un state separado para cada uno.
+El caso de uso principal de los workspaces es **gestionar múltiples entornos** (dev, staging, prod) utilizando exactamente la misma configuración de Terraform, pero con diferentes valores y un state separado para cada uno.
 
-### Comandos de gestion
+### Comandos de gestión
 
-Los comandos basicos para trabajar con workspaces son los siguientes:
+Los comandos básicos para trabajar con workspaces son los siguientes:
 
 ```bash
 # Listar todos los workspaces disponibles
@@ -42,19 +42,19 @@ terraform workspace show
 terraform workspace delete staging
 ```
 
-Cuando creamos un nuevo workspace, Terraform genera un subdirectorio dentro de `terraform.tfstate.d/` con el nombre del workspace. El workspace `default` utiliza el fichero `terraform.tfstate` en la raiz del directorio.
+Cuando creamos un nuevo workspace, Terraform genera un subdirectorio dentro de `terraform.tfstate.d/` con el nombre del workspace. El workspace `default` utiliza el fichero `terraform.tfstate` en la raíz del directorio.
 
 ### La variable terraform.workspace
 
-Terraform expone una variable especial llamada `terraform.workspace` que contiene el nombre del workspace actualmente seleccionado. Esta variable es extremadamente util para parametrizar nuestras configuraciones segun el entorno.
+Terraform expone una variable especial llamada `terraform.workspace` que contiene el nombre del workspace actualmente seleccionado. Esta variable es extremadamente útil para parametrizar nuestras configuraciones según el entorno.
 
 import WorkspacesSim from '@site/src/components/demos/terraform/WorkspacesSim';
 
 <WorkspacesSim />
 
-### Ejemplo practico: parametrizar entornos con workspaces
+### Ejemplo práctico: parametrizar entornos con workspaces
 
-Veamos un ejemplo completo donde utilizamos el workspace para determinar el tamano de las instancias, el numero de replicas y las etiquetas de los recursos:
+Veamos un ejemplo completo donde utilizamos el workspace para determinar el tamaño de las instancias, el número de réplicas y las etiquetas de los recursos:
 
 <CloudTabs>
 <CloudTab provider="aws">
@@ -222,7 +222,7 @@ resource "azurerm_mssql_database" "main" {
 </CloudTab>
 </CloudTabs>
 
-Con esta configuracion, el flujo de trabajo seria:
+Con esta configuración, el flujo de trabajo sería:
 
 ```bash
 # Desplegar en desarrollo
@@ -239,29 +239,29 @@ terraform apply
 ### Workspaces vs directorios separados
 
 :::info[Workspaces vs directorios separados]
-Ambas estrategias son validas para gestionar multiples entornos, pero tienen trade-offs diferentes:
+Ambas estrategias son válidas para gestionar múltiples entornos, pero tienen trade-offs diferentes:
 
 **Workspaces** son ideales cuando:
-- La configuracion es identica entre entornos (solo cambian variables).
-- El equipo es pequeno y la coordinacion es sencilla.
-- Se quiere evitar duplicacion de codigo.
+- La configuración es idéntica entre entornos (solo cambian variables).
+- El equipo es pequeño y la coordinación es sencilla.
+- Se quiere evitar duplicación de código.
 
 **Directorios separados** son preferibles cuando:
 - Los entornos tienen diferencias significativas en arquitectura.
 - Se necesita control granular de permisos por entorno.
 - Se quiere poder hacer `plan` o `apply` en un entorno sin riesgo de afectar otro.
-- El equipo es grande y multiples personas trabajan en paralelo.
+- El equipo es grande y múltiples personas trabajan en paralelo.
 
-En la practica, muchos equipos profesionales prefieren directorios separados con modulos compartidos, ya que ofrece mayor aislamiento y reduce el riesgo de errores.
+En la práctica, muchos equipos profesionales prefieren directorios separados con módulos compartidos, ya que ofrece mayor aislamiento y reduce el riesgo de errores.
 :::
 
 ---
 
 ## 2. for_each
 
-### Iteracion sobre maps y sets
+### Iteración sobre maps y sets
 
-El meta-argumento `for_each` permite crear multiples instancias de un recurso iterando sobre un `map` o un `set` de strings. A diferencia de `count`, cada instancia se identifica por su clave, no por un indice numerico, lo que proporciona estabilidad ante cambios en la coleccion.
+El meta-argumento `for_each` permite crear múltiples instancias de un recurso iterando sobre un `map` o un `set` de strings. A diferencia de `count`, cada instancia se identifica por su clave, no por un índice numérico, lo que proporciona estabilidad ante cambios en la colección.
 
 Dentro del bloque del recurso, tenemos acceso a dos valores especiales:
 
@@ -474,15 +474,15 @@ resource "aws_iam_user" "team" {
 
 ### Diferencia entre for_each y count
 
-| Caracteristica | `count` | `for_each` |
+| Característica | `count` | `for_each` |
 |---|---|---|
-| Identificador | Indice numerico (0, 1, 2...) | Clave del map o valor del set |
+| Identificador | Índice numérico (0, 1, 2...) | Clave del map o valor del set |
 | Reordenamiento | Puede causar destroy/create | Estable ante cambios |
 | Referencia | `resource.name[0]` | `resource.name["key"]` |
-| Uso ideal | Recursos identicos, condicionales | Recursos con identidad propia |
+| Uso ideal | Recursos idénticos, condicionales | Recursos con identidad propia |
 
 :::tip[Preferir for_each sobre count]
-Siempre que los elementos tengan **identidad propia** (un nombre, un ID, un rol), usa `for_each` en lugar de `count`. Con `count`, si eliminamos el segundo elemento de una lista de cinco, los elementos 3, 4 y 5 cambian de indice, lo que provoca que Terraform destruya y recree esos recursos innecesariamente. Con `for_each`, solo se elimina el recurso correspondiente a la clave eliminada.
+Siempre que los elementos tengan **identidad propia** (un nombre, un ID, un rol), usa `for_each` en lugar de `count`. Con `count`, si eliminamos el segundo elemento de una lista de cinco, los elementos 3, 4 y 5 cambian de índice, lo que provoca que Terraform destruya y recree esos recursos innecesariamente. Con `for_each`, solo se elimina el recurso correspondiente a la clave eliminada.
 :::
 
 ---
@@ -491,7 +491,7 @@ Siempre que los elementos tengan **identidad propia** (un nombre, un ID, un rol)
 
 ### Crear N instancias de un recurso
 
-El meta-argumento `count` es la forma mas sencilla de crear multiples copias de un recurso. Terraform asigna un indice numerico (empezando en 0) a cada instancia.
+El meta-argumento `count` es la forma más sencilla de crear múltiples copias de un recurso. Terraform asigna un índice numérico (empezando en 0) a cada instancia.
 
 ```hcl
 variable "instance_count" {
@@ -520,9 +520,9 @@ output "all_instance_ips" {
 }
 ```
 
-### Patron condicional con count
+### Patrón condicional con count
 
-Uno de los usos mas frecuentes de `count` es la **creacion condicional** de recursos. Si `count = 0`, el recurso no se crea. Si `count = 1`, se crea una unica instancia:
+Uno de los usos más frecuentes de `count` es la **creación condicional** de recursos. Si `count = 0`, el recurso no se crea. Si `count = 1`, se crea una única instancia:
 
 ```hcl
 variable "create_monitoring" {
@@ -552,7 +552,7 @@ output "dashboard_arn" {
 
 Es importante entender las limitaciones de `count` para evitar problemas:
 
-1. **Dependencia del indice**: los recursos se identifican por su posicion numerica. Si eliminamos un elemento del medio de la lista, todos los indices posteriores cambian.
+1. **Dependencia del índice**: los recursos se identifican por su posición numérica. Si eliminamos un elemento del medio de la lista, todos los índices posteriores cambian.
 
 2. **Reordering causa destroy/create**: cambiar el orden de los elementos puede provocar que Terraform destruya y recree recursos innecesariamente, lo cual es particularmente peligroso con bases de datos o recursos con datos persistentes.
 
@@ -574,7 +574,7 @@ resource "aws_instance" "servers" {
 }
 ```
 
-En este caso, seria mucho mejor usar `for_each` con `toset(var.server_names)`.
+En este caso, sería mucho mejor usar `for_each` con `toset(var.server_names)`.
 
 ---
 
@@ -582,9 +582,9 @@ En este caso, seria mucho mejor usar `for_each` con `toset(var.server_names)`.
 
 ### Generar bloques repetidos dentro de un recurso
 
-Los dynamic blocks permiten generar bloques de configuracion repetidos dentro de un recurso de forma programatica. Son utiles cuando un recurso necesita multiples bloques del mismo tipo (como reglas de un security group, tags, o configuraciones de disco).
+Los dynamic blocks permiten generar bloques de configuración repetidos dentro de un recurso de forma programática. Son útiles cuando un recurso necesita múltiples bloques del mismo tipo (como reglas de un security group, tags, o configuraciones de disco).
 
-### Ejemplo: security group con multiples reglas de ingress
+### Ejemplo: security group con múltiples reglas de ingress
 
 <CloudTabs>
 <CloudTab provider="aws">
@@ -756,7 +756,7 @@ resource "azurerm_network_security_group" "main" {
 </CloudTab>
 </CloudTabs>
 
-### Anatomia de un dynamic block
+### Anatomía de un dynamic block
 
 La estructura de un dynamic block tiene tres partes:
 
@@ -814,7 +814,7 @@ resource "aws_lb" "main" {
 ```
 
 :::warning[No abusar de dynamic blocks]
-Los dynamic blocks son una herramienta poderosa, pero su uso excesivo puede reducir significativamente la **legibilidad** de la configuracion. Antes de usar un dynamic block, preguntate si la repeticion manual de los bloques seria mas clara. Reserva los dynamic blocks para casos donde la lista de bloques es verdaderamente variable o extensa. Recuerda que el codigo de infraestructura debe ser facil de auditar.
+Los dynamic blocks son una herramienta poderosa, pero su uso excesivo puede reducir significativamente la **legibilidad** de la configuración. Antes de usar un dynamic block, pregúntate si la repetición manual de los bloques sería más clara. Reserva los dynamic blocks para casos donde la lista de bloques es verdaderamente variable o extensa. Recuerda que el código de infraestructura debe ser fácil de auditar.
 :::
 
 ---
@@ -823,7 +823,7 @@ Los dynamic blocks son una herramienta poderosa, pero su uso excesivo puede redu
 
 ### Operador ternario
 
-Terraform soporta el operador ternario clasico para evaluar condiciones inline:
+Terraform soporta el operador ternario clásico para evaluar condiciones inline:
 
 ```hcl
 # Sintaxis: condicion ? valor_si_true : valor_si_false
@@ -831,9 +831,9 @@ Terraform soporta el operador ternario clasico para evaluar condiciones inline:
 instance_type = var.environment == "prod" ? "t3.large" : "t3.micro"
 ```
 
-### Ejemplos practicos
+### Ejemplos prácticos
 
-Las expresiones condicionales son especialmente utiles para ajustar la configuracion segun el entorno o las necesidades:
+Las expresiones condicionales son especialmente útiles para ajustar la configuración según el entorno o las necesidades:
 
 ```hcl
 variable "environment" {
@@ -869,7 +869,7 @@ resource "aws_instance" "app" {
 
 ### Combinar condicionales con count
 
-El patron mas comun es usar el operador ternario con `count` para crear o no un recurso:
+El patrón más común es usar el operador ternario con `count` para crear o no un recurso:
 
 ```hcl
 variable "environment" {
@@ -895,7 +895,7 @@ resource "aws_cloudfront_distribution" "cdn" {
 }
 ```
 
-### Condicionales con cadenas vacias y null
+### Condicionales con cadenas vacías y null
 
 ```hcl
 # Usar null para omitir argumentos opcionales
@@ -972,7 +972,7 @@ concat(["a", "b"], ["c", "d"])          # ["a", "b", "c", "d"]
 [for s in ["a", "b", "c", "d"] : s if s != "c"]  # ["a", "b", "d"]
 ```
 
-### Funciones numericas
+### Funciones numéricas
 
 ```hcl
 min(5, 3, 8, 1)     # 1
@@ -1040,9 +1040,9 @@ timestamp()                          # "2026-03-29T10:30:00Z"
 formatdate("DD MMM YYYY hh:mm ZZZ", timestamp())  # "29 Mar 2026 10:30 UTC"
 ```
 
-### Ejemplo practico con templatefile
+### Ejemplo práctico con templatefile
 
-El uso de `templatefile` es uno de los patrones mas utiles. Permite separar scripts complejos de la configuracion de Terraform:
+El uso de `templatefile` es uno de los patrones más útiles. Permite separar scripts complejos de la configuración de Terraform:
 
 ```hcl
 # Fichero: userdata.sh.tpl
@@ -1155,7 +1155,7 @@ resource "azurerm_linux_virtual_machine" "web" {
 
 ### terraform console
 
-El comando `terraform console` abre una sesion interactiva donde podemos probar funciones y expresiones antes de incluirlas en nuestra configuracion:
+El comando `terraform console` abre una sesión interactiva donde podemos probar funciones y expresiones antes de incluirlas en nuestra configuración:
 
 ```bash
 $ terraform console
@@ -1182,12 +1182,12 @@ Este comando es invaluable para experimentar con funciones complejas como `cidrs
 
 ## 7. Provisioners
 
-### Que son los provisioners
+### Qué son los provisioners
 
-Los provisioners son mecanismos que permiten **ejecutar scripts o comandos** en recursos despues de su creacion (o antes de su destruccion). Terraform ofrece dos tipos principales:
+Los provisioners son mecanismos que permiten **ejecutar scripts o comandos** en recursos después de su creación (o antes de su destrucción). Terraform ofrece dos tipos principales:
 
-- **local-exec**: ejecuta un comando en la maquina donde se ejecuta Terraform.
-- **remote-exec**: ejecuta un comando en el recurso remoto via SSH o WinRM.
+- **local-exec**: ejecuta un comando en la máquina donde se ejecuta Terraform.
+- **remote-exec**: ejecuta un comando en el recurso remoto vía SSH o WinRM.
 
 ### Ejemplo con local-exec
 
@@ -1304,7 +1304,7 @@ resource "aws_instance" "web" {
 }
 ```
 
-### Provisioners en la destruccion
+### Provisioners en la destrucción
 
 Se puede configurar un provisioner para que se ejecute cuando el recurso se destruye:
 
@@ -1321,7 +1321,7 @@ resource "aws_instance" "web" {
 
 ### Control de errores
 
-Por defecto, si un provisioner falla, Terraform marca el recurso como **tainted** y lo intentara recrear en el siguiente `apply`. Se puede cambiar este comportamiento:
+Por defecto, si un provisioner falla, Terraform marca el recurso como **tainted** y lo intentará recrear en el siguiente `apply`. Se puede cambiar este comportamiento:
 
 ```hcl
 provisioner "local-exec" {
@@ -1330,60 +1330,60 @@ provisioner "local-exec" {
 }
 ```
 
-:::danger[Los provisioners son un ULTIMO RECURSO]
-HashiCorp recomienda explicitamente **evitar los provisioners** siempre que sea posible. Las razones son:
+:::danger[Los provisioners son un ÚLTIMO RECURSO]
+HashiCorp recomienda explícitamente **evitar los provisioners** siempre que sea posible. Las razones son:
 
-1. **No son declarativos**: rompen el modelo declarativo de Terraform. No se puede hacer un `plan` de lo que ejecutara un provisioner.
-2. **No son idempotentes**: si un script falla a mitad de ejecucion y se reintenta, puede dejar el sistema en un estado inconsistente.
-3. **Acoplan la configuracion**: mezclan la provision de infraestructura con la configuracion del software, que deberian ser responsabilidades separadas.
-4. **Dificultan la depuracion**: los errores en provisioners son mas dificiles de diagnosticar y reproducir.
+1. **No son declarativos**: rompen el modelo declarativo de Terraform. No se puede hacer un `plan` de lo que ejecutará un provisioner.
+2. **No son idempotentes**: si un script falla a mitad de ejecución y se reintenta, puede dejar el sistema en un estado inconsistente.
+3. **Acoplan la configuración**: mezclan la provisión de infraestructura con la configuración del software, que deberían ser responsabilidades separadas.
+4. **Dificultan la depuración**: los errores en provisioners son más difíciles de diagnosticar y reproducir.
 :::
 
 ### Alternativas a los provisioners
 
-Para la gran mayoria de casos, existen alternativas superiores:
+Para la gran mayoría de casos, existen alternativas superiores:
 
 | Necesidad | Alternativa recomendada |
 |---|---|
 | Configurar una instancia EC2 al arrancar | `user_data` con cloud-init |
 | Crear una AMI preconfigurada | Packer |
-| Configuracion post-provision | Ansible, Chef, Puppet |
-| Ejecutar un script local tras crear un recurso | `null_resource` + `local-exec` (si no hay otra opcion) |
+| Configuración post-provision | Ansible, Chef, Puppet |
+| Ejecutar un script local tras crear un recurso | `null_resource` + `local-exec` (si no hay otra opción) |
 | Notificar a un sistema externo | Webhooks o integraciones nativas del provider |
 
-### Cuando es aceptable usar provisioners
+### Cuándo es aceptable usar provisioners
 
-Los provisioners son aceptables en escenarios muy especificos:
+Los provisioners son aceptables en escenarios muy específicos:
 
-- **Bootstrap inicial** de un cluster donde no hay otra forma de inyectar la configuracion.
-- **Integracion con herramientas legacy** que no tienen provider de Terraform.
-- **Pruebas de concepto rapidas** donde la velocidad de desarrollo importa mas que la robustez.
+- **Bootstrap inicial** de un cluster donde no hay otra forma de inyectar la configuración.
+- **Integración con herramientas legacy** que no tienen provider de Terraform.
+- **Pruebas de concepto rápidas** donde la velocidad de desarrollo importa más que la robustez.
 
-Incluso en estos casos, se deberia planificar la migracion a una solucion mas robusta.
+Incluso en estos casos, se debería planificar la migración a una solución más robusta.
 
 ---
 
 ## 8. Terraform en CI/CD
 
-### Por que integrar Terraform en pipelines
+### Por qué integrar Terraform en pipelines
 
-Ejecutar Terraform manualmente desde la maquina de un desarrollador presenta varios problemas en entornos profesionales:
+Ejecutar Terraform manualmente desde la máquina de un desarrollador presenta varios problemas en entornos profesionales:
 
 - **Inconsistencia**: diferentes desarrolladores pueden tener diferentes versiones de Terraform o providers.
-- **Falta de auditoria**: no queda registro de quien aplico que cambio y cuando.
-- **Sin revision**: los cambios se aplican sin que otro miembro del equipo los revise.
-- **Riesgo de errores**: un `terraform apply` accidental en produccion puede ser catastrofico.
+- **Falta de auditoría**: no queda registro de quién aplicó qué cambio y cuándo.
+- **Sin revisión**: los cambios se aplican sin que otro miembro del equipo los revise.
+- **Riesgo de errores**: un `terraform apply` accidental en producción puede ser catastrófico.
 
-La integracion en CI/CD resuelve todos estos problemas al proporcionar un entorno controlado, reproducible y auditable.
+La integración en CI/CD resuelve todos estos problemas al proporcionar un entorno controlado, reproducible y auditable.
 
-### Pipeline tipico
+### Pipeline típico
 
-El flujo estandar de Terraform en un pipeline de CI/CD sigue estos pasos:
+El flujo estándar de Terraform en un pipeline de CI/CD sigue estos pasos:
 
-1. **fmt** -- Verificar que el codigo esta formateado correctamente.
-2. **validate** -- Validar la sintaxis y la configuracion.
-3. **plan** -- Generar y mostrar el plan de ejecucion.
-4. **approval** -- (Solo en produccion) Aprobacion manual por parte del equipo.
+1. **fmt** -- Verificar que el código está formateado correctamente.
+2. **validate** -- Validar la sintaxis y la configuración.
+3. **plan** -- Generar y mostrar el plan de ejecución.
+4. **approval** -- (Solo en producción) Aprobación manual por parte del equipo.
 5. **apply** -- Aplicar los cambios.
 
 ### Ejemplo completo con GitHub Actions
@@ -1469,8 +1469,8 @@ jobs:
         run: terraform apply plan.tfplan
 ```
 
-:::tip[Aprobacion manual en produccion]
-En entornos de produccion, es fundamental anadir un paso de aprobacion manual antes del `apply`. En GitHub Actions, esto se puede conseguir con **environments** que requieran revision:
+:::tip[Aprobación manual en producción]
+En entornos de producción, es fundamental añadir un paso de aprobación manual antes del `apply`. En GitHub Actions, esto se puede conseguir con **environments** que requieran revisión:
 
 ```yaml
 jobs:
@@ -1486,16 +1486,16 @@ jobs:
       # ... pasos de apply
 ```
 
-Configura el environment `production` en los settings del repositorio para requerir la aprobacion de uno o mas revisores antes de que el job se ejecute.
+Configura el environment `production` en los settings del repositorio para requerir la aprobación de uno o más revisores antes de que el job se ejecute.
 :::
 
-### Gestion de secrets en CI/CD
+### Gestión de secrets en CI/CD
 
-La gestion segura de credenciales es critica cuando Terraform se ejecuta en un pipeline. Existen varias estrategias:
+La gestión segura de credenciales es crítica cuando Terraform se ejecuta en un pipeline. Existen varias estrategias:
 
 **OIDC (OpenID Connect) -- Recomendado**
 
-La forma mas segura de autenticarse con proveedores cloud desde GitHub Actions es mediante OIDC. No se almacenan credenciales de larga duracion:
+La forma más segura de autenticarse con proveedores cloud desde GitHub Actions es mediante OIDC. No se almacenan credenciales de larga duración:
 
 ```yaml
 - name: Configure AWS Credentials
@@ -1522,45 +1522,45 @@ Para valores que no pueden usar OIDC, GitHub Actions permite definir secrets a n
 Recuerda que el state de Terraform puede contener valores sensibles en texto plano. Es imprescindible:
 
 - Usar un backend remoto con cifrado (S3 + KMS, por ejemplo).
-- Restringir el acceso al state con politicas IAM.
+- Restringir el acceso al state con políticas IAM.
 - No guardar el state en el repositorio.
 
 ---
 
 ## 9. Patrones empresariales
 
-### Workspaces vs directorios: cuando usar cada uno
+### Workspaces vs directorios: cuándo usar cada uno
 
-La decision entre workspaces y directorios separados por entorno es una de las mas debatidas en la comunidad de Terraform:
+La decisión entre workspaces y directorios separados por entorno es una de las más debatidas en la comunidad de Terraform:
 
 **Usar workspaces cuando:**
 
-- Los entornos son practicamente identicos y solo difieren en tamanos o cantidades.
-- Se trabaja con un equipo pequeno donde la coordinacion es sencilla.
-- Se quiere un flujo de trabajo simple sin duplicacion de codigo.
+- Los entornos son prácticamente idénticos y solo difieren en tamaños o cantidades.
+- Se trabaja con un equipo pequeño donde la coordinación es sencilla.
+- Se quiere un flujo de trabajo simple sin duplicación de código.
 
 **Usar directorios separados cuando:**
 
-- Los entornos tienen diferencias arquitectonicas significativas (por ejemplo, produccion tiene multi-AZ y dev no).
+- Los entornos tienen diferencias arquitectónicas significativas (por ejemplo, producción tiene multi-AZ y dev no).
 - Se necesitan diferentes niveles de acceso por entorno.
 - Se quiere poder hacer deploy de un entorno sin riesgo de afectar otros.
-- El equipo es grande y multiples ingenieros trabajan simultaneamente.
+- El equipo es grande y múltiples ingenieros trabajan simultáneamente.
 
 ### Monorepo vs multi-repo
 
-**Monorepo** (toda la infraestructura en un unico repositorio):
+**Monorepo** (toda la infraestructura en un único repositorio):
 
-- Ventajas: vision global, refactoring mas facil, dependencias entre modulos mas claras.
-- Desventajas: el repositorio puede crecer mucho, los pipelines de CI/CD son mas complejos, los permisos son menos granulares.
+- Ventajas: visión global, refactoring más fácil, dependencias entre módulos más claras.
+- Desventajas: el repositorio puede crecer mucho, los pipelines de CI/CD son más complejos, los permisos son menos granulares.
 
 **Multi-repo** (un repositorio por componente o equipo):
 
 - Ventajas: ownership claro, pipelines independientes, permisos granulares.
-- Desventajas: duplicacion de configuracion, mas dificil mantener la consistencia, dependencias entre repos son mas complicadas.
+- Desventajas: duplicación de configuración, más difícil mantener la consistencia, dependencias entre repos son más complicadas.
 
 ### Estructura de directorio recomendada
 
-Para proyectos de tamano mediano-grande, la siguiente estructura ofrece un buen equilibrio entre modularidad y simplicidad:
+Para proyectos de tamaño mediano-grande, la siguiente estructura ofrece un buen equilibrio entre modularidad y simplicidad:
 
 ```
 infrastructure/
@@ -1606,11 +1606,11 @@ infrastructure/
 
 Los principios clave de esta estructura son:
 
-1. **Modulos en `/modules`**: contienen la logica reutilizable. No tienen valores hardcodeados; todo se recibe via variables.
-2. **Entornos en `/environments`**: cada entorno tiene su propia configuracion que instancia los modulos con los valores apropiados. Cada entorno tiene su propio state.
+1. **Módulos en `/modules`**: contienen la lógica reutilizable. No tienen valores hardcodeados; todo se recibe vía variables.
+2. **Entornos en `/environments`**: cada entorno tiene su propia configuración que instancia los módulos con los valores apropiados. Cada entorno tiene su propio state.
 3. **Global en `/global`**: recursos que son compartidos entre todos los entornos (IAM roles, DNS zones, etc.). Tienen su propio state separado.
 
-Un ejemplo de como un entorno instancia los modulos:
+Un ejemplo de cómo un entorno instancia los módulos:
 
 ```hcl
 # environments/dev/main.tf
@@ -1645,21 +1645,21 @@ module "rds" {
 }
 ```
 
-:::info[No hay una unica respuesta correcta]
-La estructura ideal depende del contexto de cada equipo: tamano del equipo, complejidad de la infraestructura, requisitos de seguridad y normativa, y herramientas complementarias que se utilicen. Lo importante es elegir una estructura, documentarla, y mantener la consistencia a lo largo del tiempo. Es mejor una estructura simple que todo el equipo entiende que una estructura "perfecta" que nadie sigue.
+:::info[No hay una única respuesta correcta]
+La estructura ideal depende del contexto de cada equipo: tamaño del equipo, complejidad de la infraestructura, requisitos de seguridad y normativa, y herramientas complementarias que se utilicen. Lo importante es elegir una estructura, documentarla, y mantener la consistencia a lo largo del tiempo. Es mejor una estructura simple que todo el equipo entiende que una estructura "perfecta" que nadie sigue.
 :::
 
 ### Checklist para proyectos empresariales
 
-Independientemente de la estructura elegida, un proyecto de Terraform empresarial deberia cumplir con estos requisitos:
+Independientemente de la estructura elegida, un proyecto de Terraform empresarial debería cumplir con estos requisitos:
 
 - **Backend remoto** con cifrado y locking (S3 + DynamoDB, Terraform Cloud, etc.).
 - **State separado** por entorno y por componente de infraestructura.
-- **Modulos versionados** para garantizar la reproducibilidad.
-- **Pipeline de CI/CD** que ejecute plan en PRs y apply solo tras aprobacion.
-- **Politica de branching** clara (por ejemplo, trunk-based development).
+- **Módulos versionados** para garantizar la reproducibilidad.
+- **Pipeline de CI/CD** que ejecute plan en PRs y apply solo tras aprobación.
+- **Política de branching** clara (por ejemplo, trunk-based development).
 - **Code review obligatorio** para cualquier cambio en infraestructura.
-- **Documentacion** de decisiones arquitectonicas y convenciones del equipo.
+- **Documentación** de decisiones arquitectónicas y convenciones del equipo.
 
 ---
 
@@ -1667,22 +1667,22 @@ Independientemente de la estructura elegida, un proyecto de Terraform empresaria
 
 Los conceptos cubiertos en esta unidad son fundamentales para trabajar con Terraform a escala profesional:
 
-- **Workspaces** permiten gestionar multiples entornos con la misma configuracion, cada uno con su propio state aislado. Son utiles para casos simples, pero los directorios separados ofrecen mayor control en proyectos complejos.
+- **Workspaces** permiten gestionar múltiples entornos con la misma configuración, cada uno con su propio state aislado. Son útiles para casos simples, pero los directorios separados ofrecen mayor control en proyectos complejos.
 
-- **for_each** es la forma preferida de crear multiples instancias de un recurso cuando los elementos tienen identidad propia. Proporciona estabilidad ante cambios en la coleccion, al contrario que `count`.
+- **for_each** es la forma preferida de crear múltiples instancias de un recurso cuando los elementos tienen identidad propia. Proporciona estabilidad ante cambios en la colección, al contrario que `count`.
 
-- **count** es util para crear N copias identicas de un recurso y, especialmente, para el patron condicional `count = condition ? 1 : 0`.
+- **count** es útil para crear N copias idénticas de un recurso y, especialmente, para el patrón condicional `count = condition ? 1 : 0`.
 
-- **Dynamic blocks** permiten generar bloques repetidos dentro de un recurso de forma programatica, aunque no se debe abusar de ellos por razones de legibilidad.
+- **Dynamic blocks** permiten generar bloques repetidos dentro de un recurso de forma programática, aunque no se debe abusar de ellos por razones de legibilidad.
 
-- **Expresiones condicionales** con el operador ternario permiten adaptar la configuracion segun variables o el entorno.
+- **Expresiones condicionales** con el operador ternario permiten adaptar la configuración según variables o el entorno.
 
-- **Funciones built-in** ofrecen un amplio repertorio para manipular strings, colecciones, numeros, ficheros y datos de red. El comando `terraform console` es invaluable para experimentar con ellas.
+- **Funciones built-in** ofrecen un amplio repertorio para manipular strings, colecciones, números, ficheros y datos de red. El comando `terraform console` es invaluable para experimentar con ellas.
 
 - **Provisioners** ejecutan scripts en los recursos, pero deben evitarse en favor de alternativas como user_data, Packer o Ansible.
 
-- **CI/CD** proporciona consistencia, auditoria y control de cambios. Un pipeline tipico sigue el flujo fmt, validate, plan, approval, apply.
+- **CI/CD** proporciona consistencia, auditoría y control de cambios. Un pipeline típico sigue el flujo fmt, validate, plan, approval, apply.
 
-- **Patrones empresariales** como la estructura de directorios con modulos compartidos, el uso de backends remotos y las politicas de code review son esenciales para gestionar infraestructura a escala.
+- **Patrones empresariales** como la estructura de directorios con módulos compartidos, el uso de backends remotos y las políticas de code review son esenciales para gestionar infraestructura a escala.
 
-Estos patrones y herramientas, combinados con los fundamentos de las unidades anteriores, proporcionan una base solida para gestionar infraestructura como codigo en entornos reales de produccion.
+Estos patrones y herramientas, combinados con los fundamentos de las unidades anteriores, proporcionan una base sólida para gestionar infraestructura como código en entornos reales de producción.

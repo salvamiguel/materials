@@ -135,12 +135,16 @@ Vamos a construir un módulo completo que despliega una **webapp** compuesta por
 import LabActions from '@site/src/components/shared/LabActions';
 
 <LabActions
-  repo="https://github.com/salvamiguel/materials"
+  repo="https://github.com/salvamiguel/tf-first-module-example"
   title="Explora el código del ejemplo"
   codespace={false}
   devcontainer={true}
-  fork={false}
+  fork={true}
 />
+
+:::info Estructura del repositorio
+La rama **main** contiene el esqueleto del proyecto con la estructura base del módulo. A partir de ahí, cada cloud provider tiene su propia rama con la implementación específica: `aws`, `gcp` y `azure`.
+:::
 
 ### modules/webapp/variables.tf
 

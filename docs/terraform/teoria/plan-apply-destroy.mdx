@@ -11,7 +11,7 @@ import { CloudTab } from '@site/src/components/shared/CloudTabs';
 
 ## El flujo de trabajo de Terraform
 
-Terraform sigue un flujo de trabajo declarativo: describes el estado deseado de tu infraestructura en archivos de configuracion `.tf`, y Terraform se encarga de calcular que cambios son necesarios para alcanzar ese estado. No le dices a Terraform "crea un servidor", sino "quiero que exista un servidor con estas caracteristicas". Si ya existe, no hace nada. Si no existe, lo crea. Si ha cambiado, lo actualiza.
+Terraform sigue un flujo de trabajo declarativo: describes el estado deseado de tu infraestructura en archivos de configuración `.tf`, y Terraform se encarga de calcular qué cambios son necesarios para alcanzar ese estado. No le dices a Terraform "crea un servidor", sino "quiero que exista un servidor con estas características". Si ya existe, no hace nada. Si no existe, lo crea. Si ha cambiado, lo actualiza.
 
 El ciclo de vida completo de un proyecto Terraform se resume en este flujo:
 
@@ -25,56 +25,56 @@ graph LR
     E -->|No| F["Destroy<br/>Eliminar infraestructura"]
 ```
 
-Cada paso tiene un proposito claro y un comando asociado. Vamos a recorrerlos uno a uno con detalle.
+Cada paso tiene un propósito claro y un comando asociado. Vamos a recorrerlos uno a uno con detalle.
 
 ---
 
 ## terraform init
 
-### Que hace
+### Qué hace
 
 `terraform init` es el primer comando que ejecutas en cualquier proyecto Terraform. Es el equivalente a `npm install` o `pip install -r requirements.txt`: prepara el directorio de trabajo descargando todo lo necesario.
 
 Concretamente, `terraform init`:
 
 1. **Descarga los providers** declarados en los bloques `required_providers` o inferidos de los resources.
-2. **Configura el backend** donde se almacenara el state (local por defecto, o remoto si esta configurado).
-3. **Descarga modulos** referenciados en la configuracion.
+2. **Configura el backend** donde se almacenará el state (local por defecto, o remoto si está configurado).
+3. **Descarga módulos** referenciados en la configuración.
 4. **Genera el lockfile** `.terraform.lock.hcl` para fijar las versiones exactas de los providers.
 
-### Cuando ejecutarlo
+### Cuándo ejecutarlo
 
 Debes ejecutar `terraform init` en estas situaciones:
 
 - **Primera vez** que trabajas con un proyecto Terraform (o al clonarlo).
-- **Al anadir o cambiar un provider** (por ejemplo, anadir el provider de AWS).
-- **Al cambiar la configuracion del backend** (por ejemplo, migrar de local a S3).
-- **Al anadir o actualizar un modulo** externo.
+- **Al añadir o cambiar un provider** (por ejemplo, añadir el provider de AWS).
+- **Al cambiar la configuración del backend** (por ejemplo, migrar de local a S3).
+- **Al añadir o actualizar un módulo** externo.
 
-### Flags utiles
+### Flags útiles
 
-| Flag | Descripcion |
+| Flag | Descripción |
 |------|-------------|
-| `-upgrade` | Actualiza providers y modulos a la ultima version compatible con las constraints |
-| `-reconfigure` | Reconfigura el backend descartando cualquier configuracion previa |
-| `-backend-config=KEY=VALUE` | Pasa parametros de backend desde la linea de comandos (util para CI/CD) |
+| `-upgrade` | Actualiza providers y módulos a la última versión compatible con las constraints |
+| `-reconfigure` | Reconfigura el backend descartando cualquier configuración previa |
+| `-backend-config=KEY=VALUE` | Pasa parámetros de backend desde la línea de comandos (útil para CI/CD) |
 | `-migrate-state` | Migra el state al nuevo backend configurado |
 
 ### El directorio .terraform/ y el lockfile
 
-Al ejecutar `init`, Terraform crea un directorio `.terraform/` en la raiz del proyecto. Este directorio contiene:
+Al ejecutar `init`, Terraform crea un directorio `.terraform/` en la raíz del proyecto. Este directorio contiene:
 
 - Los binarios de los providers descargados.
-- Cache de modulos remotos.
-- Configuracion del backend.
+- Cache de módulos remotos.
+- Configuración del backend.
 
-Tambien genera (o actualiza) el archivo `.terraform.lock.hcl`, que registra las versiones exactas y los hashes de los providers descargados.
+También genera (o actualiza) el archivo `.terraform.lock.hcl`, que registra las versiones exactas y los hashes de los providers descargados.
 
 :::tip
-Commitea siempre `.terraform.lock.hcl` a tu repositorio Git. Esto garantiza que todos los miembros del equipo usen exactamente las mismas versiones de providers. En cambio, anade `.terraform/` a tu `.gitignore` -- contiene binarios grandes y configuracion local que no debe compartirse.
+Commitea siempre `.terraform.lock.hcl` a tu repositorio Git. Esto garantiza que todos los miembros del equipo usen exactamente las mismas versiones de providers. En cambio, añade `.terraform/` a tu `.gitignore` -- contiene binarios grandes y configuración local que no debe compartirse.
 :::
 
-Tu `.gitignore` deberia incluir como minimo:
+Tu `.gitignore` debería incluir como mínimo:
 
 ```bash
 # .gitignore para proyectos Terraform
@@ -109,7 +109,7 @@ You may now begin working with Terraform. Try running "terraform plan" to see
 any changes that are required for your infrastructure.
 ```
 
-Si ejecutas `init` por segunda vez sin cambios, Terraform detecta que ya esta todo inicializado y el proceso es casi instantaneo:
+Si ejecutas `init` por segunda vez sin cambios, Terraform detecta que ya está todo inicializado y el proceso es casi instantáneo:
 
 ```bash
 $ terraform init
@@ -127,11 +127,11 @@ Terraform has been successfully initialized!
 
 ## terraform plan
 
-### Que hace
+### Qué hace
 
-`terraform plan` es el comando mas importante del flujo de trabajo diario. Compara el estado deseado (tus archivos `.tf`) con el estado actual (el state file) y genera un **plan de ejecucion** que muestra exactamente que cambios hara Terraform.
+`terraform plan` es el comando más importante del flujo de trabajo diario. Compara el estado deseado (tus archivos `.tf`) con el estado actual (el state file) y genera un **plan de ejecución** que muestra exactamente qué cambios hará Terraform.
 
-Es una operacion de solo lectura: no modifica nada en la infraestructura real. Es el equivalente a un "dry run".
+Es una operación de solo lectura: no modifica nada en la infraestructura real. Es el equivalente a un "dry run".
 
 import TerraformPlanSim from '@site/src/components/demos/terraform/TerraformPlanSim';
 
@@ -139,35 +139,35 @@ import TerraformPlanSim from '@site/src/components/demos/terraform/TerraformPlan
 
 ### Lectura del output
 
-El output de `terraform plan` usa una notacion clara para indicar el tipo de cambio:
+El output de `terraform plan` usa una notación clara para indicar el tipo de cambio:
 
-| Simbolo | Color | Significado |
+| Símbolo | Color | Significado |
 |---------|-------|-------------|
-| `+` | Verde | **Create** -- se creara un recurso nuevo |
-| `~` | Amarillo | **Update in-place** -- se modificara un recurso existente sin recrearlo |
-| `-` | Rojo | **Destroy** -- se eliminara un recurso |
-| `-/+` | Rojo/Verde | **Replace** -- se destruira y recreara el recurso (destroy then create) |
-| `+/-` | Verde/Rojo | **Replace** -- se creara primero el nuevo y luego se destruira el viejo (create then destroy) |
-| `<=` | Cyan | **Read** -- se leera un data source |
+| `+` | Verde | **Create** -- se creará un recurso nuevo |
+| `~` | Amarillo | **Update in-place** -- se modificará un recurso existente sin recrearlo |
+| `-` | Rojo | **Destroy** -- se eliminará un recurso |
+| `-/+` | Rojo/Verde | **Replace** -- se destruirá y recreará el recurso (destroy then create) |
+| `+/-` | Verde/Rojo | **Replace** -- se creará primero el nuevo y luego se destruirá el viejo (create then destroy) |
+| `<=` | Cyan | **Read** -- se leerá un data source |
 
-Ademas del simbolo, Terraform muestra para cada atributo si su valor es `(known after apply)`, lo que significa que ese valor solo se conocera despues de que el recurso se cree (por ejemplo, un ID generado por el proveedor cloud).
+Además del símbolo, Terraform muestra para cada atributo si su valor es `(known after apply)`, lo que significa que ese valor solo se conocerá después de que el recurso se cree (por ejemplo, un ID generado por el proveedor cloud).
 
-### Flags utiles
+### Flags útiles
 
-| Flag | Descripcion |
+| Flag | Descripción |
 |------|-------------|
-| `-out=ARCHIVO` | Guarda el plan en un archivo binario para aplicarlo despues |
-| `-target=RECURSO` | Limita el plan a un recurso especifico y sus dependencias |
-| `-var="KEY=VALUE"` | Pasa una variable desde la linea de comandos |
+| `-out=ARCHIVO` | Guarda el plan en un archivo binario para aplicarlo después |
+| `-target=RECURSO` | Limita el plan a un recurso específico y sus dependencias |
+| `-var="KEY=VALUE"` | Pasa una variable desde la línea de comandos |
 | `-var-file=ARCHIVO` | Carga variables desde un archivo `.tfvars` |
 | `-refresh-only` | Solo actualiza el state con el estado real, sin planificar cambios |
-| `-destroy` | Genera un plan de destruccion (equivalente a `terraform plan` para destroy) |
+| `-destroy` | Genera un plan de destrucción (equivalente a `terraform plan` para destroy) |
 | `-compact-warnings` | Muestra warnings en formato compacto |
-| `-parallelism=N` | Limita el numero de operaciones concurrentes (default: 10) |
+| `-parallelism=N` | Limita el número de operaciones concurrentes (default: 10) |
 
-### Guardar un plan para aplicar despues
+### Guardar un plan para aplicar después
 
-Uno de los patrones mas importantes es guardar el plan en un archivo y aplicarlo posteriormente:
+Uno de los patrones más importantes es guardar el plan en un archivo y aplicarlo posteriormente:
 
 ```bash
 # Generar y guardar el plan
@@ -180,15 +180,15 @@ terraform show plan.tfplan
 terraform apply plan.tfplan
 ```
 
-Este patron garantiza que lo que revisaste es exactamente lo que se aplica. Entre el momento del `plan` y el `apply`, nada cambia: Terraform aplica las mismas operaciones que mostro en el plan.
+Este patrón garantiza que lo que revisaste es exactamente lo que se aplica. Entre el momento del `plan` y el `apply`, nada cambia: Terraform aplica las mismas operaciones que mostró en el plan.
 
 :::warning
-Revisa siempre el plan antes de ejecutar `apply`. Es tu ultima linea de defensa antes de modificar infraestructura real. Un `plan` te puede alertar de destrucciones inesperadas, cambios en recursos criticos o errores de configuracion. Acostumbrate a leer el plan completo, especialmente las secciones marcadas con `-` (destroy) y `-/+` (replace).
+Revisa siempre el plan antes de ejecutar `apply`. Es tu última línea de defensa antes de modificar infraestructura real. Un `plan` te puede alertar de destrucciones inesperadas, cambios en recursos críticos o errores de configuración. Acostúmbrate a leer el plan completo, especialmente las secciones marcadas con `-` (destroy) y `-/+` (replace).
 :::
 
 ### Ejemplo completo de output
 
-Supongamos que tenemos esta configuracion que crea un archivo local:
+Supongamos que tenemos esta configuración que crea un archivo local:
 
 ```hcl
 resource "local_file" "ejemplo" {
@@ -226,7 +226,7 @@ Terraform will perform the following actions:
 Plan: 1 to add, 0 to change, 0 to destroy.
 ```
 
-La linea final es el resumen: `Plan: 1 to add, 0 to change, 0 to destroy.` Esto te da una vision rapida de la magnitud de los cambios.
+La línea final es el resumen: `Plan: 1 to add, 0 to change, 0 to destroy.` Esto te da una visión rápida de la magnitud de los cambios.
 
 Ahora, si modificamos el contenido del archivo:
 
@@ -261,19 +261,19 @@ Terraform will perform the following actions:
 Plan: 1 to add, 0 to change, 1 to destroy.
 ```
 
-Observa que el provider `local_file` no soporta actualizaciones in-place: necesita destruir el archivo y recrearlo. Esto se indica con el simbolo `-/+`.
+Observa que el provider `local_file` no soporta actualizaciones in-place: necesita destruir el archivo y recrearlo. Esto se indica con el símbolo `-/+`.
 
 ---
 
 ## terraform apply
 
-### Que hace
+### Qué hace
 
-`terraform apply` es el comando que materializa los cambios en la infraestructura real. Toma el plan de ejecucion (calculado en el momento o desde un archivo guardado) y ejecuta las operaciones necesarias: crear, modificar o destruir recursos.
+`terraform apply` es el comando que materializa los cambios en la infraestructura real. Toma el plan de ejecución (calculado en el momento o desde un archivo guardado) y ejecuta las operaciones necesarias: crear, modificar o destruir recursos.
 
-### Confirmacion interactiva
+### Confirmación interactiva
 
-Por defecto, `terraform apply` muestra primero el plan y luego pide confirmacion:
+Por defecto, `terraform apply` muestra primero el plan y luego pide confirmación:
 
 ```bash
 $ terraform apply
@@ -313,7 +313,7 @@ local_file.ejemplo: Creation complete after 0s [id=a1b2c3d4e5f6...]
 Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 ```
 
-Terraform requiere que escribas literalmente `yes` (no `y`, no `Y`, no `si`). Cualquier otra entrada cancela la operacion.
+Terraform requiere que escribas literalmente `yes` (no `y`, no `Y`, no `si`). Cualquier otra entrada cancela la operación.
 
 ### Aplicar un plan guardado
 
@@ -328,30 +328,30 @@ terraform apply plan.tfplan
 ```
 
 :::info
-Cuando aplicas un plan guardado, Terraform **no pide confirmacion interactiva**. Se asume que ya revisaste el plan al generarlo. Esto es por diseno: un plan guardado es un contrato sobre lo que va a suceder.
+Cuando aplicas un plan guardado, Terraform **no pide confirmación interactiva**. Se asume que ya revisaste el plan al generarlo. Esto es por diseño: un plan guardado es un contrato sobre lo que va a suceder.
 :::
 
 ### El flag -auto-approve
 
-Existe el flag `-auto-approve` que salta la confirmacion interactiva:
+Existe el flag `-auto-approve` que salta la confirmación interactiva:
 
 ```bash
 terraform apply -auto-approve
 ```
 
 :::danger
-No uses `-auto-approve` en ejecuciones locales manuales. Este flag existe para pipelines de CI/CD donde un humano ya reviso y aprobo el plan en un paso previo. Usarlo localmente sin revisar el plan es una receta para destruir infraestructura accidentalmente. En un pipeline de CI/CD, el flujo seguro es: `terraform plan -out=plan.tfplan` en un step, revision humana (por ejemplo via pull request), y `terraform apply plan.tfplan` en otro step.
+No uses `-auto-approve` en ejecuciones locales manuales. Este flag existe para pipelines de CI/CD donde un humano ya revisó y aprobó el plan en un paso previo. Usarlo localmente sin revisar el plan es una receta para destruir infraestructura accidentalmente. En un pipeline de CI/CD, el flujo seguro es: `terraform plan -out=plan.tfplan` en un step, revisión humana (por ejemplo vía pull request), y `terraform apply plan.tfplan` en otro step.
 :::
 
-### Que pasa si falla a mitad
+### Qué pasa si falla a mitad
 
-Terraform aplica los cambios recurso por recurso. Si falla a mitad de la ejecucion (por ejemplo, por un timeout de red, un error de permisos, o un limite de cuota), el state reflejara un **estado parcial**: algunos recursos ya creados, otros no.
+Terraform aplica los cambios recurso por recurso. Si falla a mitad de la ejecución (por ejemplo, por un timeout de red, un error de permisos, o un límite de cuota), el state reflejará un **estado parcial**: algunos recursos ya creados, otros no.
 
-Esto no es un problema catastrofico. Terraform esta disenado para manejar esta situacion:
+Esto no es un problema catastrófico. Terraform está diseñado para manejar esta situación:
 
 1. El state se actualiza con cada recurso completado exitosamente.
 2. Al volver a ejecutar `terraform apply`, Terraform detecta los recursos ya creados y solo intenta crear/modificar los que faltan.
-3. Es **idempotente**: puedes ejecutar `apply` multiples veces de forma segura.
+3. Es **idempotente**: puedes ejecutar `apply` múltiples veces de forma segura.
 
 ```bash
 # Si fallo a mitad, simplemente vuelve a ejecutar
@@ -359,20 +359,20 @@ terraform apply
 ```
 
 :::info
-Si un recurso quedo en un estado inconsistente (parcialmente creado), puede que necesites intervencion manual: eliminar el recurso desde la consola del proveedor cloud y luego ejecutar `terraform apply` de nuevo, o usar `terraform state rm` para eliminar la referencia del state.
+Si un recurso quedó en un estado inconsistente (parcialmente creado), puede que necesites intervención manual: eliminar el recurso desde la consola del proveedor cloud y luego ejecutar `terraform apply` de nuevo, o usar `terraform state rm` para eliminar la referencia del state.
 :::
 
 ---
 
 ## terraform destroy
 
-### Que hace
+### Qué hace
 
-`terraform destroy` elimina **todos** los recursos gestionados por Terraform en el directorio actual. Lee el state file y genera un plan de destruccion para cada recurso que existe en el state.
+`terraform destroy` elimina **todos** los recursos gestionados por Terraform en el directorio actual. Lee el state file y genera un plan de destrucción para cada recurso que existe en el state.
 
-### Confirmacion obligatoria
+### Confirmación obligatoria
 
-Al igual que `apply`, `terraform destroy` pide confirmacion antes de proceder:
+Al igual que `apply`, `terraform destroy` pide confirmación antes de proceder:
 
 ```bash
 $ terraform destroy
@@ -414,25 +414,25 @@ local_file.ejemplo: Destruction complete after 0s
 Destroy complete! Resources: 1 destroyed.
 ```
 
-### Destruccion selectiva con -target
+### Destrucción selectiva con -target
 
-Si solo necesitas destruir un recurso concreto sin afectar a los demas:
+Si solo necesitas destruir un recurso concreto sin afectar a los demás:
 
 ```bash
-# Destruir solo un recurso especifico
+# Destruir solo un recurso específico
 terraform destroy -target=local_file.ejemplo
 
-# Destruir un recurso dentro de un modulo
+# Destruir un recurso dentro de un módulo
 terraform destroy -target=module.mi_modulo.aws_instance.servidor
 ```
 
 :::danger
-`terraform destroy` es una operacion irreversible. Una vez destruidos, los recursos desaparecen. En el caso de bases de datos, esto significa perdida total de datos si no tienes backups. En el caso de instancias, se pierden los datos en disco efimero. Usa este comando con extremo cuidado, especialmente en entornos de produccion. Verifica siempre que estas en el directorio y workspace correctos antes de ejecutar `destroy`.
+`terraform destroy` es una operación irreversible. Una vez destruidos, los recursos desaparecen. En el caso de bases de datos, esto significa pérdida total de datos si no tienes backups. En el caso de instancias, se pierden los datos en disco efímero. Usa este comando con extremo cuidado, especialmente en entornos de producción. Verifica siempre que estás en el directorio y workspace correctos antes de ejecutar `destroy`.
 :::
 
-### Alternativa: eliminar recursos via apply
+### Alternativa: eliminar recursos vía apply
 
-Una alternativa mas controlada a `terraform destroy` es simplemente comentar o eliminar los bloques de recursos en tus archivos `.tf` y ejecutar `terraform apply`. Terraform detectara que esos recursos ya no estan en la configuracion pero si en el state, y los marcara para destruccion.
+Una alternativa más controlada a `terraform destroy` es simplemente comentar o eliminar los bloques de recursos en tus archivos `.tf` y ejecutar `terraform apply`. Terraform detectará que esos recursos ya no están en la configuración pero sí en el state, y los marcará para destrucción.
 
 ```hcl
 # Antes: el recurso existe
@@ -458,21 +458,21 @@ $ terraform plan
 Plan: 0 to add, 0 to change, 1 to destroy.
 ```
 
-Esta tecnica tiene varias ventajas:
+Esta técnica tiene varias ventajas:
 
-- Puedes revisar el plan de destruccion antes de ejecutarlo.
-- Es mas facil de integrar en code review (el diff del pull request muestra que se elimina).
+- Puedes revisar el plan de destrucción antes de ejecutarlo.
+- Es más fácil de integrar en code review (el diff del pull request muestra qué se elimina).
 - Permite destruir recursos de forma selectiva y controlada.
 
 ---
 
 ## Comandos auxiliares
 
-Ademas de los cuatro comandos principales (`init`, `plan`, `apply`, `destroy`), Terraform ofrece varios comandos auxiliares que facilitan el desarrollo y la depuracion.
+Además de los cuatro comandos principales (`init`, `plan`, `apply`, `destroy`), Terraform ofrece varios comandos auxiliares que facilitan el desarrollo y la depuración.
 
 ### terraform fmt
 
-Formatea automaticamente tus archivos `.tf` segun las convenciones de estilo de HCL. Es el equivalente a `prettier` para JavaScript o `black` para Python.
+Formatea automáticamente tus archivos `.tf` según las convenciones de estilo de HCL. Es el equivalente a `prettier` para JavaScript o `black` para Python.
 
 ```bash
 # Formatear todos los archivos .tf del directorio actual
@@ -488,7 +488,7 @@ terraform fmt -check
 terraform fmt -check -diff
 ```
 
-En un pipeline de CI, `-check` retorna un codigo de salida distinto de cero si algun archivo no esta formateado correctamente:
+En un pipeline de CI, `-check` retorna un código de salida distinto de cero si algún archivo no está formateado correctamente:
 
 ```bash
 $ terraform fmt -check -diff
@@ -505,17 +505,17 @@ main.tf
 ```
 
 :::tip
-Integra `terraform fmt -check` como el primer paso de tu pipeline de CI. Es rapido, no requiere providers ni credenciales, y garantiza consistencia de estilo en todo el equipo. Tambien puedes configurar tu editor (VS Code, IntelliJ) para ejecutar `terraform fmt` automaticamente al guardar.
+Integra `terraform fmt -check` como el primer paso de tu pipeline de CI. Es rápido, no requiere providers ni credenciales, y garantiza consistencia de estilo en todo el equipo. También puedes configurar tu editor (VS Code, IntelliJ) para ejecutar `terraform fmt` automáticamente al guardar.
 :::
 
 ### terraform validate
 
-Valida la sintaxis y la semantica de tus archivos de configuracion. Comprueba que:
+Valida la sintaxis y la semántica de tus archivos de configuración. Comprueba que:
 
 - La sintaxis HCL es correcta.
-- Los bloques de recursos usan tipos validos.
+- Los bloques de recursos usan tipos válidos.
 - Las referencias entre recursos son consistentes.
-- Los atributos requeridos estan presentes.
+- Los atributos requeridos están presentes.
 
 ```bash
 $ terraform validate
@@ -537,12 +537,12 @@ $ terraform validate
 ```
 
 :::info
-`terraform validate` requiere que hayas ejecutado `terraform init` previamente (necesita los providers para validar los tipos de recursos y atributos). Sin embargo, no requiere credenciales de acceso al proveedor cloud. Esto lo hace ideal como segundo paso en CI, justo despues de `terraform fmt -check`.
+`terraform validate` requiere que hayas ejecutado `terraform init` previamente (necesita los providers para validar los tipos de recursos y atributos). Sin embargo, no requiere credenciales de acceso al proveedor cloud. Esto lo hace ideal como segundo paso en CI, justo después de `terraform fmt -check`.
 :::
 
 ### terraform console
 
-Abre un REPL (Read-Eval-Print Loop) interactivo donde puedes evaluar expresiones HCL contra el state actual y la configuracion:
+Abre un REPL (Read-Eval-Print Loop) interactivo donde puedes evaluar expresiones HCL contra el state actual y la configuración:
 
 ```bash
 $ terraform console
@@ -560,9 +560,9 @@ $ terraform console
 "10.0.1.0/24"
 ```
 
-Es especialmente util para:
+Es especialmente útil para:
 
-- Probar funciones de Terraform antes de usarlas en la configuracion.
+- Probar funciones de Terraform antes de usarlas en la configuración.
 - Explorar el state de recursos existentes.
 - Depurar expresiones complejas con `for` o condicionales.
 - Verificar el resultado de interpolaciones.
@@ -613,7 +613,7 @@ resource "local_file" "ejemplo" {
 
 ### terraform output
 
-Consulta los valores de los outputs definidos en la configuracion:
+Consulta los valores de los outputs definidos en la configuración:
 
 ```bash
 # Mostrar todos los outputs
@@ -654,13 +654,13 @@ $ terraform output -raw ruta_archivo
 
 ---
 
-## Flujo completo: ejemplo practico
+## Flujo completo: ejemplo práctico
 
-Vamos a recorrer el flujo completo de Terraform con un ejemplo real usando el provider `local`, que permite crear y gestionar archivos en el sistema de archivos local. Este provider es perfecto para aprender porque no necesita credenciales ni acceso a ningun servicio externo.
+Vamos a recorrer el flujo completo de Terraform con un ejemplo real usando el provider `local`, que permite crear y gestionar archivos en el sistema de archivos local. Este provider es perfecto para aprender porque no necesita credenciales ni acceso a ningún servicio externo.
 
-### Paso 1: Escribir la configuracion
+### Paso 1: Escribir la configuración
 
-Crea un directorio para el proyecto y el archivo de configuracion:
+Crea un directorio para el proyecto y el archivo de configuración:
 
 ```bash
 mkdir terraform-demo && cd terraform-demo
@@ -734,7 +734,7 @@ drwxr-xr-x  3 user  staff    96 Mar 29 10:00 .terraform
 -rw-r--r--  1 user  staff   456 Mar 29 10:00 main.tf
 ```
 
-### Paso 3: Validar la configuracion
+### Paso 3: Validar la configuración
 
 ```bash
 $ terraform validate
@@ -829,7 +829,7 @@ contenido = "Hola, Mundo! Creado con Terraform."
 ruta      = "./saludo.txt"
 ```
 
-### Paso 7: Modificar la configuracion
+### Paso 7: Modificar la configuración
 
 Ahora cambiamos el contenido del archivo editando `main.tf`:
 
@@ -840,7 +840,7 @@ resource "local_file" "saludo" {
 }
 ```
 
-### Paso 8: Plan de la modificacion
+### Paso 8: Plan de la modificación
 
 ```bash
 $ terraform plan
@@ -870,9 +870,9 @@ Changes to Outputs:
   ~ contenido = "Hola, Mundo! Creado con Terraform." -> "Hola, Mundo! Creado con Terraform. Version 2."
 ```
 
-El plan muestra claramente: se destruira el archivo actual y se creara uno nuevo con el contenido actualizado.
+El plan muestra claramente: se destruirá el archivo actual y se creará uno nuevo con el contenido actualizado.
 
-### Paso 9: Aplicar la modificacion
+### Paso 9: Aplicar la modificación
 
 ```bash
 $ terraform apply
@@ -936,7 +936,7 @@ local_file.saludo: Destruction complete after 0s
 Destroy complete! Resources: 1 destroyed.
 ```
 
-Verificacion final:
+Verificación final:
 
 ```bash
 $ ls saludo.txt
@@ -946,20 +946,20 @@ $ terraform show
 The state file is empty. No resources are represented.
 ```
 
-El archivo ha sido eliminado y el state esta vacio. El ciclo completo se ha cerrado.
+El archivo ha sido eliminado y el state está vacío. El ciclo completo se ha cerrado.
 
 ---
 
 ## Resumen
 
-| Comando | Descripcion |
+| Comando | Descripción |
 |---------|-------------|
 | `terraform init` | Inicializa el directorio, descarga providers y configura el backend |
 | `terraform plan` | Muestra un preview de los cambios sin aplicarlos |
 | `terraform apply` | Aplica los cambios a la infraestructura real |
 | `terraform destroy` | Elimina todos los recursos gestionados |
-| `terraform fmt` | Formatea el codigo HCL segun las convenciones estandar |
-| `terraform validate` | Valida la sintaxis y semantica de la configuracion |
+| `terraform fmt` | Formatea el código HCL según las convenciones estándar |
+| `terraform validate` | Valida la sintaxis y semántica de la configuración |
 | `terraform console` | Abre un REPL interactivo para evaluar expresiones |
 | `terraform show` | Muestra el state actual o un plan guardado |
 | `terraform output` | Consulta los valores de los outputs definidos |
@@ -979,4 +979,4 @@ graph LR
     style E fill:#e5c07b,color:#000
 ```
 
-Dominar este flujo es la base de todo el trabajo con Terraform. Cada comando tiene un proposito claro y un momento preciso en el que debe usarse. Con la practica, este ciclo se convierte en algo natural y automatico.
+Dominar este flujo es la base de todo el trabajo con Terraform. Cada comando tiene un propósito claro y un momento preciso en el que debe usarse. Con la práctica, este ciclo se convierte en algo natural y automático.

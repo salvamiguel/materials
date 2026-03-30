@@ -49,7 +49,7 @@ export default function LabActions({ repo, codespace = false, fork = false, titl
           rel="noopener noreferrer"
           className={`${styles.btn} ${styles.btnSecondary}`}
         >
-          <VscVscode /> Abrir en vscode.dev
+          <VscRemote /> Abrir en vscode.dev
         </a>
 
         {fork && (

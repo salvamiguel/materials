@@ -9,32 +9,32 @@ import { CloudTab } from '@site/src/components/shared/CloudTabs';
 
 # Estado (State)
 
-Terraform necesita recordar que recursos ha creado y como se relacionan entre si.
-Ese "recuerdo" es el **state**: un fichero JSON que actua como fuente de verdad
-entre tu configuracion HCL y la infraestructura real que existe en el proveedor cloud.
+Terraform necesita recordar qué recursos ha creado y cómo se relacionan entre sí.
+Ese "recuerdo" es el **state**: un fichero JSON que actúa como fuente de verdad
+entre tu configuración HCL y la infraestructura real que existe en el proveedor cloud.
 
-En esta unidad cubriremos como funciona el state, como compartirlo en equipo de forma
-segura, como gestionar drift y que reglas de lifecycle te ofrece Terraform para
+En esta unidad cubriremos cómo funciona el state, cómo compartirlo en equipo de forma
+segura, cómo gestionar drift y qué reglas de lifecycle te ofrece Terraform para
 controlar el comportamiento de los recursos.
 
 ---
 
-## 1. Que es el Terraform State
+## 1. Qué es el Terraform State
 
-### 1.1 Proposito
+### 1.1 Propósito
 
 Cuando ejecutas `terraform apply`, Terraform crea recursos reales (una instancia EC2,
 un bucket S3, una base de datos...). Para poder gestionar esos recursos en el futuro
-necesita un **mapeo** entre la configuracion HCL y los objetos reales. Ese mapeo es el
+necesita un **mapeo** entre la configuración HCL y los objetos reales. Ese mapeo es el
 state.
 
 El state cumple tres funciones principales:
 
-| Funcion | Descripcion |
+| Función | Descripción |
 |---------|-------------|
 | **Mapeo de identidad** | Asocia cada bloque `resource` de tu `.tf` con un ID real del proveedor |
 | **Cache de metadata** | Almacena atributos del recurso para no tener que consultar la API en cada `plan` |
-| **Grafo de dependencias** | Permite a Terraform calcular el orden correcto de creacion y destruccion |
+| **Grafo de dependencias** | Permite a Terraform calcular el orden correcto de creación y destrucción |
 
 ### 1.2 El fichero terraform.tfstate
 
@@ -81,27 +81,27 @@ Por defecto, Terraform almacena el state en un fichero local llamado
 
 Campos clave del state:
 
-- **version**: version del formato del state (actualmente 4).
+- **version**: versión del formato del state (actualmente 4).
 - **serial**: se incrementa con cada escritura, sirve para detectar conflictos.
-- **lineage**: UUID unico que identifica esta "cadena" de state — evita mezclar states
+- **lineage**: UUID único que identifica esta "cadena" de state — evita mezclar states
   de entornos distintos accidentalmente.
 - **resources**: lista de todos los recursos gestionados con sus atributos reales.
-- **outputs**: valores de salida definidos en tu configuracion.
+- **outputs**: valores de salida definidos en tu configuración.
 
-### 1.3 Por que es necesario
+### 1.3 Por qué es necesario
 
-Sin el state, Terraform no podria:
+Sin el state, Terraform no podría:
 
 1. **Detectar cambios** entre lo que defines en HCL y lo que existe realmente.
 2. **Calcular un plan** de cambios incrementales (solo lo que ha cambiado).
-3. **Destruir** recursos que ya no aparecen en la configuracion.
-4. **Resolver dependencias** implicitas entre recursos.
+3. **Destruir** recursos que ya no aparecen en la configuración.
+4. **Resolver dependencias** implícitas entre recursos.
 
 :::danger Datos sensibles en el state
 El state almacena **todos** los atributos de los recursos, incluyendo passwords de
 bases de datos, tokens de API, claves privadas y cualquier otro secreto que el
 proveedor devuelva. Trata el fichero `terraform.tfstate` con el mismo nivel de
-seguridad que un fichero de credenciales. Nunca lo subas a un repositorio Git publico.
+seguridad que un fichero de credenciales. Nunca lo subas a un repositorio Git público.
 :::
 
 ---
@@ -111,7 +111,7 @@ seguridad que un fichero de credenciales. Nunca lo subas a un repositorio Git pu
 ### 2.1 State local
 
 Por defecto, `terraform.tfstate` se genera en el directorio de trabajo. Esto es
-perfectamente valido para proyectos personales o pruebas, pero presenta problemas
+perfectamente válido para proyectos personales o pruebas, pero presenta problemas
 serios en equipo:
 
 | Problema | Impacto |
@@ -126,18 +126,18 @@ serios en equipo:
 Un **remote backend** almacena el state en un servicio centralizado (S3, Azure Blob,
 GCS, Terraform Cloud...). Las ventajas son inmediatas:
 
-- **Colaboracion**: todo el equipo trabaja contra el mismo state.
-- **Locking**: el backend bloquea el state durante una operacion para evitar
+- **Colaboración**: todo el equipo trabaja contra el mismo state.
+- **Locking**: el backend bloquea el state durante una operación para evitar
   escrituras concurrentes.
 - **Cifrado**: el state se almacena cifrado en reposo (encryption at rest).
 - **Versionado**: puedes recuperar versiones anteriores del state si algo sale mal.
 - **Backup**: el proveedor cloud gestiona la durabilidad del almacenamiento.
 
-### 2.3 Por que migrar a remoto
+### 2.3 Por qué migrar a remoto
 
-Si trabajas en equipo, la migracion a remote backend deberia ser una de las primeras
-cosas que configures. Terraform facilita la migracion: basta con anadir el bloque
-`backend` y ejecutar `terraform init`, que te preguntara si quieres copiar el state
+Si trabajas en equipo, la migración a remote backend debería ser una de las primeras
+cosas que configures. Terraform facilita la migración: basta con añadir el bloque
+`backend` y ejecutar `terraform init`, que te preguntará si quieres copiar el state
 local al backend remoto.
 
 ```bash
@@ -153,9 +153,9 @@ terraform init
 
 ## 3. Remote Backends
 
-### 3.1 Configuracion del backend
+### 3.1 Configuración del backend
 
-Esta es la configuracion del backend remoto segun el proveedor cloud. El state se
+Esta es la configuración del backend remoto según el proveedor cloud. El state se
 almacena en un servicio de almacenamiento de objetos y el locking se gestiona de forma
 nativa o mediante un servicio adicional.
 
@@ -216,7 +216,7 @@ Storage.
 
 Los recursos de almacenamiento del backend deben existir **antes** de configurar el
 backend. Esto crea un problema circular: necesitas infraestructura para gestionar
-infraestructura. La solucion habitual es crear estos recursos manualmente o con un
+infraestructura. La solución habitual es crear estos recursos manualmente o con un
 proyecto Terraform separado que use state local:
 
 <CloudTabs>
@@ -268,7 +268,7 @@ resource "aws_dynamodb_table" "terraform_locks" {
 
 :::tip Versionado en S3
 Habilita **siempre** el versionado en el bucket S3. Esto te permite recuperar
-versiones anteriores del state en caso de corrupcion o error humano. Es tu red de
+versiones anteriores del state en caso de corrupción o error humano. Es tu red de
 seguridad principal.
 :::
 
@@ -296,7 +296,7 @@ resource "google_storage_bucket" "terraform_state" {
 
 :::tip Versionado en GCS
 Habilita **siempre** el versionado en el bucket GCS. Esto te permite recuperar
-versiones anteriores del state en caso de corrupcion o error humano.
+versiones anteriores del state en caso de corrupción o error humano.
 :::
 
 </CloudTab>
@@ -329,7 +329,7 @@ resource "azurerm_storage_container" "terraform_state" {
 ```
 
 :::tip Versionado en Azure
-Azure Storage soporta **blob versioning**. Habilitalo en la cuenta de almacenamiento
+Azure Storage soporta **blob versioning**. Habilítalo en la cuenta de almacenamiento
 para poder recuperar versiones anteriores del state.
 :::
 
@@ -338,7 +338,7 @@ para poder recuperar versiones anteriores del state.
 
 ### 3.3 Estructura de keys recomendada
 
-Para organizaciones con multiples proyectos y entornos:
+Para organizaciones con múltiples proyectos y entornos:
 
 ```
 mi-empresa-terraform-state/
@@ -414,17 +414,17 @@ terraform {
 }
 ```
 
-Ventajas adicionales respecto a un backend clasico:
+Ventajas adicionales respecto a un backend clásico:
 
 - **UI web** para visualizar state, historial de runs y outputs.
 - **Policy as Code** con Sentinel o OPA.
-- **Run remoto**: la ejecucion de `plan` y `apply` ocurre en los servidores de
-  Terraform Cloud, no en tu portatil.
+- **Run remoto**: la ejecución de `plan` y `apply` ocurre en los servidores de
+  Terraform Cloud, no en tu portátil.
 - **Control de acceso** granular por workspace y equipo.
 
 :::info Free tier
-Terraform Cloud ofrece un tier gratuito para equipos pequenos (hasta 500 recursos
-gestionados). Es una opcion excelente para empezar sin montar infraestructura de
+Terraform Cloud ofrece un tier gratuito para equipos pequeños (hasta 500 recursos
+gestionados). Es una opción excelente para empezar sin montar infraestructura de
 backend.
 :::
 
@@ -432,34 +432,34 @@ backend.
 
 ## 4. State Locking
 
-### 4.1 Que es el locking
+### 4.1 Qué es el locking
 
-Cuando Terraform ejecuta una operacion que modifica el state (`apply`, `destroy`,
+Cuando Terraform ejecuta una operación que modifica el state (`apply`, `destroy`,
 `import`...), adquiere un **lock** (bloqueo) sobre el state para impedir que otro
-proceso lo modifique simultaneamente.
+proceso lo modifique simultáneamente.
 
-Sin locking, dos personas ejecutando `terraform apply` al mismo tiempo podrian:
+Sin locking, dos personas ejecutando `terraform apply` al mismo tiempo podrían:
 
-1. Leer la misma version del state.
+1. Leer la misma versión del state.
 2. Calcular planes basados en el mismo punto de partida.
 3. Escribir resultados incompatibles al state.
-4. Resultado: **state corrupto** y recursos huerfanos.
+4. Resultado: **state corrupto** y recursos huérfanos.
 
-### 4.2 Como funciona segun el backend
+### 4.2 Cómo funciona según el backend
 
 | Backend | Mecanismo de locking |
 |---------|---------------------|
-| **S3 + DynamoDB** | Terraform escribe un registro en la tabla DynamoDB con un UUID de lock. Mientras ese registro exista, ningun otro proceso puede adquirir el lock |
+| **S3 + DynamoDB** | Terraform escribe un registro en la tabla DynamoDB con un UUID de lock. Mientras ese registro exista, ningún otro proceso puede adquirir el lock |
 | **Azure Blob** | Usa el mecanismo nativo de blob lease (un lease exclusivo sobre el blob del state) |
 | **GCS** | Crea un fichero `.tflock` junto al state |
-| **Terraform Cloud** | Gestionado automaticamente por la plataforma |
+| **Terraform Cloud** | Gestionado automáticamente por la plataforma |
 | **Local** | Usa file locking del sistema operativo |
 
 ### 4.3 Cuando el lock se queda "stuck"
 
-Si un proceso de Terraform se interrumpe abruptamente (crash, perdida de red,
+Si un proceso de Terraform se interrumpe abruptamente (crash, pérdida de red,
 Ctrl+C agresivo), es posible que el lock no se libere correctamente. En ese caso
-veras un error como:
+verás un error como:
 
 ```bash
 Error: Error locking state: Error acquiring the state lock:
@@ -478,22 +478,22 @@ Para liberar el lock manualmente:
 terraform force-unlock a1b2c3d4-5678-90ab-cdef-1234567890ab
 ```
 
-:::warning force-unlock: ultimo recurso
-Solo usa `terraform force-unlock` cuando estes **seguro** de que no hay otra operacion
-en curso. Si otro proceso esta realmente ejecutando un `apply`, forzar el unlock puede
-provocar corrupcion del state. Verifica primero con tu equipo.
+:::warning force-unlock: último recurso
+Solo usa `terraform force-unlock` cuando estés **seguro** de que no hay otra operación
+en curso. Si otro proceso está realmente ejecutando un `apply`, forzar el unlock puede
+provocar corrupción del state. Verifica primero con tu equipo.
 :::
 
 ---
 
-## 5. Comandos de gestion de state
+## 5. Comandos de gestión de state
 
 Terraform proporciona un conjunto de subcomandos bajo `terraform state` para
 inspeccionar y manipular el state de forma segura.
 
 ### 5.1 terraform state list
 
-Lista todos los recursos que Terraform esta gestionando:
+Lista todos los recursos que Terraform está gestionando:
 
 ```bash
 terraform state list
@@ -514,7 +514,7 @@ module.vpc.aws_subnet.public[0]
 module.vpc.aws_subnet.public[1]
 ```
 
-Puedes filtrar por patron:
+Puedes filtrar por patrón:
 
 ```bash
 # Solo recursos dentro del modulo vpc
@@ -537,7 +537,7 @@ module.vpc.google_compute_subnetwork.public[0]
 module.vpc.google_compute_subnetwork.public[1]
 ```
 
-Puedes filtrar por patron:
+Puedes filtrar por patrón:
 
 ```bash
 # Solo recursos dentro del modulo vpc
@@ -560,7 +560,7 @@ module.vnet.azurerm_subnet.public[0]
 module.vnet.azurerm_subnet.public[1]
 ```
 
-Puedes filtrar por patron:
+Puedes filtrar por patrón:
 
 ```bash
 # Solo recursos dentro del modulo vnet
@@ -662,15 +662,15 @@ resource "azurerm_linux_virtual_machine" "web" {
 </CloudTab>
 </CloudTabs>
 
-Este comando es muy util para depurar problemas: puedes ver exactamente que atributos
-tiene un recurso segun Terraform.
+Este comando es muy útil para depurar problemas: puedes ver exactamente qué atributos
+tiene un recurso según Terraform.
 
 ### 5.3 terraform state mv
 
 Renombra o mueve un recurso **dentro del state** sin destruirlo ni recrearlo. Es
-esencial durante refactoring de codigo Terraform.
+esencial durante refactoring de código Terraform.
 
-**Caso de uso**: has renombrado un recurso en tu configuracion HCL y no quieres que
+**Caso de uso**: has renombrado un recurso en tu configuración HCL y no quieres que
 Terraform lo destruya y lo vuelva a crear:
 
 <CloudTabs>
@@ -690,7 +690,7 @@ resource "aws_instance" "new" {
 }
 ```
 
-Sin `state mv`, Terraform interpretaria esto como "destruir `old`, crear `new`". Con
+Sin `state mv`, Terraform interpretaría esto como "destruir `old`, crear `new`". Con
 el comando:
 
 ```bash
@@ -728,7 +728,7 @@ resource "google_compute_instance" "new" {
 }
 ```
 
-Sin `state mv`, Terraform interpretaria esto como "destruir `old`, crear `new`". Con
+Sin `state mv`, Terraform interpretaría esto como "destruir `old`, crear `new`". Con
 el comando:
 
 ```bash
@@ -768,7 +768,7 @@ resource "azurerm_linux_virtual_machine" "new" {
 }
 ```
 
-Sin `state mv`, Terraform interpretaria esto como "destruir `old`, crear `new`". Con
+Sin `state mv`, Terraform interpretaría esto como "destruir `old`, crear `new`". Con
 el comando:
 
 ```bash
@@ -790,12 +790,12 @@ terraform state mv module.old.azurerm_linux_virtual_machine.web module.new.azure
 </CloudTab>
 </CloudTabs>
 
-El siguiente `terraform plan` mostrara `No changes`.
+El siguiente `terraform plan` mostrará `No changes`.
 
 ### 5.4 terraform state rm
 
-Elimina un recurso del state **sin destruirlo** en el proveedor. El recurso seguira
-existiendo en la nube, pero Terraform dejara de gestionarlo.
+Elimina un recurso del state **sin destruirlo** en el proveedor. El recurso seguirá
+existiendo en la nube, pero Terraform dejará de gestionarlo.
 
 <CloudTabs>
 <CloudTab provider="aws">
@@ -823,12 +823,12 @@ terraform state rm azurerm_linux_virtual_machine.legacy
 
 **Caso de uso**: tienes un servidor que fue creado con Terraform pero ahora otro equipo
 lo gestiona manualmente o con otra herramienta. Quieres que Terraform "se olvide"
-de el sin apagarlo.
+de él sin apagarlo.
 
 :::warning
-Despues de un `state rm`, el recurso queda "huerfano" — existe en la nube pero ningun
-fichero de state lo referencia. Asegurate de que alguien o algo se encarga de su
-gestion.
+Después de un `state rm`, el recurso queda "huérfano" — existe en la nube pero ningún
+fichero de state lo referencia. Asegúrate de que alguien o algo se encarga de su
+gestión.
 :::
 
 ### 5.5 terraform import
@@ -862,9 +862,9 @@ terraform import azurerm_linux_virtual_machine.web /subscriptions/00000000-0000-
 
 El flujo completo de un import es:
 
-1. **Escribir** el bloque `resource` en tu fichero `.tf` (aunque sea vacio).
-2. **Ejecutar** `terraform import` con la direccion del recurso y su ID real.
-3. **Completar** la configuracion HCL para que coincida con los atributos reales.
+1. **Escribir** el bloque `resource` en tu fichero `.tf` (aunque sea vacío).
+2. **Ejecutar** `terraform import` con la dirección del recurso y su ID real.
+3. **Completar** la configuración HCL para que coincida con los atributos reales.
 4. **Verificar** con `terraform plan` que no hay cambios pendientes.
 
 Ejemplo paso a paso:
@@ -941,16 +941,16 @@ terraform plan
 # Debe mostrar: No changes. Your infrastructure matches the configuration.
 ```
 
-:::warning Import: solo state, no configuracion
-`terraform import` solo anade el recurso al state. **No genera configuracion HCL
-automaticamente**. Tienes que escribir el bloque `resource` a mano para que coincida
-con el estado real del recurso. Si no lo haces, el siguiente `plan` intentara
-modificar el recurso para que coincida con tu configuracion incompleta.
+:::warning Import: solo state, no configuración
+`terraform import` solo añade el recurso al state. **No genera configuración HCL
+automáticamente**. Tienes que escribir el bloque `resource` a mano para que coincida
+con el estado real del recurso. Si no lo haces, el siguiente `plan` intentará
+modificar el recurso para que coincida con tu configuración incompleta.
 :::
 
 :::tip Import blocks (Terraform 1.5+)
 Desde Terraform 1.5, puedes usar bloques `import` declarativos directamente en la
-configuracion, eliminando la necesidad del comando CLI:
+configuración, eliminando la necesidad del comando CLI:
 
 <CloudTabs>
 <CloudTab provider="aws">
@@ -1004,7 +1004,7 @@ resource "azurerm_linux_virtual_machine" "web" {
 </CloudTabs>
 
 Ejecuta `terraform plan` para previsualizar el import y `terraform apply` para
-ejecutarlo. Es mas seguro y reproducible que el comando `terraform import`.
+ejecutarlo. Es más seguro y reproducible que el comando `terraform import`.
 :::
 
 ### 5.6 terraform state pull / push
@@ -1019,13 +1019,13 @@ terraform state pull > state_backup.json
 terraform state push state_modified.json
 ```
 
-**`state pull`** es util para:
+**`state pull`** es útil para:
 - Hacer backups manuales.
 - Inspeccionar el state completo con herramientas como `jq`.
 - Scripting avanzado.
 
-**`state push`** es extremadamente peligroso y solo deberia usarse en situaciones
-de emergencia (por ejemplo, restaurar un backup despues de corrupcion).
+**`state push`** es extremadamente peligroso y solo debería usarse en situaciones
+de emergencia (por ejemplo, restaurar un backup después de corrupción).
 
 <CloudTabs>
 <CloudTab provider="aws">
@@ -1060,7 +1060,7 @@ terraform state pull | jq '.resources[] | select(.type=="azurerm_linux_virtual_m
 
 Terraform permite controlar el ciclo de vida de los recursos mediante el bloque
 `lifecycle` dentro de cada `resource`. Estas reglas modifican el comportamiento por
-defecto de creacion, actualizacion y destruccion.
+defecto de creación, actualización y destrucción.
 
 ### 6.1 create_before_destroy
 
@@ -1079,24 +1079,24 @@ resource "aws_instance" "web" {
 }
 ```
 
-**Cuando usarlo**: cualquier recurso que necesite **zero downtime** durante un
-reemplazo. Ejemplos tipicos:
+**Cuándo usarlo**: cualquier recurso que necesite **zero downtime** durante un
+reemplazo. Ejemplos típicos:
 
-- Instancias detras de un load balancer.
+- Instancias detrás de un load balancer.
 - Launch configurations / launch templates de autoscaling groups.
 - Certificados SSL (el nuevo debe estar listo antes de revocar el antiguo).
 
 :::info
 No todos los recursos soportan `create_before_destroy` correctamente. Algunos
-recursos tienen restricciones de unicidad (por ejemplo, un nombre DNS unico) que
-impiden que existan dos versiones simultaneamente. Terraform te avisara con un error
+recursos tienen restricciones de unicidad (por ejemplo, un nombre DNS único) que
+impiden que existan dos versiones simultáneamente. Terraform te avisará con un error
 si esto ocurre.
 :::
 
 ### 6.2 prevent_destroy
 
-Protege un recurso contra destruccion accidental. Si cualquier operacion de Terraform
-intentaria destruir este recurso, el `plan` fallara con un error:
+Protege un recurso contra destrucción accidental. Si cualquier operación de Terraform
+intentaría destruir este recurso, el `plan` fallará con un error:
 
 ```hcl
 resource "aws_db_instance" "main" {
@@ -1122,20 +1122,20 @@ terraform destroy
 # but the plan calls for this resource to be destroyed.
 ```
 
-**Cuando usarlo**: bases de datos de produccion, buckets con datos criticos, cualquier
-recurso cuya perdida seria catastrofica. Es una red de seguridad contra errores
+**Cuándo usarlo**: bases de datos de producción, buckets con datos críticos, cualquier
+recurso cuya pérdida sería catastrófica. Es una red de seguridad contra errores
 humanos.
 
 :::warning
 `prevent_destroy` no es infalible. Si eliminas el bloque `resource` completo de tu
-configuracion y luego ejecutas `apply`, Terraform lo destruira igualmente porque ya
-no sabe que debe protegerlo. La proteccion solo funciona mientras el recurso este
-declarado en la configuracion.
+configuración y luego ejecutas `apply`, Terraform lo destruirá igualmente porque ya
+no sabe que debe protegerlo. La protección solo funciona mientras el recurso esté
+declarado en la configuración.
 :::
 
 ### 6.3 ignore_changes
 
-Indica a Terraform que ignore los cambios en ciertos atributos de un recurso. Util
+Indica a Terraform que ignore los cambios en ciertos atributos de un recurso. Útil
 cuando algo externo a Terraform modifica esos atributos legitimamente:
 
 ```hcl
@@ -1159,10 +1159,10 @@ resource "aws_instance" "web" {
 **Casos de uso habituales**:
 
 - **Tags** gestionados por un equipo de gobernanza o por AWS Config.
-- **Autoscaling**: el numero de instancias deseadas cambia automaticamente.
+- **Autoscaling**: el número de instancias deseadas cambia automáticamente.
 - **Image ID**: en entornos donde un pipeline de CI/CD actualiza la AMI fuera de
   Terraform.
-- **User data** que se modifica post-creacion.
+- **User data** que se modifica post-creación.
 
 Para ignorar **todos** los atributos:
 
@@ -1172,8 +1172,8 @@ lifecycle {
 }
 ```
 
-Esto convierte el recurso en "solo creacion" — Terraform lo crea pero nunca lo
-modifica despues.
+Esto convierte el recurso en "solo creación" — Terraform lo crea pero nunca lo
+modifica después.
 
 ### 6.4 replace_triggered_by
 
@@ -1200,21 +1200,21 @@ resource "null_resource" "config" {
 }
 ```
 
-**Cuando usarlo**: para forzar la re-ejecucion de provisioners o la recreacion de
-recursos dependientes que Terraform no detecta automaticamente como afectados.
+**Cuándo usarlo**: para forzar la re-ejecución de provisioners o la recreación de
+recursos dependientes que Terraform no detecta automáticamente como afectados.
 
 ---
 
-## 7. Deteccion y resolucion de Drift
+## 7. Detección y resolución de Drift
 
-### 7.1 Que es el drift
+### 7.1 Qué es el drift
 
-El **drift** es la diferencia entre lo que Terraform cree que existe (segun el state)
+El **drift** es la diferencia entre lo que Terraform cree que existe (según el state)
 y lo que realmente existe en el proveedor cloud. El drift ocurre cuando alguien
-modifica la infraestructura **fuera de Terraform**: a traves de la consola web, la
+modifica la infraestructura **fuera de Terraform**: a través de la consola web, la
 CLI del proveedor, otra herramienta o un script.
 
-Ejemplo: Terraform creo una instancia `t3.micro`, pero alguien la cambio a `t3.large`
+Ejemplo: Terraform creó una instancia `t3.micro`, pero alguien la cambió a `t3.large`
 desde la consola de AWS. El state dice `t3.micro`, la realidad dice `t3.large`. Eso
 es drift.
 
@@ -1222,17 +1222,17 @@ import StateDriftDetector from '@site/src/components/demos/terraform/StateDriftD
 
 <StateDriftDetector />
 
-### 7.2 Como detecta Terraform el drift
+### 7.2 Cómo detecta Terraform el drift
 
 Cada vez que ejecutas `terraform plan`, Terraform:
 
-1. Lee el state para saber que recursos deberia gestionar.
+1. Lee el state para saber qué recursos debería gestionar.
 2. Consulta la API del proveedor para obtener el estado real de cada recurso.
-3. Compara el estado real con la configuracion HCL.
+3. Compara el estado real con la configuración HCL.
 4. Muestra las diferencias.
 
-Si hay drift, el `plan` mostrara los cambios necesarios para volver a alinear la
-realidad con la configuracion:
+Si hay drift, el `plan` mostrará los cambios necesarios para volver a alinear la
+realidad con la configuración:
 
 ```bash
 terraform plan
@@ -1244,7 +1244,7 @@ terraform plan
 ### 7.3 terraform refresh
 
 El comando `terraform refresh` actualizaba el state para reflejar la realidad sin
-modificar la infraestructura. Sin embargo, **esta deprecado** desde Terraform 0.15.4
+modificar la infraestructura. Sin embargo, **está deprecado** desde Terraform 0.15.4
 porque modifica el state sin mostrar un plan previo.
 
 La alternativa segura es:
@@ -1256,8 +1256,8 @@ terraform apply -refresh-only
 Este comando:
 
 1. Consulta el estado real de todos los recursos.
-2. Muestra un plan con los cambios que se aplicarian **solo al state**.
-3. Pide confirmacion antes de actualizar el state.
+2. Muestra un plan con los cambios que se aplicarían **solo al state**.
+3. Pide confirmación antes de actualizar el state.
 
 ```bash
 terraform apply -refresh-only
@@ -1269,11 +1269,11 @@ terraform apply -refresh-only
 # Would you like to update the Terraform state to reflect these detected changes?
 ```
 
-### 7.4 Estrategias de resolucion
+### 7.4 Estrategias de resolución
 
-Cuando detectas drift, tienes tres opciones segun la situacion:
+Cuando detectas drift, tienes tres opciones según la situación:
 
-#### Opcion A: Aceptar el cambio manual
+#### Opción A: Aceptar el cambio manual
 
 Si el cambio hecho manualmente es correcto y quieres que Terraform lo "adopte":
 
@@ -1285,9 +1285,9 @@ terraform apply -refresh-only
 # (cambiar t3.micro a t3.large en el .tf)
 ```
 
-#### Opcion B: Revertir al estado deseado
+#### Opción B: Revertir al estado deseado
 
-Si el cambio manual fue un error y quieres volver a lo que dice tu configuracion:
+Si el cambio manual fue un error y quieres volver a lo que dice tu configuración:
 
 ```bash
 # terraform plan ya mostrara el cambio necesario
@@ -1298,9 +1298,9 @@ terraform plan
 terraform apply
 ```
 
-#### Opcion C: Importar recursos nuevos
+#### Opción C: Importar recursos nuevos
 
-Si alguien creo un recurso nuevo fuera de Terraform que quieres empezar a gestionar:
+Si alguien creó un recurso nuevo fuera de Terraform que quieres empezar a gestionar:
 
 <CloudTabs>
 <CloudTab provider="aws">
@@ -1334,34 +1334,34 @@ terraform import azurerm_network_security_group.extra /subscriptions/00000000-00
 
 :::warning Evita los cambios manuales
 La causa principal de drift son los cambios manuales en infraestructura gestionada por
-Terraform. Establece como norma de equipo que **toda modificacion** pase por
-Terraform. Si algo requiere urgencia, documentalo y reconcilia el state lo antes
-posible. Los cambios manuales repetidos son una senal de que falta algo en tu
-configuracion Terraform.
+Terraform. Establece como norma de equipo que **toda modificación** pase por
+Terraform. Si algo requiere urgencia, documéntalo y reconcilia el state lo antes
+posible. Los cambios manuales repetidos son una señal de que falta algo en tu
+configuración Terraform.
 :::
 
 ---
 
-## 8. Buenas practicas de State
+## 8. Buenas prácticas de State
 
 ### 8.1 Siempre remote backend en equipo
 
-No hay excepcion. Si mas de una persona toca la infraestructura, el state debe estar
-en un backend remoto con locking. Configuralo desde el primer dia del proyecto.
+No hay excepción. Si más de una persona toca la infraestructura, el state debe estar
+en un backend remoto con locking. Configúralo desde el primer día del proyecto.
 
 ### 8.2 Encryption at rest
 
-Asegurate de que el backend cifre el state en reposo:
+Asegúrate de que el backend cifre el state en reposo:
 
 - **S3**: `encrypt = true` en el backend + KMS key si quieres control adicional.
 - **Azure**: cifrado por defecto en Azure Storage.
-- **GCS**: cifrado por defecto, con opcion de Customer-Managed Encryption Keys (CMEK).
+- **GCS**: cifrado por defecto, con opción de Customer-Managed Encryption Keys (CMEK).
 - **Terraform Cloud**: cifrado gestionado por HashiCorp.
 
 ### 8.3 Versionado del state
 
 Habilita el versionado en el almacenamiento del state. Si algo sale mal, puedes
-recuperar una version anterior:
+recuperar una versión anterior:
 
 <CloudTabs>
 <CloudTab provider="aws">
@@ -1430,16 +1430,16 @@ comandos mantienen la consistencia interna del state (serial, lineage, checksums
 
 ### 8.5 Separar states por entorno
 
-Cada entorno (dev, staging, prod) deberia tener su propio state independiente. Esto:
+Cada entorno (dev, staging, prod) debería tener su propio state independiente. Esto:
 
 - Limita el **blast radius**: un error en dev no afecta a prod.
 - Permite **permisos granulares**: el equipo de desarrollo no necesita acceso al state
-  de produccion.
-- Mejora el **rendimiento**: states mas pequenos significan `plan` mas rapidos.
+  de producción.
+- Mejora el **rendimiento**: states más pequeños significan `plan` más rápidos.
 
-Estrategias de separacion:
+Estrategias de separación:
 
-| Estrategia | Como |
+| Estrategia | Cómo |
 |-----------|------|
 | **Directorios** | Un directorio por entorno, cada uno con su propio backend config |
 | **Workspaces** | Usar `terraform workspace` (cubierto en la siguiente unidad) |
@@ -1447,11 +1447,11 @@ Estrategias de separacion:
 
 ### 8.6 Usar state mv para refactoring
 
-Cuando reorganices tu codigo Terraform (renombrar recursos, mover a modulos), usa
+Cuando reorganices tu código Terraform (renombrar recursos, mover a módulos), usa
 `terraform state mv` en lugar de dejar que Terraform destruya y recree recursos. El
 proceso seguro es:
 
-1. Ejecutar `terraform plan` para ver que cambios detecta Terraform.
+1. Ejecutar `terraform plan` para ver qué cambios detecta Terraform.
 2. Si ve destroy+create en recursos que solo has renombrado, usa `state mv`.
 3. Verificar con `terraform plan` que muestra `No changes`.
 
@@ -1462,26 +1462,26 @@ Si ejecutas Terraform desde un pipeline de CI/CD:
 - Las credenciales del backend deben ser **secretos del pipeline**, nunca hardcoded.
 - Configura **timeouts** razonables para el locking.
 - Solo permite `apply` desde la rama `main` (o equivalente).
-- Guarda los logs de `plan` y `apply` para auditoria.
+- Guarda los logs de `plan` y `apply` para auditoría.
 
 ---
 
 ## 9. Resumen
 
-El state es el corazon de Terraform. Sin el, Terraform no puede saber que recursos
+El state es el corazón de Terraform. Sin él, Terraform no puede saber qué recursos
 gestiona ni calcular cambios incrementales. Los puntos clave de esta unidad:
 
-- El **state** es un fichero JSON que mapea tu configuracion HCL con los recursos
+- El **state** es un fichero JSON que mapea tu configuración HCL con los recursos
   reales del proveedor cloud.
 - En equipo, **siempre** usa un **remote backend** con locking, cifrado y versionado.
-- Los backends mas comunes son **S3 + DynamoDB** (AWS), **Azure Blob Storage**,
+- Los backends más comunes son **S3 + DynamoDB** (AWS), **Azure Blob Storage**,
   **GCS** y **Terraform Cloud**.
 - El **locking** previene escrituras concurrentes al state. Solo usa `force-unlock`
-  como ultimo recurso.
+  como último recurso.
 - Los comandos `terraform state` (list, show, mv, rm, import) te permiten gestionar
   el state sin editar el JSON directamente.
 - Las reglas de **lifecycle** (`create_before_destroy`, `prevent_destroy`,
-  `ignore_changes`, `replace_triggered_by`) controlan como Terraform gestiona el
+  `ignore_changes`, `replace_triggered_by`) controlan cómo Terraform gestiona el
   ciclo de vida de los recursos.
 - El **drift** se detecta con `terraform plan` y se resuelve con `apply -refresh-only`
   (aceptar cambios) o `apply` normal (revertir cambios).

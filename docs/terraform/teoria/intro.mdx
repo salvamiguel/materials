@@ -6,24 +6,24 @@ description: "Fundamentos de Infrastructure as Code, comparativa de herramientas
 
 import InstallExtension from '@site/src/components/shared/InstallExtension';
 
-# Introduccion a Terraform
+# Introducción a Terraform
 
-## 1. Que es Infrastructure as Code (IaC)
+## 1. Qué es Infrastructure as Code (IaC)
 
-### El problema: gestion manual de infraestructura
+### El problema: gestión manual de infraestructura
 
-Durante anos, la forma habitual de gestionar infraestructura era conectarse a un portal web o a un servidor via SSH y realizar cambios manualmente: crear maquinas virtuales, configurar redes, abrir puertos, instalar paquetes. Este enfoque presenta problemas graves a medida que la infraestructura crece:
+Durante años, la forma habitual de gestionar infraestructura era conectarse a un portal web o a un servidor vía SSH y realizar cambios manualmente: crear máquinas virtuales, configurar redes, abrir puertos, instalar paquetes. Este enfoque presenta problemas graves a medida que la infraestructura crece:
 
-- **Inconsistencia**: dos entornos que deberian ser identicos (staging y produccion) acaban divergiendo porque alguien aplico un cambio en uno y no en el otro.
-- **No reproducible**: si un servidor se pierde, reconstruirlo requiere recordar (o documentar) cada paso manual. En la practica, esa documentacion rara vez esta actualizada.
-- **Error humano**: un clic equivocado en la consola web puede abrir un security group al mundo o borrar una base de datos. No hay revision de codigo ni aprobacion previa.
-- **No auditable**: no queda registro claro de quien hizo que cambio, cuando y por que. Ante un incidente, la investigacion se convierte en un ejercicio de arqueologia.
+- **Inconsistencia**: dos entornos que deberían ser idénticos (staging y producción) acaban divergiendo porque alguien aplicó un cambio en uno y no en el otro.
+- **No reproducible**: si un servidor se pierde, reconstruirlo requiere recordar (o documentar) cada paso manual. En la práctica, esa documentación rara vez está actualizada.
+- **Error humano**: un clic equivocado en la consola web puede abrir un security group al mundo o borrar una base de datos. No hay revisión de código ni aprobación previa.
+- **No auditable**: no queda registro claro de quién hizo qué cambio, cuándo y por qué. Ante un incidente, la investigación se convierte en un ejercicio de arqueología.
 - **Escalabilidad imposible**: gestionar 5 servidores manualmente es viable; gestionar 500 es insostenible.
 
 
-### La solucion: definir infraestructura como codigo
+### La solución: definir infraestructura como código
 
-Infrastructure as Code (IaC) es la practica de definir y gestionar la infraestructura mediante archivos de configuracion versionados en un repositorio, en lugar de procesos manuales. La infraestructura se trata con las mismas practicas que el codigo de aplicacion: control de versiones, code review, testing, CI/CD.
+Infrastructure as Code (IaC) es la práctica de definir y gestionar la infraestructura mediante archivos de configuración versionados en un repositorio, en lugar de procesos manuales. La infraestructura se trata con las mismas prácticas que el código de aplicación: control de versiones, code review, testing, CI/CD.
 
 import ClickOpsVsIaC from '@site/src/components/demos/terraform/ClickOpsVsIaC';
 
@@ -35,40 +35,40 @@ import ClickOpsVsIaC from '@site/src/components/demos/terraform/ClickOpsVsIaC';
 
 Existen dos enfoques para describir infraestructura:
 
-- **Declarativo**: describes el estado deseado (_"quiero 3 instancias EC2 con Ubuntu 22.04"_) y la herramienta calcula los pasos para llegar a ese estado. Si ya existen 2, crea 1 mas. Si ya existen 3, no hace nada. Terraform y CloudFormation siguen este modelo.
-- **Imperativo**: describes los pasos a ejecutar (_"crea una instancia EC2, luego otra, luego otra"_). Si lo ejecutas dos veces, tendras 6 instancias. Ansible y scripts de Bash siguen este modelo (aunque Ansible tiene modulos con comportamiento idempotente).
+- **Declarativo**: describes el estado deseado (_"quiero 3 instancias EC2 con Ubuntu 22.04"_) y la herramienta calcula los pasos para llegar a ese estado. Si ya existen 2, crea 1 más. Si ya existen 3, no hace nada. Terraform y CloudFormation siguen este modelo.
+- **Imperativo**: describes los pasos a ejecutar (_"crea una instancia EC2, luego otra, luego otra"_). Si lo ejecutas dos veces, tendrás 6 instancias. Ansible y scripts de Bash siguen este modelo (aunque Ansible tiene módulos con comportamiento idempotente).
 
 :::tip Regla general
-El enfoque declarativo es preferible para infraestructura porque reduce errores: defines el _que_, no el _como_. La herramienta se encarga de calcular las diferencias entre el estado actual y el deseado.
+El enfoque declarativo es preferible para infraestructura porque reduce errores: defines el _qué_, no el _cómo_. La herramienta se encarga de calcular las diferencias entre el estado actual y el deseado.
 :::
 
 **Idempotencia**
 
-Una operacion es idempotente si ejecutarla multiples veces produce el mismo resultado que ejecutarla una sola vez. En IaC, esto significa que si tu configuracion declara 3 servidores y ya existen 3 servidores con esa configuracion, aplicar de nuevo no cambia nada. Este principio es fundamental para evitar efectos secundarios inesperados.
+Una operación es idempotente si ejecutarla múltiples veces produce el mismo resultado que ejecutarla una sola vez. En IaC, esto significa que si tu configuración declara 3 servidores y ya existen 3 servidores con esa configuración, aplicar de nuevo no cambia nada. Este principio es fundamental para evitar efectos secundarios inesperados.
 
 **Versionado**
 
 Al estar la infraestructura definida en archivos de texto, se almacena en un sistema de control de versiones como Git. Esto permite:
 
 - Ver el historial completo de cambios.
-- Hacer rollback a una version anterior.
+- Hacer rollback a una versión anterior.
 - Usar pull requests para revisar cambios antes de aplicarlos.
 - Asociar cambios de infraestructura con tickets o incidencias.
 
-**Automatizacion**
+**Automatización**
 
-IaC permite integrar la gestion de infraestructura en pipelines de CI/CD. Un cambio en un archivo de configuracion puede desencadenar automaticamente un `plan` para revisar los cambios propuestos y, tras aprobacion, un `apply` para ejecutarlos. Esto elimina la intervencion manual y acelera los ciclos de entrega.
+IaC permite integrar la gestión de infraestructura en pipelines de CI/CD. Un cambio en un archivo de configuración puede desencadenar automáticamente un `plan` para revisar los cambios propuestos y, tras aprobación, un `apply` para ejecutarlos. Esto elimina la intervención manual y acelera los ciclos de entrega.
 
 ### Ventajas de IaC
 
-| Ventaja | Descripcion |
+| Ventaja | Descripción |
 |---------|-------------|
-| **Reproducibilidad** | El mismo codigo genera el mismo entorno, siempre. Puedes crear entornos identicos de desarrollo, staging y produccion. |
+| **Reproducibilidad** | El mismo código genera el mismo entorno, siempre. Puedes crear entornos idénticos de desarrollo, staging y producción. |
 | **Consistencia** | Se elimina el _configuration drift_: las diferencias no documentadas entre entornos. |
-| **Velocidad** | Crear o destruir un entorno completo toma minutos en lugar de horas o dias. |
-| **Auditoria** | Cada cambio queda registrado en Git con autor, fecha, mensaje y diff. |
-| **Colaboracion** | Equipos pueden trabajar en paralelo sobre la infraestructura usando ramas, pull requests y code review. |
-| **Costes** | Entornos efimeros que se crean y destruyen bajo demanda reducen el gasto en cloud. |
+| **Velocidad** | Crear o destruir un entorno completo toma minutos en lugar de horas o días. |
+| **Auditoría** | Cada cambio queda registrado en Git con autor, fecha, mensaje y diff. |
+| **Colaboración** | Equipos pueden trabajar en paralelo sobre la infraestructura usando ramas, pull requests y code review. |
+| **Costes** | Entornos efímeros que se crean y destruyen bajo demanda reducen el gasto en cloud. |
 
 ---
 
@@ -76,48 +76,48 @@ IaC permite integrar la gestion de infraestructura en pipelines de CI/CD. Un cam
 
 ### Comparativa detallada
 
-| Caracteristica | Terraform | Pulumi | CloudFormation | Ansible |
+| Característica | Terraform | Pulumi | CloudFormation | Ansible |
 |----------------|-----------|--------|----------------|---------|
 | **Proveedor** | HashiCorp (IBM) | Pulumi Inc. | AWS | Red Hat (IBM) |
 | **Modelo** | Declarativo | Imperativo | Declarativo | Imperativo / Procedural |
 | **Lenguaje** | HCL | Python, TypeScript, Go, C#, Java | JSON / YAML | YAML |
-| **Multi-cloud** | Si (AWS, Azure, GCP, +3000 providers) | Si | Solo AWS | Si (via modulos) |
+| **Multi-cloud** | Sí (AWS, Azure, GCP, +3000 providers) | Sí | Solo AWS | Sí (vía módulos) |
 | **State** | Archivo local o remoto | Archivo local o Pulumi Cloud | Gestionado por AWS | Sin state |
 | **Curva de aprendizaje** | Media (HCL es sencillo) | Baja si conoces el lenguaje | Media | Baja |
 | **Comunidad** | Muy grande | Creciente | Grande (ecosistema AWS) | Muy grande |
 | **Licencia** | BSL 1.1 (OpenTofu como fork abierto) | Apache 2.0 | Propietario | GPL |
 
-### Cuando usar cada una
+### Cuándo usar cada una
 
-**Terraform** es la eleccion por defecto para equipos que gestionan infraestructura multi-cloud o que necesitan un ecosistema maduro de providers. Su lenguaje HCL esta disenado especificamente para infraestructura, lo que lo hace legible y conciso. Es la herramienta mas adoptada: mas del 45% de las organizaciones con practicas DevOps la usan segun encuestas de HashiCorp y la Cloud Native Computing Foundation.
+**Terraform** es la elección por defecto para equipos que gestionan infraestructura multi-cloud o que necesitan un ecosistema maduro de providers. Su lenguaje HCL está diseñado específicamente para infraestructura, lo que lo hace legible y conciso. Es la herramienta más adoptada: más del 45% de las organizaciones con prácticas DevOps la usan según encuestas de HashiCorp y la Cloud Native Computing Foundation.
 
-**Pulumi** es ideal cuando el equipo prefiere usar un lenguaje de programacion que ya conoce (Python, TypeScript) en lugar de aprender HCL. Permite usar condicionales, bucles y abstracciones del lenguaje nativo, lo cual es util para logicas complejas.
+**Pulumi** es ideal cuando el equipo prefiere usar un lenguaje de programación que ya conoce (Python, TypeScript) en lugar de aprender HCL. Permite usar condicionales, bucles y abstracciones del lenguaje nativo, lo cual es útil para lógicas complejas.
 
-**CloudFormation** es la opcion natural si tu infraestructura esta exclusivamente en AWS. Tiene integracion nativa con todos los servicios de AWS y no requiere gestionar el state externamente.
+**CloudFormation** es la opción natural si tu infraestructura está exclusivamente en AWS. Tiene integración nativa con todos los servicios de AWS y no requiere gestionar el state externamente.
 
-**Ansible** destaca en la configuracion de servidores (instalar paquetes, configurar servicios, gestionar usuarios) mas que en la creacion de infraestructura. En la practica, muchos equipos combinan Terraform para provisionar infraestructura y Ansible para configurarla.
+**Ansible** destaca en la configuración de servidores (instalar paquetes, configurar servicios, gestionar usuarios) más que en la creación de infraestructura. En la práctica, muchos equipos combinan Terraform para provisionar infraestructura y Ansible para configurarla.
 
 :::info Terraform vs OpenTofu
-En 2023, HashiCorp cambio la licencia de Terraform de MPL 2.0 a BSL 1.1 (Business Source License). Como respuesta, la comunidad creo **OpenTofu**, un fork de Terraform bajo la Linux Foundation con licencia abierta. Ambos son compatibles en sintaxis y providers. En este curso usaremos Terraform, pero todo lo aprendido es directamente aplicable a OpenTofu.
+En 2023, HashiCorp cambió la licencia de Terraform de MPL 2.0 a BSL 1.1 (Business Source License). Como respuesta, la comunidad creó **OpenTofu**, un fork de Terraform bajo la Linux Foundation con licencia abierta. Ambos son compatibles en sintaxis y providers. En este curso usaremos Terraform, pero todo lo aprendido es directamente aplicable a OpenTofu.
 :::
 
 ---
 
 ## 3. Arquitectura de Terraform
 
-Terraform se compone de tres elementos fundamentales que interactuan entre si:
+Terraform se compone de tres elementos fundamentales que interactúan entre sí:
 
 ### Terraform Core
 
-Es el binario principal (`terraform`). Su funcion es:
+Es el binario principal (`terraform`). Su función es:
 
-1. Leer los archivos de configuracion (`.tf`).
+1. Leer los archivos de configuración (`.tf`).
 2. Leer el state actual de la infraestructura.
-3. Calcular las diferencias entre la configuracion deseada y el state actual.
-4. Generar un plan de ejecucion (que recursos crear, modificar o destruir).
-5. Ejecutar ese plan comunicandose con los providers.
+3. Calcular las diferencias entre la configuración deseada y el state actual.
+4. Generar un plan de ejecución (qué recursos crear, modificar o destruir).
+5. Ejecutar ese plan comunicándose con los providers.
 
-Terraform Core implementa un **grafo de dependencias**: analiza las relaciones entre recursos y determina el orden correcto de creacion. Ademas, paraleliza operaciones sobre recursos que no tienen dependencias entre si.
+Terraform Core implementa un **grafo de dependencias**: analiza las relaciones entre recursos y determina el orden correcto de creación. Además, paraleliza operaciones sobre recursos que no tienen dependencias entre sí.
 
 ### Providers
 
@@ -130,16 +130,16 @@ Algunos providers destacados:
 - **SaaS**: `github`, `cloudflare`, `datadog`, `pagerduty`
 - **Utilidades**: `local`, `random`, `null`, `tls`, `http`
 
-El [Terraform Registry](https://registry.terraform.io/) alberga mas de 3000 providers mantenidos por HashiCorp, por los propios proveedores de cloud o por la comunidad.
+El [Terraform Registry](https://registry.terraform.io/) alberga más de 3000 providers mantenidos por HashiCorp, por los propios proveedores de cloud o por la comunidad.
 
 ### State
 
-El state es un archivo (por defecto `terraform.tfstate`) en formato JSON que almacena el mapeo entre los recursos definidos en la configuracion y los recursos reales en el proveedor. Es la **fuente de verdad** que Terraform usa para saber que existe actualmente.
+El state es un archivo (por defecto `terraform.tfstate`) en formato JSON que almacena el mapeo entre los recursos definidos en la configuración y los recursos reales en el proveedor. Es la **fuente de verdad** que Terraform usa para saber qué existe actualmente.
 
-Sin el state, Terraform no podria saber si un recurso que aparece en la configuracion ya existe o necesita ser creado. Tampoco podria detectar que un recurso que existia ha sido eliminado de la configuracion y debe destruirse.
+Sin el state, Terraform no podría saber si un recurso que aparece en la configuración ya existe o necesita ser creado. Tampoco podría detectar que un recurso que existía ha sido eliminado de la configuración y debe destruirse.
 
 :::warning El state contiene datos sensibles
-El archivo de state puede contener contrasenas, claves de acceso, direcciones IP privadas y otros datos sensibles. **Nunca** lo subas a un repositorio publico. En produccion, utiliza un backend remoto (S3, GCS, Terraform Cloud) con cifrado y control de acceso.
+El archivo de state puede contener contraseñas, claves de acceso, direcciones IP privadas y otros datos sensibles. **Nunca** lo subas a un repositorio público. En producción, utiliza un backend remoto (S3, GCS, Terraform Cloud) con cifrado y control de acceso.
 :::
 
 ### Diagrama conceptual
@@ -154,18 +154,18 @@ graph LR
 
 El flujo es siempre el mismo:
 
-1. Terraform Core lee la configuracion (archivos `.tf`) y el state.
+1. Terraform Core lee la configuración (archivos `.tf`) y el state.
 2. Calcula las diferencias y genera un plan.
-3. Ejecuta el plan invocando las APIs a traves de los providers.
+3. Ejecuta el plan invocando las APIs a través de los providers.
 4. Actualiza el state con el resultado.
 
 ---
 
-## 4. Instalacion y configuracion
+## 4. Instalación y configuración
 
 ### macOS
 
-La forma mas sencilla es usar [Homebrew](https://brew.sh/):
+La forma más sencilla es usar [Homebrew](https://brew.sh/):
 
 ```bash
 brew tap hashicorp/tap
@@ -207,22 +207,22 @@ Con [Scoop](https://scoop.sh/):
 scoop install terraform
 ```
 
-### Verificacion
+### Verificación
 
-Independientemente del sistema operativo, verifica que la instalacion es correcta:
+Independientemente del sistema operativo, verifica que la instalación es correcta:
 
 ```bash
 terraform version
 ```
 
-Deberias ver algo similar a:
+Deberías ver algo similar a:
 
 ```
 Terraform v1.9.x
 on darwin_arm64
 ```
 
-:::tip Gestion de versiones con tfenv
+:::tip Gestión de versiones con tfenv
 Si necesitas trabajar con diferentes versiones de Terraform en distintos proyectos, utiliza [tfenv](https://github.com/tfutils/tfenv), un gestor de versiones similar a `nvm` para Node.js:
 
 ```bash
@@ -237,20 +237,20 @@ tfenv use 1.9.5
 ```
 :::
 
-### Configuracion de VSCode
+### Configuración de VSCode
 
-Instala la extension oficial **HashiCorp Terraform** desde el marketplace de VSCode. Esta extension proporciona:
+Instala la extensión oficial **HashiCorp Terraform** desde el marketplace de VSCode. Esta extensión proporciona:
 
 - Resaltado de sintaxis para archivos `.tf` y `.tfvars`.
 - Autocompletado de recursos, atributos y funciones.
-- Formateo automatico con `terraform fmt`.
-- Navegacion a la definicion de variables y modulos.
-- Validacion de la configuracion en tiempo real.
+- Formateo automático con `terraform fmt`.
+- Navegación a la definición de variables y módulos.
+- Validación de la configuración en tiempo real.
 
 <InstallExtension id="hashicorp.terraform" label="HashiCorp Terraform" />
 
 #### settings.json
-Ademas, anade esta configuracion a tu `settings.json` de VSCode para habilitar el formateo automatico al guardar:
+Además, añade esta configuración a tu `settings.json` de VSCode para habilitar el formateo automático al guardar:
 
 ```json
 {
@@ -269,7 +269,7 @@ Ademas, anade esta configuracion a tu `settings.json` de VSCode para habilitar e
 
 ## 5. Primer recurso con Terraform
 
-Vamos a crear nuestro primer recurso con Terraform sin necesidad de una cuenta en ningun proveedor cloud. Usaremos el provider `local`, que permite crear y gestionar archivos en el sistema de archivos local.
+Vamos a crear nuestro primer recurso con Terraform sin necesidad de una cuenta en ningún proveedor cloud. Usaremos el provider `local`, que permite crear y gestionar archivos en el sistema de archivos local.
 
 import LabActions from '@site/src/components/shared/LabActions';
 
@@ -287,7 +287,7 @@ import LabActions from '@site/src/components/shared/LabActions';
 mkdir tf-first-example && cd tf-first-example
 ```
 
-### Escribir la configuracion
+### Escribir la configuración
 
 Crea un archivo llamado `main.tf` con el siguiente contenido:
 
@@ -320,11 +320,11 @@ resource "local_file" "saludo" {
 
 Analicemos cada bloque:
 
-| Bloque | Proposito |
+| Bloque | Propósito |
 |--------|-----------|
-| `terraform {}` | Configuracion global: que providers se necesitan y en que versiones, y que version minima de Terraform se requiere. |
-| `required_providers {}` | Dentro del bloque `terraform`, declara cada provider con su `source` (registro/organizacion/nombre) y restriccion de `version`. |
-| `provider "local" {}` | Configura el provider `local`. Algunos providers requieren credenciales aqui (por ejemplo, `provider "aws"` necesita `region`). |
+| `terraform {}` | Configuración global: qué providers se necesitan y en qué versiones, y qué versión mínima de Terraform se requiere. |
+| `required_providers {}` | Dentro del bloque `terraform`, declara cada provider con su `source` (registro/organización/nombre) y restricción de `version`. |
+| `provider "local" {}` | Configura el provider `local`. Algunos providers requieren credenciales aquí (por ejemplo, `provider "aws"` necesita `region`). |
 | `resource "local_file" "saludo"` | Define un recurso de tipo `local_file` con el nombre local `saludo`. Dentro van los argumentos del recurso. |
 
 ### Inicializar el proyecto: `terraform init`
@@ -333,7 +333,7 @@ Analicemos cada bloque:
 terraform init
 ```
 
-Este comando descarga los providers declarados y prepara el directorio de trabajo. La salida sera similar a:
+Este comando descarga los providers declarados y prepara el directorio de trabajo. La salida será similar a:
 
 ```
 Initializing the backend...
@@ -346,12 +346,12 @@ Initializing provider plugins...
 Terraform has been successfully initialized!
 ```
 
-Despues de `init`, veras que se ha creado:
+Después de `init`, verás que se ha creado:
 - Un directorio `.terraform/` con los plugins descargados.
 - Un archivo `.terraform.lock.hcl` con las versiones exactas de los providers (similar a un `package-lock.json` en Node.js).
 
 :::info El archivo .terraform.lock.hcl
-Este archivo **debe** incluirse en el repositorio Git. Garantiza que todos los miembros del equipo usen exactamente las mismas versiones de providers. El directorio `.terraform/`, en cambio, debe anadirse al `.gitignore`.
+Este archivo **debe** incluirse en el repositorio Git. Garantiza que todos los miembros del equipo usen exactamente las mismas versiones de providers. El directorio `.terraform/`, en cambio, debe añadirse al `.gitignore`.
 :::
 
 ### Previsualizar los cambios: `terraform plan`
@@ -360,7 +360,7 @@ Este archivo **debe** incluirse en el repositorio Git. Garantiza que todos los m
 terraform plan
 ```
 
-Terraform compara la configuracion con el state (que esta vacio, ya que es la primera ejecucion) y muestra que acciones realizara:
+Terraform compara la configuración con el state (que está vacío, ya que es la primera ejecución) y muestra qué acciones realizará:
 
 ```
 Terraform used the selected providers to generate the following execution plan.
@@ -387,10 +387,10 @@ Terraform will perform the following actions:
 Plan: 1 to add, 0 to change, 0 to destroy.
 ```
 
-El simbolo `+` indica que el recurso sera creado. Los valores marcados como `(known after apply)` son atributos computados que solo se conoceran tras la creacion.
+El símbolo `+` indica que el recurso será creado. Los valores marcados como `(known after apply)` son atributos computados que solo se conocerán tras la creación.
 
-:::tip Buena practica
-Siempre ejecuta `terraform plan` antes de `terraform apply`. Revisalo con calma, especialmente los recursos marcados con `-` (destroy) o `~` (update in-place). Un plan es tu ultima linea de defensa antes de modificar infraestructura real.
+:::tip Buena práctica
+Siempre ejecuta `terraform plan` antes de `terraform apply`. Revísalo con calma, especialmente los recursos marcados con `-` (destroy) o `~` (update in-place). Un plan es tu última línea de defensa antes de modificar infraestructura real.
 :::
 
 ### Aplicar los cambios: `terraform apply`
@@ -399,7 +399,7 @@ Siempre ejecuta `terraform plan` antes de `terraform apply`. Revisalo con calma,
 terraform apply
 ```
 
-Terraform mostrara el mismo plan y pedira confirmacion:
+Terraform mostrará el mismo plan y pedirá confirmación:
 
 ```
 Do you want to perform these actions?
@@ -409,7 +409,7 @@ Do you want to perform these actions?
   Enter a value: yes
 ```
 
-Escribe `yes` y pulsa Enter. La salida sera:
+Escribe `yes` y pulsa Enter. La salida será:
 
 ```
 local_file.saludo: Creating...
@@ -428,7 +428,7 @@ cat saludo.txt
 Hola desde Terraform! Este archivo ha sido creado automaticamente.
 ```
 
-Ademas, se ha generado el archivo `terraform.tfstate` con el estado del recurso creado.
+Además, se ha generado el archivo `terraform.tfstate` con el estado del recurso creado.
 
 ### Destruir la infraestructura: `terraform destroy`
 
@@ -436,7 +436,7 @@ Ademas, se ha generado el archivo `terraform.tfstate` con el estado del recurso 
 terraform destroy
 ```
 
-Terraform mostrara un plan de destruccion (los recursos marcados con `-`) y pedira confirmacion:
+Terraform mostrará un plan de destrucción (los recursos marcados con `-`) y pedirá confirmación:
 
 ```
 local_file.saludo: Refreshing state... [id=a1b2c3d4...]
@@ -465,15 +465,15 @@ local_file.saludo: Destruction complete after 0s
 Destroy complete! Resources: 1 destroyed.
 ```
 
-:::danger terraform destroy en produccion
-El comando `terraform destroy` elimina **todos** los recursos gestionados por la configuracion. En un entorno de produccion, esto puede significar borrar bases de datos, servidores, redes y todo lo que Terraform gestione. Usalo con extrema precaucion y nunca sin revisar el plan primero.
+:::danger terraform destroy en producción
+El comando `terraform destroy` elimina **todos** los recursos gestionados por la configuración. En un entorno de producción, esto puede significar borrar bases de datos, servidores, redes y todo lo que Terraform gestione. Úsalo con extrema precaución y nunca sin revisar el plan primero.
 :::
 
 ---
 
-## 6. Sintaxis basica de HCL
+## 6. Sintaxis básica de HCL
 
-HCL (HashiCorp Configuration Language) es el lenguaje que Terraform utiliza para definir infraestructura. Esta disenado para ser legible tanto por humanos como por maquinas, situandose a medio camino entre JSON y un lenguaje de programacion.
+HCL (HashiCorp Configuration Language) es el lenguaje que Terraform utiliza para definir infraestructura. Está diseñado para ser legible tanto por humanos como por máquinas, situándose a medio camino entre JSON y un lenguaje de programación.
 
 import HCLAnatomy from '@site/src/components/demos/terraform/HCLAnatomy';
 
@@ -481,7 +481,7 @@ import HCLAnatomy from '@site/src/components/demos/terraform/HCLAnatomy';
 
 ### Estructura de un bloque
 
-La unidad basica de HCL es el **bloque**. Un bloque tiene un tipo, cero o mas etiquetas, y un cuerpo entre llaves:
+La unidad básica de HCL es el **bloque**. Un bloque tiene un tipo, cero o más etiquetas, y un cuerpo entre llaves:
 
 ```hcl
 tipo "etiqueta1" "etiqueta2" {
@@ -505,7 +505,7 @@ resource "aws_instance" "web" {
 }
 ```
 
-El primer label (`aws_instance`) es el tipo de recurso. El segundo (`web`) es el nombre local que usaras para referenciarte a el dentro de la configuracion.
+El primer label (`aws_instance`) es el tipo de recurso. El segundo (`web`) es el nombre local que usarás para referenciarte a él dentro de la configuración.
 
 #### `data` -- Consulta datos existentes (no los crea)
 
@@ -522,7 +522,7 @@ data "aws_ami" "ubuntu" {
 }
 ```
 
-Los data sources permiten leer informacion de recursos que ya existen y no son gestionados por tu configuracion.
+Los data sources permiten leer información de recursos que ya existen y no son gestionados por tu configuración.
 
 #### `variable` -- Define una variable de entrada
 
@@ -539,18 +539,18 @@ variable "instance_type" {
 }
 ```
 
-Las variables permiten parametrizar la configuracion para reutilizarla en diferentes contextos.
+Las variables permiten parametrizar la configuración para reutilizarla en diferentes contextos.
 
 #### `output` -- Expone valores tras el apply
 
 ```hcl
 output "instance_ip" {
-  description = "IP publica de la instancia"
+  description = "IP pública de la instancia"
   value       = aws_instance.web.public_ip
 }
 ```
 
-Los outputs son utiles para mostrar informacion relevante al usuario o para pasar datos entre modulos.
+Los outputs son útiles para mostrar información relevante al usuario o para pasar datos entre módulos.
 
 #### `locals` -- Define valores intermedios reutilizables
 
@@ -565,7 +565,7 @@ locals {
 }
 ```
 
-Los locals son como constantes o variables calculadas internas a la configuracion. A diferencia de las variables, no se pueden pasar desde fuera.
+Los locals son como constantes o variables calculadas internas a la configuración. A diferencia de las variables, no se pueden pasar desde fuera.
 
 #### `module` -- Reutiliza un conjunto de recursos
 
@@ -583,9 +583,9 @@ module "vpc" {
 }
 ```
 
-Los modulos son paquetes reutilizables de configuracion. Pueden venir del Terraform Registry, de un repositorio Git o de un directorio local.
+Los módulos son paquetes reutilizables de configuración. Pueden venir del Terraform Registry, de un repositorio Git o de un directorio local.
 
-#### `terraform` -- Configuracion global
+#### `terraform` -- Configuración global
 
 ```hcl
 terraform {
@@ -653,7 +653,7 @@ variable "servidor" {
   })
 }
 
-# Tuple (secuencia con tipos fijos por posicion)
+# Tuple (secuencia con tipos fijos por posición)
 variable "config" {
   type = tuple([string, number, bool])
 }
@@ -673,9 +673,9 @@ variable "config" {
 */
 ```
 
-### Interpolacion y expresiones
+### Interpolación y expresiones
 
-Puedes insertar valores dinamicos dentro de strings usando la sintaxis `${}`:
+Puedes insertar valores dinámicos dentro de strings usando la sintaxis `${}`:
 
 ```hcl
 resource "local_file" "config" {
@@ -684,8 +684,8 @@ resource "local_file" "config" {
 }
 ```
 
-:::warning Interpolacion innecesaria
-No uses `"${var.nombre}"` cuando el valor entero es una referencia. Escribe directamente `var.nombre` sin comillas. La interpolacion solo es necesaria cuando combinas una referencia con texto literal:
+:::warning Interpolación innecesaria
+No uses `"${var.nombre}"` cuando el valor entero es una referencia. Escribe directamente `var.nombre` sin comillas. La interpolación solo es necesaria cuando combinas una referencia con texto literal:
 
 ```hcl
 # Correcto
@@ -701,7 +701,7 @@ name = "web-${var.entorno}-${count.index}"
 
 ### Ejemplo completo combinando varios elementos
 
-Este ejemplo ilustra como se combinan los diferentes bloques en una configuracion coherente:
+Este ejemplo ilustra cómo se combinan los diferentes bloques en una configuración coherente:
 
 ```hcl
 terraform {
@@ -782,7 +782,7 @@ terraform init
 terraform apply -auto-approve
 ```
 
-El flag `-auto-approve` omite la confirmacion interactiva. Es util en desarrollo y en pipelines de CI/CD, pero **nunca** lo uses en entornos de produccion sin un paso previo de revision con `terraform plan`.
+El flag `-auto-approve` omite la confirmación interactiva. Es útil en desarrollo y en pipelines de CI/CD, pero **nunca** lo uses en entornos de producción sin un paso previo de revisión con `terraform plan`.
 
 ---
 
@@ -790,11 +790,11 @@ El flag `-auto-approve` omite la confirmacion interactiva. Es util en desarrollo
 
 Estos son los puntos clave de esta unidad:
 
-- **IaC** es la practica de definir infraestructura mediante archivos de configuracion versionados, eliminando la gestion manual y sus problemas asociados.
+- **IaC** es la práctica de definir infraestructura mediante archivos de configuración versionados, eliminando la gestión manual y sus problemas asociados.
 - El enfoque **declarativo** (definir el estado deseado) es preferible al imperativo para infraestructura, porque es idempotente y reduce errores.
-- **Terraform** es la herramienta IaC mas adoptada, multi-cloud, con un ecosistema de mas de 3000 providers y una comunidad activa.
+- **Terraform** es la herramienta IaC más adoptada, multi-cloud, con un ecosistema de más de 3000 providers y una comunidad activa.
 - La arquitectura de Terraform se compone de **Core** (motor), **providers** (plugins para APIs) y **state** (fuente de verdad).
-- El flujo basico es: `terraform init` (preparar) -> `terraform plan` (previsualizar) -> `terraform apply` (ejecutar) -> `terraform destroy` (eliminar):
+- El flujo básico es: `terraform init` (preparar) -> `terraform plan` (previsualizar) -> `terraform apply` (ejecutar) -> `terraform destroy` (eliminar):
 
 ```mermaid
 graph LR
@@ -803,5 +803,5 @@ graph LR
     C --> D["terraform destroy<br/>Eliminar"]
 ```
 - **HCL** es el lenguaje de Terraform, con bloques como `resource`, `variable`, `output`, `locals`, `module`, `provider` y `terraform`.
-- El **state** es un archivo critico que contiene datos sensibles y debe protegerse adecuadamente.
+- El **state** es un archivo crítico que contiene datos sensibles y debe protegerse adecuadamente.
 - Siempre ejecuta `terraform plan` antes de `terraform apply` para revisar los cambios propuestos.
