@@ -1,0 +1,16 @@
+---
+sidebar_position: 1
+title: "Autoevaluación y tests"
+description: "Ejercicios prácticos y tests para evaluar tus conocimientos en Terraform: desde fundamentos hasta patrones avanzados."
+---
+
+import ModuleTest from '@site/src/components/test/ModuleTest';
+import { testIntroduction } from './test-data';
+
+# Tests de Terraform
+
+Evalúa tus conocimientos con estos tests interactivos. Tu progreso se guarda automáticamente en el navegador.
+
+<ModuleTest tests={[
+  { id: 'tf-intro', title: 'Introducción a Terraform', config: testIntroduction },
+]} />
