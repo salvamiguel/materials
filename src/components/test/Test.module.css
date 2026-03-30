@@ -1,0 +1,390 @@
+/* src/components/test/Test.module.css */
+
+/* ── Progress bar ── */
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--ifm-font-color-base);
+  opacity: 0.7;
+  margin-bottom: 0.4rem;
+}
+
+.timer {
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.timerWarning {
+  color: #e74c3c;
+}
+
+.progressTrack {
+  background: var(--ifm-background-color);
+  border-radius: 4px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.progressFill {
+  background: var(--ifm-color-primary);
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* ── IDLE screen ── */
+.idleScreen {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.idleTitle {
+  font-family: var(--ifm-heading-font-family);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.idleMeta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.idleActions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.idleLastResult {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  opacity: 0.5;
+  margin-top: 1rem;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btnPrimary {
+  background: var(--ifm-color-primary);
+  color: #0D0D0D;
+}
+
+.btnSecondary {
+  background: transparent;
+  color: var(--ifm-color-primary);
+  border: 1px solid var(--ifm-color-primary);
+}
+
+.btnDanger {
+  background: transparent;
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+}
+
+/* ── Question area ── */
+.questionTitle {
+  font-family: var(--ifm-heading-font-family);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.2rem 0 1rem;
+}
+
+.questionNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(128, 128, 128, 0.15);
+}
+
+.navBtn {
+  background: none;
+  border: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--ifm-font-color-base);
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+  padding: 0.3rem 0;
+}
+
+.navBtn:hover {
+  opacity: 1;
+}
+
+.navBtnActive {
+  opacity: 1;
+  color: var(--ifm-color-primary);
+  font-weight: 600;
+}
+
+/* ── Answer option cards (select/multiselect) ── */
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.optionCard {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.9rem;
+  border: 1.5px solid rgba(128, 128, 128, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  font-size: 0.85rem;
+}
+
+.optionCard:hover {
+  border-color: var(--ifm-color-primary);
+}
+
+.optionSelected {
+  border-color: var(--ifm-color-primary);
+  background: rgba(74, 255, 160, 0.06);
+}
+
+.optionCorrect {
+  border-color: var(--ifm-color-primary);
+  background: rgba(74, 255, 160, 0.08);
+  color: var(--ifm-color-primary);
+}
+
+.optionIncorrect {
+  border-color: #e74c3c;
+  background: rgba(231, 76, 60, 0.08);
+  color: #e74c3c;
+}
+
+.optionIndicator {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(128, 128, 128, 0.4);
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  font-size: 0.65rem;
+}
+
+.optionIndicatorCheckbox {
+  border-radius: 4px;
+}
+
+.optionIndicatorSelected {
+  border-color: var(--ifm-color-primary);
+  background: var(--ifm-color-primary);
+  color: #0D0D0D;
+}
+
+.optionHint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  opacity: 0.5;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Feedback / explanation ── */
+.explanation {
+  margin-top: 1rem;
+  background: var(--ifm-background-surface-color);
+  border-left: 3px solid #5bc0de;
+  padding: 0.8rem 1rem;
+  border-radius: 0 6px 6px 0;
+}
+
+.explanationLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5bc0de;
+  margin-bottom: 0.3rem;
+}
+
+.explanationText {
+  font-size: 0.82rem;
+  opacity: 0.8;
+  line-height: 1.5;
+}
+
+/* ── Results screen ── */
+.resultsScreen {
+  padding: 1rem 0;
+}
+
+.scoreBig {
+  text-align: center;
+  font-family: var(--ifm-heading-font-family);
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--ifm-color-primary);
+}
+
+.resultBadge {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.3rem;
+}
+
+.passed {
+  color: var(--ifm-color-primary);
+}
+
+.failed {
+  color: #e74c3c;
+}
+
+.resultMeta {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  opacity: 0.6;
+  margin-top: 0.3rem;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.statCard {
+  background: var(--ifm-background-color);
+  border-radius: 6px;
+  padding: 0.7rem;
+  text-align: center;
+}
+
+.statLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+
+.statValue {
+  font-family: var(--ifm-heading-font-family);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 0.2rem;
+}
+
+.resultActions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.reviewSection {
+  margin-top: 1.5rem;
+}
+
+.reviewItem {
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.12);
+}
+
+.reviewItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.reviewItemPoints {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+
+/* ── Time-up overlay ── */
+.timeUpOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  z-index: 10;
+}
+
+.timeUpText {
+  font-family: var(--ifm-heading-font-family);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #e74c3c;
+  margin-bottom: 1rem;
+}
+
+/* ── Wrapper override for test ── */
+.testWrapper {
+  position: relative;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .progressFill,
+  .optionCard,
+  .btn,
+  .navBtn {
+    transition: none;
+  }
+}
+
+/* ── Mobile ── */
+@media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .idleActions {
+    flex-direction: column;
+    align-items: center;
+  }
+}
