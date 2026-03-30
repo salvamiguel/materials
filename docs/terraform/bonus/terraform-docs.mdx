@@ -1,0 +1,162 @@
+---
+sidebar_position: 2
+title: "terraform-docs"
+---
+
+import LabActions from '@site/src/components/shared/LabActions';
+
+# terraform-docs
+
+<div style={{display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem'}}>
+  <img
+    src="/materials/img/terraform-docs-logo.png"
+    alt="terraform-docs"
+    style={{width: '64px', height: '64px', objectFit: 'contain'}}
+  />
+  <p style={{margin: 0}}>
+    <strong>terraform-docs</strong> genera documentación automática de tus módulos Terraform a partir del código fuente — variables, outputs, providers y recursos — en múltiples formatos (Markdown, JSON, YAML, Asciidoc…).
+  </p>
+</div>
+
+## El problema que resuelve
+
+Documentar módulos de Terraform a mano es tedioso y se queda desactualizado rápido. Cada vez que cambias una variable o un output, tienes que acordarte de actualizar el README.
+
+```hcl
+# Sin terraform-docs: actualizas esto...
+variable "instance_type" {
+  description = "EC2 instance type"
+  type        = string
+  default     = "t3.micro"
+}
+
+# ...y luego tienes que ir al README y actualizar la tabla a mano
+```
+
+`terraform-docs` automatiza eso: lee el código y genera la documentación.
+
+## Instalación
+
+```bash
+# macOS
+brew install terraform-docs
+
+# Linux (con go install)
+go install github.com/terraform-docs/terraform-docs@v0.18.0
+
+# Verificar
+terraform-docs --version
+```
+
+## Uso básico
+
+El comando más usado: generar una tabla Markdown con variables y outputs:
+
+```bash
+# Genera tabla en stdout
+terraform-docs markdown table .
+
+# Genera tabla y escribe en README.md
+terraform-docs markdown table --output-file README.md .
+```
+
+### Output de ejemplo
+
+Dado este módulo:
+
+```hcl
+variable "region" {
+  description = "AWS region"
+  type        = string
+  default     = "eu-west-1"
+}
+
+output "vpc_id" {
+  description = "ID of the created VPC"
+  value       = aws_vpc.main.id
+}
+```
+
+Genera:
+
+```markdown
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| region | AWS region | `string` | `"eu-west-1"` | no |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| vpc\_id | ID of the created VPC |
+```
+
+## Configuración (`.terraform-docs.yml`)
+
+Puedes configurar el comportamiento con un fichero en la raíz del módulo:
+
+```yaml
+formatter: markdown table
+
+output:
+  file: README.md
+  mode: inject            # inyecta entre marcadores en el README existente
+  template: |-
+    <!-- BEGIN_TF_DOCS -->
+    {{ .Content }}
+    <!-- END_TF_DOCS -->
+
+sort:
+  enabled: true
+  by: required
+
+settings:
+  indent: 2
+  anchor: true
+  escape: true
+```
+
+Con `mode: inject`, solo se actualiza la sección entre los marcadores — el resto del README queda intacto.
+
+## Integración con pre-commit
+
+La forma más potente: que `terraform-docs` se ejecute automáticamente en cada commit que toque un módulo.
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/terraform-docs/terraform-docs
+    rev: v0.18.0
+    hooks:
+      - id: terraform-docs-go
+        args: ["--output-file", "README.md", "--output-mode", "inject", "."]
+```
+
+```bash
+# Instalar pre-commit y el hook
+pip install pre-commit
+pre-commit install
+
+# Ejecutar manualmente en todos los módulos
+pre-commit run terraform-docs-go --all-files
+```
+
+## Integración con CI/CD
+
+```yaml
+# .github/workflows/docs.yml
+- name: Generate terraform-docs
+  uses: terraform-docs/gh-actions@v1
+  with:
+    working-dir: modules/vpc,modules/eks
+    output-file: README.md
+    output-method: inject
+    git-push: true
+```
+
+:::tip Inyecta, no sobreescribas
+Usa siempre `mode: inject` con los marcadores `<!-- BEGIN_TF_DOCS -->` / `<!-- END_TF_DOCS -->`. Así puedes tener contenido manual en el README (descripción del módulo, ejemplos de uso) sin que terraform-docs lo borre.
+:::
+

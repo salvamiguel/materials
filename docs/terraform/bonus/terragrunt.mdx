@@ -1,0 +1,150 @@
+---
+sidebar_position: 3
+title: "Terragrunt"
+---
+
+import LabActions from '@site/src/components/shared/LabActions';
+
+# Terragrunt
+
+<div style={{display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem'}}>
+  <img
+    src="/materials/img/terragrunt-logo.svg"
+    alt="Terragrunt"
+    style={{height: '40px', objectFit: 'contain'}}
+  />
+  <p style={{margin: 0}}>
+    <strong>Terragrunt</strong> es un thin wrapper sobre Terraform que resuelve los problemas de escala: configuración DRY, gestión de remote state automatizada, y dependencias entre módulos.
+  </p>
+</div>
+
+## El problema que resuelve
+
+Cuando tienes múltiples entornos y módulos, Terraform tiene fricción:
+
+```
+infra/
+├── prod/
+│   ├── backend.tf       # s3 bucket, dynamodb table, key...
+│   ├── provider.tf      # misma config que staging
+│   └── main.tf
+├── staging/
+│   ├── backend.tf       # copias exactas con pequeñas diferencias
+│   ├── provider.tf
+│   └── main.tf
+└── dev/
+    ├── backend.tf        # repetición × 3
+    ├── provider.tf
+    └── main.tf
+```
+
+Con Terragrunt, defines la config una sola vez y cada entorno solo declara sus diferencias.
+
+## Estructura con Terragrunt
+
+```
+infra/
+├── terragrunt.hcl           # config raíz: remote state, provider
+├── prod/
+│   ├── terragrunt.hcl       # hereda raíz + vars de prod
+│   └── vpc/
+│       └── terragrunt.hcl
+├── staging/
+│   └── terragrunt.hcl
+└── dev/
+    └── terragrunt.hcl
+```
+
+## Remote state automático
+
+Sin Terragrunt tienes que crear manualmente el bucket S3 y la tabla DynamoDB antes de poder hacer `terraform init`. Terragrunt lo provisiona automáticamente:
+
+```hcl
+# terragrunt.hcl (raíz)
+remote_state {
+  backend = "s3"
+  generate = {
+    path      = "backend.tf"
+    if_exists = "overwrite"
+  }
+  config = {
+    bucket         = "my-terraform-state-${local.account_id}"
+    key            = "${path_relative_to_include()}/terraform.tfstate"
+    region         = "eu-west-1"
+    encrypt        = true
+    dynamodb_table = "terraform-locks"
+
+    # Terragrunt crea el bucket y la tabla si no existen
+  }
+}
+```
+
+## Config DRY con `include`
+
+```hcl
+# prod/vpc/terragrunt.hcl
+include "root" {
+  path = find_in_parent_folders()    # hereda la config raíz
+}
+
+terraform {
+  source = "git::https://github.com/org/modules.git//vpc?ref=v1.2.0"
+}
+
+inputs = {
+  env          = "prod"
+  cidr         = "10.0.0.0/16"
+  az_count     = 3
+}
+```
+
+## Dependencias entre módulos
+
+Terragrunt puede leer outputs de otros módulos sin hardcodear valores:
+
+```hcl
+# prod/eks/terragrunt.hcl
+dependency "vpc" {
+  config_path = "../vpc"
+}
+
+inputs = {
+  vpc_id          = dependency.vpc.outputs.vpc_id
+  private_subnets = dependency.vpc.outputs.private_subnet_ids
+}
+```
+
+## Comandos principales
+
+```bash
+# Equivalentes a los comandos de Terraform
+terragrunt init
+terragrunt plan
+terragrunt apply
+
+# Ejecutar en todos los módulos a la vez
+terragrunt run-all plan
+terragrunt run-all apply
+
+# Solo los módulos que han cambiado
+terragrunt run-all apply --terragrunt-include-dir "prod/*"
+```
+
+## ¿Cuándo usar Terragrunt?
+
+| Situación | ¿Usar Terragrunt? |
+|-----------|:-----------------:|
+| Un solo entorno, pocos módulos | ❌ No necesario |
+| 2+ entornos con la misma infra | ✅ Sí |
+| Gestión de remote state manual repetitiva | ✅ Sí |
+| Módulos con dependencias entre sí | ✅ Sí |
+| Equipo grande con muchos repos de infra | ✅ Sí |
+| Proyecto personal o prueba de concepto | ❌ Overhead innecesario |
+
+:::info Terragrunt vs Terraform Workspaces
+Los workspaces de Terraform son útiles para pequeñas diferencias entre entornos. Terragrunt es mejor cuando los entornos tienen diferencias significativas en backends, providers o recursos. No son excluyentes — se pueden combinar.
+:::
+
+:::tip Empieza sin él
+Si empiezas un proyecto nuevo, no añadas Terragrunt desde el día 1. Añádelo cuando el dolor de la repetición sea real. La abstracción prematura también aplica a la infraestructura.
+:::

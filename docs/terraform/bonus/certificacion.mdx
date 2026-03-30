@@ -1,0 +1,149 @@
+---
+sidebar_position: 1
+title: "Certificación Terraform Associate"
+---
+
+import LabActions from '@site/src/components/shared/LabActions';
+
+# Certificación Terraform Associate (004)
+
+<div style={{display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2rem', flexWrap: 'wrap'}}>
+  <img
+    src="/materials/img/terraform-cert-badge.png"
+    alt="HashiCorp Certified: Terraform Associate (004)"
+    style={{width: '160px', borderRadius: '8px'}}
+  />
+  <div>
+    <p style={{margin: 0, fontSize: '1.1rem'}}>
+      La certificación <strong>HashiCorp Certified: Terraform Associate (004)</strong> valida que conoces IaC con Terraform y puedes operar infraestructura de forma segura a escala.
+    </p>
+    <p style={{margin: '0.5rem 0 0', opacity: 0.7, fontSize: '0.9rem'}}>
+      Lanzada el 8 de enero de 2026 · Terraform 1.12 · 60 min · Plataforma: Certiverse
+    </p>
+  </div>
+</div>
+
+:::info 003 vs 004
+La versión 003 se retiró el 7 de enero de 2026. Si tienes el 003, tu credencial sigue siendo válida 2 años desde tu fecha de aprobación. La renovación requerirá el 004.
+:::
+
+## Diferencias clave respecto al 003
+
+| Área | 003 | 004 |
+|------|-----|-----|
+| Terraform de referencia | 1.3 | **1.12** |
+| Plataforma de examen | PSI | **Certiverse** |
+| Multi-cloud workflows | No presente | **NUEVO** |
+| Lifecycle rules (`depends_on`, `prevent_destroy`...) | Implícito | **Explícito** |
+| Custom conditions (check blocks, pre/postconditions) | No presente | **NUEVO** |
+| Ephemeral values | No presente | **NUEVO** |
+| HCP Terraform (Domain 8) | Básico | **Muy expandido** |
+
+El salto conceptual del 003 al 004: el 003 preguntaba *"¿sabes usar Terraform?"*, el 004 pregunta *"¿puedes operar Terraform con seguridad a escala?"*
+
+## Dominios del examen (004)
+
+El examen cubre **8 dominios con 37 sub-objetivos**. HashiCorp no publica pesos por dominio.
+
+### Dominio 1 — IaC con Terraform
+- 1a. Qué es IaC y sus ventajas
+- 1b. Patrones de IaC
+- 1c. ⭐ **NUEVO** — Workflows multi-cloud, hybrid cloud y agnósticos al proveedor
+
+### Dominio 2 — Fundamentos de Terraform
+- 2a. Instalar y versionar providers
+- 2b. Cómo Terraform usa los providers
+- 2c. Configuración con múltiples providers
+- 2d. Cómo Terraform gestiona el estado
+
+### Dominio 3 — Core Workflow
+- 3a. El flujo de trabajo de Terraform
+- 3b. `terraform init`
+- 3c. `terraform validate`
+- 3d. `terraform plan`
+- 3e. `terraform apply`
+- 3f. `terraform destroy`
+- 3g. `terraform fmt`
+
+### Dominio 4 — Configuración de Terraform
+- 4a. Bloques `resource` y `data`
+- 4b. Referencias entre recursos
+- 4c. Variables y outputs
+- 4d. Tipos complejos
+- 4e. Expresiones y funciones
+- 4f. ⭐ **EXPANDIDO** — Dependencias: `depends_on`, `create_before_destroy`, `prevent_destroy`, `ignore_changes`
+- 4g. ⭐ **NUEVO** — Validación con custom conditions: `validation`, `precondition`, `postcondition`, `check`
+- 4h. Gestión de datos sensibles y Vault
+
+### Dominio 5 — Módulos
+- 5a. Fuentes de módulos
+- 5b. Scope de variables en módulos
+- 5c. Uso de módulos
+- 5d. Versioning de módulos
+
+### Dominio 6 — Gestión del Estado
+- 6a. Backend local
+- 6b. State locking
+- 6c. Remote state con el bloque `backend`
+- 6d. Drift y gestión del estado
+
+### Dominio 7 — Mantenimiento de infraestructura
+- 7a. Importar infraestructura existente
+- 7b. Inspeccionar el estado con la CLI
+- 7c. Verbose logging
+
+### Dominio 8 — HCP Terraform ⭐ Muy expandido
+- 8a. Crear infraestructura con HCP Terraform
+- 8b. Colaboración y gobernanza: teams, permisos, policy enforcement, variable sets
+- 8c. Workspaces, proyectos y Explorer
+- 8d. Integración: CLI login, bloque `cloud`, remote operations, run triggers, dynamic credentials, drift detection
+
+## Formato del examen
+
+| Detalle | Valor |
+|---------|-------|
+| Duración | 60 minutos |
+| Nº de preguntas | No publicado oficialmente (~50-57 según la comunidad) |
+| Nota de corte | No publicada oficialmente |
+| Plataforma | Certiverse (online proctored) |
+| Tipos de pregunta | Verdadero/Falso, opción única, opción múltiple |
+| Idioma | Inglés |
+| Validez | 2 años |
+| Retake | No incluido — hay que pagar de nuevo |
+
+## Recursos de estudio oficiales (004)
+
+| Recurso | URL |
+|---------|-----|
+| Guía de estudio | `developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004` |
+| Lista de objetivos | `developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004` |
+| Preguntas de ejemplo | `developer.hashicorp.com/terraform/tutorials/certification-004/associate-questions-004` |
+| Colección completa 004 | `developer.hashicorp.com/terraform/tutorials/certification-004` |
+| Docs de Terraform 1.12 | `developer.hashicorp.com/terraform/language/v1.12.x` |
+| HCP Terraform docs | `developer.hashicorp.com/terraform/cloud-docs` |
+
+:::warning Cuidado con materiales del 003
+Cualquier libro o curso escrito para la versión 003 (Terraform 1.3) no cubre check blocks, ephemeral values, el bloque `import`, ni el Domain 8 expandido. Usa siempre los docs de la versión 1.12.
+:::
+
+## Consejos para aprobar
+
+:::tip Practica la CLI
+El examen hace preguntas sobre comandos concretos. `init`, `plan`, `apply`, `fmt`, `validate`, `state`, `workspace`, `import` — deben ser automáticos.
+:::
+
+:::tip Domina el Domain 8
+HCP Terraform está muy expandido en el 004. Entiende workspaces, proyectos, run triggers, dynamic credentials y drift detection. Es donde más gente falla viniendo del 003.
+:::
+
+:::info Los nuevos objectives del 004
+Dedica tiempo extra a: **custom conditions** (4g), **lifecycle rules completos** (4f), y **ephemeral values**. Son completamente nuevos respecto al 003.
+:::
+
+## Cómo registrarse
+
+1. Ve a [developer.hashicorp.com/certifications/infrastructure-automation](https://developer.hashicorp.com/certifications/infrastructure-automation)
+2. Inicia sesión con tu cuenta de HashiCorp Developer
+3. Programa el examen a través de **Certiverse**
+4. Elige fecha y hora (online desde casa o centro de pruebas)
+5. Paga el examen
