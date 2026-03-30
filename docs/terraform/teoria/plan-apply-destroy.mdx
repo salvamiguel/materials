@@ -658,12 +658,22 @@ $ terraform output -raw ruta_archivo
 
 Vamos a recorrer el flujo completo de Terraform con un ejemplo real usando el provider `local`, que permite crear y gestionar archivos en el sistema de archivos local. Este provider es perfecto para aprender porque no necesita credenciales ni acceso a ningún servicio externo.
 
+import LabActions from '@site/src/components/shared/LabActions';
+
+<LabActions
+  repo="https://github.com/salvamiguel/tf-complete-flow-example"
+  title="Descarga el código de este ejemplo"
+  codespace={false}
+  devcontainer={false}
+  fork={true}
+/>
+
 ### Paso 1: Escribir la configuración
 
 Crea un directorio para el proyecto y el archivo de configuración:
 
 ```bash
-mkdir terraform-demo && cd terraform-demo
+mkdir tf-complete-flow-example && cd tf-complete-flow-example
 ```
 
 Crea el archivo `main.tf`:
