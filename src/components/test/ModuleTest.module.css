@@ -1,0 +1,113 @@
+.moduleTest {
+  margin: 1.5rem 0;
+}
+
+.moduleHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.moduleTitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ifm-color-primary);
+  opacity: 0.7;
+}
+
+.progressInfo {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+
+.progressTrack {
+  background: var(--ifm-background-color);
+  border-radius: 4px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.progressFill {
+  background: var(--ifm-color-primary);
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.testList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.testItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.9rem;
+  background: var(--ifm-background-color);
+  border-radius: 6px;
+  border-left: 3px solid rgba(128, 128, 128, 0.3);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.testItem:hover {
+  border-left-color: var(--ifm-color-primary);
+}
+
+.testItemPassed {
+  border-left-color: var(--ifm-color-primary);
+}
+
+.testItemFailed {
+  border-left-color: #e74c3c;
+}
+
+.testItemTitle {
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.testItemMeta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  opacity: 0.6;
+  margin-top: 0.15rem;
+}
+
+.testItemStatus {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.statusPassed {
+  color: var(--ifm-color-primary);
+}
+
+.statusFailed {
+  color: #e74c3c;
+}
+
+.statusPending {
+  opacity: 0.4;
+}
+
+.expandedTest {
+  margin-top: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressFill,
+  .testItem {
+    transition: none;
+  }
+}
