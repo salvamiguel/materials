@@ -1,184 +1,14 @@
 import React, { useState } from "react";
 import DemoWrapper from "../../shared/DemoWrapper";
 
-const HCL_SEGMENTS = [
-  {
-    id: "block_type",
-    label: "Tipo de bloque",
-    color: "#c678dd",
-    icon: "⬡",
-    lines: [0],
-    ranges: [[0, 8]],
-    explanation: {
-      title: "Tipo de Bloque",
-      subtitle: "resource",
-      body: "Define qué tipo de construcción HCL estamos declarando. Los tipos principales son:",
-      items: [
-        { code: "resource", desc: "Crea y gestiona un recurso de infraestructura" },
-        { code: "data", desc: "Consulta un recurso existente (solo lectura)" },
-        { code: "variable", desc: "Declara una variable de entrada" },
-        { code: "output", desc: "Exporta un valor para otros módulos" },
-        { code: "provider", desc: "Configura un proveedor de infraestructura" },
-        { code: "locals", desc: "Define valores locales reutilizables" },
-      ],
-    },
-  },
-  {
-    id: "resource_type",
-    label: "Tipo de recurso",
-    color: "#e5c07b",
-    icon: "◈",
-    lines: [0],
-    ranges: [[10, 24]],
-    explanation: {
-      title: "Tipo de Recurso",
-      subtitle: '"aws_instance"',
-      body: "Identifica el recurso concreto del provider. Siempre sigue el formato:",
-      format: "<provider>_<recurso>",
-      examples: [
-        { code: "aws_instance", desc: "Instancia EC2 en AWS" },
-        { code: "aws_s3_bucket", desc: "Bucket S3 en AWS" },
-        { code: "azurerm_virtual_network", desc: "VNet en Azure" },
-        { code: "google_compute_instance", desc: "VM en GCP" },
-      ],
-      note: "El prefijo indica qué provider gestiona este recurso. Terraform lo usa para saber qué API llamar.",
-    },
-  },
-  {
-    id: "resource_name",
-    label: "Nombre local",
-    color: "#61afef",
-    icon: "◇",
-    lines: [0],
-    ranges: [[26, 35]],
-    explanation: {
-      title: "Nombre Local",
-      subtitle: '"web_server"',
-      body: "Identificador interno dentro de tu configuración Terraform. Se usa para:",
-      items: [
-        { code: "Referenciar", desc: "Acceder a atributos: aws_instance.web_server.id" },
-        { code: "Identificar", desc: "Terraform lo usa en el state para trackear el recurso" },
-        { code: "Documentar", desc: "Indica la intención: web_server, database, cache..." },
-      ],
-      note: "No confundir con el nombre real del recurso en la nube. Es solo un nombre en tu código HCL.",
-    },
-  },
-  {
-    id: "argument_basic",
-    label: "Argumento básico",
-    color: "#98c379",
-    icon: "●",
-    lines: [1],
-    ranges: [[2, 30]],
-    explanation: {
-      title: "Argumento (Atributo)",
-      subtitle: 'ami = "ami-0c55b..."',
-      body: "Configura una propiedad del recurso. Sintaxis: nombre = valor. Los tipos de valor incluyen:",
-      items: [
-        { code: "string", desc: '"ami-0c55..." — texto entre comillas dobles' },
-        { code: "number", desc: "8, 3.14 — números sin comillas" },
-        { code: "bool", desc: "true / false — booleanos sin comillas" },
-        { code: "list", desc: '["a", "b"] — colección ordenada' },
-        { code: "map", desc: "clave = valor — pares clave-valor" },
-      ],
-      note: "Cada recurso tiene argumentos obligatorios y opcionales. Consulta la documentación del provider.",
-    },
-  },
-  {
-    id: "reference",
-    label: "Referencia",
-    color: "#e06c75",
-    icon: "◆",
-    lines: [2],
-    ranges: [[22, 60]],
-    explanation: {
-      title: "Referencia a Variable",
-      subtitle: "var.instance_type",
-      body: "En lugar de un valor fijo, referenciamos una variable de entrada. Tipos de referencia en HCL:",
-      items: [
-        { code: "var.nombre", desc: "Variable de entrada (input variable)" },
-        { code: "local.nombre", desc: "Valor local definido en locals" },
-        { code: "recurso.nombre.attr", desc: "Atributo de otro recurso (dependencia implícita)" },
-        { code: "data.tipo.nombre.attr", desc: "Atributo de un data source" },
-        { code: "module.nombre.output", desc: "Output de un módulo hijo" },
-      ],
-      note: "Las referencias crean dependencias implícitas — Terraform calcula el orden automáticamente.",
-    },
-  },
-  {
-    id: "nested_block",
-    label: "Bloque anidado",
-    color: "#56b6c2",
-    icon: "▣",
-    lines: [5, 6, 7, 8, 9],
-    ranges: [
-      [2, 18],
-      [4, 36],
-      [4, 22],
-      [4, 45],
-      [2, 3],
-    ],
-    explanation: {
-      title: "Bloque Anidado",
-      subtitle: "root_block_device { ... }",
-      body: "Algunos argumentos se agrupan en sub-bloques con su propia estructura. Ejemplos comunes:",
-      items: [
-        { code: "root_block_device", desc: "Configuración de disco en EC2" },
-        { code: "ingress / egress", desc: "Reglas de firewall en security groups" },
-        { code: "lifecycle", desc: "Reglas de ciclo de vida del recurso" },
-        { code: "provisioner", desc: "Acciones post-creación (usar con cautela)" },
-      ],
-      note: "Cuando un bloque se repite muchas veces, se puede refactorizar con 'dynamic blocks' (UD5).",
-    },
-  },
-  {
-    id: "tags",
-    label: "Tags (map)",
-    color: "#d19a66",
-    icon: "▪",
-    lines: [11, 12, 13, 14],
-    ranges: [
-      [2, 8],
-      [4, 28],
-      [4, 37],
-      [2, 3],
-    ],
-    explanation: {
-      title: "Tags (tipo map)",
-      subtitle: "tags = clave-valor",
-      body: "Los tags son metadatos clave-valor que se aplican al recurso en la nube. Son de tipo map(string).",
-      items: [
-        { code: "Name", desc: "Nombre visible en la consola del cloud provider" },
-        { code: "Environment", desc: "Identificar entorno: dev, staging, prod" },
-        { code: "Project", desc: "Agrupar recursos por proyecto" },
-        { code: "Owner / Team", desc: "Responsable del recurso" },
-      ],
-      note: "Los tags son esenciales para organización, billing y governance. Muchas empresas los hacen obligatorios.",
-    },
-  },
-];
-
-const CODE_LINES = [
-  'resource "aws_instance" "web_server" {',
-  '  ami           = "ami-0c55b159cbfafe1f0"',
-  "  instance_type = var.instance_type",
-  "",
-  "  subnet_id     = aws_subnet.main.id",
-  "  root_block_device {",
-  "    volume_size = 20",
-  '    volume_type = "gp3"',
-  "    encrypted   = true",
-  "  }",
-  "",
-  "  tags = {",
-  '    Name        = "web-$\\{var.environment}"',
-  "    Environment = var.environment",
-  "  }",
-  "}",
-];
-
-function getSegmentsForLine(lineIdx: number) {
-  return HCL_SEGMENTS.filter((s) => s.lines.includes(lineIdx)).map((s) => s.id);
+interface SegmentExplanation {
+  title: string;
+  subtitle: string;
+  body: string;
+  format?: string;
+  items?: { code: string; desc: string }[];
+  examples?: { code: string; desc: string }[];
+  note?: string;
 }
 
 interface Segment {
@@ -187,29 +17,216 @@ interface Segment {
   color: string;
   icon: string;
   lines: number[];
-  ranges: number[][];
-  explanation: {
-    title: string;
-    subtitle: string;
-    body: string;
-    format?: string;
-    items?: { code: string; desc: string }[];
-    examples?: { code: string; desc: string }[];
-    note?: string;
-  };
+  explanation: SegmentExplanation;
+}
+
+const SEGMENTS: Segment[] = [
+  {
+    id: "name",
+    label: "Nombre",
+    color: "#c678dd",
+    icon: "⬡",
+    lines: [0],
+    explanation: {
+      title: "Nombre del Workflow",
+      subtitle: "name: CI Pipeline",
+      body: "Nombre descriptivo que aparece en la pestaña Actions de GitHub. Es opcional pero muy recomendable.",
+      items: [
+        { code: "name:", desc: "Clave de nivel superior que identifica el workflow" },
+        { code: "CI Pipeline", desc: "Texto libre — aparece en la UI y en los checks de PRs" },
+      ],
+      note: "Si omites el name, GitHub usa el nombre del fichero YAML como identificador.",
+    },
+  },
+  {
+    id: "on",
+    label: "Eventos (on)",
+    color: "#e5c07b",
+    icon: "◈",
+    lines: [1, 2, 3, 4, 5],
+    explanation: {
+      title: "Eventos / Triggers",
+      subtitle: "on: push | pull_request",
+      body: "Define cuándo se ejecuta el workflow. Puede ser un evento simple, una lista o un mapa con filtros.",
+      examples: [
+        { code: "push", desc: "Al hacer push de commits o tags" },
+        { code: "pull_request", desc: "Al abrir, sincronizar o cerrar una PR" },
+        { code: "workflow_dispatch", desc: "Ejecución manual desde la UI" },
+        { code: "schedule", desc: "Cron programado (ej: tests nocturnos)" },
+        { code: "repository_dispatch", desc: "Webhook externo vía API" },
+      ],
+      note: "branches: [main] filtra para que solo se ejecute en esa rama. También puedes filtrar por paths, tags, etc.",
+    },
+  },
+  {
+    id: "jobs",
+    label: "Jobs",
+    color: "#61afef",
+    icon: "◇",
+    lines: [6, 7],
+    explanation: {
+      title: "Jobs",
+      subtitle: "jobs: → build:",
+      body: "Mapa de unidades de ejecución. Cada job corre en su propio runner (máquina virtual). Por defecto se ejecutan en paralelo.",
+      items: [
+        { code: "jobs:", desc: "Clave que contiene todos los jobs del workflow" },
+        { code: "build:", desc: "ID del job — nombre interno para referencias y dependencias" },
+      ],
+      examples: [
+        { code: "needs: [build]", desc: "Crea dependencia secuencial entre jobs" },
+        { code: "if: success()", desc: "Ejecución condicional basada en estado" },
+      ],
+      note: "Puedes tener múltiples jobs (build, test, deploy) y controlar el orden con 'needs'.",
+    },
+  },
+  {
+    id: "job_config",
+    label: "Config del job",
+    color: "#98c379",
+    icon: "●",
+    lines: [8, 9],
+    explanation: {
+      title: "Configuración del Job",
+      subtitle: "name: / runs-on:",
+      body: "Propiedades que configuran cómo y dónde se ejecuta el job.",
+      items: [
+        { code: "name:", desc: "Nombre descriptivo visible en la UI de GitHub Actions" },
+        { code: "runs-on:", desc: "Sistema operativo del runner que ejecuta el job" },
+      ],
+      examples: [
+        { code: "ubuntu-latest", desc: "Linux Ubuntu (el más común y barato)" },
+        { code: "windows-latest", desc: "Windows Server" },
+        { code: "macos-latest", desc: "macOS (más caro, para builds iOS/Mac)" },
+        { code: "self-hosted", desc: "Tu propio runner (on-premise o cloud)" },
+      ],
+      note: "Los runners hosted de GitHub se destruyen después de cada job — cada ejecución empieza limpia.",
+    },
+  },
+  {
+    id: "steps",
+    label: "Steps",
+    color: "#e06c75",
+    icon: "◆",
+    lines: [10],
+    explanation: {
+      title: "Steps (Pasos)",
+      subtitle: "steps:",
+      body: "Lista ordenada de pasos que se ejecutan secuencialmente dentro del mismo runner. Cada step puede ser una Action o un comando shell.",
+      items: [
+        { code: "uses:", desc: "Ejecuta una Action reutilizable (de marketplace o propia)" },
+        { code: "run:", desc: "Ejecuta un comando de shell directamente" },
+        { code: "with:", desc: "Parámetros de entrada para una Action" },
+        { code: "name:", desc: "Nombre descriptivo del step (aparece en logs)" },
+        { code: "env:", desc: "Variables de entorno para el step" },
+      ],
+      note: "Todos los steps de un job comparten el mismo filesystem y workspace.",
+    },
+  },
+  {
+    id: "action_checkout",
+    label: "Action (uses)",
+    color: "#56b6c2",
+    icon: "▣",
+    lines: [11],
+    explanation: {
+      title: "Action Reutilizable",
+      subtitle: "uses: actions/checkout@v5",
+      body: "Referencia a una Action del marketplace o de un repositorio. Formato: owner/repo@version.",
+      items: [
+        { code: "actions/checkout", desc: "Clona el repositorio en el runner" },
+        { code: "@v5", desc: "Versión fijada — nunca uses @main en producción" },
+      ],
+      examples: [
+        { code: "actions/checkout@v5", desc: "Clonar el repo" },
+        { code: "actions/setup-node@v4", desc: "Configurar Node.js" },
+        { code: "actions/cache@v4", desc: "Caché de dependencias" },
+        { code: "actions/upload-artifact@v4", desc: "Subir artefactos" },
+      ],
+      note: "Las Actions encapsulan lógica compleja en un step reutilizable. Piensa en ellas como funciones.",
+    },
+  },
+  {
+    id: "action_with",
+    label: "Parámetros (with)",
+    color: "#d19a66",
+    icon: "▪",
+    lines: [12, 13, 14, 15],
+    explanation: {
+      title: "Parámetros de Action",
+      subtitle: "with: node-version / cache",
+      body: "La clave 'with' pasa parámetros de entrada a una Action. Es el equivalente a los argumentos de una función.",
+      items: [
+        { code: "node-version: 20", desc: "Versión de Node.js a instalar" },
+        { code: "cache: npm", desc: "Activa caché automática de dependencias npm" },
+      ],
+      examples: [
+        { code: "node-version: 20", desc: "Versión exacta" },
+        { code: "node-version: '>=18'", desc: "Rango de versiones" },
+        { code: "registry-url:", desc: "Registry npm privado" },
+      ],
+      note: "Cada Action define sus propios inputs. Consulta la documentación de la Action para ver las opciones disponibles.",
+    },
+  },
+  {
+    id: "run_commands",
+    label: "Comandos (run)",
+    color: "#e8e8e8",
+    icon: "▶",
+    lines: [16, 17],
+    explanation: {
+      title: "Comandos Shell",
+      subtitle: "run: npm ci / npm test",
+      body: "Ejecuta comandos directamente en el shell del runner. Por defecto usa bash en Linux/macOS y pwsh en Windows.",
+      items: [
+        { code: "npm ci", desc: "Instala dependencias de forma reproducible (respeta package-lock)" },
+        { code: "npm test", desc: "Ejecuta los tests definidos en package.json" },
+      ],
+      examples: [
+        { code: "run: |", desc: "Multi-línea: ejecuta varios comandos seguidos" },
+        { code: "shell: pwsh", desc: "Cambiar el shell (powershell, python, etc.)" },
+        { code: "working-directory:", desc: "Ejecutar desde un directorio específico" },
+      ],
+      note: "Cada 'run' crea un nuevo proceso shell. Variables de entorno persisten con $GITHUB_ENV, no con export.",
+    },
+  },
+];
+
+const CODE_LINES = [
+  "name: CI Pipeline",
+  "on:",
+  "  push:",
+  "    branches: [main]",
+  "  pull_request:",
+  "    branches: [main]",
+  "jobs:",
+  "  build:",
+  '    name: Build and Test',
+  "    runs-on: ubuntu-latest",
+  "    steps:",
+  "      - uses: actions/checkout@v5",
+  "      - uses: actions/setup-node@v4",
+  "        with:",
+  "          node-version: 20",
+  "          cache: npm",
+  "      - run: npm ci",
+  "      - run: npm test",
+];
+
+function getSegmentsForLine(lineIdx: number) {
+  return SEGMENTS.filter((s) => s.lines.includes(lineIdx)).map((s) => s.id);
 }
 
 function colorize(text: string) {
   if (!text.trim()) return <>{" "}</>;
 
   const keywords = [
-    { match: /^(resource|data|variable|output|provider|locals)\b/, color: "#c678dd" },
+    { match: /^(name|on|jobs|steps|runs-on|uses|with|run|push|pull_request|branches|node-version|cache):/, color: "#e06c75" },
     { match: /"[^"]*"/, color: "#98c379" },
     { match: /\b(true|false)\b/, color: "#d19a66" },
-    { match: /\b(var|local|module|data)\.[a-zA-Z_.[\]0-9]+/, color: "#e06c75" },
-    { match: /\b(aws_[a-z_]+)\.[a-zA-Z_.]+/, color: "#e06c75" },
     { match: /\b\d+\b/, color: "#d19a66" },
-    { match: /\$\\\{[^}]+\}/, color: "#e06c75" },
+    { match: /\[.*?\]/, color: "#61afef" },
+    { match: /actions\/[a-zA-Z-]+@v\d+/, color: "#56b6c2" },
+    { match: /npm\s+\S+/, color: "#c678dd" },
   ];
 
   let idx = 0;
@@ -264,7 +281,7 @@ function CodeLine({
 }) {
   const segments = getSegmentsForLine(lineIdx);
   const isActive = segments.includes(activeSegment || "");
-  const seg = isActive ? HCL_SEGMENTS.find((s) => s.id === activeSegment) : null;
+  const seg = isActive ? SEGMENTS.find((s) => s.id === activeSegment) : null;
   const hasSegment = segments.length > 0;
 
   return (
@@ -285,14 +302,13 @@ function CodeLine({
         background: isActive && seg ? `${seg.color}12` : "transparent",
         borderLeft: isActive && seg ? `3px solid ${seg.color}` : "3px solid transparent",
         transition: "all 0.2s ease",
-        position: "relative",
       }}
     >
       <span
         style={{
-          width: 32,
+          width: 28,
           textAlign: "right",
-          paddingRight: 12,
+          paddingRight: 10,
           fontSize: 11,
           fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
           color: isActive && seg ? seg.color : "#555",
@@ -328,7 +344,7 @@ function ExplanationPanel({ segment }: { segment: Segment }) {
         borderRadius: 12,
         border: `1px solid ${segment.color}30`,
         padding: "20px 24px",
-        animation: "hclPanelIn 0.3s ease",
+        animation: "ghaPanelIn 0.3s ease",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
@@ -505,23 +521,23 @@ function Legend({
   );
 }
 
-export default function HCLAnatomy() {
+export default function GHActionsAnatomy() {
   const [active, setActive] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const current = active || hovered;
-  const activeSeg = current ? HCL_SEGMENTS.find((s) => s.id === current) || null : null;
+  const activeSeg = current ? SEGMENTS.find((s) => s.id === current) || null : null;
 
   return (
     <DemoWrapper
-      title="Anatomía de un Bloque HCL"
-      description="Haz clic en cualquier parte del código para explorar su significado"
+      title="Anatom&iacute;a de un Workflow"
+      description="Haz clic en cualquier parte del c&oacute;digo para explorar su significado"
     >
       <style>{`
-        @keyframes hclPanelIn {
+        @keyframes ghaPanelIn {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes hclPulse {
+        @keyframes ghaPulse {
           0%, 100% { opacity: 0.4; }
           50% { opacity: 1; }
         }
@@ -529,7 +545,7 @@ export default function HCLAnatomy() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <Legend
-          segments={HCL_SEGMENTS}
+          segments={SEGMENTS}
           activeSegment={current}
           onClick={(id) => setActive((prev) => (prev === id ? null : id))}
         />
@@ -572,7 +588,7 @@ export default function HCLAnatomy() {
                   marginLeft: 8,
                 }}
               >
-                main.tf
+                .github/workflows/ci.yml
               </span>
             </div>
 
@@ -607,7 +623,7 @@ export default function HCLAnatomy() {
                 gap: 12,
               }}
             >
-              <div style={{ fontSize: 32, animation: "hclPulse 2s ease-in-out infinite" }}>
+              <div style={{ fontSize: 32, animation: "ghaPulse 2s ease-in-out infinite" }}>
                 {"👆"}
               </div>
               <p style={{ color: "#636a76", fontSize: 13.5, lineHeight: 1.5 }}>

@@ -264,6 +264,14 @@ th {
   margin: 0;
 }
 
+/* ── Drawio diagrams ── */
+.docusaurus-plugin-drawio {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   * {

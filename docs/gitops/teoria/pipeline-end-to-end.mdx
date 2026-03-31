@@ -1,0 +1,328 @@
+---
+sidebar_position: 8
+title: "Pipeline End-to-End"
+---
+
+import LabActions from '@site/src/components/shared/LabActions';
+
+# Pipeline End-to-End
+
+Hasta ahora hemos visto cada pieza del puzzle de forma independiente. En este tema unimos todo: el código fuente, la integración continua, el registro de imágenes, los manifiestos de Kubernetes y ArgoCD en un único flujo automatizado de principio a fin.
+
+## 1. El flujo completo
+
+Este es el flujo GitOps completo desde que un desarrollador hace `git push` hasta que el cambio llega al clúster de Kubernetes:
+
+```mermaid
+graph LR
+  Dev[Developer] -->|git push| AppRepo[App Repo]
+  AppRepo -->|trigger| CI[GitHub Actions]
+  CI -->|docker build + push| Registry[GHCR / Docker Hub]
+  CI -->|update image tag| ConfigRepo[Config Repo / manifests]
+  ArgoCD[ArgoCD] -->|detects change| ConfigRepo
+  ArgoCD -->|kubectl apply| K8s[Kubernetes]
+```
+
+**Descripción de cada paso:**
+
+| Paso | Actor | Acción | Resultado |
+|------|-------|--------|-----------|
+| 1 | Developer | `git push` al app repo | Dispara el pipeline de CI |
+| 2 | GitHub Actions | Build y push de la imagen Docker | Imagen publicada en GHCR con el SHA del commit |
+| 3 | GitHub Actions | Actualiza el image tag en el config repo | Nuevo commit en el repo de manifiestos |
+| 4 | ArgoCD | Detecta el nuevo commit en el config repo | Compara con el estado actual del clúster |
+| 5 | ArgoCD | `kubectl apply` de los manifiestos actualizados | Nueva versión desplegada en Kubernetes |
+
+:::info El pull model de GitOps
+A diferencia del modelo push tradicional (donde la CI hace `kubectl apply` directamente), en GitOps ArgoCD **tira** (pull) de los cambios desde el clúster. Esto significa que las credenciales del clúster nunca salen de él — el clúster no es accesible desde el exterior para despliegues.
+:::
+
+## 2. El workflow completo de GitHub Actions
+
+Este es el workflow real que implementa el flujo completo descrito arriba:
+
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write      # Necesario para publicar en GHCR
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  update-manifests:
+    needs: build-and-push      # Solo corre si el build fue exitoso
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: salvamiguel/materials-config    # Config repo separado
+          token: ${{ secrets.CONFIG_REPO_TOKEN }}     # PAT con acceso al config repo
+
+      - name: Update image tag in manifests
+        run: |
+          sed -i "s|image: .*|image: ${{ env.IMAGE_NAME }}:${{ github.sha }}|" \
+            k8s/base/deployment.yaml
+
+      - name: Commit and push manifest update
+        run: |
+          git config user.email "ci@github.com"
+          git config user.name "GitHub Actions"
+          git add k8s/base/deployment.yaml
+          git commit -m "chore: update image to ${{ github.sha }}
+
+          Triggered by: ${{ github.repository }}@${{ github.sha }}
+          Actor: ${{ github.actor }}
+          Workflow: ${{ github.workflow }}"
+          git push
+```
+
+### Desglose del workflow
+
+**Job `build-and-push`:**
+
+- `actions/checkout@v5`: clona el repositorio de la aplicación.
+- `docker/login-action@v3`: autentica en GHCR usando el `GITHUB_TOKEN` automático.
+- `docker/build-push-action@v6`: construye la imagen y la publica con dos tags: el SHA del commit (inmutable) y `latest`.
+- `cache-from/cache-to`: utiliza la caché de GitHub Actions para acelerar builds sucesivos.
+
+**Job `update-manifests`:**
+
+- `needs: build-and-push`: garantiza que solo actualiza el manifiesto si la imagen se publicó correctamente.
+- Hace checkout del **config repo** (no del app repo) usando un Personal Access Token almacenado en secrets.
+- `sed -i`: actualiza la línea de la imagen en el `deployment.yaml` con el SHA exacto del commit.
+- Commit con mensaje descriptivo que incluye quién disparó el pipeline y desde qué repo.
+
+:::tip SHA en lugar de latest para producción
+Usar el SHA del commit como tag de imagen garantiza **inmutabilidad**: siempre sabes exactamente qué código está desplegado. Nunca uses `:latest` en producción porque puede cambiar en cualquier momento sin que Git lo registre.
+:::
+
+## 3. Separación app repo / config repo
+
+Este patrón es una best practice fundamental en GitOps y tiene razones sólidas:
+
+### Por qué separar los repositorios
+
+**Historial limpio y auditabilidad:**
+- El config repo contiene **solo** cambios de configuración e infraestructura.
+- Es fácil ver qué versión estaba desplegada en cada momento.
+- El historial del app repo no se contamina con commits de "update image tag".
+
+**Permisos y control de acceso:**
+- Los desarrolladores hacen push al app repo pero no necesariamente al config repo.
+- El config repo puede requerir revisión de un SRE o tech lead antes del merge.
+- ArgoCD solo necesita acceso de lectura al config repo.
+
+**Ciclos de vida independientes:**
+- Puedes actualizar la configuración de infraestructura sin tocar el código.
+- Puedes hacer rollback de la config sin afectar el código fuente.
+
+**Separación de concerns:**
+
+```mermaid
+graph LR
+  subgraph "App Repo (salvamiguel/mi-app)"
+    src["src/<br/>main.go, ..."]
+    Dockerfile
+    CI[".github/workflows/ci.yaml"]
+    tests["tests/"]
+  end
+
+  subgraph "Config Repo (salvamiguel/mi-app-config)"
+    base["k8s/base/<br/>deployment.yaml<br/>service.yaml"]
+    dev["k8s/overlays/dev/"]
+    staging["k8s/overlays/staging/"]
+    prod["k8s/overlays/prod/"]
+  end
+
+  CI -->|"actualiza image tag"| base
+```
+
+:::note Monorepo como alternativa
+Es posible tener el app repo y el config repo en el mismo repositorio, con ArgoCD apuntando a una subdirectorio específico. Este enfoque simplifica la operación en equipos pequeños pero puede complicar el acceso granular en equipos grandes.
+:::
+
+## 4. Observabilidad del flujo
+
+Un pipeline GitOps sin observabilidad es como conducir sin instrumentación. Estos son los puntos clave de visibilidad:
+
+### ArgoCD Notifications
+
+ArgoCD puede enviar notificaciones a Slack, Teams, email u otros canales cuando el estado de una aplicación cambia:
+
+```yaml
+# En el ConfigMap argocd-notifications-cm
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+data:
+  trigger.on-sync-succeeded: |
+    - when: app.status.sync.status == 'Synced'
+      send: [app-sync-succeeded]
+  trigger.on-health-degraded: |
+    - when: app.status.health.status == 'Degraded'
+      send: [app-health-degraded]
+  template.app-sync-succeeded: |
+    message: |
+      App {{.app.metadata.name}} sincronizada.
+      Revision: {{.app.status.sync.revision}}
+  template.app-health-degraded: |
+    slack:
+      attachments: |
+        [{
+          "color": "#E96D76",
+          "title": "{{.app.metadata.name}} degradada",
+          "text": "La aplicacion ha entrado en estado Degraded"
+        }]
+```
+
+### GitHub Actions status checks en PRs
+
+Configura los checks de CI como **required status checks** en la rama principal:
+
+1. Ve a **Settings → Branches → Branch protection rules**.
+2. Activa **Require status checks to pass before merging**.
+3. Añade los jobs del workflow como checks requeridos.
+
+Esto bloquea el merge de cualquier PR cuyo pipeline falle — garantizando que solo código que pasa los tests llega al config repo.
+
+### kubectl get events
+
+Para debugging rápido durante un despliegue:
+
+```bash
+# Ver todos los eventos del namespace en tiempo real
+kubectl get events -n mi-app-prod --watch
+
+# Ver eventos ordenados por tiempo
+kubectl get events -n mi-app-prod --sort-by='.lastTimestamp'
+
+# Ver logs del pod que está fallando
+kubectl logs -n mi-app-prod -l app=mi-app --tail=100 -f
+
+# Ver el estado detallado del deployment
+kubectl describe deployment mi-app -n mi-app-prod
+```
+
+:::tip Integra Prometheus + Grafana
+Para una observabilidad completa del pipeline, instrumenta tu aplicación con métricas de Prometheus y crea un dashboard en Grafana que muestre error rate, latencia y tasa de despliegues exitosos. Esto te permite correlacionar los deploys con el comportamiento de la aplicación.
+:::
+
+## 5. Patrones empresariales
+
+### Semantic versioning de imágenes
+
+En producción, las imágenes deben tener tags significativos, no solo SHAs:
+
+```yaml
+# En el workflow de GitHub Actions
+- name: Extract version from tag
+  if: startsWith(github.ref, 'refs/tags/')
+  run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+- name: Build and push with semver tag
+  uses: docker/build-push-action@v6
+  with:
+    push: true
+    tags: |
+      ${{ env.IMAGE_NAME }}:${{ github.sha }}
+      ${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+      ${{ env.IMAGE_NAME }}:latest
+```
+
+Estrategia de tags recomendada:
+
+| Tag | Ejemplo | Cuándo se crea | Uso |
+|-----|---------|----------------|-----|
+| SHA | `sha-a1b2c3d` | Cada commit a main | Dev / staging |
+| Semver | `v1.2.3` | Al crear un Git tag | Producción |
+| `latest` | `latest` | Cada commit a main | Solo desarrollo |
+
+### PRs automáticos para promoción entre entornos
+
+En lugar de que la CI actualice el config repo directamente, puede abrir un PR para que un humano revise y apruebe la promoción:
+
+```yaml
+- name: Open PR to promote to staging
+  uses: peter-evans/create-pull-request@v6
+  with:
+    token: ${{ secrets.CONFIG_REPO_TOKEN }}
+    commit-message: "chore: update mi-app to ${{ github.sha }}"
+    title: "Promote mi-app ${{ github.sha }} to staging"
+    body: |
+      ## Promotion Request
+
+      **App**: mi-app
+      **New version**: `${{ github.sha }}`
+      **Source**: ${{ github.repository }}@${{ github.sha }}
+
+      ### Checklist
+      - [ ] Tests pasados en CI
+      - [ ] Revisión de cambios
+      - [ ] Validado en dev
+    branch: promote/mi-app-${{ github.sha }}
+    base: main
+```
+
+### ArgoCD Image Updater
+
+ArgoCD Image Updater es un componente adicional que automatiza la actualización del image tag en el config repo, eliminando el paso del `sed` en la CI:
+
+```yaml
+# Anotaciones en la Application de ArgoCD
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mi-app
+  annotations:
+    # Actualizar automáticamente cuando haya nueva imagen con semver
+    argocd-image-updater.argoproj.io/image-list: mi-app=ghcr.io/salvamiguel/mi-app
+    argocd-image-updater.argoproj.io/mi-app.update-strategy: semver
+    argocd-image-updater.argoproj.io/mi-app.allow-tags: regexp:^v[0-9]+\.[0-9]+\.[0-9]+$
+    argocd-image-updater.argoproj.io/write-back-method: git
+```
+
+Con Image Updater, el flujo se simplifica: la CI solo necesita publicar la imagen en el registry. ArgoCD Image Updater detecta la nueva imagen, actualiza el manifiesto en Git y ArgoCD sincroniza automáticamente.
+
+:::info Resumen del pipeline GitOps
+El pipeline GitOps completo conecta todas las piezas del curso:
+1. **Git** como fuente de verdad (UD1)
+2. **GitHub Actions** para CI (UD2)
+3. **ArgoCD** como controlador GitOps (UD3)
+4. **Kustomize** para multi-entorno (UD3)
+5. **Argo Rollouts** para estrategias de despliegue avanzadas (UD4)
+
+El resultado es un sistema donde cualquier cambio en producción pasa por Git, tiene un responsable, un timestamp y puede revertirse en segundos.
+:::
+

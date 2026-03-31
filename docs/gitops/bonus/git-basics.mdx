@@ -1,0 +1,301 @@
+---
+sidebar_position: 1
+title: "Conceptos Básicos de Git"
+---
+import { FaGitAlt } from "react-icons/fa6";
+
+# Conceptos Básicos de Git
+
+Git <FaGitAlt /> es la herramienta que hace posible GitOps. Antes de entrar en ArgoCD, Flux o cualquier herramienta de entrega continua, necesitas dominar Git: no sólo los comandos, sino el modelo mental detrás de ellos.
+
+---
+
+## 1. ¿Por qué Git es la base de GitOps?
+
+GitOps es, en esencia, el principio de que **el repositorio Git es la única fuente de verdad** del estado del sistema. Cualquier cambio en infraestructura o aplicaciones pasa primero por Git y luego se reconcilia automáticamente con el clúster.
+
+¿Por qué Git encaja tan bien?
+
+- **Historia inmutable**: cada commit es un registro permanente de qué cambió, cuándo y quién lo hizo. No puedes borrar esa historia sin que se note.
+- **Audit trail nativo**: en entornos regulados (fintech, salud, banca), el historial de Git es el log de auditoría. Quién aprobó el PR, cuándo se hizo merge, qué cambió exactamente.
+- **Branching strategies**: las ramas permiten trabajar en paralelo, validar cambios antes de que lleguen a producción, y gestionar múltiples entornos (dev, staging, prod) desde el mismo repositorio.
+- **Reversibilidad**: si algo falla, puedes revertir a cualquier commit anterior. En GitOps, esto se traduce en rollbacks deterministas y reproducibles.
+
+> **Principio fundamental de GitOps**: Si no está en Git, no existe. Si está en Git, puede reproducirse.
+
+---
+
+## 2. Conceptos fundamentales
+
+### Repositorio (repo)
+
+Un repositorio es el contenedor que almacena todo tu proyecto: el código, la configuración, los manifiestos de Kubernetes, el historial de cambios.
+
+- **Repositorio local**: la copia en tu máquina. Aquí trabajas, haces commits, creas ramas.
+- **Repositorio remoto**: la copia en un servidor (GitHub, GitLab, Bitbucket). Es la referencia compartida del equipo y, en GitOps, la fuente de verdad que el clúster observa.
+
+### Commit: snapshot, no diff
+
+Un commit no es una lista de cambios. Es una **fotografía completa del estado del repositorio** en un momento dado. Git calcula las diferencias por ti cuando las necesitas, pero internamente almacena snapshots.
+
+Cada commit tiene:
+- **SHA**: identificador único de 40 caracteres (normalmente se usan los primeros 7). Ej: `a3f9c1d`
+- **Mensaje**: descripción del cambio (más sobre esto en la sección de Conventional Commits)
+- **Autor**: nombre y email
+- **Timestamp**: cuándo se creó
+- **Parent(s)**: el commit o commits anteriores (los merges tienen dos padres)
+
+### Branch: puntero a un commit
+
+Una rama no es una copia del repositorio. Es simplemente un **puntero ligero** que apunta a un commit específico. Cuando haces un nuevo commit en una rama, el puntero avanza. Esto hace que las ramas en Git sean extremadamente baratas de crear y destruir.
+
+### HEAD: dónde estás ahora
+
+`HEAD` es un puntero especial que indica **tu posición actual** en el repositorio. Normalmente apunta a la rama en la que estás trabajando, y esa rama apunta al último commit. Cuando haces un nuevo commit, `HEAD` avanza junto con la rama.
+
+### Remote (origin): el repositorio remoto
+
+`origin` es el nombre convencional que Git da al repositorio remoto del que clonaste. Puedes tener múltiples remotos, pero `origin` es siempre el principal.
+
+---
+
+## 3. Flujo de trabajo básico
+
+El ciclo fundamental de Git en el día a día:
+
+```bash
+# Clonar un repositorio
+git clone https://github.com/salvamiguel/materials.git
+
+# Ver estado (qué ha cambiado, qué está en staging)
+git status
+
+# Añadir cambios al staging area
+git add archivo.yaml
+git add .   # todos los cambios del directorio actual
+
+# Commit: crear un snapshot con un mensaje descriptivo
+git commit -m "feat: add kubernetes manifests for dev env"
+
+# Push al remoto: enviar commits locales a GitHub/GitLab
+git push origin main
+
+# Pull (fetch + merge): traer cambios del remoto
+git pull origin main
+```
+
+**El staging area** (o índice) es una zona intermedia entre tu directorio de trabajo y el historial de commits. Te permite seleccionar exactamente qué cambios incluir en el próximo commit, aunque hayas modificado múltiples archivos.
+
+---
+
+## 4. Ramas (Branches)
+
+Las ramas son el mecanismo que permite trabajar en paralelo sin interferir con el trabajo de otros, y sin romper la rama principal.
+
+```bash
+# Crear una nueva rama y cambiar a ella en un solo paso
+git checkout -b feature/add-argocd-app
+
+# Equivalente moderno (Git 2.23+)
+git switch -c feature/add-argocd-app
+
+# Listar todas las ramas (locales y remotas)
+git branch -a
+
+# Cambiar a una rama existente
+git checkout main
+git switch main   # forma moderna
+
+# Merge: integrar los cambios de una rama en la actual
+git merge feature/add-argocd-app
+
+# Borrar una rama (solo si ya fue mergeada)
+git branch -d feature/add-argocd-app
+
+# Forzar el borrado (con cuidado)
+git branch -D feature/add-argocd-app
+```
+
+En GitOps, las ramas suelen mapear directamente a entornos o etapas del pipeline:
+
+| Rama | Entorno |
+|------|---------|
+| `main` | Producción |
+| `staging` | Staging |
+| `develop` | Desarrollo |
+| `feature/*` | Desarrollo local de funcionalidades |
+
+---
+
+## 5. Pull Requests (PRs)
+
+Un Pull Request (PR) —llamado Merge Request (MR) en GitLab— es una **propuesta formal para integrar cambios** de una rama a otra. No es una funcionalidad de Git puro, sino de las plataformas (GitHub, GitLab, Bitbucket).
+
+### ¿Por qué los PRs son centrales en GitOps?
+
+En GitOps, **ningún cambio llega a producción sin pasar por un PR**. Esto garantiza:
+
+1. **Revisión por pares**: al menos otra persona revisa el cambio antes de que se aplique.
+2. **Ejecución de CI**: los tests automáticos, linters y validaciones corren antes del merge.
+3. **Trazabilidad**: cada cambio en producción tiene un PR asociado con contexto, discusión y aprobaciones.
+4. **Control de acceso**: solo personas autorizadas pueden hacer merge a `main`.
+
+### Flujo de un PR en GitOps
+
+```
+1. Crear rama desde main
+   git checkout -b fix/update-replica-count
+
+2. Hacer cambios y commits
+   git add k8s/deployment.yaml
+   git commit -m "fix: correct replica count in prod overlay"
+
+3. Push de la rama al remoto
+   git push origin fix/update-replica-count
+
+4. Abrir PR en GitHub/GitLab
+   - Descripción del cambio y motivación
+   - Enlazar issue si existe
+
+5. Review: uno o más compañeros revisan y comentan
+
+6. CI pasa: tests, lint, validación de manifiestos
+
+7. Aprobación: al menos un revisor aprueba
+
+8. Merge a main
+
+9. ArgoCD/Flux detecta el cambio y reconcilia el clúster
+```
+
+---
+
+## 6. Comandos esenciales para GitOps
+
+Más allá del flujo básico, estos comandos son críticos cuando trabajas con infraestructura como código:
+
+```bash
+# Ver historial de commits en formato compacto con grafo de ramas
+git log --oneline --graph
+
+# Revert: deshacer un commit creando uno nuevo (no destruye historia)
+# Es la forma segura de revertir cambios en GitOps
+git revert <sha>
+
+# Ver las diferencias entre commits en un archivo específico
+git diff HEAD~1 HEAD -- k8s/deployment.yaml
+
+# Ver quién cambió cada línea de un archivo y en qué commit
+git blame k8s/deployment.yaml
+
+# Etiquetar una versión (importante para releases)
+git tag v1.2.0
+git push origin v1.2.0
+
+# Ver las diferencias entre tu rama y main
+git diff main...HEAD
+
+# Buscar en el historial qué commit introdujo un string
+git log -S "replicas: 5" --oneline
+
+# Stash: guardar cambios temporalmente sin hacer commit
+git stash
+git stash pop
+```
+
+:::info git revert vs git reset
+En GitOps, **siempre usa `git revert`** para deshacer cambios en ramas compartidas. Crea un nuevo commit que invierte los cambios, preservando la historia. `git reset` reescribe la historia y puede causar problemas graves en repositorios compartidos.
+:::
+
+---
+
+## 7. Conventional Commits
+
+Conventional Commits es una convención de mensajes de commit que facilita la automatización. En GitOps, los mensajes de commit alimentan changelogs automáticos, versionado semántico y pipelines de CI/CD.
+
+### Formato
+
+```
+<tipo>[scope opcional]: <descripción corta>
+
+[cuerpo opcional]
+
+[footer opcional]
+```
+
+### Tipos comunes
+
+```
+feat: add canary deployment for payment service
+fix: correct replica count in prod overlay
+chore: update image tag to v1.2.3
+docs: add runbook for rollback procedure
+refactor: split monolithic helm chart into sub-charts
+test: add smoke tests for staging environment
+ci: add trivy vulnerability scan to pipeline
+```
+
+### ¿Por qué importa en GitOps?
+
+- **Automated releases**: herramientas como `semantic-release` leen los commits y generan versiones automáticamente (`feat` → minor, `fix` → patch).
+- **Changelogs**: el historial de commits se convierte en changelog legible.
+- **Filtrado en CI**: puedes configurar pipelines que solo despliegan si el commit es de tipo `feat` o `fix`, ignorando `docs` o `chore`.
+- **Claridad en PRs**: un mensaje como `fix: correct replica count in prod overlay` comunica exactamente el impacto del cambio.
+
+---
+
+## 8. .gitignore para proyectos DevOps/IaC
+
+El archivo `.gitignore` le dice a Git qué archivos no debe rastrear. En proyectos de infraestructura, esto es crítico para evitar comprometer secretos o archivos generados automáticamente.
+
+```gitignore
+# Terraform — archivos generados automáticamente
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+terraform.tfvars      # puede contener valores sensibles
+
+# Secrets (NUNCA en Git)
+*.env
+.env.*
+secrets.yaml
+kubeconfig
+*_rsa
+*_rsa.pub
+*.pem
+*.key
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Helm — dependencias descargadas
+charts/
+```
+
+:::danger Nunca en Git
+Secrets, tokens, contraseñas, kubeconfig — jamás los comitas en Git. Aunque borres el archivo después, el secreto quedará en el historial y puede extraerse.
+
+Para gestionar secretos en GitOps usa:
+- **Sealed Secrets** (Bitnami): cifra el secreto y solo el clúster puede descifrarlo
+- **External Secrets Operator**: sincroniza secretos desde AWS Secrets Manager, Vault, GCP Secret Manager
+- **HashiCorp Vault**: gestor de secretos dedicado con rotación automática
+:::
+
+---
+
+## Recursos adicionales
+
+- [Pro Git Book](https://git-scm.com/book/es/v2) — gratuito, en español
+- [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) — especificación completa
+- [Oh Shit, Git!](https://ohshitgit.com/es) — cómo salir de situaciones complicadas
+
+import LabActions from '@site/src/components/shared/LabActions';
+
+<LabActions repo="https://github.com/salvamiguel/materials" codespace={true} />

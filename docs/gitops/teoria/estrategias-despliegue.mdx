@@ -1,0 +1,309 @@
+---
+sidebar_position: 6
+title: "Estrategias de Despliegue"
+---
+
+import LabActions from '@site/src/components/shared/LabActions';
+import BlueGreenSwitcher from '@site/src/components/demos/gitops/BlueGreenSwitcher';
+import CanaryDeploySlider from '@site/src/components/demos/gitops/CanaryDeploySlider';
+
+# Estrategias de Despliegue
+
+La estrategia de despliegue determina **cómo** se reemplaza la versión anterior de una aplicación por la nueva. Elegir bien puede ser la diferencia entre cero downtime y una interrupción de servicio en producción.
+
+## 1. Las 4 estrategias principales
+
+| Estrategia | Downtime | Riesgo | Complejidad | Rollback |
+|------------|----------|--------|-------------|----------|
+| **Recreate** | Si | Bajo | Muy baja | Sencillo |
+| **Rolling Update** | No | Medio | Baja | Automático |
+| **Blue-Green** | No | Bajo | Media | Instantáneo |
+| **Canary** | No | Muy bajo | Alta | Automático |
+
+### Recreate
+Mata todos los pods de la versión antigua y despliega los nuevos. Hay un período de downtime entre ambas operaciones. Aceptable solo en entornos de desarrollo o aplicaciones que no toleran versiones mixtas (ej. migraciones de base de datos con cambios de esquema incompatibles).
+
+### Rolling Update
+Reemplaza los pods gradualmente, de uno en uno (o en grupos). Durante el proceso conviven pods de la versión anterior y la nueva. Es la estrategia por defecto en Kubernetes y la más usada en producción.
+
+### Blue-Green
+Mantiene dos entornos idénticos activos: el **Blue** (versión actual en producción) y el **Green** (nueva versión). El switch de tráfico es instantáneo mediante cambio de selector del Service. El rollback es igualmente instantáneo.
+
+### Canary
+Dirige un pequeño porcentaje del tráfico a la nueva versión mientras el resto sigue yendo a la antigua. Si las métricas son buenas, el porcentaje aumenta progresivamente hasta el 100%. Es la estrategia con menor riesgo pero mayor complejidad operativa.
+
+## 2. Rolling Update (Kubernetes nativo)
+
+Rolling Update es la estrategia por defecto de `Deployment`. Se configura directamente en el spec del Deployment:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mi-app
+spec:
+  replicas: 4
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1   # Máximo de pods no disponibles durante el update
+      maxSurge: 1         # Máximo de pods extra que pueden crearse temporalmente
+  selector:
+    matchLabels:
+      app: mi-app
+  template:
+    metadata:
+      labels:
+        app: mi-app
+    spec:
+      containers:
+      - name: mi-app
+        image: ghcr.io/salvamiguel/mi-app:v2.0.0
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+```
+
+**Parámetros clave:**
+
+- **`maxUnavailable: 1`**: como máximo 1 pod puede estar no disponible en cualquier momento. Con 4 réplicas, siempre habrá al menos 3 sirviendo tráfico.
+- **`maxSurge: 1`**: puede haber como máximo 5 pods corriendo temporalmente (4 + 1 extra). Esto acelera el proceso.
+
+:::important Readiness Probe es fundamental
+Sin una `readinessProbe` correctamente configurada, Kubernetes puede enviar tráfico a pods que aún están iniciando, causando errores durante el rolling update. Siempre configura readiness probes en aplicaciones productivas.
+:::
+
+```bash
+# Monitorear el progreso del rolling update
+kubectl rollout status deployment/mi-app -n mi-app-prod
+
+# Pausar un rolling update en curso
+kubectl rollout pause deployment/mi-app -n mi-app-prod
+
+# Reanudar el rolling update
+kubectl rollout resume deployment/mi-app -n mi-app-prod
+
+# Hacer rollback al estado anterior (Kubernetes nativo)
+kubectl rollout undo deployment/mi-app -n mi-app-prod
+```
+
+## 3. Blue-Green con Argo Rollouts
+
+Argo Rollouts es un controlador que extiende Kubernetes con estrategias de despliegue avanzadas. Para Blue-Green, mantiene dos conjuntos de pods y gestiona el switch de tráfico:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: mi-app
+  namespace: mi-app-prod
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: mi-app
+  template:
+    metadata:
+      labels:
+        app: mi-app
+    spec:
+      containers:
+      - name: mi-app
+        image: ghcr.io/salvamiguel/mi-app:v2.0.0
+        ports:
+        - containerPort: 8080
+  strategy:
+    blueGreen:
+      activeService: mi-app-active       # Service que recibe tráfico de producción
+      previewService: mi-app-preview     # Service para probar la nueva versión
+      autoPromotionEnabled: false        # Requiere promoción manual
+      scaleDownDelaySeconds: 30          # Tiempo antes de eliminar los pods antiguos
+```
+
+Los Services que gestiona Argo Rollouts:
+
+```yaml
+# Service de producción (apunta a Blue o Green según la versión activa)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mi-app-active
+spec:
+  selector:
+    app: mi-app
+  ports:
+  - port: 80
+    targetPort: 8080
+---
+# Service de preview (apunta siempre a la nueva versión para testing)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mi-app-preview
+spec:
+  selector:
+    app: mi-app
+  ports:
+  - port: 80
+    targetPort: 8080
+```
+
+**Flujo Blue-Green:**
+
+1. Argo Rollouts despliega la nueva versión (Green) apuntada por `mi-app-preview`.
+2. El equipo valida la nueva versión en `mi-app-preview` (smoke tests, validación manual).
+3. Se promueve manualmente: `kubectl argo rollouts promote mi-app`.
+4. El tráfico de producción conmuta instantáneamente a Green.
+5. Los pods Blue se mantienen `scaleDownDelaySeconds` segundos por si hay que hacer rollback.
+
+```bash
+# Instalar el plugin de kubectl para Argo Rollouts
+kubectl argo rollouts version
+
+# Ver el estado del rollout en tiempo real
+kubectl argo rollouts get rollout mi-app --watch
+
+# Promover manualmente (Blue → Green)
+kubectl argo rollouts promote mi-app
+
+# Abortar y hacer rollback
+kubectl argo rollouts abort mi-app
+```
+### Demo interactiva: Blue-Green
+
+<BlueGreenSwitcher />
+
+## 4. Canary con Argo Rollouts
+
+La estrategia Canary es la más sofisticada y la más segura para producción. Permite validar la nueva versión con tráfico real antes de hacer el rollout completo:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: mi-app
+  namespace: mi-app-prod
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: mi-app
+  template:
+    metadata:
+      labels:
+        app: mi-app
+    spec:
+      containers:
+      - name: mi-app
+        image: ghcr.io/salvamiguel/mi-app:v2.0.0
+  strategy:
+    canary:
+      canaryService: mi-app-canary     # Service del canary
+      stableService: mi-app-stable     # Service de la versión estable
+      steps:
+      - setWeight: 10                  # 10% del tráfico al canary
+      - pause: {duration: 5m}          # Esperar 5 minutos
+      - setWeight: 25
+      - pause: {duration: 10m}
+      - setWeight: 50
+      - pause: {duration: 10m}
+      - setWeight: 100                 # 100% — rollout completo
+      analysis:
+        templates:
+        - templateName: success-rate
+        args:
+        - name: service-name
+          value: mi-app-canary
+```
+
+**Pasos del Canary:**
+
+| Paso | Tráfico Canary | Duración | Qué hacer |
+|------|----------------|----------|-----------|
+| 1 | 10% | 5 min | Monitorizar error rate y latencia |
+| 2 | 25% | 10 min | Verificar métricas de negocio |
+| 3 | 50% | 10 min | Confirmar comportamiento con carga real |
+| 4 | 100% | — | Rollout completado |
+
+```bash
+# Ver el progreso del canary
+kubectl argo rollouts get rollout mi-app --watch
+
+# Pausar el canary en el paso actual
+kubectl argo rollouts pause mi-app
+
+# Continuar al siguiente paso manualmente
+kubectl argo rollouts promote mi-app
+
+# Abortar y volver al 0% (rollback automático)
+kubectl argo rollouts abort mi-app
+```
+
+:::tip Canary con análisis automático
+Si integras `AnalysisTemplate` con Prometheus (como en el ejemplo de la sección de Rollback), el canary puede promoverse o abortarse automáticamente basándose en métricas reales, sin intervención humana.
+:::
+
+### Demo interactiva: Canary
+
+<CanaryDeploySlider />
+
+## 5. Monorepo vs Polyrepo
+
+La arquitectura del repositorio GitOps tiene un impacto significativo en la operación diaria del equipo.
+
+### Monorepo
+
+Todos los servicios y sus manifiestos de configuración en un solo repositorio:
+
+```
+gitops-repo/
+├── apps/
+│   ├── frontend/
+│   │   └── k8s/overlays/{dev,staging,prod}/
+│   ├── api/
+│   │   └── k8s/overlays/{dev,staging,prod}/
+│   └── worker/
+│       └── k8s/overlays/{dev,staging,prod}/
+└── platform/
+    ├── ingress/
+    └── monitoring/
+```
+
+**Ventajas:**
+- Un solo lugar para revisar todos los cambios de infraestructura.
+- Fácil de hacer cambios coordinados entre varios servicios.
+- Historial centralizado de todos los despliegues.
+
+**Desventajas:**
+- En equipos grandes, los PRs pueden generar conflictos frecuentes.
+- El acceso granular por equipo es más difícil de implementar.
+- Los pipelines de CI pueden volverse lentos si no están bien optimizados.
+
+### Polyrepo
+
+Cada servicio tiene su propio repositorio de configuración:
+
+```
+frontend-config/    → k8s manifests del frontend
+api-config/         → k8s manifests de la API
+worker-config/      → k8s manifests del worker
+platform-config/    → ingress, monitoring, etc.
+```
+
+**Ventajas:**
+- Separación clara de responsabilidades por equipo.
+- Acceso granular: el equipo de frontend no puede modificar la config de la API.
+- Pipelines de CI más rápidos y específicos.
+
+**Desventajas:**
+- Coordinación entre repositorios es más compleja.
+- Difícil de ver el estado global de todos los servicios.
+- Más overhead operativo (múltiples repos que mantener).
+
+:::tip Recomendación práctica
+Para equipos pequeños (< 10 devs), **monorepo** es generalmente más práctico. Para organizaciones grandes con múltiples equipos autónomos, **polyrepo** (o un monorepo estructurado por dominio) escala mejor. Herramientas como ArgoCD `ApplicationSet` con el generador `Git` funcionan bien con ambos patrones.
+:::
+

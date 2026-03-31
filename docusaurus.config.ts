@@ -14,6 +14,8 @@ const config: Config = {
   markdown: {
     mermaid: true,
   },
+  plugins: ['drawio'],
+
   themes: [
     '@docusaurus/theme-mermaid',
     [

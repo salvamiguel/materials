@@ -1,8 +1,173 @@
 ---
-sidebar_position: 4
+sidebar_position: 7
 title: "Rollback"
 ---
 
+
 # Rollback
 
-Contenido pendiente.
+Una de las ventajas más importantes del patrón GitOps es que el rollback es trivial: el historial de Git **es** el historial de despliegues. Volver a cualquier versión anterior es tan simple como revertir un commit.
+
+## 1. Rollback en GitOps: revert del commit
+
+En GitOps, el estado deseado del clúster siempre está en Git. Por tanto, hacer rollback significa **volver al estado anterior en Git**, y ArgoCD se encarga de reconciliar el clúster automáticamente.
+
+### Opción 1: git revert (recomendada en producción)
+
+`git revert` crea un **nuevo commit** que deshace los cambios, preservando el historial completo. Es la opción más segura porque:
+- Mantiene el registro de auditoría intacto.
+- No reescribe la historia del repositorio.
+- Es seguro en ramas compartidas.
+
+```bash
+# Revertir el último commit
+git revert HEAD
+git push origin main
+
+# Revertir un commit específico (sin el último)
+git log --oneline -10
+git revert abc1234
+git push origin main
+
+# Revertir un rango de commits (de más reciente a más antiguo)
+git revert HEAD~3..HEAD
+git push origin main
+```
+
+Tras el push, ArgoCD detecta el nuevo commit y sincroniza el clúster al estado anterior en cuestión de minutos.
+
+:::tip Por qué revert y no reset
+`git reset --hard` reescribe el historial y es peligroso en ramas compartidas. Siempre usa `git revert` en el config repo de producción. Usa `reset` solo en branches locales de desarrollo.
+:::
+
+### Opción 2: ArgoCD rollback desde la CLI
+
+ArgoCD mantiene su propio historial de despliegues sincronizados. Puedes hacer rollback directamente a cualquier revisión anterior sin tocar Git:
+
+```bash
+# Ver el historial de despliegues con sus IDs
+argocd app history mi-app
+
+# Ejemplo de salida:
+# ID  DATE                          REVISION
+# 1   2024-01-15 10:23:45 +0000    abc1234 (HEAD)
+# 2   2024-01-14 16:45:12 +0000    def5678
+# 3   2024-01-13 09:10:33 +0000    ghi9012
+
+# Rollback al ID 2 (versión de ayer)
+argocd app rollback mi-app 2
+
+# Verificar el estado tras el rollback
+argocd app get mi-app
+```
+
+:::warning Rollback de ArgoCD vs rollback de Git
+El rollback de ArgoCD es **temporal**: si tienes `selfHeal: true` activado, ArgoCD volverá a sincronizar con el HEAD de Git poco después. Para que el rollback sea permanente, debes hacer `git revert` y actualizar el repositorio.
+:::
+
+### Opción 3: ArgoCD UI — History and Rollback
+
+La UI de ArgoCD ofrece una interfaz visual para el rollback:
+
+1. Navega a la aplicación en la UI de ArgoCD.
+2. Haz clic en **History and Rollback** (icono de reloj).
+3. Selecciona la revisión a la que quieres volver.
+4. Haz clic en **Rollback**.
+
+Esta opción es especialmente útil en situaciones de incidente donde la velocidad es crítica y no hay tiempo para comandos de terminal.
+
+## 2. Rollback vs Redeploy
+
+Aunque parecen similares, son conceptos distintos con casos de uso diferentes:
+
+| Aspecto | Rollback | Redeploy |
+|---------|----------|----------|
+| **Qué hace** | Vuelve a una versión anterior conocida | Despliega la misma versión actual de nuevo |
+| **Cuándo usarlo** | Bug crítico en la versión nueva | Problema de infraestructura (pod crasheado, nodo caído) |
+| **Velocidad** | Muy rápido (Git ya tiene el estado) | Requiere re-ejecutar el pipeline completo |
+| **Riesgo** | Bajo (versión probada anteriormente) | Puede reproducir el mismo error si la causa no es la versión |
+| **Historial** | Crea nuevo commit en Git (con revert) | No modifica Git |
+
+### Cuándo hacer rollback
+
+- La nueva versión introduce un bug crítico en producción.
+- Las métricas de error o latencia superan el SLO tras el despliegue.
+- El análisis automatizado de Argo Rollouts detecta degradación.
+- Un test de humo post-despliegue falla.
+
+### Cuándo hacer redeploy
+
+- Un pod ha entrado en `CrashLoopBackOff` por agotamiento de recursos del nodo.
+- El nodo subyacente ha tenido un fallo de hardware.
+- Un ConfigMap o Secret fue actualizado manualmente y los pods necesitan reiniciarse.
+- Un cambio de infraestructura (nuevo nodo, nuevo PV) requiere recrear los pods.
+
+```bash
+# Redeploy forzando el restart de los pods (sin cambiar la imagen)
+kubectl rollout restart deployment/mi-app -n mi-app-prod
+
+# Verificar el estado del rollout
+kubectl rollout status deployment/mi-app -n mi-app-prod
+```
+
+## 3. Rollback automático con Argo Rollouts
+
+Para estrategias de despliegue progresivo (Canary, Blue-Green), **Argo Rollouts** permite configurar análisis automáticos que desencadenan rollbacks sin intervención humana.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+spec:
+  args:
+  - name: service-name
+  metrics:
+  - name: success-rate
+    interval: 1m
+    # Abortar si la tasa de éxito cae por debajo del 95%
+    failureLimit: 3
+    successCondition: result[0] >= 0.95
+    provider:
+      prometheus:
+        address: http://prometheus-server
+        query: |
+          sum(rate(http_requests_total{
+            service="{{args.service-name}}",
+            status!~"5.."
+          }[5m])) /
+          sum(rate(http_requests_total{
+            service="{{args.service-name}}"
+          }[5m]))
+```
+
+El rollout con análisis integrado:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: mi-app
+spec:
+  strategy:
+    canary:
+      steps:
+      - setWeight: 10
+      - pause: {duration: 5m}
+      - analysis:                    # Análisis antes de continuar
+          templates:
+          - templateName: success-rate
+          args:
+          - name: service-name
+            value: mi-app-canary
+      - setWeight: 50
+      - pause: {duration: 10m}
+      - setWeight: 100
+```
+
+Si el análisis falla (tasa de éxito < 95%), Argo Rollouts hace rollback automático al 0% de tráfico en la nueva versión, sin intervención humana.
+
+:::info Más sobre estrategias de despliegue
+Las estrategias Canary y Blue-Green con Argo Rollouts se cubren en detalle en el tema de [Estrategias de Despliegue](./estrategias-despliegue).
+:::
+

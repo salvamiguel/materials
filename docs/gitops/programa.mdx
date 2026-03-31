@@ -1,0 +1,81 @@
+---
+sidebar_position: 0
+title: "Programa del módulo"
+description: "Visión general del módulo de GitOps: unidades didácticas, carga horaria, requisitos previos y herramientas necesarias."
+---
+
+# Programa del módulo de GitOps
+
+Este módulo introduce **GitOps** como paradigma de entrega continua declarativa. La carga lectiva es de **8 horas** en ambos formatos (S3 4 h + S4 4 h). El recorrido parte de los principios de GitOps y Kubernetes esencial, avanza por **GitHub Actions** como motor CI/CD, y culmina con **ArgoCD** y estrategias de despliegue avanzadas (blue-green, canary) en un pipeline end-to-end.
+
+---
+
+## Unidades didácticas
+
+| Unidad | Título | Páginas | Horas |
+|--------|--------|---------|-------|
+| UD 1 | Fundamentos de GitOps y Kubernetes Esenciales | [Introducción a GitOps](./teoria/intro), [Pull vs Push](./teoria/pull-vs-push) | 2 h |
+| UD 2 | GitHub Actions: Pipelines CI/CD | [GitHub Actions](./teoria/github-actions) | 2 h |
+| UD 3 | ArgoCD: Implementación GitOps | [ArgoCD](./teoria/argocd), [Multi-entorno con Kustomize](./teoria/multi-env) | 2 h |
+| UD 4 | Estrategias de Despliegue Avanzadas | [Estrategias de Despliegue](./teoria/estrategias-despliegue), [Rollback](./teoria/rollback) | 1 h |
+| UD 5 | Pipeline End-to-End: GitHub Actions + ArgoCD | [Pipeline End-to-End](./teoria/pipeline-end-to-end) | 1 h |
+
+---
+
+## Carga horaria
+
+| Formato | Sesiones | Teoría | Práctica | Total |
+|---------|----------|--------|----------|-------|
+| Entre semana (ES) | S3 (4 h) + S4 (4 h) | 4 h | 4 h | **8 h** |
+| Fin de semana (FS) | S3 (4 h) + S4 (4 h) | 4 h | 4 h | **8 h** |
+
+:::note Transferencia de horas
+Este módulo se benefició de la transferencia de 2 horas desde el módulo de Terraform para reforzar los contenidos de GitHub Actions, despliegue continuo declarativo y estrategias de delivery avanzadas.
+:::
+
+---
+
+## Requisitos previos
+
+:::info Antes de empezar
+
+- Conceptos de IaC cubiertos en el módulo de Terraform (S1–S2).
+- Conocimientos básicos de **Git**: commits, branches, pull requests.
+- Familiaridad con **YAML** y formatos de configuración declarativos.
+- Nociones básicas de **contenedores Docker** (build, run, push).
+- Conceptos fundamentales de redes y servicios web (HTTP, DNS, puertos).
+
+¿Necesitas repasar? Consulta las páginas de [Conceptos Básicos de Git](./bonus/git-basics) y [Conceptos Básicos de Kubernetes](./bonus/kubernetes-basics) en la sección Bonus.
+:::
+
+---
+
+## Herramientas necesarias
+
+| Herramienta | Versión mínima | Notas |
+|-------------|----------------|-------|
+| Git | >= 2.30 | Control de versiones |
+| Docker Desktop | >= 4.0 | Con Kubernetes habilitado |
+| kind o minikube | kind >= 0.20 / minikube >= 1.30 | Clúster Kubernetes local — se usará **kind** |
+| kubectl | >= 1.28 | CLI de Kubernetes |
+| Helm CLI | >= 3.12 | Gestión de paquetes Kubernetes |
+| ArgoCD CLI | Última estable | Se instala durante el Lab 3 |
+| Visual Studio Code | Última estable | Con extensiones YAML, Kubernetes y GitHub Actions |
+| Cuenta de GitHub | — | Gratuita — incluye 2.000 min/mes de GitHub Actions |
+| Cuenta de Docker Hub | — | Gratuita — para push de imágenes en los labs |
+
+:::tip Preparación previa
+Se enviará una guía de setup al menos 1 semana antes de S3. Incluye instalación de kind, verificación de kubectl y un workflow de prueba para comprobar que GitHub Actions funciona. **Prepara el entorno antes de la primera sesión** para maximizar el tiempo de práctica.
+:::
+
+---
+
+## Recursos de referencia
+
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [ArgoCD Documentation](https://argo-cd.readthedocs.io/en/stable/)
+- [Kubernetes Documentation](https://kubernetes.io/docs/home/)
+- [Kustomize Documentation](https://kustomize.io/)
+- [Argo Rollouts](https://argoproj.github.io/argo-rollouts/)
+- [OpenGitOps Principles](https://opengitops.dev/)
+- [GitHub Skills – GitHub Actions](https://skills.github.com/)
