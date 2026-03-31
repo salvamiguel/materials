@@ -1,0 +1,280 @@
+---
+sidebar_position: 6
+title: "IA Generativa y Amazon Bedrock"
+description: "Fundamentos de IA Generativa, modelos fundacionales, arquitectura Transformer y Amazon Bedrock."
+---
+
+import { FaAws } from "react-icons/fa";
+
+# IA Generativa y Amazon Bedrock <FaAws />
+
+Este modulo cubre el **Domain 2: Fundamentals of Generative AI** del examen AWS Certified AI Practitioner (AIF-C01). Exploraremos que es la IA Generativa, como funcionan los Foundation Models, la arquitectura Transformer que los hace posibles, el servicio Amazon Bedrock y conceptos clave como RAG, Prompt Engineering y Embeddings.
+
+---
+
+## 1. ¿Que es la IA Generativa?
+
+La IA Generativa (Generative AI o Gen-AI) es un tipo de Deep Learning enfocado en **crear contenido nuevo** que es similar a los datos con los que fue entrenado. A diferencia de los modelos discriminativos tradicionales que clasifican o predicen valores a partir de datos de entrada, los modelos generativos aprenden la distribucion subyacente de los datos de entrenamiento y son capaces de generar nuevas muestras que siguen esa distribucion.
+
+Los tipos de contenido que la IA Generativa puede producir incluyen:
+
+- **Texto:** Articulos, resumenes, traducciones, codigo, respuestas a preguntas, dialogos conversacionales.
+- **Imagenes:** Fotografias realistas, ilustraciones, disenos graficos, edicion y modificacion de imagenes existentes.
+- **Audio:** Voz sintetica, musica, efectos de sonido, clonacion de voz.
+- **Codigo:** Generacion de funciones, clases, tests, documentacion tecnica, depuracion de errores.
+- **Video:** Clips cortos, animaciones, edicion automatizada de video.
+
+### Diferencias con la AI Tradicional
+
+La AI tradicional (o AI discriminativa) se centra en **analizar y clasificar** datos existentes. Por ejemplo, un modelo de clasificacion de imagenes recibe una foto y determina si contiene un gato o un perro. La IA Generativa, en cambio, puede **crear** una imagen completamente nueva de un gato que nunca existio.
+
+Otra diferencia fundamental es el tipo de datos de entrenamiento. Los modelos tradicionales supervisados necesitan grandes cantidades de datos etiquetados (curados manualmente). Los Foundation Models generativos se pre-entrenan con enormes volumenes de **datos no etiquetados** (texto de internet, libros, codigo publico), lo que reduce drasticamente el coste de preparacion de datos.
+
+### Origenes y Evolucion
+
+La IA Generativa tiene sus raices en el deseo de simular la creatividad y la cognicion humana. Los hitos mas importantes de su evolucion incluyen la aparicion de las Generative Adversarial Networks (GANs) en 2014, el desarrollo de la arquitectura Transformer en 2017, y la explosion de los Large Language Models (LLMs) con GPT-3 en 2020 y sus sucesores. Hoy en dia, la IA Generativa se ha integrado en multiples industrias para creacion de contenido, diseno, prototipado, atencion al cliente y resolucion de problemas complejos.
+
+---
+
+## 2. Foundation Models (Modelos Fundacionales)
+
+Los Foundation Models (FM) son modelos de IA de gran escala que han sido **pre-entrenados con enormes volumenes de datos diversos** y que pueden adaptarse a una amplia variedad de tareas sin necesidad de entrenar un modelo desde cero para cada una.
+
+### Caracteristicas Principales
+
+**Escala masiva:** Los FM tienen miles de millones de parametros. Entrenar uno de estos modelos cuesta decenas de millones de dolares en infraestructura computacional.
+
+**Pre-entrenamiento con datos diversos:** Se entrenan con una gran variedad de datos: libros, paginas web, articulos cientificos, codigo fuente, conversaciones, etc. Esta diversidad les permite adquirir un conocimiento amplio del mundo.
+
+**Adaptabilidad:** Un unico FM puede adaptarse a multiples tareas (traduccion, resumen, generacion de codigo, respuesta a preguntas) mediante Fine-Tuning o simplemente a traves de Prompt Engineering, sin modificar el modelo base.
+
+**Empresas proveedoras:** Los FM mas conocidos provienen de empresas como Anthropic (Claude), Meta (Llama), Google (Gemini, BERT), Amazon (Titan), OpenAI (GPT), Mistral AI, Cohere y AI21 Labs. Algunos son open source (Llama, BERT), mientras que otros estan bajo licencia comercial (Claude, GPT).
+
+### Large Language Models (LLMs)
+
+Los LLMs son Foundation Models especificamente adaptados para generar **texto similar al humano**. Ejemplos prominentes son ChatGPT, Claude, Gemini y Llama. Todos ellos se entrenan con grandes cantidades de datos textuales (libros, periodicos, sitios web) y tienen miles de millones de parametros.
+
+Los LLMs son capaces de realizar una amplia variedad de tareas relacionadas con el lenguaje: traduccion, resumen, respuesta a preguntas, generacion de contenido, analisis de sentimiento, extraccion de informacion y mucho mas.
+
+Una caracteristica importante de los LLMs es que son **no deterministas**: la misma entrada (prompt) puede producir respuestas diferentes en cada ejecucion, dependiendo de los parametros de inferencia configurados (temperature, top-k, top-p).
+
+### Tokens
+
+Los LLMs no procesan texto directamente a nivel de palabras completas. En su lugar, descomponen el texto en unidades mas pequenas llamadas **tokens**. Un token puede ser una palabra completa, parte de una palabra, un signo de puntuacion o incluso un espacio. Por ejemplo, la palabra "extraordinario" podria descomponerse en varios tokens. La cantidad de tokens que un modelo puede procesar en una sola solicitud se denomina **context window** (ventana de contexto), y es una de las limitaciones practicas mas importantes de los LLMs.
+
+---
+
+## 3. Arquitectura Transformer
+
+La arquitectura Transformer, introducida en 2017, es la base de practicamente todos los Foundation Models modernos. Su innovacion clave es el **mecanismo de atencion** (attention mechanism), que permite al modelo considerar todas las palabras de una secuencia simultaneamente, en lugar de procesarlas una por una de forma secuencial.
+
+### Componentes Clave
+
+**Self-Attention Mechanism:** Permite al modelo evaluar la importancia de cada palabra en relacion con todas las demas palabras de la secuencia. Esto permite capturar relaciones contextuales a larga distancia. Por ejemplo, en la frase "El gato que estaba sobre la mesa se bajo al suelo", el mecanismo de atencion ayuda al modelo a entender que "se bajo" se refiere a "el gato" y no a "la mesa".
+
+**Encoder-Decoder Structure:** La arquitectura Transformer original consta de un **encoder** que procesa la secuencia de entrada y un **decoder** que genera la secuencia de salida. Algunos modelos usan solo el encoder (BERT, para tareas de comprension), solo el decoder (GPT, para generacion de texto) o ambos (T5, para tareas de traduccion).
+
+**Positional Encoding:** Como el Transformer procesa todos los tokens en paralelo (a diferencia de las redes recurrentes que los procesan secuencialmente), necesita una forma de incorporar informacion sobre el **orden** de las palabras. El Positional Encoding anade vectores que codifican la posicion de cada token en la secuencia.
+
+**Layer Normalization y Residual Connections:** Mejoran la estabilidad del entrenamiento y permiten que los gradientes fluyan de manera efectiva a traves de la red, haciendo posible entrenar modelos con muchas capas.
+
+**Feedforward Neural Networks:** Se aplican a cada posicion de forma independiente despues del procesamiento de atencion, transformando aun mas los datos.
+
+---
+
+## 4. Tipos de Modelos Generativos
+
+### Large Language Models (LLMs)
+
+Modelos basados en Transformer enfocados en generacion y comprension de texto. Ejemplos: GPT-4, Claude, Llama, Mistral.
+
+### Diffusion Models (Modelos de Difusion)
+
+Generan imagenes de alta calidad a traves de un proceso iterativo que parte de ruido aleatorio y lo refina progresivamente hasta obtener una imagen coherente. Ejemplos: Stable Diffusion, DALL-E 3, Midjourney. Son actualmente el estandar para generacion de imagenes.
+
+### Generative Adversarial Networks (GANs)
+
+Consisten en dos redes neuronales que compiten entre si: un **generador** que crea muestras falsas y un **discriminador** que intenta distinguir las muestras falsas de las reales. A traves de este proceso adversarial, el generador aprende a crear muestras cada vez mas realistas. Fueron pioneras en la generacion de imagenes realistas antes de la aparicion de los Diffusion Models.
+
+### Variational Autoencoders (VAEs)
+
+Aprenden una representacion comprimida (latente) de los datos de entrenamiento y pueden generar nuevas muestras a partir de esa representacion. Son utiles para generacion de datos, deteccion de anomalias y aprendizaje de representaciones.
+
+---
+
+## 5. Capacidades y Limitaciones de la IA Generativa
+
+### Capacidades
+
+- Generacion de contenido creativo de alta calidad a gran escala.
+- Automatizacion de tareas repetitivas de conocimiento (resumenes, traducciones, correos).
+- Asistencia en programacion (generacion de codigo, depuracion, documentacion).
+- Atencion al cliente mediante chatbots avanzados.
+- Aumento de datos para entrenamiento de otros modelos (Data Augmentation).
+- Diseno y prototipado rapido de productos.
+
+### Limitaciones
+
+- **Alucinaciones (Hallucinations):** Los modelos pueden generar informacion que suena convincente pero es factualmente incorrecta.
+- **Conocimiento desactualizado:** Los modelos solo conocen informacion hasta su fecha de corte de entrenamiento.
+- **Sesgo (Bias):** Los modelos pueden reflejar y amplificar sesgos presentes en sus datos de entrenamiento.
+- **Falta de razonamiento real:** Los modelos generan texto estadisticamente probable, pero no "entienden" ni "razonan" en el sentido humano.
+- **Privacidad:** Existe riesgo de que los modelos memoricen y reproduzcan datos sensibles del entrenamiento.
+- **Coste computacional:** Los modelos grandes requieren infraestructura costosa para inferencia.
+
+---
+
+## 6. Amazon Bedrock
+
+Amazon Bedrock es un **servicio completamente gestionado de AWS** que proporciona acceso a Foundation Models de AWS y de terceros a traves de una API unificada. Permite a los desarrolladores construir y escalar aplicaciones de IA Generativa sin gestionar infraestructura subyacente.
+
+### Caracteristicas Principales
+
+**Catalogo de modelos:** Bedrock ofrece acceso a modelos de multiples proveedores, permitiendo elegir el mas adecuado para cada caso de uso:
+
+| Proveedor | Modelo(s) | Especialidad |
+|-----------|-----------|-------------|
+| **Anthropic** | Claude (3, 3.5, 4) | Conversacion, analisis, codigo, vision |
+| **Meta** | Llama 3 | Generacion de texto open-weight |
+| **Amazon** | Titan (Text, Embeddings, Image) | Texto, embeddings, imagenes |
+| **Stability AI** | Stable Diffusion | Generacion de imagenes |
+| **Cohere** | Command, Embed | Texto empresarial, embeddings |
+| **AI21 Labs** | Jamba | Generacion de texto |
+| **Mistral AI** | Mistral, Mixtral | Texto eficiente, multilingue |
+
+**Servicio completamente gestionado:** No requiere aprovisionar servidores, gestionar escalado ni configurar infraestructura. Se accede a los modelos a traves de APIs REST o SDKs de AWS.
+
+**Seguridad de datos:** Los datos de los clientes **no se usan para entrenar los modelos base**. La informacion enviada a Bedrock esta protegida y no se comparte entre clientes.
+
+**Integracion con servicios AWS:** Se integra con IAM para control de acceso, CloudWatch para monitorizacion, CloudTrail para auditoria, y otros servicios como S3, Lambda y SageMaker.
+
+### Bedrock Playgrounds
+
+Bedrock incluye **playgrounds** integrados en la consola de AWS que permiten experimentar con los modelos directamente desde el navegador, sin escribir codigo. Hay playgrounds para texto, chat e imagenes, donde se pueden ajustar los parametros de inferencia y probar diferentes prompts de forma interactiva.
+
+### Knowledge Bases
+
+Las Knowledge Bases de Bedrock implementan el patron RAG (Retrieval Augmented Generation) de forma gestionada. Permiten conectar fuentes de datos externas (documentos en S3, bases de datos) para que los modelos puedan consultar informacion actualizada y especifica del dominio al generar respuestas. El proceso de chunking, encoding e indexacion se gestiona automaticamente.
+
+### Bedrock Guardrails
+
+Las Guardrails de Bedrock proporcionan mecanismos de control sobre las entradas y salidas de los modelos:
+
+- **Content Moderation:** Filtros para bloquear contenido danino o inapropiado en las respuestas generadas.
+- **Access Controls:** Control de acceso basado en roles mediante IAM con permisos granulares.
+- **Topic Controls:** Restriccion de temas sobre los que el modelo puede responder.
+- **Word Filters:** Bloqueo de palabras o frases especificas.
+- **PII Detection:** Deteccion y redaccion de informacion personal identificable.
+- **Monitoring:** Integracion con CloudWatch para seguimiento de uso y deteccion de anomalias.
+
+### Bedrock Agents
+
+Los Agents de Bedrock permiten crear agentes autonomos que pueden **ejecutar acciones** y **consultar fuentes de datos** para completar tareas complejas de varios pasos. Un agente puede, por ejemplo, recibir una solicitud del usuario, consultar una base de datos, ejecutar una funcion Lambda y devolver una respuesta compuesta.
+
+### Watermark Detection
+
+Bedrock incluye capacidad de **deteccion de marcas de agua** (watermarking) en contenido generado por sus modelos, lo que permite verificar si un texto o imagen fue producido por un modelo de Bedrock.
+
+---
+
+## 7. RAG (Retrieval Augmented Generation)
+
+RAG es una tecnica que mejora los LLMs integrando **fuentes de datos externas** para generar respuestas mas precisas y contextualmente relevantes. En lugar de depender unicamente del conocimiento adquirido durante el pre-entrenamiento, el modelo consulta informacion actualizada y especifica antes de generar su respuesta.
+
+### ¿Por que RAG?
+
+Los LLMs tienen dos limitaciones importantes que RAG resuelve: su conocimiento se detiene en la fecha de corte del entrenamiento, y no tienen acceso a informacion privada o especifica de una organizacion. RAG permite "aumentar" las capacidades del modelo con datos actualizados y propietarios sin necesidad de reentrenar el modelo.
+
+### Arquitectura de RAG
+
+El proceso de RAG consta de varias fases:
+
+**1. Chunking:** Los documentos grandes (informes, manuales, paginas web) se dividen en fragmentos mas pequenos llamados "chunks". Cada chunk contiene una unidad coherente de informacion. La division puede basarse en longitud, estructura del documento o relevancia semantica.
+
+**2. Encoding (Embeddings):** Cada chunk se convierte en una representacion numerica (embedding) utilizando un modelo de embeddings. Estos vectores de alta dimensionalidad capturan el significado semantico del texto, permitiendo al sistema entender la relevancia y el contexto de cada chunk.
+
+**3. Indexacion:** Los embeddings se almacenan en un **vector database** o motor de busqueda por similitud (como Amazon OpenSearch). Se almacena tambien metadata (ID del documento, posicion del chunk, atributos adicionales) junto a los embeddings. El indice se optimiza para busquedas rapidas a escala.
+
+**4. Retrieval (Recuperacion):** Cuando un usuario hace una consulta, esta se convierte en un embedding usando el mismo modelo de encoding. El sistema busca los chunks mas similares comparando embeddings mediante metricas como cosine similarity o dot product. Los chunks mas relevantes se recuperan y se filtran.
+
+**5. Generation (Generacion):** La informacion recuperada se combina con la consulta original y se envia al LLM como contexto adicional. El modelo genera una respuesta basada tanto en su conocimiento pre-entrenado como en la informacion recuperada, incluyendo tipicamente citas o referencias a los documentos originales.
+
+### Beneficios de RAG
+
+- **Reduce alucinaciones:** Al basarse en datos concretos recuperados, el modelo es menos propenso a inventar informacion.
+- **Informacion actualizada:** No requiere reentrenar el modelo para incorporar datos nuevos; basta con actualizar la base de conocimiento.
+- **Adaptabilidad al dominio:** Permite que un LLM generalista responda preguntas especificas de un sector o empresa.
+- **Transparencia:** Las respuestas pueden incluir referencias a los documentos fuente.
+
+:::tip Amazon Q Business y RAG
+Amazon Q Business es un ejemplo de servicio AWS que utiliza RAG. Se conecta a fuentes de datos empresariales (S3, Jira, ServiceNow, Salesforce, Zendesk) y permite a los empleados hacer preguntas en lenguaje natural sobre la informacion interna de la empresa. Esta construido sobre Amazon Bedrock.
+:::
+
+---
+
+## 8. Prompt Engineering
+
+Prompt Engineering es el arte y la ciencia de disenar las instrucciones (prompts) que se envian a un LLM para obtener las respuestas mas utiles y precisas posibles.
+
+### Tecnicas Principales
+
+**Zero-Shot Prompting:** Se le pide al modelo que realice una tarea sin proporcionarle ningun ejemplo. El modelo depende enteramente de su conocimiento pre-entrenado. Ejemplo: "Clasifica el siguiente texto como positivo o negativo: 'El producto es excelente'".
+
+**Few-Shot Prompting:** Se proporcionan unos pocos ejemplos de la tarea antes de hacer la solicitud real. Estos ejemplos guian al modelo sobre el formato y tipo de respuesta esperada. Ejemplo: "Positivo: 'Me encanta este producto'. Negativo: 'Es terrible'. Clasifica: 'No esta mal pero podria mejorar'".
+
+**Chain-of-Thought (CoT):** Se le pide al modelo que **explique su razonamiento paso a paso** antes de dar la respuesta final. Esta tecnica mejora significativamente el rendimiento en tareas que requieren razonamiento logico o matematico. Ejemplo: "Piensa paso a paso y luego responde: Si Juan tiene 3 manzanas y Maria le da el doble..."
+
+### Parametros de Inferencia
+
+Al enviar un prompt a un modelo, se pueden ajustar varios parametros que controlan el comportamiento de la generacion:
+
+| Parametro | Descripcion | Efecto |
+|-----------|------------|--------|
+| **Temperature** | Controla la aleatoriedad de las predicciones | Valores bajos (0-0.3): respuestas deterministas y conservadoras. Valores altos (0.7-1.0): respuestas mas creativas y variadas. |
+| **Top-k** | Limita la seleccion a los k tokens mas probables | Valores bajos: respuestas mas predecibles. Valores altos: mayor diversidad. |
+| **Top-p (Nucleus Sampling)** | Selecciona tokens cuyas probabilidades acumuladas suman hasta p | Selecciona dinamicamente un subconjunto de tokens probables. |
+| **Max Tokens** | Establece la longitud maxima de la respuesta generada | Controla la extension de la salida. |
+
+:::info Temperatura y determinismo
+Si un cliente tiene un chatbot LLM que produce respuestas muy diversas para el mismo prompt y necesita respuestas mas consistentes, la solucion es **reducir la temperature**. Este es un escenario tipico del examen AIF-C01.
+:::
+
+---
+
+## 9. Embeddings y Vector Databases
+
+### Embeddings
+
+Un embedding es una **representacion numerica** (vector de numeros) de un dato (texto, imagen, audio) en un espacio multidimensional. Los embeddings capturan el significado semantico de los datos: elementos con significados similares se representan con vectores cercanos en el espacio de embeddings.
+
+Por ejemplo, los embeddings de las palabras "rey" y "reina" estarian cercanos entre si, y la relacion entre "rey" y "reina" seria similar a la relacion entre "hombre" y "mujer" en el espacio vectorial.
+
+Los embeddings son fundamentales para multiples aplicaciones: busqueda semantica, sistemas de recomendacion, deteccion de duplicados, clustering de documentos y, crucialmente, para el componente de retrieval en sistemas RAG.
+
+### Vector Databases
+
+Las Vector Databases son bases de datos optimizadas para almacenar y buscar vectores de alta dimensionalidad de forma eficiente. Permiten realizar busquedas por similitud (encontrar los vectores mas cercanos a un vector de consulta) en milisegundos, incluso con millones de vectores. En el ecosistema AWS, **Amazon OpenSearch** es la opcion principal para implementar busquedas vectoriales.
+
+---
+
+## 10. Modelo de Precios de Amazon Bedrock
+
+Amazon Bedrock utiliza un modelo de precios basado en el uso, con dos modalidades principales:
+
+**On-Demand:** Se paga por cada solicitud al modelo, medida en tokens de entrada y tokens de salida. No requiere compromiso a largo plazo. Es ideal para cargas de trabajo variables o experimentacion.
+
+**Provisioned Throughput:** Se reserva capacidad computacional dedicada para un modelo especifico, garantizando un nivel de rendimiento constante. Es mas economico para cargas de trabajo predecibles y de alto volumen, pero requiere un compromiso temporal.
+
+El coste varia significativamente entre modelos (Claude es mas caro que Titan, por ejemplo) y entre tipos de tarea (los modelos de imagen suelen cobrar por imagen generada en lugar de por tokens). La eleccion del modelo y la optimizacion de los prompts (reduciendo tokens innecesarios) son las principales palancas para controlar costes.
+
+### Fine-Tuning y Continued Pre-Training en Bedrock
+
+**Fine-Tuning:** Adapta un Foundation Model a un caso de uso especifico entrenandolo con datos del dominio del cliente. Utiliza datasets mas pequenos para refinar los pesos del modelo sin alterar la arquitectura base. Mejora la relevancia y precision para aplicaciones de nicho con menor coste computacional que un entrenamiento completo.
+
+**Continued Pre-Training:** Extiende el entrenamiento del modelo con grandes corpus de datos especificos de un dominio para mejorar su conocimiento fundacional en areas especializadas. Es ideal para industrias con lenguaje o contexto unicos (legal, medico, cientifico). Si un chatbot cientifico basado en Bedrock tiene problemas con terminologia especializada, el Continued Pre-Training es la solucion recomendada.
+
+:::tip Clave para el examen
+El examen AIF-C01 puede preguntar sobre la diferencia entre Fine-Tuning y Continued Pre-Training:
+- **Fine-Tuning**: Adapta el modelo a una tarea especifica con datos etiquetados. Ajusta pesos para mejorar rendimiento en una tarea concreta.
+- **Continued Pre-Training**: Expone el modelo a nuevos datos de dominio para ampliar su conocimiento base. No se enfoca en una tarea especifica sino en mejorar la comprension general del dominio.
+:::

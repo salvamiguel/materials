@@ -1,0 +1,370 @@
+---
+sidebar_position: 8
+title: "Amazon SageMaker"
+description: "Ecosistema completo de Amazon SageMaker: entrenamiento, despliegue, monitorizacion y herramientas asociadas."
+---
+
+import { FaAws } from "react-icons/fa";
+
+# Amazon SageMaker <FaAws />
+
+Amazon SageMaker AI es la plataforma integral de AWS para Machine Learning. Es un servicio completamente gestionado que permite a data scientists y desarrolladores construir, entrenar y desplegar modelos de ML de forma rapida y segura en un entorno listo para produccion. Este modulo cubre el ecosistema completo de SageMaker, desde la preparacion de datos hasta la monitorizacion de modelos en produccion.
+
+---
+
+## 1. Vision General de SageMaker
+
+Amazon SageMaker resuelve un problema comun en los proyectos de ML: la necesidad de combinar multiples herramientas, frameworks y servicios de infraestructura para completar el ciclo de vida de un modelo. SageMaker integra todo el flujo en un unico servicio gestionado que cubre tres fases principales:
+
+1. **Recopilar y preparar datos** para el entrenamiento.
+2. **Construir y entrenar modelos** de Machine Learning.
+3. **Desplegar modelos y monitorizar** el rendimiento de las predicciones en produccion.
+
+La ventaja principal de SageMaker frente a soluciones auto-gestionadas (por ejemplo, instalar TensorFlow en una instancia EC2 manualmente) es que elimina la complejidad operativa: no hay que aprovisionar servidores, configurar redes, gestionar dependencias ni implementar pipelines de despliegue desde cero. Todo esta integrado y gestionado por AWS.
+
+---
+
+## 2. SageMaker Studio
+
+SageMaker Studio es el **IDE unificado** para todo el desarrollo de ML. Proporciona una interfaz web completa donde los equipos pueden realizar todas las tareas del ciclo de vida de ML sin cambiar de herramienta:
+
+- **Desarrollo end-to-end:** Desde la exploracion de datos hasta el despliegue del modelo, todo dentro de la misma interfaz.
+- **Colaboracion en equipo:** Multiples usuarios pueden trabajar en el mismo entorno, compartir notebooks, experimentos y modelos.
+- **Ajuste y depuracion:** Herramientas integradas para tunear hiperparametros, depurar modelos y visualizar metricas de entrenamiento.
+- **Despliegue con un clic:** Los modelos entrenados se pueden desplegar directamente desde Studio.
+- **Workflows automatizados:** Integracion con SageMaker Pipelines para automatizar el flujo completo de ML.
+
+Studio integra todas las herramientas del ecosistema SageMaker (Data Wrangler, Feature Store, Clarify, Canvas, etc.) en una unica experiencia.
+
+---
+
+## 3. Preparacion de Datos
+
+### SageMaker Data Wrangler
+
+Data Wrangler es la herramienta de SageMaker para **preparar datos tabulares e imagenes** para Machine Learning. Proporciona una interfaz visual unica para todo el proceso de preparacion de datos:
+
+- **Seleccion de datos:** Importacion desde multiples fuentes (S3, Athena, Redshift, bases de datos SQL).
+- **Exploracion y visualizacion:** Graficos y estadisticas descriptivas para entender la distribucion y calidad de los datos.
+- **Limpieza:** Tratamiento de valores faltantes, eliminacion de duplicados, correccion de tipos de datos.
+- **Transformacion:** Normalizacion, codificacion de variables categoricas, creacion de nuevas features.
+- **Feature Engineering:** Creacion de caracteristicas derivadas para mejorar la capacidad predictiva del modelo.
+- **Evaluacion rapida (Quick Model):** Permite entrenar un modelo basico rapidamente para validar que las transformaciones de datos son adecuadas antes de invertir en un entrenamiento completo.
+- **Soporte SQL:** Capacidad de transformar datos usando consultas SQL.
+- **Calidad de datos (Data Quality):** Herramientas automaticas para evaluar la calidad del dataset.
+- **Exportacion:** Los flujos de datos preparados se pueden exportar directamente a Feature Store, a un notebook de entrenamiento o a S3.
+
+### SageMaker Feature Store
+
+Las features (caracteristicas) son las variables de entrada que los modelos de ML usan tanto durante el entrenamiento como para la inferencia. Por ejemplo, en un dataset de musica, las features podrian incluir puntuaciones de canciones, duracion de escucha y datos demograficos del oyente.
+
+Feature Store es un **repositorio centralizado** para almacenar, descubrir y reutilizar features de ML a traves de toda la organizacion:
+
+- **Ingestion de features** desde multiples fuentes de datos.
+- **Definicion de transformaciones** de datos en features directamente dentro de Feature Store.
+- **Publicacion directa** desde Data Wrangler.
+- **Descubrimiento** de features existentes desde SageMaker Studio, permitiendo a los equipos reutilizar features ya creadas en lugar de duplicar esfuerzos.
+- **Consistencia** entre entrenamiento e inferencia: las mismas features usadas para entrenar el modelo estan disponibles para inferencia, eliminando el riesgo de training-serving skew.
+
+Tener un Feature Store centralizado es especialmente importante en organizaciones grandes donde multiples equipos trabajan en diferentes modelos que pueden compartir las mismas features base.
+
+---
+
+## 4. Entrenamiento de Modelos
+
+### Built-in Algorithms (Algoritmos Integrados)
+
+SageMaker incluye una coleccion de **algoritmos pre-implementados y optimizados** que cubren los casos de uso mas comunes de ML, eliminando la necesidad de implementar algoritmos desde cero:
+
+**Algoritmos Supervisados:**
+- Linear Regression y Classification: para problemas de regresion y clasificacion lineales.
+- K-Nearest Neighbors (KNN): para clasificacion basada en proximidad.
+
+**Algoritmos No Supervisados:**
+- Principal Component Analysis (PCA): para reduccion de dimensionalidad.
+- K-Means: para clustering y segmentacion.
+- Anomaly Detection: para deteccion de valores atipicos y comportamientos inusuales.
+
+**Algoritmos Textuales:** Para tareas de NLP como procesamiento de lenguaje natural y resumen de texto.
+
+**Procesamiento de Imagenes:** Para clasificacion y deteccion de objetos en imagenes.
+
+Estos algoritmos estan optimizados para ejecutarse de forma distribuida en la infraestructura de AWS, lo que significa que escalan eficientemente con datasets grandes sin configuracion adicional.
+
+### Custom Training (Entrenamiento Personalizado)
+
+Cuando los algoritmos integrados no son suficientes, SageMaker permite traer tu propio codigo de entrenamiento usando los frameworks mas populares (TensorFlow, PyTorch, scikit-learn, etc.) empaquetado en contenedores Docker. SageMaker se encarga de aprovisionar la infraestructura, ejecutar el entrenamiento y liberar los recursos al finalizar.
+
+### Automatic Model Tuning (AMT)
+
+El Automatic Model Tuning, tambien conocido como **Hyperparameter Optimization (HPO)**, automatiza el proceso de encontrar los mejores hiperparametros para un modelo:
+
+- **Define el objetivo:** Se especifica la metrica que se quiere optimizar (accuracy, F1-score, RMSE, etc.).
+- **Seleccion automatica:** AMT elige automaticamente los rangos de hiperparametros, la estrategia de busqueda, el tiempo maximo de cada trabajo de tuning y las condiciones de parada temprana.
+- **Ahorro de tiempo y dinero:** Evita la necesidad de ejecutar cientos de experimentos manualmente y previene el desperdicio de recursos en configuraciones suboptimas.
+
+---
+
+## 5. Despliegue de Modelos e Inferencia
+
+SageMaker ofrece cuatro tipos de despliegue para inferencia, cada uno diseñado para patrones de uso diferentes. El despliegue se realiza con un solo clic desde Studio, con escalado automatico y sin necesidad de gestionar servidores.
+
+### Real-Time Inference
+
+Para predicciones individuales con latencia baja. El endpoint esta activo permanentemente y responde en milisegundos. Payload maximo de 6 MB y tiempo de procesamiento maximo de 60 segundos.
+
+### Serverless Inference
+
+Similar a Real-Time pero con **escalado a cero** durante periodos de inactividad. Ideal para cargas de trabajo con trafico esporadico donde se puede tolerar cierta latencia adicional por cold starts. Solo se paga por el tiempo de procesamiento efectivo.
+
+### Asynchronous Inference
+
+Para payloads grandes (hasta 1 GB) y tiempos de procesamiento largos (hasta 1 hora). Las solicitudes y respuestas se gestionan a traves de Amazon S3, con procesamiento en segundo plano y latencia "near real-time".
+
+### Batch Transform
+
+Para generar predicciones sobre datasets completos de forma masiva. Permite procesamiento concurrente de multiples solicitudes con payloads de hasta 100 MB por mini-batch. Ideal para scoring periodico de grandes volumenes de datos.
+
+### Tabla Comparativa
+
+| Tipo | Latencia | Payload Max | Tiempo Max | Caso de Uso |
+|------|---------|-------------|------------|-------------|
+| **Real-Time** | Baja (ms-s) | 6 MB (un registro) | 60 segundos | Predicciones rapidas para apps web/movil |
+| **Serverless** | Baja (ms-s) | 6 MB (un registro) | 60 segundos | Inferencia esporadica sin infraestructura, tolera cold starts |
+| **Asynchronous** | Media-Alta ("near real-time") | 1 GB (un registro) | 1 hora | Payloads grandes con procesamiento largo |
+| **Batch Transform** | Alta (min-h) | 100 MB por mini-batch | 1 hora | Procesamiento masivo de datasets completos |
+
+---
+
+## 6. SageMaker Clarify
+
+SageMaker Clarify es un conjunto de herramientas para **evaluar modelos, detectar sesgos y explicar predicciones**. Es una pieza clave para la IA Responsable y la gobernanza de modelos.
+
+### Evaluacion de Foundation Models
+
+Clarify permite evaluar Foundation Models en multiples dimensiones, incluyendo factores humanos como amabilidad o humor en las respuestas. Se puede utilizar un equipo gestionado por AWS o empleados propios como evaluadores, con datasets integrados o personalizados y metricas y algoritmos de evaluacion pre-construidos.
+
+### Model Explainability (Explicabilidad del Modelo)
+
+Clarify proporciona herramientas para **entender como y por que un modelo hace sus predicciones**:
+
+- Analisis del modelo completo antes del despliegue para comprender su comportamiento general.
+- Depuracion de predicciones individuales una vez el modelo esta desplegado.
+- Aumento de la confianza y comprension del modelo por parte de los stakeholders.
+
+Un ejemplo practico: si un modelo de prestamos rechaza una solicitud, Clarify puede explicar que features contribuyeron mas a esa decision, respondiendo a preguntas como "¿Por que el modelo predijo un resultado negativo para este solicitante?" o "¿Por que el modelo hizo una prediccion incorrecta?".
+
+### Deteccion de Bias (Sesgo)
+
+Clarify puede detectar y cuantificar sesgos en datasets y modelos:
+
+- **Medicion de sesgo** usando metricas estadisticas.
+- **Deteccion automatica** especificando las features de entrada que se quieren analizar.
+- **Tipos de sesgo detectables:**
+
+| Tipo de Sesgo | Descripcion |
+|--------------|-------------|
+| **Sampling Bias** | Los datos de entrenamiento no representan a toda la poblacion de forma justa, sobre-representando o afectando desproporcionadamente a ciertos grupos. |
+| **Measurement Bias** | Las herramientas o mediciones usadas en la recopilacion de datos son defectuosas o estan sesgadas. |
+| **Observer Bias** | La persona que recopila o interpreta los datos tiene sesgos personales que afectan los resultados. |
+| **Confirmation Bias** | Se favorece informacion que confirma suposiciones preexistentes. Mas aplicable a decisiones humanas que a salidas automaticas. |
+
+:::tip Ejemplo de examen
+Si un modelo de evaluacion de riesgo de prestamos señala sistematicamente a personas de grupos etnicos especificos, esto probablemente se debe a un **Sampling Bias** en los datos de entrenamiento. La solucion es realizar Data Augmentation para las clases sub-representadas y re-entrenar el modelo.
+:::
+
+---
+
+## 7. SageMaker Ground Truth
+
+Ground Truth es el servicio de SageMaker para **etiquetado de datos y feedback humano**:
+
+### RLHF (Reinforcement Learning from Human Feedback)
+
+Ground Truth facilita la implementacion de RLHF para alinear modelos con las preferencias humanas. Los evaluadores humanos revisan, califican y comparan respuestas del modelo, y ese feedback se incorpora a la funcion de recompensa del aprendizaje por refuerzo.
+
+### Etiquetado de Datos (Data Labeling)
+
+- **Creacion de labels** para datasets de entrenamiento supervisado.
+- **Evaluacion de modelos** por parte de revisores humanos.
+- **Generacion y anotacion de datos.**
+- **Workforce flexible:** Los revisores pueden ser trabajadores de Amazon Mechanical Turk, empleados propios de la empresa o proveedores externos.
+
+### SageMaker Ground Truth Plus
+
+Una version premium del servicio de etiquetado que gestiona todo el workflow de labeling, incluyendo la seleccion y gestion del equipo de etiquetadores, el control de calidad y la entrega de datasets etiquetados listos para usar.
+
+---
+
+## 8. ML Governance (Gobernanza de ML)
+
+SageMaker incluye un conjunto completo de herramientas para la gobernanza del ciclo de vida de los modelos de ML.
+
+### SageMaker Model Cards
+
+Las Model Cards son documentos estructurados que contienen **informacion esencial sobre un modelo de ML**:
+
+- Usos previstos del modelo y limitaciones conocidas.
+- Nivel de riesgo (risk rating) del modelo.
+- Detalles del entrenamiento (datos usados, hiperparametros, metricas alcanzadas).
+- Consideraciones eticas y de equidad.
+
+Las Model Cards son fundamentales para la transparencia y la documentacion regulatoria de modelos en produccion.
+
+### SageMaker Model Dashboard
+
+El Model Dashboard es un **portal centralizado** donde se pueden visualizar, buscar y explorar todos los modelos de la organizacion:
+
+- Vista unificada de todos los modelos desplegados.
+- Seguimiento de que modelos estan en produccion realizando inferencia.
+- Accesible desde la consola de SageMaker.
+- Alertas automaticas cuando un modelo viola los umbrales definidos para calidad de datos, calidad del modelo, sesgo o explicabilidad.
+
+### SageMaker Model Monitor
+
+Model Monitor supervisa la **calidad de los modelos en produccion** de forma continua o programada:
+
+- Deteccion de desviaciones en la calidad del modelo (model drift).
+- Alertas cuando el rendimiento del modelo se degrada.
+- Ejemplo practico: un modelo de prestamos comienza a otorgar creditos a personas con puntuaciones crediticias inadecuadas (drift). Model Monitor detecta esta anomalia y alerta al equipo para que investigue y, si es necesario, reentrene el modelo con datos actualizados.
+
+### SageMaker Model Registry
+
+El Model Registry es un **repositorio centralizado** para gestionar el ciclo de vida de los modelos:
+
+- Seguimiento de versiones de modelos.
+- Catalogacion de modelos con metadata asociada.
+- Gestion del estado de aprobacion (pendiente, aprobado, rechazado).
+- Automatizacion del despliegue de modelos aprobados.
+- Comparticion de modelos entre equipos y cuentas de AWS.
+
+### SageMaker Role Manager
+
+Role Manager permite definir **roles de acceso** para diferentes personas (data scientists, ingenieros de MLOps, administradores) con permisos granulares sobre los recursos y operaciones de SageMaker. Esto asegura que cada usuario tenga acceso unicamente a las herramientas y datos que necesita para su trabajo.
+
+---
+
+## 9. SageMaker Pipelines
+
+SageMaker Pipelines es el servicio de **CI/CD para Machine Learning**. Proporciona workflows automatizados que cubren todo el proceso de construccion, entrenamiento, prueba y despliegue de modelos:
+
+- Automatizacion completa del ciclo de vida ML.
+- Iteracion rapida con mecanismos repetibles.
+- Reduccion de errores al eliminar pasos manuales.
+- Facilita el despliegue de cientos de modelos de forma automatica.
+
+Cada pipeline esta compuesto por **Steps** (pasos), donde cada paso realiza una tarea especifica:
+
+| Tipo de Step | Funcion |
+|-------------|---------|
+| **Processing** | Procesamiento de datos (feature engineering, limpieza) |
+| **Training** | Entrenamiento de un modelo |
+| **Tuning** | Hyperparameter Optimization |
+| **AutoML** | Entrenamiento automatico de modelos |
+| **Model** | Creacion o registro de un modelo en SageMaker |
+| **ClarifyCheck** | Verificacion de drift contra lineas base (sesgo de datos, sesgo del modelo, explicabilidad) |
+| **QualityCheck** | Verificacion de drift contra lineas base (calidad de datos, calidad del modelo) |
+
+---
+
+## 10. SageMaker JumpStart
+
+JumpStart es el **hub de modelos y soluciones pre-construidas** de SageMaker:
+
+- Acceso a una gran coleccion de Foundation Models pre-entrenados de proveedores como Hugging Face, Databricks, Meta, Stability AI y mas.
+- Modelos de Computer Vision y NLP listos para usar.
+- Los modelos pueden **personalizarse completamente** con datos propios.
+- Los modelos se despliegan directamente en SageMaker con control total sobre las opciones de despliegue (tipo de instancia, escalado, etc.).
+- Incluye **soluciones ML pre-construidas** para casos de uso comunes: prediccion de demanda, evaluacion de riesgo crediticio, deteccion de fraude y vision por computador.
+
+JumpStart es la opcion recomendada cuando se quiere empezar con modelos ya existentes y personalizarlos posteriormente, en lugar de entrenar desde cero.
+
+---
+
+## 11. SageMaker Canvas
+
+Canvas es la interfaz **no-code** de SageMaker, diseñada para usuarios de negocio que no saben programar pero quieren crear y usar modelos de ML:
+
+- **Interfaz visual** para construir modelos sin escribir una sola linea de codigo.
+- Acceso a modelos **ready-to-use** de Amazon Bedrock o JumpStart.
+- Construccion de modelos personalizados con **AutoML** (powered by SageMaker Autopilot).
+- Integrado dentro de SageMaker Studio.
+- Aprovecha **Data Wrangler** para la preparacion de datos.
+- Acceso a modelos pre-entrenados de Amazon Rekognition, Amazon Comprehend y Amazon Textract.
+- Facilita la creacion de pipelines ML completos sin codigo, aprovechando los servicios de AI de AWS.
+
+Canvas es la respuesta correcta cuando el examen plantea un escenario en el que una empresa sin data scientists dedicados quiere empezar a crear modelos de ML.
+
+---
+
+## 12. MLFlow on Amazon SageMaker
+
+MLFlow es una herramienta **open-source** ampliamente adoptada para gestionar el ciclo de vida completo de ML. SageMaker ofrece una integracion nativa con MLFlow:
+
+- **MLFlow Tracking Servers:** Permiten registrar y comparar ejecuciones, experimentos, metricas, parametros y artefactos de modelos.
+- **Lanzamiento rapido:** Se puede crear un servidor MLFlow en SageMaker con pocos clics.
+- **Integracion completa** con SageMaker Studio, donde aparece como parte de la experiencia unificada.
+- **Transicion desde MLFlow existente:** Equipos que ya usan MLFlow on-premise pueden migrar a SageMaker sin cambiar sus workflows.
+
+---
+
+## 13. Underfitting vs Overfitting y Bias-Variance Tradeoff
+
+Este tema es recurrente en el examen AIF-C01 y merece una revision consolidada en el contexto de SageMaker, ya que las herramientas de SageMaker estan diseñadas para detectar y mitigar estos problemas.
+
+### Model Fit (Ajuste del Modelo)
+
+El ajuste del modelo se refiere a como de bien un modelo de ML aproxima la relacion real entre las features de entrada y la variable objetivo.
+
+**Underfitting (Subajuste):** El modelo es demasiado simple y no captura los patrones subyacentes de los datos. Tiene un rendimiento pobre tanto en los datos de entrenamiento como en los datos de test. Indicadores: bias alto, varianza baja. Soluciones: usar un modelo mas complejo, añadir mas features, aumentar el numero de epochs, reducir la regularizacion.
+
+**Overfitting (Sobreajuste):** El modelo es demasiado complejo y memoriza el ruido de los datos de entrenamiento. Tiene un rendimiento excelente en training pero pobre en datos nuevos. Indicadores: bias bajo, varianza alta. Soluciones: usar regularizacion (L1, L2), reducir la complejidad del modelo, aumentar los datos de entrenamiento, aplicar dropout, usar early stopping.
+
+**Generalization (Generalizacion):** Es la capacidad del modelo de funcionar bien con datos que nunca ha visto. Es el objetivo final del entrenamiento: un modelo que generalice bien tiene un rendimiento similar en training y test.
+
+### Bias-Variance Tradeoff
+
+- **Bias:** Error introducido por las suposiciones simplificadoras del modelo. Alto bias implica underfitting.
+- **Variance:** Sensibilidad del modelo a variaciones en los datos de entrenamiento. Alta varianza implica overfitting.
+- **Tradeoff:** Reducir el bias suele aumentar la varianza y viceversa. El objetivo es encontrar el punto optimo donde el error total (bias + varianza) es minimo.
+
+**Causas de alta varianza:**
+- Modelos excesivamente complejos con demasiados parametros.
+- Datos de entrenamiento insuficientes.
+- Falta de regularizacion.
+
+**Estrategias de mitigacion:**
+- Cross-Validation para evaluar la generalizacion.
+- Regularizacion (L1 y L2) para controlar la complejidad.
+- Feature Selection para reducir el ruido.
+- Ensemble Methods (bagging, boosting) para combinar multiples modelos y reducir varianza.
+
+:::info SageMaker y Model Fit
+SageMaker ofrece herramientas especificas para abordar estos problemas:
+- **Automatic Model Tuning** para encontrar los hiperparametros optimos que equilibren bias y varianza.
+- **Model Monitor** para detectar drift en produccion (que puede indicar que el modelo ya no generaliza bien).
+- **Clarify** para evaluar el rendimiento y detectar sesgos que podrian afectar la generalizacion.
+:::
+
+---
+
+## 14. Resumen de Servicios SageMaker
+
+| Servicio | Funcion Principal |
+|----------|------------------|
+| **SageMaker Studio** | IDE unificado para todo el desarrollo ML |
+| **Data Wrangler** | Exploracion, preparacion y transformacion de datasets |
+| **Feature Store** | Repositorio centralizado de features reutilizables |
+| **Built-in Algorithms** | Algoritmos pre-implementados y optimizados |
+| **Automatic Model Tuning** | Optimizacion automatica de hiperparametros |
+| **Clarify** | Comparacion de modelos, explicabilidad y deteccion de sesgo |
+| **Ground Truth** | RLHF, etiquetado de datos y evaluacion humana |
+| **Model Cards** | Documentacion estructurada de modelos ML |
+| **Model Dashboard** | Vista centralizada de todos los modelos |
+| **Model Monitor** | Monitorizacion continua y alertas de calidad |
+| **Model Registry** | Gestion de versiones y ciclo de vida de modelos |
+| **Role Manager** | Control de acceso basado en roles |
+| **Pipelines** | CI/CD para Machine Learning |
+| **JumpStart** | Hub de modelos y soluciones pre-construidas |
+| **Canvas** | Interfaz no-code para ML |
+| **MLFlow on SageMaker** | Tracking de experimentos con MLFlow |

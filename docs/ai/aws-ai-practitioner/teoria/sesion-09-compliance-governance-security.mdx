@@ -1,0 +1,349 @@
+---
+sidebar_position: 9
+title: "Cumplimiento, Gobernanza y Seguridad"
+description: "IA Responsable, marcos de gobernanza, seguridad de sistemas de IA y MLOps en AWS."
+---
+
+import { FaAws } from "react-icons/fa";
+
+# Cumplimiento, Gobernanza y Seguridad <FaAws />
+
+Esta sesion cubre los dominios 4 y 5 del examen AIF-C01, centrados en las practicas de IA Responsable, los marcos de gobernanza organizacional, la seguridad de los sistemas de IA y las operaciones de Machine Learning (MLOps) en AWS. Comprender estos conceptos es fundamental no solo para aprobar la certificacion, sino para desplegar sistemas de IA que sean confiables, seguros y alineados con las regulaciones vigentes.
+
+---
+
+## 1. Responsible AI
+
+Responsible AI es el conjunto de practicas y principios que aseguran que los sistemas de inteligencia artificial sean transparentes, confiables y beneficiosos para la sociedad. No se trata unicamente de construir modelos que funcionen bien tecnicamente, sino de garantizar que esos modelos mitiguen riesgos potenciales y resultados negativos a lo largo de todo su ciclo de vida: diseno, desarrollo, despliegue, monitorizacion y evaluacion.
+
+La responsabilidad en IA implica hacerse preguntas como: este modelo discrimina a algun grupo de personas? Los usuarios entienden como se toman las decisiones? Que ocurre si el modelo produce un resultado danino? Estas preguntas deben abordarse de forma sistematica, no como una ocurrencia tardia.
+
+### Responsible AI vs. Security
+
+Aunque estan relacionados, Responsible AI y Security son conceptos distintos:
+
+- **Responsible AI** se centra en que los sistemas sean transparentes, justos y beneficiosos para los usuarios y la sociedad.
+- **Security** se centra en mantener la confidencialidad, integridad y disponibilidad de los datos, activos de informacion e infraestructura de la organizacion.
+
+Ambos deben trabajarse en paralelo: un sistema puede ser tecnicamente seguro pero injusto, o puede ser justo pero vulnerable a ataques.
+
+---
+
+## 2. Dimensiones Fundamentales de Responsible AI
+
+Responsible AI se articula en ocho dimensiones fundamentales que todo sistema de IA deberia considerar. Cada una aborda un aspecto diferente del comportamiento etico y tecnico del sistema.
+
+### Fairness (Equidad)
+
+La equidad implica promover la inclusion y prevenir la discriminacion. Un modelo justo no deberia producir resultados sistematicamente diferentes para grupos demograficos distintos cuando esas diferencias no estan justificadas. Por ejemplo, un modelo de aprobacion de creditos no deberia penalizar a personas por su genero o etnia.
+
+### Explainability (Explicabilidad)
+
+La explicabilidad se refiere a la capacidad de comprender como y por que un modelo toma sus decisiones. Esto es especialmente critico en dominios regulados como la salud o las finanzas, donde las decisiones deben poder justificarse ante un auditor o un usuario.
+
+### Privacy and Security (Privacidad y Seguridad)
+
+Los individuos deben tener control sobre cuando y como se utilizan sus datos. Los sistemas de IA deben proteger la informacion personal y cumplir con las regulaciones de privacidad aplicables, como GDPR o HIPAA.
+
+### Transparency (Transparencia)
+
+La transparencia va mas alla de la explicabilidad: implica que las organizaciones sean abiertas sobre como funcionan sus sistemas de IA, que datos utilizan, cuales son sus limitaciones y como se toman las decisiones.
+
+### Veracity and Robustness (Veracidad y Robustez)
+
+Los sistemas deben ser fiables incluso en situaciones inesperadas. Un modelo robusto mantiene su rendimiento cuando se enfrenta a datos que difieren de los que vio durante el entrenamiento, y un modelo veraz produce resultados precisos y verificables.
+
+### Governance (Gobernanza)
+
+La gobernanza implica definir, implementar y hacer cumplir las practicas de IA Responsable dentro de la organizacion. Esto incluye politicas, procesos de revision, roles y responsabilidades claras.
+
+### Safety (Seguridad del sistema)
+
+Los algoritmos deben ser seguros y beneficiosos tanto para los individuos como para la sociedad. Esto abarca desde prevenir que un modelo genere contenido danino hasta asegurar que un sistema autonomo no cause dano fisico.
+
+### Controllability (Controlabilidad)
+
+La controlabilidad es la capacidad de alinear los sistemas de IA con los valores e intenciones humanas. Los humanos deben poder intervenir, corregir y controlar el comportamiento de los sistemas de IA en todo momento.
+
+| Dimension | Pregunta clave |
+|-----------|---------------|
+| Fairness | El modelo trata a todos los grupos de forma equitativa? |
+| Explainability | Podemos explicar por que el modelo tomo esta decision? |
+| Privacy | Los datos del usuario estan protegidos? |
+| Transparency | Somos abiertos sobre como funciona el sistema? |
+| Veracity | Los resultados son fiables y verificables? |
+| Governance | Hay politicas y procesos claros para supervisar el sistema? |
+| Safety | El sistema es seguro para individuos y sociedad? |
+| Controllability | Los humanos pueden intervenir y corregir el sistema? |
+
+---
+
+## 3. Servicios AWS para Responsible AI
+
+AWS proporciona un conjunto de servicios disenados especificamente para implementar practicas de IA Responsable a lo largo del ciclo de vida del modelo.
+
+### Guardrails for Amazon Bedrock
+
+Guardrails for Amazon Bedrock es el servicio principal para controlar el comportamiento de los modelos fundacionales en Bedrock. Permite filtrar contenido, redactar informacion personal identificable (PII), bloquear temas no deseados y filtrar contenido danino. Es la primera linea de defensa para asegurar que las respuestas generadas por los modelos sean seguras y apropiadas para el contexto de uso.
+
+### SageMaker Clarify
+
+Amazon SageMaker Clarify es la herramienta central para la evaluacion de modelos en terminos de equidad y explicabilidad. Permite evaluar Foundation Models en precision, robustez y toxicidad, ademas de detectar sesgos tanto antes del entrenamiento (en los datos) como despues del entrenamiento (en las predicciones del modelo).
+
+:::info Tipos de sesgo que detecta SageMaker Clarify
+SageMaker Clarify detecta sesgos estadisticos en datos y modelos, como Class Imbalance Bias, Sampling Bias, Disparate Impact o Demographic Parity. Sin embargo, **no** detecta sesgos cognitivos humanos como Observer Bias o Confirmation Bias, ya que estos surgen del juicio humano y no de patrones estadisticos.
+:::
+
+Los tipos de sesgo se organizan en tres categorias:
+
+- **Pre-Training Bias (sesgo en datos)**: Class Imbalance, Label Bias, Sampling Bias, Historical Bias, Feature Correlation Bias.
+- **Post-Training Bias (sesgo en modelo)**: Disparate Impact, Disparate Mistreatment, Equalized Odds, Demographic Parity.
+- **Explainability Bias**: Feature Attribution Bias, que identifica si ciertas caracteristicas influyen desproporcionadamente en las predicciones.
+
+### SageMaker Data Wrangler
+
+SageMaker Data Wrangler permite explorar y preparar datasets, crear features y, crucialmente, corregir sesgos mediante el balanceo de datasets. Es la herramienta para abordar los problemas de sesgo en los datos antes de que lleguen al modelo.
+
+### SageMaker Model Monitor
+
+SageMaker Model Monitor proporciona analisis de calidad en produccion. Monitoriza continuamente los modelos desplegados para detectar degradacion del rendimiento, data drift y otros problemas que pueden surgir cuando un modelo se enfrenta a datos reales que evolucionan con el tiempo.
+
+### Amazon Augmented AI (A2I)
+
+Amazon A2I permite incorporar revision humana de las predicciones de Machine Learning. Cuando un modelo produce resultados con baja confianza o en escenarios criticos, A2I facilita que un humano revise y valide las decisiones del modelo antes de que se ejecuten.
+
+### Herramientas de Governance en SageMaker
+
+Ademas de las herramientas anteriores, SageMaker incluye servicios especificos para la gobernanza de modelos:
+
+- **SageMaker Role Manager**: control de acceso basado en roles para los recursos de SageMaker.
+- **SageMaker Model Cards**: documentacion estandarizada de modelos ML en un repositorio centralizado.
+- **SageMaker Model Dashboard**: vista unificada de todos los modelos en un solo lugar.
+
+---
+
+## 4. AWS AI Service Cards
+
+Las AWS AI Service Cards son una forma de documentacion de IA Responsable proporcionada por AWS para sus propios servicios de IA. Cada Service Card ayuda a los usuarios a comprender el servicio y sus caracteristicas, encontrar los casos de uso previstos y las limitaciones conocidas, entender las decisiones de diseno responsable que se tomaron, y seguir las mejores practicas para la optimizacion del despliegue y el rendimiento.
+
+Por ejemplo, Amazon Textract tiene una AI Service Card que documenta para que esta disenado el servicio, en que escenarios no deberia usarse, y que consideraciones de equidad se tuvieron en cuenta durante su desarrollo.
+
+:::tip AI Service Cards en el examen
+Las AI Service Cards son un concepto que aparece frecuentemente en el examen. Recuerda que son documentacion proporcionada por **AWS sobre sus propios servicios**, no documentacion que tu crees sobre tus modelos (eso seria Model Cards en SageMaker).
+:::
+
+---
+
+## 5. Marco de Gobernanza (Governance Framework)
+
+La gobernanza de IA es el proceso de gestionar, optimizar y escalar la iniciativa de IA de una organizacion. Es instrumental para construir confianza y asegurar practicas de IA responsables y confiables. Sin un marco de gobernanza solido, las organizaciones se exponen a riesgos legales, reputacionales y eticos.
+
+### Establecer un AI Governance Board
+
+El primer paso es crear un comite o junta de gobernanza de IA. Este equipo debe incluir representantes de diversos departamentos: legal, cumplimiento normativo, privacidad de datos y expertos en la materia (SMEs) en desarrollo de IA. La diversidad de perspectivas es esencial para identificar riesgos que un equipo puramente tecnico podria pasar por alto.
+
+### Definir Roles y Responsabilidades
+
+El marco debe definir claramente los roles y responsabilidades del comite de gobernanza: supervision, creacion de politicas, evaluacion de riesgos y procesos de toma de decisiones. Cada miembro del equipo debe saber exactamente que se espera de el.
+
+### Implementar Politicas y Procedimientos
+
+Se deben desarrollar politicas y procedimientos integrales que abarquen todo el ciclo de vida de la IA, desde la gestion de datos hasta el despliegue y la monitorizacion de modelos. Estas politicas deben cubrir gestion de datos, entrenamiento de modelos, validacion de outputs, seguridad, supervision humana, propiedad intelectual, mitigacion de sesgos y proteccion de la privacidad.
+
+---
+
+## 6. Estrategias de Gobernanza
+
+### Politicas
+
+Las politicas deben establecer principios, directrices y consideraciones de IA Responsable que cubran la gestion de datos, el entrenamiento de modelos, la validacion de resultados, la seguridad y la supervision humana, asi como la propiedad intelectual, la mitigacion de sesgos y la proteccion de la privacidad.
+
+### Cadencia de Revision
+
+Es fundamental establecer una cadencia de revision clara que combine revisiones tecnicas, legales y de IA Responsable. El cronograma debe ser explicito (mensual, trimestral, anual) e incluir a expertos en la materia (SMEs), equipos legales y de cumplimiento, y usuarios finales.
+
+### Estrategias de Revision
+
+Las revisiones deben ser tanto tecnicas como no tecnicas:
+
+- **Revisiones tecnicas**: rendimiento del modelo, calidad de los datos, robustez del algoritmo.
+- **Revisiones no tecnicas**: politicas, principios de IA Responsable, requisitos regulatorios.
+- **Procedimientos de testing y validacion**: validar los outputs antes de desplegar un nuevo modelo.
+- **Marcos de decision**: procesos claros para tomar decisiones basadas en los resultados de las revisiones.
+
+---
+
+## 7. Gestion de Datos (Data Management)
+
+La gestion adecuada de los datos es la base de cualquier sistema de IA confiable. Los conceptos clave incluyen:
+
+| Concepto | Descripcion |
+|----------|-------------|
+| **Data Lifecycles** | Fases de los datos: recoleccion, procesamiento, almacenamiento, consumo y archivado |
+| **Data Logging** | Registro de inputs, outputs, metricas de rendimiento y eventos del sistema |
+| **Data Residency** | Donde se procesan y almacenan los datos (regulaciones, requisitos de privacidad, proximidad de computo) |
+| **Data Monitoring** | Calidad de datos, identificacion de anomalias y data drift |
+| **Data Analysis** | Analisis estadistico, visualizacion de datos y exploracion |
+| **Data Retention** | Requisitos regulatorios, datos historicos para entrenamiento y coste de almacenamiento |
+
+:::info Data Residency
+La residencia de datos es particularmente importante en contextos regulados. Regulaciones como GDPR exigen que los datos de ciudadanos europeos se procesen y almacenen dentro de la UE. AWS permite seleccionar la region donde se despliegan los servicios para cumplir con estos requisitos.
+:::
+
+---
+
+## 8. Seguridad y Privacidad de Sistemas de IA
+
+### Threat Detection (Deteccion de Amenazas)
+
+Los sistemas de IA pueden ser tanto objetivo como herramienta de amenazas. Los atacantes pueden generar contenido falso, manipular datos o lanzar ataques automatizados. La respuesta es desplegar sistemas de deteccion de amenazas basados en IA que analicen el trafico de red, el comportamiento de los usuarios y otras fuentes de datos relevantes.
+
+### Vulnerability Management (Gestion de Vulnerabilidades)
+
+Es necesario identificar vulnerabilidades en los sistemas de IA de forma proactiva: bugs de software, debilidades del modelo y configuraciones incorrectas. Las practicas incluyen evaluaciones de seguridad, pruebas de penetracion, revisiones de codigo y procesos de gestion de parches y actualizaciones.
+
+### Infrastructure Protection (Proteccion de Infraestructura)
+
+La infraestructura que soporta los sistemas de IA debe estar protegida: la plataforma de computacion en la nube, los dispositivos edge, los almacenes de datos. Esto incluye control de acceso, segmentacion de red, cifrado y asegurar que el sistema pueda resistir fallos.
+
+### Prompt Injection Defense
+
+La inyeccion de prompts es un tipo de ataque donde se manipulan los inputs para generar contenido malicioso o no deseado. La mitigacion incluye implementar guardrails como filtrado de prompts, sanitizacion y validacion de entradas.
+
+### Data Encryption (Cifrado de Datos)
+
+Los datos deben cifrarse tanto en reposo (at rest) como en transito (in transit). Las claves de cifrado deben gestionarse adecuadamente y protegerse contra accesos no autorizados. AWS Key Management Service (KMS) es el servicio principal para esta gestion.
+
+---
+
+## 9. Monitorizacion de Sistemas de IA
+
+La monitorizacion continua es esencial para mantener la calidad y confiabilidad de los sistemas de IA en produccion. Se organiza en varias categorias:
+
+### Metricas de Rendimiento del Modelo
+
+- **Model Accuracy**: ratio de predicciones correctas sobre el total.
+- **Precision**: ratio de predicciones positivas verdaderas sobre todas las predicciones positivas.
+- **Recall**: ratio de predicciones positivas verdaderas sobre todos los positivos reales.
+- **F1-score**: media armonica de precision y recall; una buena medida equilibrada.
+- **Latency**: tiempo que tarda el modelo en producir una prediccion.
+
+### Monitorizacion de Infraestructura
+
+Se deben monitorizar los recursos de computo (uso de CPU y GPU), el rendimiento de red y el almacenamiento para detectar cuellos de botella y fallos antes de que afecten a los usuarios.
+
+### System Logs y Compliance
+
+Los logs del sistema proporcionan trazabilidad completa. Ademas, se deben monitorizar continuamente los aspectos de Bias and Fairness y el cumplimiento de los principios de Responsible AI.
+
+---
+
+## 10. AWS Shared Responsibility Model
+
+El modelo de responsabilidad compartida de AWS define claramente que protege AWS y que protege el cliente.
+
+### Responsabilidad de AWS: Security OF the Cloud
+
+AWS es responsable de proteger la infraestructura subyacente: hardware, software, instalaciones y redes que ejecutan todos los servicios de AWS. Esto incluye los servicios gestionados como Bedrock, SageMaker, S3, etc.
+
+### Responsabilidad del Cliente: Security IN the Cloud
+
+Para servicios como Amazon Bedrock, el cliente es responsable de la gestion de datos, los controles de acceso, la configuracion de guardrails y el cifrado de los datos de la aplicacion. El cliente decide que datos alimentan al modelo, quien tiene acceso y que restricciones se aplican.
+
+### Controles Compartidos
+
+Algunas responsabilidades son compartidas entre AWS y el cliente: la gestion de parches, la gestion de configuracion, y la formacion y concienciacion del equipo.
+
+:::warning Pregunta frecuente en el examen
+El Shared Responsibility Model es un tema recurrente en el examen. La regla general es: AWS protege la infraestructura y el cliente protege lo que pone dentro de esa infraestructura. Si el cliente configura mal un bucket S3 o no activa el cifrado, es responsabilidad del cliente, no de AWS.
+:::
+
+---
+
+## 11. Secure Data Engineering: Mejores Practicas
+
+### Calidad de los Datos
+
+La calidad de los datos es la base de cualquier sistema de IA confiable. Se evalua en cuatro dimensiones:
+
+- **Completeness (Completitud)**: los datos cubren un rango diverso y completo de escenarios.
+- **Accuracy (Precision)**: los datos son precisos, actualizados y representativos.
+- **Timeliness (Oportunidad)**: la edad de los datos en el almacen es adecuada para el caso de uso.
+- **Consistency (Consistencia)**: los datos mantienen coherencia a lo largo de todo su ciclo de vida.
+
+Ademas, se deben implementar practicas de data profiling, monitoring y data lineage para mantener la visibilidad sobre el estado de los datos.
+
+### Privacy-Enhancing Technologies
+
+Las tecnologias de mejora de la privacidad incluyen data masking y data obfuscation para minimizar el riesgo de brechas de datos, asi como encryption y tokenization para proteger los datos durante su procesamiento y uso.
+
+### Data Access Control
+
+Un marco de gobernanza de datos integral debe incluir politicas claras, control de acceso basado en roles (RBAC), permisos granulares, inicio de sesion unico (SSO), autenticacion multifactor (MFA), monitorizacion y registro de todas las actividades de acceso a datos, y revision periodica de los derechos de acceso basada en el principio de minimo privilegio.
+
+### Data Integrity
+
+La integridad de los datos asegura que estos sean completos, consistentes y libres de errores. Esto requiere una estrategia robusta de backup y recovery, mantener data lineage y audit trails, y monitorizar y probar los controles de integridad de forma regular.
+
+---
+
+## 12. GenAI Security Scoping Matrix
+
+La GenAI Security Scoping Matrix es un marco disenado para identificar y gestionar los riesgos de seguridad asociados con el despliegue de aplicaciones de IA generativa. Permite clasificar las aplicaciones en cinco alcances definidos, desde bajo hasta alto nivel de propiedad y responsabilidad.
+
+El objetivo es que cada equipo pueda evaluar rapidamente que nivel de controles de seguridad necesita segun el tipo de aplicacion GenAI que esta construyendo. Una aplicacion que solo consume una API de un tercero tiene requisitos de seguridad muy diferentes a una que entrena sus propios modelos con datos propietarios.
+
+---
+
+## 13. Fases de un Proyecto de Machine Learning
+
+Un proyecto de ML sigue un ciclo de vida definido que incluye las siguientes fases:
+
+1. **Definicion del problema**: identificar el problema de negocio y determinar si ML es la solucion adecuada.
+2. **Recoleccion y preparacion de datos**: obtener, limpiar y transformar los datos necesarios.
+3. **Feature engineering**: crear y seleccionar las caracteristicas mas relevantes para el modelo.
+4. **Entrenamiento del modelo**: seleccionar algoritmos, entrenar y ajustar hiperparametros.
+5. **Evaluacion**: validar el rendimiento del modelo con datos de prueba.
+6. **Despliegue**: poner el modelo en produccion.
+7. **Monitorizacion y mantenimiento**: supervisar el rendimiento y reentrenar cuando sea necesario.
+
+Cada fase tiene sus propios retos de seguridad, gobernanza y cumplimiento que deben abordarse de forma proactiva.
+
+---
+
+## 14. MLOps
+
+MLOps es la extension de las practicas de DevOps al mundo del Machine Learning. Su objetivo es asegurar que los modelos no solo se desarrollen, sino que tambien se desplieguen, monitoricen y reentrenen de forma sistematica y repetible. Sin MLOps, los modelos tienden a degradarse en produccion sin que nadie lo detecte.
+
+### Principios Clave de MLOps
+
+| Principio | Descripcion |
+|-----------|-------------|
+| **Version Control** | Datos, codigo y modelos deben estar versionados y poder revertirse si es necesario |
+| **Automation** | Automatizacion de todas las etapas: ingestion de datos, preprocesamiento, entrenamiento, etc. |
+| **Continuous Integration** | Probar modelos de forma consistente y automatizada |
+| **Continuous Delivery** | Entrega continua de modelos a produccion |
+| **Continuous Retraining** | Reentrenamiento automatico cuando se detecta degradacion del rendimiento |
+| **Continuous Monitoring** | Monitorizacion constante del rendimiento, sesgo y drift en produccion |
+
+:::tip MLOps en el contexto del examen
+El examen AIF-C01 espera que entiendas MLOps como la disciplina que cierra el ciclo entre el desarrollo y la operacion de modelos. La clave es que MLOps no es solo desplegar un modelo una vez, sino establecer un pipeline automatizado que permita iterar rapidamente con confianza.
+:::
+
+---
+
+## 15. Funcionalidades Extra de SageMaker
+
+### Network Isolation Mode
+
+SageMaker permite ejecutar contenedores de trabajo sin ningun acceso a internet saliente. En este modo, el contenedor no puede acceder ni siquiera a Amazon S3. Es una medida de seguridad critica para escenarios donde los datos son extremadamente sensibles y no deben salir del entorno de ejecucion bajo ninguna circunstancia.
+
+### SageMaker DeepAR
+
+El algoritmo DeepAR de SageMaker esta disenado para pronosticar datos de series temporales. Utiliza Redes Neuronales Recurrentes (RNN) y es especialmente util cuando se tienen multiples series temporales relacionadas, ya que el modelo aprende patrones compartidos entre ellas.
+
+---
+
+## Resumen
+
+Los conceptos de cumplimiento, gobernanza y seguridad forman el pilar sobre el que se construyen sistemas de IA confiables en AWS. Desde las dimensiones de Responsible AI hasta las practicas de MLOps, pasando por el Shared Responsibility Model y las herramientas de AWS como SageMaker Clarify y Guardrails for Bedrock, el examen AIF-C01 espera que el candidato comprenda no solo que herramientas existen, sino por que son necesarias y como se integran en un marco de gobernanza organizacional completo.

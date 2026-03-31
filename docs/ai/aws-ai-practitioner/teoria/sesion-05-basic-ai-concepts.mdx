@@ -1,0 +1,263 @@
+---
+sidebar_position: 5
+title: "Conceptos Fundamentales de IA y ML"
+description: "Conceptos basicos de Inteligencia Artificial, tipos de Machine Learning y ciclo de vida del desarrollo ML."
+---
+
+import { FaAws } from "react-icons/fa";
+
+# Conceptos Fundamentales de IA y ML <FaAws />
+
+Este modulo cubre el **Domain 1: Fundamentals of AI and ML** del examen AWS Certified AI Practitioner (AIF-C01). Abordaremos la jerarquia de disciplinas dentro de la Inteligencia Artificial, los tipos de Machine Learning, la terminologia clave, los algoritmos mas comunes, el ciclo de vida del desarrollo ML y las metricas de evaluacion de modelos.
+
+---
+
+## 1. ¿Que es la Inteligencia Artificial?
+
+La Inteligencia Artificial (AI) es un campo amplio de la informatica cuyo objetivo es crear sistemas capaces de realizar tareas que normalmente requieren inteligencia humana. Estas tareas incluyen el reconocimiento de patrones, la toma de decisiones, la comprension del lenguaje natural y la percepcion visual, entre otras.
+
+Dentro de la AI existe una jerarquia de subdisciplinas que es fundamental comprender:
+
+### Inteligencia Artificial (AI)
+
+Es el concepto mas amplio. Abarca cualquier tecnica que permita a una maquina imitar comportamiento inteligente. Esto incluye desde sistemas basados en reglas (if-then) hasta los modelos mas sofisticados de Deep Learning. Un sistema experto que diagnostica enfermedades siguiendo reglas codificadas manualmente es AI, al igual que un chatbot que genera texto de forma autonoma.
+
+### Machine Learning (ML)
+
+Machine Learning es un subconjunto de la AI. En lugar de programar reglas explicitas, los sistemas de ML **aprenden patrones directamente de los datos**. El modelo recibe datos de entrenamiento, identifica patrones estadisticos y utiliza esos patrones para hacer predicciones sobre datos nuevos. La diferencia clave con la AI tradicional basada en reglas es que el modelo mejora su rendimiento a medida que se le proporcionan mas datos, sin necesidad de reprogramar las reglas manualmente.
+
+### Deep Learning (DL)
+
+Deep Learning es un subconjunto de Machine Learning que utiliza **redes neuronales artificiales con multiples capas** (de ahi el termino "deep", profundo). Estas redes son capaces de aprender representaciones jerarquicas de los datos: las primeras capas detectan caracteristicas simples (bordes en una imagen, fonemas en audio) y las capas superiores combinan esas caracteristicas para reconocer patrones complejos (rostros, frases). Deep Learning es la tecnologia detras de los avances recientes en vision por computador, procesamiento de lenguaje natural y IA Generativa.
+
+### Generative AI
+
+La IA Generativa es un tipo especifico de Deep Learning enfocado en **crear contenido nuevo** (texto, imagenes, audio, codigo, video) que es similar a los datos con los que fue entrenado. Los Foundation Models (modelos fundacionales) como GPT, Claude o Llama son ejemplos de IA Generativa.
+
+:::info Jerarquia de disciplinas
+**AI** > **Machine Learning** > **Deep Learning** > **Generative AI**
+
+Cada nivel es un subconjunto del anterior. Toda IA Generativa es Deep Learning, todo Deep Learning es Machine Learning, y todo Machine Learning es AI. Pero no todo AI es ML (un sistema de reglas no aprende de datos), ni todo ML es DL (un arbol de decision no usa redes neuronales).
+:::
+
+---
+
+## 2. Tipos de Machine Learning
+
+Los algoritmos de Machine Learning se clasifican en tres grandes categorias segun el tipo de datos de entrenamiento y el objetivo del aprendizaje.
+
+### 2.1 Supervised Learning (Aprendizaje Supervisado)
+
+En el aprendizaje supervisado, el modelo se entrena con datos que incluyen tanto las **features** (caracteristicas de entrada) como las **labels** (etiquetas o respuestas correctas). El objetivo es que el modelo aprenda la relacion entre las entradas y las salidas para poder predecir la etiqueta correcta cuando reciba datos nuevos sin etiquetar.
+
+El aprendizaje supervisado se divide en dos tipos de tareas principales:
+
+**Classification (Clasificacion):** El modelo predice una **categoria discreta**. Por ejemplo, determinar si un email es spam o no spam, clasificar imagenes de animales en gato/perro/pajaro, o diagnosticar si un paciente tiene una enfermedad determinada. La salida es una clase dentro de un conjunto finito de opciones.
+
+**Regression (Regresion):** El modelo predice un **valor numerico continuo**. Por ejemplo, predecir el precio de una vivienda, estimar las ventas futuras de un producto o calcular la temperatura esperada manana. La salida es un numero real que puede tomar cualquier valor dentro de un rango.
+
+### 2.2 Unsupervised Learning (Aprendizaje No Supervisado)
+
+En el aprendizaje no supervisado, el modelo trabaja con datos que **no tienen etiquetas**. El objetivo es descubrir patrones, estructuras o agrupaciones ocultas en los datos sin indicacion previa de que buscar.
+
+**Clustering (Agrupamiento):** El modelo identifica grupos naturales dentro de los datos. Los elementos dentro de un mismo grupo (cluster) son mas similares entre si que con los de otros grupos. Un ejemplo clasico es la segmentacion de clientes: a partir de datos de comportamiento de compra, el modelo identifica automaticamente grupos de clientes con patrones similares, sin que nadie le indique de antemano cuantos grupos existen ni cuales son sus caracteristicas.
+
+**Dimensionality Reduction (Reduccion de Dimensionalidad):** Cuando los datos tienen muchas features (alta dimensionalidad), estas tecnicas reducen el numero de variables manteniendo la mayor cantidad de informacion posible. Esto facilita la visualizacion de los datos, reduce el ruido y mejora el rendimiento de otros algoritmos. La tecnica mas conocida es Principal Component Analysis (PCA).
+
+### 2.3 Reinforcement Learning (Aprendizaje por Refuerzo)
+
+En el aprendizaje por refuerzo, un **agente** interactua con un **entorno** y aprende a tomar decisiones mediante un sistema de **recompensas y penalizaciones**. El agente no recibe datos etiquetados ni instrucciones explicitas: debe explorar el entorno, probar acciones y aprender cuales maximizan la recompensa acumulada a lo largo del tiempo.
+
+Este paradigma es especialmente util en escenarios donde las decisiones son secuenciales y cada accion afecta al estado futuro del sistema. Ejemplos tipicos incluyen robots que aprenden a caminar, agentes que juegan videojuegos, sistemas de conduccion autonoma y la optimizacion de chatbots mediante Reinforcement Learning from Human Feedback (RLHF).
+
+:::tip Clave para el examen
+Para el examen AIF-C01, debes saber identificar que tipo de ML es adecuado para cada escenario:
+- Si tienes datos etiquetados y quieres predecir una categoria o un valor --> **Supervised Learning**
+- Si no tienes etiquetas y quieres descubrir patrones --> **Unsupervised Learning**
+- Si un agente debe aprender a tomar decisiones optimas en un entorno --> **Reinforcement Learning**
+:::
+
+---
+
+## 3. Terminologia Clave de ML
+
+Antes de profundizar en algoritmos y metricas, es esencial dominar el vocabulario fundamental de Machine Learning:
+
+| Termino | Definicion |
+|---------|-----------|
+| **Feature** | Una variable o atributo de entrada que el modelo usa para hacer predicciones. Ejemplo: en un modelo de prediccion de precios de viviendas, las features serian la superficie, el numero de habitaciones, la ubicacion, etc. |
+| **Label** | La variable de salida o respuesta correcta en aprendizaje supervisado. Es lo que el modelo intenta predecir. Ejemplo: el precio real de la vivienda. |
+| **Training Data** | El conjunto de datos utilizado para entrenar el modelo. El modelo ajusta sus parametros internos basandose en estos datos. |
+| **Validation Data** | Un subconjunto de datos utilizado durante el entrenamiento para ajustar hiperparametros y evaluar el rendimiento del modelo sin sesgo. Ayuda a detectar overfitting. |
+| **Test Data** | Un conjunto de datos completamente independiente que solo se usa al final para evaluar el rendimiento real del modelo en datos nunca vistos. |
+| **Hyperparameter** | Configuraciones externas al modelo que se definen antes del entrenamiento (learning rate, numero de capas, numero de arboles, etc.). No se aprenden de los datos. |
+| **Parameter** | Valores internos del modelo que se ajustan automaticamente durante el entrenamiento (pesos de una red neuronal, coeficientes de una regresion). |
+| **Epoch** | Una pasada completa por todo el dataset de entrenamiento. Un modelo tipicamente se entrena durante multiples epochs. |
+| **Batch Size** | El numero de muestras de entrenamiento procesadas antes de actualizar los parametros del modelo. |
+| **Learning Rate** | Controla el tamano del paso en cada actualizacion de parametros. Un valor demasiado alto puede hacer que el modelo no converja; uno demasiado bajo hara que el entrenamiento sea muy lento. |
+
+---
+
+## 4. Algoritmos Comunes de ML
+
+### Algoritmos de Supervised Learning
+
+**Linear Regression (Regresion Lineal):** Es el algoritmo mas sencillo para problemas de regresion. Busca una relacion lineal entre las features y la variable objetivo. El modelo aprende una ecuacion de la forma `y = mx + b` (o su extension multivariable). Es rapido, interpretable y funciona bien cuando la relacion entre variables es aproximadamente lineal.
+
+**Logistic Regression (Regresion Logistica):** A pesar de su nombre, es un algoritmo de **clasificacion**, no de regresion. Utiliza una funcion sigmoide para convertir una combinacion lineal de features en una probabilidad entre 0 y 1. Es ideal para clasificacion binaria (spam/no spam, fraude/no fraude).
+
+**Decision Trees (Arboles de Decision):** Construyen un modelo en forma de arbol donde cada nodo interno representa una decision basada en una feature, cada rama representa el resultado de esa decision y cada hoja representa una prediccion final. Son muy interpretables pero pueden sobreajustarse facilmente a los datos de entrenamiento.
+
+**Random Forests (Bosques Aleatorios):** Son un conjunto (ensemble) de multiples Decision Trees entrenados con diferentes subconjuntos de datos y features. La prediccion final se obtiene promediando las predicciones de todos los arboles (regresion) o por votacion mayoritaria (clasificacion). Son mucho mas robustos que un unico arbol de decision y reducen significativamente el overfitting.
+
+**Neural Networks (Redes Neuronales):** Estan inspiradas en la estructura del cerebro humano. Consisten en capas de nodos (neuronas) interconectados que transforman los datos de entrada en predicciones. Son extremadamente flexibles y pueden aprender relaciones no lineales complejas, pero requieren grandes cantidades de datos y capacidad computacional.
+
+### Algoritmos de Unsupervised Learning
+
+**K-Means:** Es el algoritmo de clustering mas popular. Divide los datos en K grupos (clusters) donde cada dato pertenece al cluster cuyo centro (centroide) esta mas cercano. Requiere que el usuario especifique el numero K de clusters de antemano.
+
+**Principal Component Analysis (PCA):** Es la tecnica de reduccion de dimensionalidad mas utilizada. Transforma las features originales en un nuevo conjunto de variables (componentes principales) que capturan la maxima varianza de los datos con el menor numero de dimensiones posible.
+
+---
+
+## 5. Ciclo de Vida del Desarrollo ML
+
+El desarrollo de un modelo de Machine Learning no es simplemente entrenar un algoritmo. Es un proceso iterativo con multiples fases que requiere planificacion, experimentacion y monitoreo continuo.
+
+### Fase 1: Definicion del Problema de Negocio
+
+Todo proyecto de ML comienza identificando un **problema de negocio concreto** que se beneficiaria de una solucion basada en datos. Es crucial definir claramente que se quiere predecir, que impacto tendria la prediccion en el negocio y como se medira el exito. No todos los problemas requieren ML; a veces una solucion basada en reglas simples es mas eficiente y mantenible.
+
+### Fase 2: Recopilacion de Datos
+
+Una vez definido el problema, se recopilan los datos necesarios de las fuentes disponibles: bases de datos, APIs, archivos CSV, logs de aplicaciones, etc. La calidad y cantidad de los datos son determinantes para el rendimiento del modelo. Datos insuficientes, incompletos o sesgados produciran modelos de baja calidad.
+
+### Fase 3: Preparacion de Datos
+
+Los datos en bruto raramente estan listos para entrenar un modelo. Esta fase incluye la **limpieza** (tratar valores faltantes, eliminar duplicados, corregir errores), la **transformacion** (normalizacion, codificacion de variables categoricas) y la **integracion** de datos de multiples fuentes. Tipicamente, esta fase consume entre el 60% y el 80% del tiempo total del proyecto.
+
+### Fase 4: Feature Engineering
+
+Consiste en crear, seleccionar y transformar las features para maximizar la capacidad predictiva del modelo. Un buen Feature Engineering puede marcar una diferencia enorme en el rendimiento final. Incluye la creacion de nuevas features derivadas (por ejemplo, extraer el dia de la semana de una fecha), la seleccion de las features mas relevantes y la eliminacion de las redundantes.
+
+### Fase 5: Entrenamiento del Modelo
+
+Se selecciona uno o varios algoritmos candidatos y se entrenan con los datos preparados. Durante el entrenamiento, el modelo ajusta sus parametros internos para minimizar una funcion de perdida (loss function). Se experimenta con diferentes hiperparametros y se comparan los resultados usando el conjunto de validacion.
+
+### Fase 6: Evaluacion del Modelo
+
+El modelo entrenado se evalua con el **conjunto de test** (datos que nunca ha visto) para medir su rendimiento real. Se utilizan metricas especificas segun el tipo de tarea (accuracy, precision, recall, RMSE, etc.). Si el rendimiento no es satisfactorio, se itera sobre las fases anteriores.
+
+### Fase 7: Despliegue
+
+El modelo se pone en produccion para que pueda recibir datos reales y generar predicciones. El despliegue puede ser en tiempo real (API endpoint), en batch (procesamiento periodico) o serverless, segun los requisitos de latencia y volumen.
+
+### Fase 8: Monitorizacion
+
+Una vez en produccion, el modelo debe ser **monitorizado continuamente** para detectar degradacion del rendimiento (model drift). Los datos del mundo real cambian con el tiempo, y un modelo que funcionaba bien hace seis meses puede volverse impreciso. La monitorizacion permite detectar estos cambios y disparar un proceso de reentrenamiento cuando sea necesario.
+
+:::info Proceso iterativo
+El ciclo de vida del ML no es lineal. Es comun volver a fases anteriores multiples veces: despues de evaluar un modelo, puede ser necesario recopilar mas datos, mejorar el Feature Engineering o probar un algoritmo diferente. La iteracion es parte fundamental del proceso.
+:::
+
+---
+
+## 6. Metricas de Evaluacion de Modelos
+
+### 6.1 Metricas para Clasificacion
+
+**Accuracy (Exactitud):** Es la proporcion de predicciones correctas sobre el total de predicciones. Es intuitiva pero puede ser enganosa en datasets desequilibrados. Por ejemplo, si el 95% de los emails no son spam, un modelo que siempre prediga "no spam" tendra un 95% de accuracy sin ser util en absoluto.
+
+**Precision:** De todas las predicciones positivas que hizo el modelo, ¿que proporcion fue realmente positiva? Es la metrica mas importante cuando los **falsos positivos son costosos**. Ejemplo: un sistema de deteccion de fraude con alta precision genera pocas falsas alarmas.
+
+**Recall (Sensitivity):** De todos los casos positivos reales, ¿que proporcion detecto el modelo? Es la metrica mas importante cuando los **falsos negativos son costosos**. Ejemplo: en diagnostico de cancer, no detectar un caso positivo (falso negativo) puede ser fatal.
+
+**F1-Score:** Es la media armonica de Precision y Recall. Proporciona un balance entre ambas metricas y es especialmente util cuando el dataset esta desequilibrado. Un F1-Score alto indica que el modelo tiene tanto buena Precision como buen Recall.
+
+**AUC-ROC (Area Under the ROC Curve):** Mide la capacidad del modelo para distinguir entre clases positivas y negativas en todos los umbrales de decision posibles. Un valor de 1.0 indica un modelo perfecto; 0.5 indica un modelo que no es mejor que el azar.
+
+**Confusion Matrix (Matriz de Confusion):** Es una tabla que resume los resultados de clasificacion en cuatro categorias: True Positives (TP), True Negatives (TN), False Positives (FP) y False Negatives (FN). A partir de esta tabla se calculan todas las metricas anteriores.
+
+### 6.2 Metricas para Regresion
+
+**RMSE (Root Mean Squared Error):** Es la raiz cuadrada del promedio de los errores al cuadrado. Penaliza mas los errores grandes que los pequenos, lo que la hace util cuando los errores grandes son especialmente problematicos.
+
+**MAE (Mean Absolute Error):** Es el promedio de los valores absolutos de los errores. Es mas robusta frente a outliers que RMSE porque no eleva los errores al cuadrado.
+
+**R-squared (R2):** Indica la proporcion de la varianza en la variable objetivo que es explicada por el modelo. Un R2 de 1.0 significa que el modelo explica toda la varianza; un R2 de 0 significa que no explica nada. Valores cercanos a 1 indican un buen ajuste.
+
+### 6.3 Metricas para Large Language Models (LLMs)
+
+**Perplexity:** Mide que tan bien un modelo de lenguaje predice una muestra de texto. Un valor de perplexity mas bajo indica mejor rendimiento predictivo. Intuitivamente, representa el numero de opciones igualmente probables que el modelo considera para la siguiente palabra.
+
+**BLEU Score:** Evalua la calidad de texto generado por maquina comparandolo con traducciones de referencia. Se usa principalmente en Machine Translation. Valores mas altos indican mayor similitud con las traducciones humanas.
+
+**ROUGE Score:** Evalua la calidad de resumenes generados automaticamente comparandolos con resumenes de referencia. Se centra en el solapamiento de n-gramas entre el resumen generado y los resumenes de referencia.
+
+**Human Evaluation:** Involucra evaluadores humanos que juzgan aspectos como coherencia, relevancia, fluidez y utilidad del texto generado. Proporciona informacion cualitativa que las metricas automaticas no pueden capturar.
+
+---
+
+## 7. Overfitting vs Underfitting
+
+Uno de los conceptos mas importantes en Machine Learning es el equilibrio entre la capacidad del modelo para aprender patrones de los datos de entrenamiento y su capacidad para generalizar a datos nuevos.
+
+### Underfitting (Subajuste)
+
+Ocurre cuando el modelo es **demasiado simple** para capturar los patrones subyacentes en los datos. Un modelo con underfitting tiene un rendimiento pobre tanto en los datos de entrenamiento como en los datos de test. Las causas tipicas incluyen: usar un algoritmo demasiado simple para la complejidad del problema, tener pocas features relevantes o entrenar durante muy pocas epochs.
+
+### Overfitting (Sobreajuste)
+
+Ocurre cuando el modelo es **demasiado complejo** y memoriza los datos de entrenamiento, incluyendo el ruido y las anomalias. Un modelo con overfitting tiene un rendimiento excelente en los datos de entrenamiento pero muy pobre en datos nuevos. Las causas tipicas incluyen: usar un modelo demasiado complejo, tener datos de entrenamiento insuficientes o entrenar durante demasiadas epochs.
+
+### Bias-Variance Tradeoff
+
+Este concepto explica la tension fundamental entre dos fuentes de error en los modelos de ML:
+
+- **Bias (Sesgo):** Es el error introducido por suposiciones simplificadoras en el modelo. Un modelo con alto bias tiende al underfitting porque no es lo suficientemente flexible para capturar los patrones reales de los datos.
+
+- **Variance (Varianza):** Es la sensibilidad del modelo a fluctuaciones en los datos de entrenamiento. Un modelo con alta varianza tiende al overfitting porque es demasiado sensible a los detalles especificos del conjunto de entrenamiento.
+
+El objetivo es encontrar el **punto optimo** donde tanto el bias como la varianza son razonablemente bajos, lo que produce el mejor rendimiento en datos no vistos (generalizacion).
+
+:::tip Estrategias contra Overfitting
+- **Regularizacion** (L1, L2): Penaliza la complejidad del modelo anadiendo un termino a la funcion de perdida.
+- **Cross-validation**: Evalua el modelo con diferentes particiones de los datos para obtener una estimacion mas robusta del rendimiento.
+- **Early stopping**: Detiene el entrenamiento cuando el rendimiento en el conjunto de validacion deja de mejorar.
+- **Data augmentation**: Aumenta artificialmente el tamano del dataset de entrenamiento mediante transformaciones.
+- **Dropout** (en redes neuronales): Desactiva aleatoriamente neuronas durante el entrenamiento para prevenir co-adaptaciones.
+:::
+
+---
+
+## 8. Division de Datos (Data Splits)
+
+La correcta division de los datos es fundamental para evaluar de forma fiable el rendimiento de un modelo:
+
+| Conjunto | Proposito | Porcentaje tipico |
+|----------|-----------|-------------------|
+| **Training Set** | Entrenar el modelo (ajustar parametros) | 70-80% |
+| **Validation Set** | Ajustar hiperparametros y detectar overfitting durante el entrenamiento | 10-15% |
+| **Test Set** | Evaluacion final del modelo en datos completamente independientes | 10-15% |
+
+Es critico que el **Test Set nunca se use durante el entrenamiento ni para la seleccion de hiperparametros**. Si se contamina el test set con informacion del proceso de entrenamiento, las metricas de evaluacion no reflejaran el rendimiento real del modelo en produccion.
+
+---
+
+## 9. Casos de Uso Practicos de AI
+
+La Inteligencia Artificial se aplica en practicamente todas las industrias. A continuacion se presentan algunos de los casos de uso mas relevantes:
+
+**Salud (Healthcare):** Diagnostico asistido por imagen (deteccion de tumores en radiografias), descubrimiento de farmacos, prediccion de riesgo de enfermedades, analisis de historiales clinicos y planificacion personalizada de tratamientos.
+
+**Finanzas (Finance):** Deteccion de fraude en transacciones en tiempo real, evaluacion de riesgo crediticio, trading algoritmico, prevencion de lavado de dinero y chatbots de atencion al cliente.
+
+**Retail (Comercio):** Sistemas de recomendacion de productos, prediccion de demanda e inventario, analisis de sentimiento de resenas, precios dinamicos y personalizacion de la experiencia de compra.
+
+**Manufactura (Manufacturing):** Mantenimiento predictivo de maquinaria, control de calidad visual automatizado, optimizacion de cadenas de suministro, planificacion de produccion y deteccion de anomalias en procesos industriales.
+
+**Transporte:** Vehiculos autonomos, optimizacion de rutas logisticas, prediccion de demanda de transporte publico y deteccion de anomalias en el trafico.
+
+:::tip Clave para el examen
+El examen AIF-C01 puede presentar escenarios de negocio y pedir que identifiques que tipo de ML (supervised, unsupervised, reinforcement) y que tipo de tarea (clasificacion, regresion, clustering) es mas adecuado. Practica asociando casos de uso reales con los tipos correctos de ML.
+:::

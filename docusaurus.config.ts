@@ -87,6 +87,7 @@ const config: Config = {
         {type: 'docSidebar', sidebarId: 'terraform', label: 'Terraform', position: 'left'},
         {type: 'docSidebar', sidebarId: 'gitops', label: 'GitOps', position: 'left'},
         {type: 'docSidebar', sidebarId: 'scripting', label: 'Scripting', position: 'left'},
+        {type: 'docSidebar', sidebarId: 'ai', label: 'AI', position: 'left'},
         {
           href: 'https://salvamiguel.com',
           label: '← salvamiguel.com',
