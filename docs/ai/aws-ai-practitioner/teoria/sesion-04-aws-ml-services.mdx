@@ -1,0 +1,241 @@
+---
+sidebar_position: 4
+title: "Servicios de ML en AWS"
+description: "Introduccion a los servicios de Machine Learning de AWS relevantes para la certificacion AIF-C01."
+---
+
+import { FaAws } from "react-icons/fa";
+
+# Servicios de ML en AWS <FaAws />
+
+## 1. Panorama general de AI/ML en AWS
+
+AWS organiza su oferta de inteligencia artificial y Machine Learning en tres capas principales, cada una disenada para diferentes niveles de experiencia y necesidades:
+
+**AI Services (Servicios de IA):** Son servicios completamente gestionados que proporcionan capacidades de IA pre-entrenadas listas para usar, sin necesidad de conocimientos de Machine Learning. Incluyen servicios como Amazon Rekognition, Amazon Comprehend, Amazon Transcribe y Amazon Polly. Estos servicios se invocan mediante APIs y son ideales para desarrolladores que quieren anadir inteligencia artificial a sus aplicaciones sin tener que entrenar modelos propios.
+
+**ML Services (Servicios de ML):** Herramientas y plataformas gestionadas que facilitan la construccion, entrenamiento y despliegue de modelos de Machine Learning personalizados. Amazon SageMaker es el servicio principal de esta capa, proporcionando un entorno completo para todo el ciclo de vida del ML.
+
+**ML Frameworks & Infrastructure:** La capa base que proporciona los frameworks de codigo abierto (TensorFlow, PyTorch, MXNet) y la infraestructura de computacion optimizada (instancias con GPUs, AWS Inferentia, AWS Trainium) para entrenar y ejecutar modelos a escala.
+
+Para la certificacion AIF-C01, es fundamental conocer los AI Services y comprender cuando utilizar cada uno de ellos. A continuacion se describen los servicios mas relevantes para el examen.
+
+---
+
+## 2. Amazon Rekognition
+
+Amazon Rekognition es un servicio de analisis de imagenes y video basado en Deep Learning que permite agregar capacidades de vision artificial a las aplicaciones sin necesidad de experiencia en ML.
+
+### Funcionalidades principales
+
+Rekognition puede identificar objetos, personas, texto, escenas y actividades en imagenes y videos. Tambien puede detectar contenido inapropiado o no seguro para el trabajo (content moderation), comparar rostros para verificacion de identidad, y analizar expresiones faciales y emociones. Para video, puede rastrear personas a lo largo de una secuencia y detectar actividades especificas.
+
+### Casos de uso comunes
+
+El analisis de contenido generado por usuarios es uno de los casos de uso mas frecuentes. Por ejemplo, una plataforma de redes sociales puede utilizar Rekognition para detectar automaticamente contenido inapropiado antes de que sea publicado. Otros casos incluyen la verificacion de identidad en procesos de onboarding digital, el analisis de seguridad en video-vigilancia, y la busqueda visual en catalogos de productos.
+
+### Relevancia para el examen
+
+En el contexto de la certificacion, Rekognition suele aparecer en preguntas sobre moderacion de contenido, analisis de imagenes y deteccion de rostros. Un escenario tipico es una startup que necesita evitar que los usuarios suban imagenes no apropiadas: la respuesta seria Amazon Rekognition con su funcionalidad de content moderation.
+
+:::tip Recuerda
+Amazon Rekognition es para analisis de imagenes y video. No confundir con Amazon Textract (que extrae texto de documentos) ni con Amazon Comprehend (que analiza texto).
+:::
+
+---
+
+## 3. Amazon Comprehend
+
+Amazon Comprehend es un servicio de procesamiento de lenguaje natural (NLP) que utiliza Machine Learning para extraer informacion y relaciones de textos. Es completamente gestionado y no requiere experiencia previa en ML.
+
+### Funcionalidades principales
+
+Comprehend puede realizar analisis de sentimiento (determinar si un texto es positivo, negativo, neutro o mixto), extraccion de entidades (identificar personas, lugares, organizaciones, fechas y otros elementos clave), deteccion de idioma, extraccion de frases clave y clasificacion de documentos en categorias personalizadas. Tambien soporta el modelado de topicos para descubrir los temas principales en una coleccion de documentos.
+
+### Casos de uso comunes
+
+El analisis de opiniones de clientes es uno de los usos mas extendidos. Las empresas utilizan Comprehend para analizar resenas de productos, comentarios en redes sociales y respuestas de encuestas, obteniendo una vision automatizada del sentimiento general. Tambien se utiliza para clasificar automaticamente tickets de soporte, extraer informacion clave de contratos legales y organizar grandes volumenes de documentos.
+
+### Amazon Comprehend Medical
+
+Amazon Comprehend Medical es una version especializada disenada para el sector sanitario. Extrae informacion medica relevante de textos clinicos no estructurados, como notas medicas, informes de pruebas y recetas. Puede identificar condiciones medicas, medicamentos, dosis, tratamientos y relaciones entre ellos, cumpliendo con los estandares de privacidad del sector salud.
+
+---
+
+## 4. Amazon Polly
+
+Amazon Polly es un servicio completamente gestionado de conversion de texto a voz (Text-to-Speech) que utiliza tecnologias de Deep Learning para sintetizar voz natural a partir de texto.
+
+### Funcionalidades principales
+
+Polly soporta mas de 40 idiomas y ofrece voces tanto estandar como voces neurales (Neural TTS) que proporcionan una calidad de sonido mas natural y humana. Es compatible con SSML (Speech Synthesis Markup Language), lo que permite controlar aspectos como la pronunciacion, el volumen, la velocidad y las pausas del habla generada.
+
+### Modelo de precios
+
+El modelo de precios de Polly se basa en el numero de caracteres convertidos a voz. Se paga por caracter procesado, lo que lo hace eficiente en costes para aplicaciones que generan audio de forma intermitente.
+
+### Casos de uso comunes
+
+Polly se utiliza para crear experiencias de voz en aplicaciones moviles y web, generar narraciones de audio para contenido educativo, proporcionar accesibilidad a personas con discapacidad visual, y construir sistemas de respuesta de voz interactiva (IVR) mas naturales.
+
+---
+
+## 5. Amazon Transcribe
+
+Amazon Transcribe es un servicio completamente gestionado de conversion de voz a texto (Speech-to-Text) que utiliza Machine Learning para generar transcripciones precisas a partir de archivos de audio o flujos de audio en tiempo real.
+
+### Funcionalidades principales
+
+Transcribe soporta procesamiento en tiempo real (a traves de su API de streaming) para transcribir llamadas, reuniones y eventos en vivo, asi como trabajos por lotes (batch jobs) a partir de archivos de audio almacenados en S3. Ofrece modelos de dominio especificos, vocabulario personalizado, proteccion de datos personales (PII), deteccion de toxicidad, resumen de llamadas y analisis de conversaciones con insights.
+
+El modelo de precios se basa en el tiempo de audio transcrito, con un minimo de 15 segundos por trabajo de transcripcion.
+
+### Amazon Transcribe Medical
+
+Transcribe Medical es una version especializada para el sector sanitario que puede transcribir conversaciones medicas con terminologia clinica especifica, cumpliendo con los requisitos de privacidad del sector.
+
+---
+
+## 6. Amazon Translate
+
+Amazon Translate es un servicio de traduccion automatica neuronal que proporciona traducciones de texto rapidas, de alta calidad y asequibles. Es un servicio completamente gestionado que se integra facilmente con otros servicios de AWS.
+
+### Casos de uso comunes
+
+Translate se utiliza para la localizacion de contenido web y aplicaciones, la traduccion en tiempo real de comunicaciones de soporte al cliente, la traduccion de grandes volumenes de documentos empresariales y la creacion de experiencias multilingues en aplicaciones. Puede combinarse con Amazon Comprehend para primero detectar el idioma del texto y luego traducirlo, o con Amazon Polly para crear pipelines de texto a voz multilingue.
+
+---
+
+## 7. Amazon Textract
+
+Amazon Textract es un servicio que extrae automaticamente texto, escritura a mano y datos estructurados (tablas y formularios) de documentos escaneados utilizando Machine Learning. A diferencia de los sistemas OCR tradicionales, Textract puede comprender la estructura y el contexto de los documentos.
+
+### Funcionalidades principales
+
+Textract puede extraer texto plano de documentos, identificar y extraer datos de tablas manteniendo la estructura de filas y columnas, procesar formularios extrayendo pares clave-valor, y analizar documentos de identidad y recibos. Tambien soporta el procesamiento de documentos especializados como facturas, estados bancarios y formularios fiscales.
+
+### Casos de uso comunes
+
+La automatizacion del procesamiento de documentos es el caso de uso principal. Por ejemplo, una empresa de seguros puede utilizar Textract para extraer informacion de formularios de reclamacion, un departamento de contabilidad puede procesar facturas automaticamente, y un servicio financiero puede digitalizar y estructurar documentos historicos.
+
+:::info Textract vs Rekognition
+Aunque ambos trabajan con imagenes, tienen propositos diferentes. Amazon Textract se especializa en extraer texto y datos estructurados de documentos. Amazon Rekognition se especializa en analizar el contenido visual de imagenes y video (objetos, rostros, escenas). Si la pregunta del examen menciona recibos, facturas o formularios, la respuesta es Textract. Si menciona imagenes, fotos o video, la respuesta es Rekognition.
+:::
+
+---
+
+## 8. Amazon Lex
+
+Amazon Lex es un servicio para construir interfaces conversacionales (chatbots y asistentes virtuales) en aplicaciones utilizando voz y texto. Utiliza la misma tecnologia de comprension de lenguaje natural y reconocimiento de voz que impulsa Amazon Alexa.
+
+### Funcionalidades principales
+
+Lex permite definir intents (intenciones del usuario), slots (parametros necesarios para cumplir la intencion) y prompts (mensajes para solicitar informacion al usuario). Soporta conversaciones multiturno, puede integrarse con funciones Lambda para ejecutar logica de negocio y se conecta con Amazon Connect para crear centros de contacto inteligentes.
+
+### Casos de uso comunes
+
+Lex se utiliza para crear chatbots de atencion al cliente que pueden resolver consultas comunes automaticamente, asistentes virtuales para aplicaciones moviles, sistemas de reservas conversacionales y agentes de soporte tecnico de primer nivel.
+
+---
+
+## 9. Amazon Forecast
+
+Amazon Forecast es un servicio completamente gestionado que utiliza Machine Learning para generar previsiones altamente precisas. Combina datos de series temporales con variables adicionales para crear predicciones mas precisas que los metodos estadisticos tradicionales.
+
+### Casos de uso comunes
+
+Forecast se utiliza para la planificacion de inventario y demanda en retail, la prevision de trafico web, la planificacion de recursos humanos, la prevision de ingresos financieros y la optimizacion de la cadena de suministro. El servicio selecciona automaticamente el mejor algoritmo de prediccion para cada conjunto de datos.
+
+---
+
+## 10. Amazon Personalize
+
+Amazon Personalize es un servicio de Machine Learning que permite crear experiencias de personalizacion en tiempo real para los usuarios. Utiliza la misma tecnologia de recomendacion que Amazon.com para generar recomendaciones de productos, contenido personalizado y resultados de busqueda ajustados a cada usuario.
+
+### Casos de uso comunes
+
+Las plataformas de comercio electronico utilizan Personalize para recomendar productos relevantes a cada cliente. Los servicios de streaming lo emplean para sugerir contenido personalizado. Las aplicaciones de noticias lo usan para priorizar articulos segun los intereses del lector. Tambien se utiliza para personalizar campanas de marketing y enviar comunicaciones dirigidas.
+
+---
+
+## 11. Amazon Kendra
+
+Amazon Kendra es un servicio de busqueda empresarial inteligente impulsado por Machine Learning. A diferencia de los motores de busqueda tradicionales basados en palabras clave, Kendra comprende el contexto y la intencion detras de las consultas, proporcionando respuestas precisas en lugar de simples listas de documentos.
+
+### Funcionalidades principales
+
+Kendra puede indexar documentos de multiples fuentes (S3, SharePoint, Salesforce, bases de datos, sitios web) y responder preguntas en lenguaje natural extrayendo la respuesta exacta de los documentos indexados. Soporta FAQs, documentos estructurados y no estructurados, y aprende de las interacciones de los usuarios para mejorar los resultados con el tiempo.
+
+### Casos de uso comunes
+
+Kendra se utiliza como motor de busqueda interno para grandes organizaciones, permitiendo a los empleados encontrar rapidamente informacion en la documentacion corporativa. Tambien se emplea para crear portales de autoservicio para clientes, sistemas de soporte tecnico y bases de conocimiento inteligentes.
+
+---
+
+## 12. Amazon Q
+
+Amazon Q es un asistente de IA generativa completamente gestionado por AWS, construido sobre Amazon Bedrock. Se ofrece en dos modalidades:
+
+### Amazon Q Business
+
+Amazon Q Business es un chatbot basado en LLM que tiene acceso a los datos y el conocimiento de la empresa. Se conecta con multiples fuentes de datos a traves de conectores nativos:
+
+- **Servicios de AWS:** Amazon S3, RDS, Aurora, WorkDocs.
+- **Servicios de terceros:** Microsoft 365, Salesforce, Google Drive, Gmail, Slack.
+- **Plugins:** Jira, ServiceNow, Zendesk, Salesforce, que permiten a Amazon Q interactuar con otros servicios a traves de sus APIs para crear tickets, solicitudes y mas.
+
+Los administradores pueden controlar que documentos puede acceder Amazon Q para cada usuario o grupo, integrando con soluciones de identidad como Microsoft Active Directory. Ademas, los Admin Controls permiten establecer directivas sobre como debe responder Amazon Q, incluyendo el bloqueo de palabras o temas especificos, la restriccion de respuestas a informacion interna, y controles globales y por topico.
+
+### Amazon Q Developer
+
+Amazon Q Developer es un chatbot basado en LLM que se integra con consolas de AWS e IDEs para asistir en el proceso de desarrollo. Ayuda a escribir codigo, depurar, optimizar y comprender la infraestructura de AWS.
+
+:::tip Amazon Q para el examen
+Amazon Q aparece frecuentemente en preguntas sobre asistentes de IA empresariales. Recuerda las diferencias clave: Q Business es para conocimiento empresarial (documentos, datos internos), mientras que Q Developer es para asistencia en desarrollo de software. Conoce los conectores de datos disponibles, ya que suelen preguntarse.
+:::
+
+---
+
+## 13. Amazon Bedrock
+
+Amazon Bedrock es un servicio completamente gestionado que proporciona acceso a modelos de fundacion (Foundation Models) de alta calidad de empresas lideres en IA (como Anthropic, Meta, Mistral, Cohere y Amazon) a traves de una unica API. Bedrock permite construir aplicaciones de IA generativa de forma segura y escalable.
+
+Este servicio se cubre en profundidad en sesiones posteriores del curso, ya que es uno de los temas mas relevantes para la certificacion AIF-C01. En esta introduccion, basta con saber que Bedrock es la plataforma central de AWS para IA generativa, que permite personalizar modelos mediante fine-tuning con datos propios y construir aplicaciones con tecnicas como Retrieval Augmented Generation (RAG).
+
+---
+
+## 14. Otros servicios de IA relevantes
+
+### Amazon Fraud Detector
+
+Amazon Fraud Detector es un servicio completamente gestionado que utiliza Machine Learning para identificar actividades potencialmente fraudulentas en linea. Se utiliza para detectar fraude en pagos, creacion de cuentas falsas y abuso de programas de fidelizacion.
+
+### Amazon Augmented AI (A2I)
+
+Amazon A2I facilita la implementacion de revision humana de predicciones de Machine Learning. Permite crear flujos de trabajo donde las predicciones con baja confianza son revisadas por humanos antes de tomar una decision final, combinando la eficiencia del ML con el juicio humano.
+
+---
+
+## 15. Tabla comparativa de servicios de IA/ML
+
+| Servicio | Tipo | Entrada | Salida | Caso de uso clave |
+|----------|------|---------|--------|-------------------|
+| Rekognition | Vision | Imagenes, Video | Etiquetas, Rostros, Texto | Moderacion de contenido, verificacion de identidad |
+| Comprehend | NLP | Texto | Sentimiento, Entidades, Topicos | Analisis de opiniones, clasificacion de documentos |
+| Comprehend Medical | NLP (Salud) | Texto clinico | Condiciones, Medicamentos, Tratamientos | Extraccion de datos medicos |
+| Polly | TTS | Texto | Audio (voz) | Accesibilidad, narracion, IVR |
+| Transcribe | STT | Audio | Texto | Transcripcion de llamadas, subtitulos |
+| Translate | Traduccion | Texto | Texto traducido | Localizacion, soporte multilingue |
+| Textract | OCR+ | Documentos, Imagenes | Texto estructurado, Tablas, Formularios | Procesamiento de facturas, recibos |
+| Lex | Conversacional | Voz, Texto | Respuestas, Acciones | Chatbots, asistentes virtuales |
+| Forecast | Prediccion | Series temporales | Previsiones | Planificacion de demanda e inventario |
+| Personalize | Recomendacion | Datos de usuario | Recomendaciones | E-commerce, contenido personalizado |
+| Kendra | Busqueda | Consultas en lenguaje natural | Respuestas precisas | Busqueda empresarial inteligente |
+| Amazon Q | Asistente IA | Consultas en lenguaje natural | Respuestas contextuales | Asistente empresarial y de desarrollo |
+| Bedrock | Foundation Models | Variable (texto, imagen) | Variable | Aplicaciones de IA generativa |
+| Fraud Detector | Deteccion | Eventos transaccionales | Puntuacion de fraude | Deteccion de fraude online |
+| A2I | Human-in-the-loop | Predicciones ML | Predicciones revisadas | Revision humana de resultados ML |
+
+:::info Clave para el examen
+Para la certificacion AIF-C01, la habilidad mas importante es saber elegir el servicio correcto para cada escenario. Las preguntas suelen describir un caso de uso y pedir que identifiques el servicio de AWS mas adecuado. Enfocate en entender que problema resuelve cada servicio, no en los detalles tecnicos de implementacion.
+:::

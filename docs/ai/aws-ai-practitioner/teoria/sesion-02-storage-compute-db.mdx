@@ -1,0 +1,233 @@
+---
+sidebar_position: 2
+title: "Storage, Computo y Bases de Datos"
+description: "Servicios de almacenamiento, computo y bases de datos en AWS: S3, EC2, Lambda, RDS, DynamoDB y mas."
+---
+
+import { FaAws } from "react-icons/fa";
+
+# Storage, Computo y Bases de Datos <FaAws />
+
+## 1. Servicios de almacenamiento en AWS
+
+AWS ofrece una amplia gama de servicios de almacenamiento disenados para diferentes casos de uso, desde el almacenamiento de objetos a gran escala hasta sistemas de archivos de alto rendimiento. Comprender las diferencias entre estos servicios es esencial tanto para la certificacion como para disenar arquitecturas en la nube de forma efectiva.
+
+---
+
+## 2. Amazon S3 (Simple Storage Service)
+
+Amazon S3 es el servicio de almacenamiento de objetos mas utilizado en AWS. Permite almacenar y recuperar cualquier cantidad de datos desde cualquier lugar de Internet. S3 esta disenado para ofrecer una durabilidad del 99,999999999% (11 nueves) y se utiliza en una enorme variedad de casos de uso.
+
+### Conceptos fundamentales
+
+**Buckets:** Un bucket es un contenedor de nivel superior para los objetos almacenados en S3. Los nombres de los buckets deben ser unicos globalmente en todo AWS, no solo dentro de tu cuenta. Los buckets se crean en una Region especifica.
+
+**Objetos:** Los archivos almacenados en S3 se denominan objetos. Cada objeto tiene una clave (key), que es su identificador unico dentro del bucket. La clave es la ruta completa del objeto, por ejemplo: `s3://mi-bucket/carpeta1/archivo.txt`. Es importante entender que S3 no tiene un concepto real de directorios; las "carpetas" son simplemente prefijos en la clave del objeto separados por barras (`/`).
+
+**Object Keys:** La clave de un objeto se compone de un prefijo y un nombre de objeto. Por ejemplo, en `s3://mi-bucket/carpeta1/otra_carpeta/archivo.txt`, el prefijo es `carpeta1/otra_carpeta/` y el nombre del objeto es `archivo.txt`. Aunque la interfaz web de AWS muestra una estructura de carpetas, internamente todo son claves planas con barras como separadores.
+
+### Versionado de S3
+
+El versionado permite mantener multiples versiones de un mismo objeto en un bucket. Se habilita a nivel de bucket y es una practica recomendada por AWS. Cuando se sobrescribe un objeto con la misma clave, S3 conserva las versiones anteriores (1, 2, 3...) en lugar de eliminarlas. Esto proporciona proteccion contra eliminaciones accidentales, ya que se puede restaurar cualquier version anterior, y permite realizar rollback facilmente. Los archivos que existian antes de habilitar el versionado tendran la version `null`. Suspender el versionado no elimina las versiones anteriores.
+
+### Seguridad en S3: Bucket Policies
+
+Las Bucket Policies son politicas basadas en JSON que controlan el acceso a los buckets y objetos de S3. Cada politica incluye los siguientes elementos:
+
+| Elemento | Descripcion |
+|----------|-------------|
+| Resource | Los buckets y objetos a los que se aplica la politica |
+| Effect | Allow o Deny (permitir o denegar) |
+| Actions | Las operaciones de API que se permiten o deniegan |
+| Principal | La cuenta o usuario al que se aplica la politica |
+| Condition | Condiciones opcionales para aplicar la politica |
+
+Los casos de uso mas comunes para las Bucket Policies incluyen: conceder acceso publico al bucket, forzar el cifrado de objetos al subirlos, y conceder acceso entre cuentas (Cross-Account Access).
+
+### Alojamiento de sitios web estaticos
+
+S3 puede alojar sitios web estaticos y hacerlos accesibles desde Internet. La URL del sitio web sigue el formato `http://nombre-bucket.s3-website-region.amazonaws.com` o `http://nombre-bucket.s3-website.region.amazonaws.com` dependiendo de la Region. Si se obtiene un error 403 Forbidden al acceder al sitio, generalmente se debe a que la Bucket Policy no permite lecturas publicas.
+
+### Clases de almacenamiento
+
+S3 ofrece diferentes clases de almacenamiento optimizadas para diferentes patrones de acceso y requisitos de coste. Las politicas de Lifecycle permiten mover automaticamente los objetos entre clases de almacenamiento segun reglas definidas por el usuario, optimizando asi los costes de almacenamiento a lo largo del tiempo.
+
+:::tip Para el examen
+S3 es uno de los servicios mas preguntados. Recuerda que S3 es almacenamiento de objetos (no bloques ni archivos), que los nombres de bucket son globalmente unicos, y que la durabilidad es de 11 nueves. Conoce los casos de uso principales: backup y recuperacion, alojamiento de sitios estaticos, data lakes, distribucion de contenido y archivado.
+:::
+
+---
+
+## 3. Amazon EBS (Elastic Block Store)
+
+Amazon EBS proporciona volumenes de almacenamiento de bloques de alto rendimiento disenados para usar con Amazon EC2. Un volumen EBS es esencialmente un disco de red que se puede adjuntar a las instancias EC2 mientras se ejecutan, permitiendo que los datos persistan incluso despues de finalizar la instancia.
+
+### Caracteristicas principales
+
+EBS es un disco de red, no un disco fisico, lo que significa que utiliza la red para comunicarse con la instancia. Esto puede introducir una pequena latencia, pero tambien permite desconectar el volumen de una instancia y adjuntarlo rapidamente a otra. Por defecto, cada volumen EBS solo puede estar montado en una instancia a la vez (los tipos IO admiten Multi-Attach como excepcion). Un aspecto critico es que los volumenes EBS estan vinculados a una Availability Zone especifica; un volumen en `us-east-1a` no puede adjuntarse a una instancia en `us-east-1b`. Para mover un volumen entre AZs, primero hay que crear un snapshot.
+
+Los volumenes tienen una capacidad aprovisionada (tamano en GB y IOPS) y se factura por toda la capacidad aprovisionada, independientemente del uso real. La capacidad puede aumentarse con el tiempo segun las necesidades.
+
+### Tipos de volumenes EBS
+
+| Tipo | Categoria | IOPS maximo | Uso recomendado |
+|------|-----------|-------------|-----------------|
+| gp3 / gp2 | General Purpose SSD | 16.000 | Cargas generales, volumen de arranque, desarrollo |
+| io2 Block Express / io1 | Provisioned IOPS SSD | 256.000 / 64.000 | Bases de datos de alto rendimiento, baja latencia |
+| st1 | Throughput Optimized HDD | 500 | Big Data, Data Warehouses, procesamiento de logs |
+| sc1 | Cold HDD | 250 | Datos de acceso infrecuente, menor coste |
+
+:::info Importante
+Los volumenes HDD (st1 y sc1) no se pueden usar como volumenes de arranque (boot volume). Solo los volumenes SSD (gp2, gp3, io1, io2) son compatibles como disco de arranque para instancias EC2.
+:::
+
+---
+
+## 4. Amazon EFS (Elastic File System)
+
+Amazon EFS es un sistema de archivos elastico, completamente gestionado, que crece y se reduce automaticamente a medida que se agregan o eliminan archivos, sin necesidad de aprovisionamiento ni gestion. Esta disenado para ofrecer una durabilidad del 99,999999999% (11 nueves).
+
+A diferencia de EBS, EFS puede ser Multi-AZ, lo que significa que multiples instancias EC2 en diferentes Availability Zones pueden acceder al mismo sistema de archivos de forma simultanea. EFS soporta el protocolo NFS v4.0 y v4.1, lo que lo convierte en un sistema de archivos compartido ideal para aplicaciones distribuidas.
+
+EFS ofrece diferentes clases de almacenamiento para optimizar costes: **EFS Standard** para datos activos que requieren rendimiento de baja latencia, **EFS Infrequent Access** para datos que se acceden solo unas pocas veces por trimestre, y **EFS Archive** para datos que se acceden unas pocas veces al ano o menos. La funcionalidad de Intelligent-Tiering mueve automaticamente los archivos entre clases segun los patrones de acceso.
+
+Existen dos tipos de sistema de archivos: **Regional** (datos distribuidos en 3 o mas AZs, maxima durabilidad y disponibilidad) y **One Zone** (datos en una sola AZ, menor coste pero sin resiliencia ante la perdida de esa AZ).
+
+---
+
+## 5. Amazon FSx
+
+Amazon FSx ofrece sistemas de archivos completamente gestionados y de alto rendimiento optimizados para cargas de trabajo especificas. AWS proporciona cuatro variantes:
+
+| Variante | Protocolos | Caso de uso principal |
+|----------|-----------|----------------------|
+| FSx for NetApp ONTAP | SMB, NFS, iSCSI | Cargas de trabajo empresariales mixtas, migracion desde on-premises |
+| FSx for OpenZFS | NFS | Cargas de trabajo Linux de alto rendimiento |
+| FSx for Windows File Server | SMB | Aplicaciones Windows, directorios compartidos |
+| FSx for Lustre | POSIX (custom) | HPC, Machine Learning, procesamiento de datos a gran escala |
+
+FSx for Lustre destaca por su capacidad de importar y exportar datos automaticamente desde y hacia Amazon S3, lo que lo hace especialmente util para pipelines de Machine Learning que necesitan acceso rapido a grandes datasets almacenados en S3.
+
+---
+
+## 6. Servicios de computo en AWS
+
+AWS ofrece una variedad de servicios de computo que abarcan desde maquinas virtuales tradicionales hasta funciones serverless, permitiendo a las organizaciones elegir el modelo mas adecuado para cada carga de trabajo.
+
+---
+
+## 7. Amazon EC2 (Elastic Compute Cloud)
+
+Amazon EC2 es uno de los servicios mas populares y fundamentales de AWS. Proporciona capacidad de computo redimensionable en la nube en forma de maquinas virtuales, lo que permite a los usuarios tener control total sobre sus recursos de computacion. EC2 es un ejemplo clasico de Infrastructure as a Service (IaaS).
+
+EC2 integra varias capacidades clave: alquilar maquinas virtuales (instancias EC2), almacenar datos en discos virtuales (EBS), distribuir la carga entre maquinas (Elastic Load Balancer) y escalar los servicios automaticamente (Auto Scaling Group).
+
+### Opciones de configuracion
+
+Al lanzar una instancia EC2, se pueden configurar multiples parametros:
+
+- **Sistema Operativo:** Linux, Windows o macOS.
+- **CPU y RAM:** Cantidad de nucleos de procesador y memoria disponible.
+- **Almacenamiento:** Red (EBS/EFS) o hardware local (Instance Store).
+- **Red:** Velocidad de la tarjeta de red y direccion IP publica.
+- **Security Group:** Reglas de firewall que controlan el trafico de red.
+- **User Data:** Script de arranque que se ejecuta una sola vez al iniciar la instancia por primera vez, util para instalar software, aplicar actualizaciones o descargar archivos.
+
+### Tipos de instancias
+
+AWS utiliza una convencion de nombres para los tipos de instancias EC2. Por ejemplo, en `m5.2xlarge`: `m` es la clase de instancia (General Purpose), `5` es la generacion y `2xlarge` es el tamano dentro de esa clase. Los tipos se optimizan para diferentes casos de uso: General Purpose, Compute Optimized, Memory Optimized, Storage Optimized y Accelerated Computing.
+
+### Security Groups
+
+Los Security Groups son el mecanismo fundamental de seguridad de red en AWS. Funcionan como firewalls virtuales que controlan el trafico entrante y saliente de las instancias EC2. Es importante recordar que los Security Groups solo contienen reglas de tipo "Allow" (permitir); no existen reglas de denegacion explicitas. Las reglas pueden hacer referencia a direcciones IP o a otros Security Groups.
+
+### Modelos de precios de EC2
+
+| Modelo | Descuento | Compromiso | Caso de uso |
+|--------|-----------|------------|-------------|
+| On-Demand | Ninguno | Ninguno | Cargas impredecibles, pruebas |
+| Reserved Instances | Hasta 72% | 1 o 3 anos | Cargas estables y predecibles |
+| Savings Plans | Hasta 72% | 1 o 3 anos | Compromiso de gasto por hora |
+| Spot Instances | Hasta 90% | Ninguno (pueden interrumpirse) | Cargas tolerantes a fallos |
+| Dedicated Hosts | Variable | Opcional | Requisitos de licenciamiento o compliance |
+
+:::tip Spot Instances
+Las Spot Instances ofrecen hasta un 90% de descuento respecto a On-Demand, pero AWS puede reclamarlas en cualquier momento con un aviso de 2 minutos. Son ideales para cargas tolerantes a fallos como procesamiento batch, analisis de datos o renderizado.
+:::
+
+---
+
+## 8. AWS Lambda
+
+AWS Lambda es un servicio de computo serverless que ejecuta codigo en respuesta a eventos y gestiona automaticamente los recursos de computo subyacentes. Con Lambda, no es necesario aprovisionar ni administrar servidores; simplemente se sube el codigo y Lambda se encarga de todo lo necesario para ejecutarlo y escalarlo.
+
+Lambda soporta multiples lenguajes de programacion y se integra nativamente con una gran cantidad de servicios de AWS como S3, DynamoDB, API Gateway, Kinesis, CloudWatch y muchos mas. El modelo de precios se basa en el numero de solicitudes y la duracion de la ejecucion, lo que lo convierte en una opcion extremadamente eficiente en costes para cargas de trabajo intermitentes o basadas en eventos.
+
+Un caso de uso comun es el procesamiento automatico de imagenes subidas a S3: cuando un usuario sube una imagen, S3 genera un evento que dispara una funcion Lambda que procesa la imagen (por ejemplo, generando thumbnails) y almacena el resultado de vuelta en S3.
+
+---
+
+## 9. Contenedores en AWS: ECS, EKS y Fargate
+
+### Amazon ECS (Elastic Container Service)
+
+Amazon ECS es un servicio de orquestacion de contenedores completamente gestionado que facilita el despliegue, la gestion y el escalado de aplicaciones en contenedores. ECS soporta dos tipos de lanzamiento:
+
+- **EC2 Launch Type:** El usuario aprovisiona y mantiene la infraestructura (las instancias EC2) donde se ejecutan los contenedores. Se tiene mayor control sobre la infraestructura subyacente.
+- **Fargate Launch Type:** Modelo completamente serverless donde no se necesita aprovisionar ni gestionar servidores. AWS se encarga de ejecutar los contenedores sin que el usuario tenga que gestionar la infraestructura.
+
+### Amazon EKS (Elastic Kubernetes Service)
+
+Amazon EKS es un servicio gestionado de Kubernetes que permite ejecutar Kubernetes tanto en la nube de AWS como en centros de datos on-premises. EKS facilita la ejecucion de aplicaciones en contenedores siguiendo el estandar Kubernetes, lo que resulta util para organizaciones que ya utilizan Kubernetes o desean portabilidad entre proveedores de nube.
+
+### AWS Fargate
+
+Fargate es un motor de computo serverless para contenedores que funciona tanto con ECS como con EKS. Elimina la necesidad de aprovisionar y gestionar servidores, permitiendo concentrarse unicamente en el diseno y la construccion de las aplicaciones.
+
+---
+
+## 10. AWS Batch
+
+AWS Batch es un servicio completamente gestionado de procesamiento por lotes que planifica, programa y ejecuta cargas de trabajo de ML, simulacion y analisis en contenedores, utilizando la gama completa de opciones de computo de AWS incluyendo ECS, EKS, Fargate e instancias Spot u On-Demand.
+
+---
+
+## 11. Servicios de bases de datos en AWS
+
+AWS ofrece una amplia variedad de servicios de bases de datos gestionados, cada uno optimizado para diferentes tipos de datos y patrones de acceso. Elegir la base de datos adecuada es una decision arquitectonica fundamental.
+
+### Amazon RDS (Relational Database Service)
+
+Amazon RDS es un servicio de bases de datos relacionales gestionado que ofrece ocho motores populares: Amazon Aurora PostgreSQL-Compatible, Amazon Aurora MySQL-Compatible, RDS for PostgreSQL, RDS for MySQL, RDS for MariaDB, RDS for SQL Server, RDS for Oracle y RDS for Db2. Al ser un servicio gestionado, AWS se encarga de las tareas de administracion como el aprovisionamiento de hardware, la configuracion de la base de datos, la aplicacion de parches y los backups automaticos.
+
+### Amazon Aurora
+
+Aurora es el motor de base de datos relacional propio de AWS, compatible con MySQL y PostgreSQL. Ofrece un rendimiento hasta 5 veces superior a MySQL y 3 veces superior a PostgreSQL, con una arquitectura distribuida y tolerante a fallos que replica los datos automaticamente en multiples Availability Zones.
+
+### Amazon DynamoDB
+
+DynamoDB es una base de datos NoSQL serverless de tipo clave-valor que ofrece rendimiento de un solo digito de milisegundos a cualquier escala. Como servicio serverless, solo se paga por lo que se utiliza y escala automaticamente a cero. No tiene arranques en frio, actualizaciones de version, ventanas de mantenimiento ni tiempos de inactividad por parcheado. Es ideal para aplicaciones web de alto trafico, sistemas de comercio electronico, aplicaciones de gaming y casos de uso de IA generativa.
+
+### Amazon ElastiCache
+
+ElastiCache es un servicio completamente gestionado compatible con Valkey, Memcached y Redis OSS que proporciona rendimiento en tiempo real y hasta un 99,99% de alta disponibilidad. Se utiliza para almacenamiento en cache de datos, gestion de sesiones, clasificaciones en juegos, aplicaciones de Machine Learning y arquitecturas de microservicios.
+
+### Otros servicios de bases de datos
+
+| Servicio | Tipo | Caso de uso principal |
+|----------|------|----------------------|
+| Amazon DocumentDB | Documental (MongoDB compatible) | Gestion de contenido, catalogos, perfiles de usuario |
+| Amazon Neptune | Grafos | Deteccion de fraude, redes sociales, sistemas de recomendacion |
+| Amazon Keyspaces | Wide-column (Cassandra compatible) | Aplicaciones industriales, IoT, gestion de flotas |
+| Amazon Timestream | Series temporales | IoT, DevOps, telemetria industrial |
+| Amazon Redshift | Data Warehouse | Analisis de datos a gran escala, BI |
+| Amazon MemoryDB | In-memory (Redis compatible) | Caching de alto rendimiento, aplicaciones de baja latencia |
+
+:::info Comparativa para el examen
+Para el examen, es importante conocer cuando usar cada tipo de base de datos:
+- **Relacional (RDS/Aurora):** Datos estructurados con relaciones complejas, transacciones ACID.
+- **NoSQL clave-valor (DynamoDB):** Alto rendimiento, escalabilidad masiva, esquema flexible.
+- **In-memory (ElastiCache):** Caching, sesiones, datos que requieren latencia ultra-baja.
+- **Grafos (Neptune):** Datos altamente conectados, relaciones complejas entre entidades.
+- **Data Warehouse (Redshift):** Analisis OLAP sobre grandes volumenes de datos historicos.
+:::

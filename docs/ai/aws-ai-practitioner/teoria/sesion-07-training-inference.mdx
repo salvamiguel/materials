@@ -1,0 +1,246 @@
+---
+sidebar_position: 7
+title: "Entrenamiento e Inferencia"
+description: "Metodos de entrenamiento de modelos, fine-tuning, transfer learning y tipos de inferencia en AWS."
+---
+
+import { FaAws } from "react-icons/fa";
+
+# Entrenamiento e Inferencia <FaAws />
+
+Este modulo cubre parcialmente el **Domain 3: Applications of Foundation Models** del examen AWS Certified AI Practitioner (AIF-C01). Nos centraremos en los fundamentos del entrenamiento de modelos, las tecnicas de adaptacion de Foundation Models, los tipos de inferencia disponibles en AWS y las consideraciones de coste asociadas.
+
+---
+
+## 1. Fundamentos del Entrenamiento de Modelos
+
+El entrenamiento de un modelo de Machine Learning es el proceso mediante el cual el modelo ajusta sus parametros internos para aprender patrones a partir de los datos. Para controlar este proceso, existen varios **hiperparametros** que el ingeniero de ML debe configurar antes de iniciar el entrenamiento.
+
+### Hiperparametros Clave
+
+**Learning Rate (Tasa de Aprendizaje):** Controla el tamano del paso en cada actualizacion de parametros durante el entrenamiento. Es quiza el hiperparametro mas critico. Un learning rate demasiado alto puede hacer que el modelo oscile y nunca converja a una solucion optima. Un learning rate demasiado bajo hara que el entrenamiento sea extremadamente lento y pueda quedar atrapado en minimos locales. En la practica, se suelen usar tecnicas de learning rate scheduling que reducen el valor progresivamente durante el entrenamiento.
+
+**Epochs:** Un epoch es una pasada completa por todo el dataset de entrenamiento. El numero de epochs determina cuantas veces el modelo ve todos los datos. Pocos epochs pueden resultar en underfitting (el modelo no ha aprendido suficiente). Demasiados epochs pueden causar overfitting (el modelo memoriza los datos de entrenamiento en lugar de aprender patrones generalizables). Tecnicas como Early Stopping detienen el entrenamiento automaticamente cuando el rendimiento en el conjunto de validacion deja de mejorar.
+
+**Batch Size (Tamano del Lote):** Define cuantas muestras de datos se procesan antes de actualizar los parametros del modelo. Un batch size grande proporciona gradientes mas estables y aprovecha mejor el paralelismo de las GPUs, pero requiere mas memoria. Un batch size pequeno introduce mas ruido en las actualizaciones, lo que puede ayudar a escapar de minimos locales pero hace el entrenamiento menos estable.
+
+**Loss Function (Funcion de Perdida):** Es la funcion matematica que el modelo intenta minimizar durante el entrenamiento. Mide la diferencia entre las predicciones del modelo y los valores reales. La eleccion de la loss function depende del tipo de tarea: Cross-Entropy Loss para clasificacion, Mean Squared Error para regresion, etc.
+
+**Optimizer (Optimizador):** Es el algoritmo que actualiza los parametros del modelo basandose en los gradientes calculados. Los optimizadores mas comunes son SGD (Stochastic Gradient Descent), Adam y AdamW. Cada uno tiene ventajas en diferentes escenarios y sus propios hiperparametros adicionales.
+
+---
+
+## 2. Preparacion de Datos de Entrenamiento
+
+La calidad de los datos de entrenamiento es el factor mas determinante en el rendimiento final del modelo. Un modelo entrenado con datos de mala calidad producira predicciones de mala calidad, independientemente de lo sofisticado que sea el algoritmo.
+
+### Limpieza de Datos
+
+La limpieza incluye eliminar registros duplicados, tratar valores faltantes (imputacion, eliminacion o marcado), corregir errores tipograficos y de formato, identificar y gestionar outliers (valores atipicos), y asegurar la consistencia de tipos de datos y formatos en todo el dataset.
+
+### Etiquetado de Datos (Data Labeling)
+
+Para el aprendizaje supervisado, cada muestra de entrenamiento necesita una etiqueta correcta. El etiquetado puede realizarse manualmente por humanos (costoso pero preciso), de forma semi-automatica con modelos pre-entrenados que un humano revisa, o programaticamente cuando las etiquetas se pueden derivar de datos existentes. En AWS, **Amazon SageMaker Ground Truth** y **Amazon Mechanical Turk** son los servicios principales para etiquetado de datos a escala.
+
+### Data Augmentation (Aumento de Datos)
+
+Cuando el dataset de entrenamiento es pequeno, las tecnicas de Data Augmentation generan nuevas muestras de entrenamiento a partir de las existentes mediante transformaciones. En imagenes, esto incluye rotaciones, recortes, cambios de brillo y volteos. En texto, puede incluir parafraseo, sustitucion de sinonimos o traduccion ida-y-vuelta. Estas tecnicas aumentan la cantidad efectiva de datos de entrenamiento y mejoran la generalizacion del modelo.
+
+---
+
+## 3. Pre-Training vs Fine-Tuning vs Transfer Learning
+
+Estos tres conceptos son fundamentales para entender como se crean y adaptan los modelos modernos de IA, y especialmente los Foundation Models.
+
+### Pre-Training (Pre-Entrenamiento)
+
+Es el entrenamiento inicial de un modelo desde cero con un dataset masivo. En el caso de los LLMs, el pre-training tipicamente consiste en predecir la siguiente palabra en un texto (next token prediction) utilizando miles de millones de documentos de internet, libros y otras fuentes. Este proceso es extremadamente costoso en tiempo y recursos computacionales: puede llevar semanas o meses en clusters de miles de GPUs, con un coste de decenas de millones de dolares. El resultado es un Foundation Model con conocimiento amplio y generalista.
+
+### Transfer Learning (Aprendizaje por Transferencia)
+
+Transfer Learning es la tecnica de tomar un modelo pre-entrenado en una tarea general y **reutilizar su conocimiento** para una tarea diferente pero relacionada. En lugar de entrenar un modelo desde cero para detectar tumores en radiografias, se puede tomar un modelo de vision pre-entrenado con millones de imagenes generales (como ImageNet) y adaptarlo al dominio medico. El modelo ya "sabe" reconocer formas, texturas y patrones generales; solo necesita aprender las particularidades del nuevo dominio. Esto reduce drasticamente la cantidad de datos y el tiempo de entrenamiento necesarios.
+
+### Fine-Tuning (Ajuste Fino)
+
+Fine-Tuning es una forma especifica de Transfer Learning en la que se toman los pesos de un modelo pre-entrenado y se **continua su entrenamiento con datos especificos** del dominio o tarea objetivo. Durante el Fine-Tuning, se actualizan los parametros del modelo (todos o solo una parte) para adaptarlo a las particularidades del nuevo dominio.
+
+---
+
+## 4. Tecnicas de Fine-Tuning para Foundation Models
+
+Existen diversas tecnicas para adaptar un Foundation Model a un caso de uso especifico, cada una con diferentes niveles de coste computacional y complejidad.
+
+### Full Fine-Tuning
+
+Se actualizan **todos los parametros** del modelo con los datos del nuevo dominio. Es la tecnica mas costosa computacionalmente pero tambien la que puede lograr la mayor adaptacion. Requiere datasets sustanciales y hardware potente (multiples GPUs de alto rendimiento). Existe riesgo de "catastrophic forgetting", donde el modelo pierde conocimiento adquirido durante el pre-training.
+
+### LoRA (Low-Rank Adaptation)
+
+En lugar de actualizar todos los parametros del modelo, LoRA inserta **matrices de baja dimensionalidad** entrenables en las capas del modelo y solo entrena esas matrices adicionales. Esto reduce drasticamente el numero de parametros que se actualizan (tipicamente menos del 1% del total), lo que reduce el coste computacional, el consumo de memoria y el tiempo de entrenamiento. Los pesos originales del modelo permanecen congelados, eliminando el riesgo de catastrophic forgetting.
+
+### PEFT (Parameter-Efficient Fine-Tuning)
+
+PEFT es una familia de tecnicas (de la que LoRA es miembro) que buscan adaptar modelos grandes actualizando solo un **pequeno subconjunto de parametros**. Otras tecnicas PEFT incluyen Prefix Tuning (anade tokens entrenables al inicio del prompt) y Adapter Layers (inserta pequenas capas entrenables entre las capas existentes del modelo). Todas comparten el objetivo de reducir el coste y la complejidad del Fine-Tuning sin sacrificar significativamente la calidad de la adaptacion.
+
+### Instruction Tuning
+
+Consiste en hacer Fine-Tuning del modelo con pares de **instruccion-respuesta** para mejorar su capacidad de seguir instrucciones de forma precisa. El modelo aprende a interpretar y ejecutar una amplia variedad de instrucciones en lenguaje natural. Esta tecnica es responsable de la diferencia entre un modelo base (que simplemente completa texto) y un modelo conversacional (que entiende y responde a peticiones especificas).
+
+### RLHF (Reinforcement Learning from Human Feedback)
+
+RLHF anade una capa de **aprendizaje por refuerzo** donde evaluadores humanos califican las respuestas del modelo, y esas calificaciones se usan para entrenar un modelo de recompensa que guia el Fine-Tuning posterior. El resultado es un modelo que genera respuestas mas alineadas con las preferencias humanas: mas utiles, menos daninas y mas honestas. Esta tecnica es fundamental en la creacion de chatbots y asistentes como Claude o ChatGPT. En AWS, **SageMaker Ground Truth** es el servicio que facilita la recopilacion de feedback humano para RLHF.
+
+### Continued Pre-Training
+
+A diferencia del Fine-Tuning, que adapta el modelo a una tarea especifica, el Continued Pre-Training **extiende el entrenamiento base** del modelo con grandes corpus de datos de un dominio especifico. El objetivo no es adaptar el modelo a una tarea concreta, sino ampliar su conocimiento fundamental en un area especializada. Es la tecnica recomendada cuando un modelo generalista no tiene suficiente vocabulario o conocimiento de un dominio especifico (por ejemplo, terminologia medica, legal o cientifica).
+
+:::info Fine-Tuning vs Continued Pre-Training
+| Aspecto | Fine-Tuning | Continued Pre-Training |
+|---------|------------|----------------------|
+| **Objetivo** | Adaptar a una tarea especifica | Ampliar conocimiento de dominio |
+| **Datos** | Pares entrada-salida especificos | Grandes corpus de texto del dominio |
+| **Tamano del dataset** | Relativmente pequeno (miles a decenas de miles de ejemplos) | Grande (millones de documentos) |
+| **Resultado** | Modelo especializado en una tarea | Modelo con conocimiento ampliado del dominio |
+| **Caso de uso tipico** | Chatbot que responde en un tono especifico | Modelo que entiende terminologia medica |
+:::
+
+---
+
+## 5. Infraestructura de Entrenamiento en AWS
+
+### Amazon EC2 con GPU
+
+AWS ofrece instancias EC2 optimizadas para entrenamiento de ML con GPUs de alto rendimiento:
+
+- **P4d/P5:** Instancias con GPUs NVIDIA A100 y H100, diseñadas para entrenamiento a gran escala de Foundation Models y Deep Learning.
+- **G5/G6:** Instancias con GPUs NVIDIA A10G y L4, adecuadas para entrenamiento de modelos medianos e inferencia.
+- **Trn1/Trn2:** Instancias con chips **AWS Trainium**, el acelerador propio de Amazon diseñado especificamente para entrenamiento de ML con mejor relacion rendimiento/precio.
+- **Inf1/Inf2:** Instancias con chips **AWS Inferentia**, optimizadas para inferencia de bajo coste.
+
+### Amazon SageMaker Training
+
+SageMaker Training proporciona un entorno gestionado para entrenamiento de modelos que abstrae la complejidad de la infraestructura. Los datos de entrenamiento se almacenan en S3, SageMaker aprovisiona automaticamente las instancias necesarias, ejecuta el entrenamiento y libera los recursos al finalizar. Soporta entrenamiento distribuido en multiples instancias y se integra con SageMaker Automatic Model Tuning para optimizacion de hiperparametros.
+
+---
+
+## 6. Tipos de Inferencia
+
+La inferencia es el proceso de usar un modelo entrenado para hacer predicciones sobre datos nuevos. AWS ofrece multiples modalidades de inferencia, cada una optimizada para diferentes patrones de uso.
+
+### Real-Time Inference (Inferencia en Tiempo Real)
+
+Las predicciones se generan **instantaneamente** a medida que llegan nuevas solicitudes. El modelo esta desplegado en un endpoint permanentemente activo, listo para recibir peticiones en cualquier momento.
+
+**Caracteristicas:**
+- Latencia baja (milisegundos a segundos).
+- Payload maximo de 6 MB por solicitud.
+- Tiempo maximo de procesamiento de 60 segundos.
+- El endpoint permanece activo continuamente (se paga aunque no haya trafico).
+
+**Casos de uso:** Deteccion de fraude en transacciones en tiempo real, sistemas de recomendacion, chatbots, conduccion autonoma, analisis de sentimiento en redes sociales.
+
+### Batch Inference (Inferencia por Lotes)
+
+Las predicciones se generan en **bloques programados** para datasets completos. Los datos de entrada y los resultados se almacenan en Amazon S3.
+
+**Caracteristicas:**
+- Latencia alta (minutos a horas).
+- Payload de hasta 100 MB por invocacion.
+- Procesamiento concurrente de multiples solicitudes.
+- Mas eficiente computacionalmente que procesar solicitudes individuales.
+
+**Casos de uso:** Analisis periodicos de datos, generacion de informes, evaluacion de modelos, scoring masivo de clientes, procesamiento de datasets historicos.
+
+### Serverless Inference (Inferencia Serverless)
+
+Similar a la inferencia en tiempo real, pero el endpoint **se escala a cero** cuando no hay trafico. La infraestructura se aprovisiona automaticamente cuando llega una solicitud y se libera cuando no hay actividad.
+
+**Caracteristicas:**
+- Latencia baja, pero con posibles **cold starts** (arranques en frio) cuando el endpoint esta inactivo.
+- Payload maximo de 6 MB.
+- Ideal para trafico irregular con periodos de inactividad.
+- Solo se paga por el tiempo de procesamiento real.
+
+**Casos de uso:** Aplicaciones con trafico esporadico, prototipos, entornos de desarrollo, APIs de ML con picos de demanda impredecibles.
+
+### Asynchronous Inference (Inferencia Asincrona)
+
+Diseñada para solicitudes con **payloads grandes** o que requieren **tiempos de procesamiento largos**. Las solicitudes se encolan y procesan en segundo plano. Los resultados se almacenan en S3 y se puede notificar al cliente mediante SNS cuando estan listos.
+
+**Caracteristicas:**
+- Latencia media a alta ("near real-time").
+- Payload de hasta 1 GB por solicitud.
+- Tiempo de procesamiento de hasta 1 hora.
+- Cola de solicitudes con escalado automatico.
+
+**Casos de uso:** Procesamiento de documentos grandes, generacion de contenido extenso, analisis de video, transcripcion de audio largo.
+
+### Tabla Comparativa de Tipos de Inferencia
+
+| Caracteristica | Real-Time | Serverless | Asynchronous | Batch |
+|---------------|-----------|------------|-------------|-------|
+| **Latencia** | Baja (ms-s) | Baja (con cold starts) | Media-Alta | Alta (min-h) |
+| **Payload maximo** | 6 MB | 6 MB | 1 GB | 100 MB/mini-batch |
+| **Tiempo procesamiento** | Max 60s | Max 60s | Max 1h | Max 1h |
+| **Disponibilidad** | Siempre activo | Escala a cero | Cola de solicitudes | Ejecucion programada |
+| **Pago** | Por tiempo activo | Por solicitud | Por procesamiento | Por procesamiento |
+| **Caso tipico** | Chatbots, fraude | Trafico esporadico | Payloads grandes | Datasets completos |
+
+:::tip Clave para el examen
+Para el examen AIF-C01, debes saber elegir el tipo de inferencia correcto segun el escenario:
+- Predicciones instantaneas con baja latencia --> **Real-Time**
+- Trafico irregular con periodos de inactividad --> **Serverless**
+- Payloads grandes (hasta 1 GB) con procesamiento largo --> **Asynchronous**
+- Predicciones masivas sobre datasets completos --> **Batch**
+:::
+
+---
+
+## 7. Inferencia en el Edge
+
+No todos los escenarios requieren enviar datos a la nube para inferencia. La **inferencia en el edge** permite ejecutar modelos directamente en dispositivos locales (IoT, moviles, camaras).
+
+### Small Language Models (SLMs) vs Large Language Models (LLMs)
+
+| Caracteristica | Small Language Model (SLM) | Large Language Model (LLM) |
+|---------------|---------------------------|---------------------------|
+| **Tamano** | Compacto, pocos parametros | Grande, miles de millones de parametros |
+| **Hardware requerido** | Dispositivos edge (IoT, moviles) | GPUs de alto rendimiento o clusters cloud |
+| **Latencia** | Baja, respuesta rapida | Mayor latencia por calculos complejos |
+| **Eficiencia energetica** | Alta (optimizado para bajo consumo) | Alto consumo energetico |
+| **Casos de uso** | Aplicaciones offline, procesamiento local | IA conversacional, analitica profunda |
+| **Ejemplos** | DistilBERT, MobileBERT | GPT-4, Llama, Claude |
+
+Los SLMs son versiones destiladas o comprimidas de modelos grandes, optimizados para ejecutarse con recursos limitados. Son la opcion indicada cuando se necesita baja latencia, funcionamiento offline o restricciones de privacidad que impiden enviar datos a la nube.
+
+---
+
+## 8. Optimizacion de Inferencia
+
+Reducir el coste y la latencia de inferencia es critico para la viabilidad economica de las aplicaciones de IA en produccion. Existen varias tecnicas para optimizar la inferencia:
+
+**Model Compression (Compresion de Modelos):** Tecnicas que reducen el tamano del modelo sin perder rendimiento significativo. Incluye pruning (eliminacion de conexiones o neuronas poco importantes) y knowledge distillation (entrenar un modelo pequeno para imitar el comportamiento de uno grande).
+
+**Quantization (Cuantizacion):** Reduce la precision numerica de los parametros del modelo (por ejemplo, de 32 bits a 8 bits o incluso 4 bits). Esto reduce significativamente el tamano del modelo y el consumo de memoria, y acelera la inferencia, con una perdida minima de calidad.
+
+**Knowledge Distillation (Destilacion de Conocimiento):** Un modelo grande (teacher) se usa para entrenar un modelo mas pequeño (student) que aprende a replicar las predicciones del modelo grande. El resultado es un modelo compacto que se acerca al rendimiento del modelo original pero es mucho mas rapido y eficiente.
+
+---
+
+## 9. Consideraciones de Coste: Training vs Inference
+
+Comprender las diferencias de coste entre entrenamiento e inferencia es esencial para la planificacion financiera de proyectos de ML.
+
+| Aspecto | Training | Inference |
+|---------|---------|-----------|
+| **Frecuencia** | Ocasional (una vez o periodicamente) | Continuo (cada solicitud) |
+| **Coste por evento** | Alto (horas a dias de GPU) | Bajo (milisegundos a segundos por solicitud) |
+| **Coste acumulado** | Concentrado en periodos cortos | Distribuido pero constante en el tiempo |
+| **Optimizacion** | Spot instances, instancias Trainium, entrenamiento distribuido | Quantization, distillation, serverless, instancias Inferentia |
+| **Escalabilidad** | Escalado vertical (GPUs mas potentes) | Escalado horizontal (mas endpoints) |
+
+En la mayoria de aplicaciones en produccion, el **coste acumulado de inferencia supera al de entrenamiento** a largo plazo, ya que la inferencia se ejecuta continuamente mientras que el entrenamiento es un evento puntual. Por esta razon, las tecnicas de optimizacion de inferencia (quantization, distillation, uso de chips Inferentia) son cruciales para la viabilidad economica de los proyectos de IA.
+
+:::info AWS Skill Builder Labs
+AWS Skill Builder ofrece laboratorios practicos para experimentar con los conceptos de entrenamiento e inferencia en un entorno real de AWS. Estos labs incluyen ejercicios con Amazon Polly (Text-to-Speech), SageMaker (Bring Your Own Model) y configuracion de entornos ML. Son un recurso excelente para la preparacion del examen AIF-C01.
+:::

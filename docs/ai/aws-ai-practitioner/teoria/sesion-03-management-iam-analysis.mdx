@@ -1,0 +1,286 @@
+---
+sidebar_position: 3
+title: "Management, IAM y Analitica"
+description: "Servicios de gestion, identidad y acceso (IAM), y analitica en AWS."
+---
+
+import { FaAws } from "react-icons/fa";
+
+# Management, IAM y Analitica <FaAws />
+
+## 1. Management & Governance
+
+AWS proporciona un conjunto completo de servicios de gestion y gobernanza que permiten a las organizaciones operar sus entornos en la nube de forma segura, eficiente y conforme a las mejores practicas. Estos servicios cubren desde la monitorizacion y auditoria hasta la gestion de costes y la automatizacion de infraestructura.
+
+---
+
+## 2. AWS Organizations
+
+AWS Organizations es un servicio que permite gestionar y gobernar de forma centralizada multiples cuentas de AWS. Con Organizations, se pueden crear cuentas nuevas de manera programatica, agruparlas en Organizational Units (OUs), aplicar politicas de gobierno y consolidar la facturacion en una sola cuenta de gestion (Management Account).
+
+La estructura jerarquica de Organizations permite aplicar politicas a diferentes niveles. Por ejemplo, se puede crear una OU para el departamento de desarrollo y otra para produccion, cada una con sus propias restricciones y permisos. La facturacion consolidada permite beneficiarse de descuentos por volumen al agregar el uso de todas las cuentas miembro.
+
+---
+
+## 3. AWS Control Tower
+
+AWS Control Tower ofrece una forma sencilla de configurar y gobernar un entorno multi-cuenta de AWS siguiendo las mejores practicas. Orquesta las capacidades de varios servicios de AWS, incluyendo AWS Organizations, AWS Service Catalog y AWS IAM Identity Center, para construir un Landing Zone (entorno base) en menos de una hora.
+
+Control Tower establece guardrails (barandillas de seguridad) que son reglas de alto nivel aplicadas a todas las cuentas dentro del entorno. Estas pueden ser preventivas (impiden acciones no permitidas) o detectivas (alertan sobre configuraciones no conformes).
+
+---
+
+## 4. AWS Well-Architected Framework
+
+El AWS Well-Architected Framework proporciona principios de diseno generales y mejores practicas de AWS organizados en seis pilares conceptuales:
+
+| Pilar | Enfoque |
+|-------|---------|
+| Operational Excellence | Ejecutar y monitorear sistemas para entregar valor empresarial |
+| Security | Proteger informacion y sistemas |
+| Reliability | Capacidad de recuperarse ante fallos y cumplir demanda |
+| Performance Efficiency | Uso eficiente de recursos de computacion |
+| Cost Optimization | Evitar gastos innecesarios |
+| Sustainability | Minimizar el impacto ambiental |
+
+El AWS Well-Architected Tool permite revisar las cargas de trabajo frente a las mejores practicas actuales de AWS y obtener recomendaciones sobre como mejorar la arquitectura.
+
+---
+
+## 5. Gestion de costes
+
+### AWS Budgets
+
+AWS Budgets permite establecer presupuestos personalizados que alertan cuando los costes o el uso superan (o se preve que superen) los umbrales definidos. Se pueden crear presupuestos basados en costes, uso, reservas o Savings Plans, y configurar alertas por correo electronico o SNS cuando se alcancen determinados porcentajes del presupuesto.
+
+### AWS Cost Explorer
+
+AWS Cost Explorer proporciona una interfaz grafica para visualizar, comprender y gestionar los costes y el uso de AWS a lo largo del tiempo. Permite crear informes personalizados, analizar datos a alto nivel (costes totales en todas las cuentas) o profundizar para identificar tendencias, factores de coste y anomalias.
+
+### AWS Cost and Usage Reports (CUR)
+
+Los Cost and Usage Reports contienen el conjunto mas completo de datos de costes y uso disponible en AWS. Proporcionan informacion detallada sobre cada recurso y servicio utilizado, lo que permite un analisis granular de los gastos.
+
+---
+
+## 6. AWS CloudFormation
+
+AWS CloudFormation permite modelar una coleccion de recursos de AWS y de terceros, aprovisionarlos de forma rapida y consistente, y gestionarlos a lo largo de su ciclo de vida tratando la infraestructura como codigo (Infrastructure as Code). Con CloudFormation, se definen los recursos deseados en plantillas JSON o YAML, y el servicio se encarga de crear y configurar esos recursos en el orden correcto, gestionando las dependencias automaticamente.
+
+---
+
+## 7. AWS Systems Manager
+
+AWS Systems Manager ayuda a escalar la eficiencia operativa simplificando la gestion de nodos, facilitando la administracion de instancias EC2, servidores hibridos y servidores en entornos multi-nube. Ofrece visibilidad y control integral sobre toda la infraestructura, incluyendo la capacidad de ver todos los nodos gestionados y no gestionados, aplicar parches a escala y automatizar tareas operativas.
+
+---
+
+## 8. AWS Config
+
+AWS Config es un servicio que permite evaluar, auditar y valorar las configuraciones de los recursos de AWS. Registra continuamente las configuraciones de los recursos y permite automatizar la evaluacion de las configuraciones registradas frente a las configuraciones deseadas. Esto es fundamental para el cumplimiento normativo, ya que permite demostrar que los recursos estan configurados segun las politicas de la organizacion.
+
+---
+
+## 9. AWS CloudTrail
+
+AWS CloudTrail es un servicio que registra la actividad de la cuenta de AWS, proporcionando gobernanza, cumplimiento normativo y auditoria operativa. CloudTrail registra todas las llamadas a la API realizadas en la cuenta, incluyendo quien hizo la llamada, desde donde, cuando y que cambios se realizaron. Es una herramienta esencial para la investigacion de seguridad y la resolucion de problemas.
+
+:::tip Diferencia entre CloudWatch, CloudTrail y Config
+- **CloudWatch:** Monitoriza el rendimiento de los recursos (metricas, logs, alarmas). Pregunta: "Como estan funcionando mis recursos?"
+- **CloudTrail:** Registra la actividad de la API (quien hizo que). Pregunta: "Quien cambio esta configuracion?"
+- **Config:** Evalua la configuracion de los recursos (cumplimiento). Pregunta: "Estan mis recursos configurados correctamente?"
+:::
+
+---
+
+## 10. Amazon CloudWatch
+
+Amazon CloudWatch es un servicio de monitorizacion que supervisa aplicaciones, responde a cambios de rendimiento, optimiza el uso de recursos y proporciona informacion sobre la salud operativa. Recopila datos de todos los recursos de AWS, ofreciendo visibilidad sobre el rendimiento de todo el sistema. Permite configurar alarmas que reaccionen automaticamente ante cambios, y proporciona una vista unificada de la salud operativa.
+
+CloudWatch se complementa con **Amazon Managed Grafana** (servicio gestionado de Grafana para visualizacion de datos operativos a escala) y **Amazon Managed Service for Prometheus** (servicio de monitorizacion y alertas optimizado para entornos de contenedores).
+
+---
+
+## 11. Otros servicios de gestion
+
+**AWS Service Catalog** permite crear, organizar y gobernar un catalogo de recursos de AWS aprobados que pueden compartirse a nivel de permisos, permitiendo aprovisionar rapidamente recursos sin necesidad de acceso directo a los servicios subyacentes.
+
+**AWS Marketplace** es un mercado digital donde las empresas pueden encontrar, probar, comprar, desplegar y gestionar soluciones de AWS Partners, con facturacion y gestion centralizadas.
+
+**AWS License Manager** facilita la gestion de licencias de software de proveedores como Microsoft, SAP, Oracle e IBM, tanto en entornos AWS como on-premises.
+
+---
+
+## 12. Security, Identity & Compliance
+
+La seguridad es una prioridad maxima en AWS. Los servicios de seguridad, identidad y cumplimiento normativo permiten a las organizaciones proteger sus datos, gestionar el acceso y cumplir con los requisitos regulatorios.
+
+---
+
+## 13. AWS IAM (Identity and Access Management)
+
+IAM es un servicio global que permite gestionar de forma segura el acceso a los servicios y recursos de AWS. Es uno de los servicios mas importantes y fundamentales para comprender la seguridad en AWS.
+
+### Usuarios y grupos
+
+Cuando se crea una cuenta de AWS, se genera automaticamente un usuario root con acceso completo. Este usuario no debe utilizarse para las tareas diarias ni compartirse. En su lugar, se deben crear usuarios IAM para cada persona de la organizacion. Los usuarios pueden organizarse en grupos, que solo contienen usuarios (no otros grupos). Un usuario puede pertenecer a multiples grupos o a ninguno.
+
+### Politicas (Policies)
+
+Las politicas IAM son documentos JSON que definen los permisos de los usuarios y grupos. Cada politica especifica que acciones estan permitidas o denegadas sobre que recursos y bajo que condiciones. La estructura de una politica incluye:
+
+- **Version:** Version del lenguaje de la politica.
+- **Statement:** Una o mas declaraciones que incluyen Effect (Allow/Deny), Action (las operaciones de API), Resource (los recursos afectados) y opcionalmente Condition (condiciones adicionales).
+
+Las politicas pueden heredarse a traves de los grupos: cuando se asigna una politica a un grupo, todos los usuarios del grupo heredan esos permisos.
+
+### Mejores practicas de IAM
+
+AWS recomienda seguir el principio de minimo privilegio (least privilege): no conceder mas permisos de los que un usuario necesita para realizar su trabajo. Otras mejores practicas incluyen:
+
+- Habilitar Multi-Factor Authentication (MFA) para todos los usuarios, especialmente para el usuario root.
+- Utilizar roles IAM en lugar de compartir credenciales.
+- Rotar las credenciales de acceso regularmente.
+- Utilizar grupos para asignar permisos en lugar de asignarlos directamente a usuarios.
+- Auditar regularmente los permisos mediante herramientas como IAM Access Analyzer.
+
+---
+
+## 14. Service Control Policies (SCP)
+
+Las Service Control Policies son politicas IAM que se aplican a nivel de Organizational Unit (OU) o cuenta dentro de AWS Organizations para restringir lo que los usuarios y roles pueden hacer. Las SCPs no se aplican a la Management Account (que mantiene poder administrativo completo). Es importante entender que las SCPs no conceden permisos por si mismas; establecen los limites maximos de los permisos. Para que una accion este permitida, debe estar autorizada tanto por la SCP como por la politica IAM del usuario.
+
+Los IAM Permission Boundaries son una funcionalidad avanzada similar que permite establecer los permisos maximos que una entidad IAM (usuario o rol, no grupo) puede obtener mediante una politica gestionada.
+
+---
+
+## 15. AWS IAM Identity Center
+
+AWS IAM Identity Center (antes AWS SSO) permite gestionar de forma centralizada el acceso a multiples cuentas de AWS y aplicaciones empresariales. Proporciona acceso de inicio de sesion unico (Single Sign-On) a todas las cuentas y aplicaciones asignadas desde un unico lugar, integrando con proveedores de identidad externos como Microsoft Active Directory.
+
+---
+
+## 16. Servicios de proteccion y deteccion
+
+### Amazon GuardDuty
+
+GuardDuty es un servicio de deteccion de amenazas que monitoriza continuamente la actividad maliciosa y el comportamiento no autorizado en el entorno de AWS. Utiliza inteligencia artificial, Machine Learning, deteccion de anomalias y fuentes de inteligencia de amenazas tanto de AWS como de la industria.
+
+### Amazon Inspector
+
+Inspector descubre automaticamente cargas de trabajo como instancias EC2, contenedores y funciones Lambda, y las escanea en busca de vulnerabilidades de software y exposiciones de red no deseadas.
+
+### AWS Security Hub
+
+Security Hub es un servicio de gestion de la postura de seguridad en la nube (CSPM) que automatiza las comprobaciones de mejores practicas de seguridad contra los recursos de AWS, ayudando a identificar configuraciones incorrectas.
+
+### AWS WAF (Web Application Firewall)
+
+AWS WAF protege las aplicaciones web de exploits comunes permitiendo crear reglas personalizadas que controlan que trafico llega a las aplicaciones. Se puede configurar para bloquear patrones de ataques comunes como SQL injection y cross-site scripting (XSS).
+
+### AWS Shield
+
+AWS Shield proporciona proteccion contra ataques de denegacion de servicio distribuido (DDoS). Shield Standard se activa automaticamente y de forma gratuita para todos los clientes de AWS. Shield Advanced ofrece proteccion adicional con soporte 24/7 y reembolso de costes por escalado DDoS.
+
+---
+
+## 17. Gestion de secretos y certificados
+
+**AWS Secrets Manager** permite gestionar de forma centralizada el ciclo de vida de los secretos (credenciales de base de datos, claves de API, tokens, etc.), incluyendo la rotacion automatica, la replicacion y el acceso controlado mediante politicas IAM.
+
+**AWS Certificate Manager** facilita el aprovisionamiento y la gestion de certificados SSL/TLS para los servicios de AWS y los recursos conectados, automatizando la renovacion de certificados.
+
+---
+
+## 18. AWS Resource Access Manager (RAM)
+
+RAM permite compartir recursos de AWS de forma sencilla y segura entre multiples cuentas de AWS. Esto es util para compartir subnets de VPC, Transit Gateways, resolvers de Route 53 y otros recursos sin necesidad de crear duplicados en cada cuenta.
+
+---
+
+## 19. Servicios de analitica en AWS
+
+AWS ofrece una gama completa de servicios de analitica que cubren todo el espectro del procesamiento de datos, desde la ingesta en tiempo real hasta la visualizacion y la gobernanza de datos.
+
+---
+
+## 20. Amazon Athena
+
+Amazon Athena es un servicio de consultas interactivas que facilita el analisis de datos directamente en Amazon S3 utilizando SQL estandar. Athena es serverless, lo que significa que no hay infraestructura que gestionar y solo se paga por las consultas ejecutadas. Es ideal para analisis ad-hoc, exploracion de datos y consultas sobre data lakes.
+
+Athena tambien soporta Federated Queries (consultas federadas), que permiten ejecutar consultas SQL no solo sobre datos en S3, sino tambien sobre datos almacenados en bases de datos relacionales, bases de datos NoSQL, sistemas de archivos y otros origenes de datos, utilizando conectores de fuentes de datos.
+
+---
+
+## 21. Amazon Redshift
+
+Amazon Redshift es un servicio de Data Warehouse en la nube rapido y completamente gestionado que permite analizar datos utilizando SQL estandar y herramientas de Business Intelligence existentes. Redshift esta optimizado para consultas analiticas (OLAP) sobre grandes volumenes de datos, utilizando almacenamiento columnar y procesamiento paralelo masivo (MPP).
+
+**Redshift Spectrum** permite ejecutar consultas directamente sobre datos almacenados en Amazon S3 sin necesidad de cargarlos en Redshift, extendiendo las capacidades de analisis del data warehouse al data lake.
+
+Los datos se pueden cargar en Redshift desde multiples fuentes, incluyendo Amazon S3, Amazon Kinesis Data Firehose, y conexiones JDBC/ODBC desde aplicaciones.
+
+---
+
+## 22. Amazon QuickSight
+
+Amazon QuickSight es un servicio de Business Intelligence (BI) serverless que permite crear dashboards interactivos, informes pixel-perfect, consultas en lenguaje natural y analitica embebida. QuickSight incluye capacidades de Generative BI que permiten a los usuarios hacer preguntas sobre sus datos en lenguaje natural y obtener visualizaciones automaticas.
+
+QuickSight se integra con una amplia variedad de fuentes de datos de AWS y de terceros, incluyendo Redshift, RDS, Athena, S3 y bases de datos on-premises.
+
+---
+
+## 23. AWS Glue
+
+AWS Glue es un servicio de integracion de datos serverless que facilita la preparacion y transformacion de datos para analisis. Proporciona un catalogo de datos centralizado (Glue Data Catalog) que actua como un repositorio de metadatos para todos los activos de datos, independientemente de donde esten almacenados. Los crawlers de Glue pueden descubrir automaticamente el esquema de los datos y registrarlos en el catalogo. Ademas, Glue permite crear y ejecutar trabajos de ETL (Extract, Transform, Load) sin necesidad de gestionar infraestructura.
+
+---
+
+## 24. Amazon Kinesis
+
+Amazon Kinesis es una familia de servicios para el procesamiento de datos en streaming en tiempo real. Se compone de varios servicios especializados:
+
+**Kinesis Data Streams:** Permite capturar, procesar y almacenar flujos de datos en tiempo real. Los productores envian datos a los streams, que los dividen en shards para su procesamiento paralelo. Los datos se retienen durante un periodo configurable (por defecto 24 horas, hasta 365 dias).
+
+**Amazon Data Firehose:** Es la forma mas sencilla de cargar datos en streaming hacia destinos como S3, Redshift, OpenSearch y servicios de terceros. Firehose gestiona automaticamente el escalado, el buffering y la compresion de los datos, sin necesidad de escribir aplicaciones de procesamiento.
+
+**Amazon Managed Service for Apache Flink:** Permite construir y ejecutar aplicaciones de procesamiento de streams en tiempo real utilizando Apache Flink, sin necesidad de gestionar la infraestructura de los clusters.
+
+:::info Kinesis Data Streams vs Data Firehose
+- **Kinesis Data Streams:** Procesamiento de datos en tiempo real con control total. El usuario escribe el codigo de procesamiento. Latencia de ~200 ms.
+- **Data Firehose:** Carga de datos automatica hacia destinos. Completamente gestionado, no requiere codigo. Latencia de ~60 segundos minimo.
+:::
+
+---
+
+## 25. Amazon OpenSearch Service
+
+Amazon OpenSearch proporciona un sistema altamente escalable para acceso rapido y busqueda sobre grandes volumenes de datos, con una herramienta de visualizacion integrada (OpenSearch Dashboards). Es ideal para analisis de logs, monitorizacion de aplicaciones, busqueda de texto completo y analisis de seguridad.
+
+---
+
+## 26. Amazon EMR (Elastic MapReduce)
+
+Amazon EMR Serverless facilita la ejecucion de aplicaciones de big data construidas con frameworks de codigo abierto como Apache Spark, Hive o Presto, sin necesidad de gestionar, operar, optimizar o asegurar clusters. Es ideal para el procesamiento de datos a gran escala, la preparacion de datos para Machine Learning y el analisis de logs.
+
+---
+
+## 27. Amazon MSK (Managed Streaming for Apache Kafka)
+
+Amazon MSK ofrece Apache Kafka completamente gestionado, incluyendo Kafka Connect y MSK Replicator. Apache Kafka es un almacen de datos distribuido optimizado para la ingesta y el procesamiento de datos en streaming en tiempo real. Con MSK, las organizaciones pueden centrarse en desarrollar y ejecutar aplicaciones de streaming en lugar de gestionar los clusters de Kafka.
+
+---
+
+## 28. Amazon DataZone
+
+Amazon DataZone es un servicio de gestion de datos que permite catalogar, descubrir, gobernar, compartir y analizar datos entre cuentas y regiones. Simplifica la experiencia de trabajo con datos a traves de multiples servicios de AWS, incluyendo Redshift, Athena, Glue y Lake Formation, proporcionando una capa unificada de gobernanza de datos.
+
+| Categoria | Servicio | Funcion principal |
+|-----------|----------|-------------------|
+| Streaming | Kinesis, Firehose, Flink, MSK | Ingesta y procesamiento en tiempo real |
+| Data Warehouse | Redshift | Analisis OLAP a gran escala |
+| Data Lake | S3 + Lake Formation | Almacenamiento y gobernanza de data lakes |
+| Procesamiento | Athena, EMR, Glue | Consultas SQL, ETL, big data |
+| BI | QuickSight | Dashboards y reportes |
+| Busqueda | OpenSearch | Busqueda y analisis de logs |
+| Gobernanza | DataZone | Catalogo y gobernanza de datos |

@@ -1,0 +1,105 @@
+---
+sidebar_position: 14
+title: "Simulacro de Examen 2"
+description: "Segundo simulacro de examen y laboratorio práctico con Amazon Bedrock Agents."
+---
+
+import { FaAws } from "react-icons/fa";
+
+# Simulacro de Examen 2 <FaAws />
+
+Esta sesion esta dedicada al segundo simulacro completo del examen de certificacion AWS Certified AI Practitioner (AIF-C01) y a un laboratorio practico con Amazon Bedrock Agents, Knowledge Bases y Guardrails. El objetivo es consolidar los conocimientos adquiridos hasta ahora y ganar experiencia con uno de los servicios mas importantes del ecosistema de IA generativa de AWS.
+
+## 1. Segundo simulacro de examen
+
+El segundo simulacro de examen es una prueba que replica fielmente las condiciones del examen oficial de certificacion. A estas alturas del curso, los estudiantes ya han cubierto la mayor parte del temario y deben ser capaces de mejorar significativamente su puntuacion respecto al primer simulacro.
+
+| Parametro | Valor |
+|-----------|-------|
+| Numero de preguntas | 65 |
+| Tiempo disponible | 100 minutos |
+| Puntuacion para aprobar | 46/65 (aproximadamente 70%) |
+
+### Estrategias para el examen
+
+Para maximizar tu rendimiento tanto en el simulacro como en el examen real, es fundamental aplicar una serie de estrategias probadas:
+
+**Gestion del tiempo**: con 100 minutos para 65 preguntas, dispones de aproximadamente 1 minuto y 32 segundos por pregunta. No te detengas demasiado en una pregunta dificil. Marcala para revision y continua. Es preferible responder todas las preguntas y luego volver a las dudosas, que quedarse atascado y dejar preguntas sin responder.
+
+**Tecnica de eliminacion**: en las preguntas de seleccion multiple, elimina primero las opciones que claramente no son correctas. Normalmente puedes descartar una o dos opciones rapidamente, lo que aumenta significativamente tus probabilidades de acertar entre las restantes.
+
+**Atencion a las palabras clave**: las preguntas del examen AWS suelen contener palabras clave que dirigen hacia la respuesta correcta. Terminos como "mas rentable" (cost-effective), "menor latencia" (lowest latency), "completamente gestionado" (fully managed) o "minimo esfuerzo operativo" (least operational overhead) son pistas importantes sobre que servicio o configuracion busca la pregunta.
+
+**Cuidado con los distractores**: AWS es conocida por incluir opciones de respuesta que son tecnicas validas en general, pero que no responden a lo que se pregunta especificamente. Lee la pregunta completa con atencion antes de seleccionar tu respuesta.
+
+:::tip Revision de errores
+Despues del simulacro, dedica tiempo a revisar cada pregunta fallada. Entender por que una opcion es incorrecta es tan valioso como saber por que la correcta lo es. Este ejercicio de revision es una de las formas mas efectivas de preparacion.
+:::
+
+### Errores comunes a evitar
+
+Los errores mas frecuentes que cometen los candidatos en el examen de certificacion incluyen:
+
+- **Confundir servicios similares**: por ejemplo, mezclar Amazon Comprehend con Amazon Textract, o confundir SageMaker con Bedrock. Cada servicio tiene un proposito especifico.
+- **No leer todas las opciones**: seleccionar la primera respuesta que parece correcta sin verificar que no haya una opcion mejor.
+- **Ignorar el contexto de coste**: muchas preguntas buscan la solucion mas economica, no solo la que funciona tecnicamente.
+- **Olvidar el principio de responsabilidad compartida**: entender que gestiona AWS y que gestiona el cliente es fundamental para varias preguntas del examen.
+
+## 2. Arquitectura de Amazon Bedrock Agents
+
+Amazon Bedrock Agents es un servicio que permite crear agentes de IA capaces de ejecutar tareas complejas de forma autonoma. Un agente de Bedrock puede descomponer una solicitud del usuario en pasos, consultar fuentes de datos, invocar APIs y generar respuestas fundamentadas en informacion real.
+
+### Que son los Bedrock Agents
+
+Un Bedrock Agent es esencialmente un orquestador inteligente que combina un modelo de lenguaje grande (LLM) con la capacidad de tomar acciones. A diferencia de un simple chatbot que solo genera texto, un agente puede:
+
+- Analizar la intencion del usuario y descomponer solicitudes complejas en subtareas
+- Consultar bases de conocimiento para obtener informacion actualizada y relevante
+- Invocar funciones y APIs externas para realizar acciones en sistemas reales
+- Mantener el contexto de la conversacion a lo largo de multiples interacciones
+
+### Knowledge Bases
+
+Las **Knowledge Bases** de Amazon Bedrock permiten conectar los agentes a fuentes de datos propias de la organizacion. El servicio se encarga de indexar documentos (PDFs, paginas web, archivos de texto, etc.) utilizando embeddings vectoriales y almacenarlos en una base de datos vectorial. Cuando el agente necesita informacion, realiza una busqueda semantica en la Knowledge Base para encontrar los fragmentos mas relevantes y los utiliza como contexto para generar su respuesta.
+
+Este patron se conoce como **Retrieval-Augmented Generation (RAG)** y es fundamental para que los agentes produzcan respuestas precisas y actualizadas, basadas en datos reales de la organizacion en lugar de depender unicamente del conocimiento preentrenado del modelo.
+
+### Guardrails
+
+Los **Guardrails** de Amazon Bedrock actuan como una capa de seguridad y control sobre las interacciones del agente. Permiten definir politicas que:
+
+- Filtran contenido inapropiado o fuera del alcance previsto
+- Bloquean la generacion de respuestas sobre temas prohibidos
+- Controlan el tono y estilo de las respuestas
+- Protegen informacion sensible (PII) evitando que el agente la revele
+- Limitan las acciones que el agente puede realizar
+
+Los Guardrails se configuran de forma declarativa y se aplican tanto a las entradas del usuario como a las salidas del modelo, proporcionando un doble nivel de proteccion.
+
+:::info Relevancia para el examen
+La arquitectura de Bedrock Agents, incluyendo Knowledge Bases y Guardrails, es un tema recurrente en el examen AIF-C01. Asegurate de entender como se relacionan estos tres componentes y en que casos de uso se aplica cada uno.
+:::
+
+## 3. Laboratorio: Bedrock Agents con Knowledge Bases y Guardrails
+
+El laboratorio practico de esta sesion se realiza en AWS Skill Builder y se titula **"Explore Amazon Bedrock Agents integrated with Amazon Bedrock Knowledge Bases and Amazon Bedrock Guardrails"**.
+
+En este laboratorio, los estudiantes trabajan con un entorno real de AWS para:
+
+- Crear y configurar un Bedrock Agent con instrucciones especificas
+- Conectar una Knowledge Base con documentos de ejemplo como fuente de datos
+- Configurar Guardrails para limitar el comportamiento del agente
+- Probar el agente con diferentes consultas y observar como interactua con la Knowledge Base
+- Verificar que los Guardrails bloquean correctamente las solicitudes fuera del alcance definido
+
+Este laboratorio es especialmente valioso porque integra los tres componentes principales de la arquitectura de Bedrock Agents en un escenario coherente, proporcionando una vision completa de como funcionan juntos en la practica.
+
+:::tip Toma notas durante el laboratorio
+Anota los pasos clave y las configuraciones que utilices durante el laboratorio. Estos detalles practicos pueden ayudarte a responder preguntas del examen que se basan en escenarios reales de implementacion.
+:::
+
+---
+
+## Resumen
+
+Esta sesion combina evaluacion y practica: el segundo simulacro de examen mide el progreso y destaca las areas de mejora, mientras que el laboratorio con Bedrock Agents, Knowledge Bases y Guardrails proporciona experiencia directa con una de las arquitecturas mas relevantes del examen de certificacion.

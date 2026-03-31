@@ -1,0 +1,223 @@
+---
+sidebar_position: 1
+title: "Introduccion a AWS"
+description: "Fundamentos de Cloud Computing, infraestructura global de AWS, VPC y modelo de responsabilidad compartida."
+---
+
+import { FaAws } from "react-icons/fa";
+
+# Introduccion a AWS <FaAws />
+
+## 1. Problemas con la IT tradicional
+
+Antes de la llegada del Cloud Computing, las organizaciones dependian enteramente de centros de datos fisicos para alojar su infraestructura tecnologica. Este modelo presentaba una serie de limitaciones significativas que dificultaban el crecimiento y la agilidad empresarial.
+
+En primer lugar, los costes de mantenimiento eran elevados. Un centro de datos requiere suministro electrico continuo, sistemas de refrigeracion, mantenimiento preventivo del hardware y un espacio fisico dedicado. Todos estos factores suponen una inversion considerable, tanto en capital inicial (CapEx) como en gastos operativos recurrentes (OpEx).
+
+Las modificaciones en la infraestructura representaban otro desafio importante. Agregar o reemplazar componentes de hardware implicaba tiempos de espera prolongados, desde la adquisicion hasta la instalacion y configuracion. Esto ralentizaba la capacidad de respuesta ante nuevas necesidades del negocio.
+
+La escalabilidad estaba limitada por el espacio fisico y los recursos disponibles. Si una empresa necesitaba mas capacidad de computo o almacenamiento, debia adquirir nuevo hardware, lo cual podia tardar semanas o meses. Ademas, existia el riesgo de sobredimensionar la infraestructura (pagando por recursos que no se utilizaban) o subdimensionarla (sin capacidad para atender picos de demanda).
+
+La seguridad y la monitorizacion requerian equipos dedicados trabajando en turnos para proporcionar cobertura 24/7, lo que incrementaba considerablemente los costes de personal y la complejidad de gestion.
+
+Finalmente, las organizaciones debian prepararse para posibles desastres naturales o incidentes como terremotos, cortes de suministro electrico o incendios, lo cual exigia planes de contingencia costosos y complejos.
+
+---
+
+## 2. Que es Cloud Computing
+
+Cloud Computing es la entrega bajo demanda de recursos de computacion, almacenamiento, bases de datos, redes y otros servicios de TI a traves de Internet, con un modelo de precios de pago por uso. En lugar de comprar, poseer y mantener centros de datos fisicos y servidores, las organizaciones acceden a estos recursos tecnologicos segun los necesiten, a traves de un proveedor de servicios en la nube como Amazon Web Services (AWS).
+
+### Modelos de despliegue
+
+Existen tres modelos principales de despliegue en la nube, cada uno adaptado a diferentes necesidades empresariales:
+
+**Public Cloud** (Nube publica): Los recursos son propiedad de un proveedor de servicios en la nube y se comparten entre multiples clientes a traves de Internet. AWS, Microsoft Azure y Google Cloud Platform son ejemplos de nubes publicas. Este modelo ofrece la mayor flexibilidad y el menor coste inicial, ya que no se requiere inversion en infraestructura propia.
+
+**Private Cloud** (Nube privada u on-premises): La infraestructura de nube se utiliza exclusivamente por una sola organizacion. Puede estar ubicada en el centro de datos de la empresa o gestionada por un tercero. Ofrece mayor control y personalizacion, pero requiere una inversion significativa en hardware y mantenimiento.
+
+**Hybrid Cloud** (Nube hibrida): Combina la nube publica y la privada, permitiendo que datos y aplicaciones se compartan entre ambas. Este modelo es ideal para organizaciones que desean mantener ciertos datos sensibles on-premises mientras aprovechan la escalabilidad de la nube publica para otras cargas de trabajo.
+
+---
+
+## 3. Seis ventajas del Cloud Computing
+
+AWS identifica seis ventajas fundamentales del Cloud Computing que explican por que tantas organizaciones estan migrando sus cargas de trabajo a la nube:
+
+**1. Cambiar gastos de capital por gastos variables (Trade fixed expense for variable expense):** En lugar de realizar grandes inversiones iniciales en centros de datos y servidores, las organizaciones pagan unicamente por los recursos de computacion que realmente consumen. Esto elimina la necesidad de predecir y comprometer presupuestos a largo plazo.
+
+**2. Beneficiarse de enormes economias de escala (Benefit from massive economies of scale):** Dado que AWS agrega el uso de cientos de miles de clientes, puede lograr economias de escala superiores, lo que se traduce en precios mas bajos de pago por uso para todos los usuarios.
+
+**3. Dejar de adivinar la capacidad necesaria (Stop guessing capacity):** Con Cloud Computing, las organizaciones pueden escalar hacia arriba o hacia abajo segun la demanda real medida, en lugar de tener que estimar la capacidad de infraestructura necesaria con meses de antelacion.
+
+**4. Aumentar la velocidad y la agilidad (Increase speed and agility):** Los recursos de TI estan disponibles en minutos, lo que reduce drasticamente el tiempo necesario para que los desarrolladores dispongan de los recursos que necesitan. Esto incrementa significativamente la agilidad organizacional.
+
+**5. Dejar de gastar dinero en mantener centros de datos (Stop spending money running and maintaining data centers):** Las organizaciones pueden centrarse en proyectos que diferencian su negocio, en lugar de dedicar recursos a la infraestructura fisica.
+
+**6. Alcance global en minutos (Go global in minutes):** Las aplicaciones se pueden desplegar en multiples regiones del mundo con unos pocos clics, proporcionando menor latencia y mejor experiencia a los clientes a un coste minimo.
+
+:::tip Problemas que resuelve la nube
+La nube resuelve problemas clave como la falta de flexibilidad, los altos costes, la escalabilidad limitada, la baja disponibilidad y la lentitud en el despliegue de nuevos servicios. Conceptos como la elasticidad (escalar automaticamente segun demanda) y la alta disponibilidad (distribuir recursos entre multiples centros de datos) son fundamentales para el examen.
+:::
+
+---
+
+## 4. Tipos de Cloud Computing
+
+Los servicios en la nube se clasifican en tres modelos principales segun el nivel de abstraccion y gestion que ofrecen:
+
+### Infrastructure as a Service (IaaS)
+
+IaaS proporciona los componentes fundamentales de la infraestructura de TI en la nube: redes, computacion (maquinas virtuales o hardware dedicado) y espacio de almacenamiento de datos. Ofrece el mayor nivel de flexibilidad y control sobre los recursos de TI, siendo el modelo mas similar a la infraestructura on-premises tradicional. El usuario es responsable de gestionar el sistema operativo, el middleware y las aplicaciones.
+
+**Ejemplo en AWS:** Amazon EC2 (maquinas virtuales), Amazon VPC (redes).
+
+### Platform as a Service (PaaS)
+
+PaaS elimina la necesidad de que la organizacion gestione la infraestructura subyacente (hardware y sistemas operativos). Permite centrarse en el despliegue y la gestion de las aplicaciones, sin preocuparse por el aprovisionamiento de recursos, la planificacion de capacidad, el mantenimiento del software ni la aplicacion de parches.
+
+**Ejemplo en AWS:** AWS Elastic Beanstalk, AWS Lambda.
+
+### Software as a Service (SaaS)
+
+SaaS proporciona un producto completo que es ejecutado y gestionado por el proveedor del servicio. El usuario final simplemente utiliza la aplicacion sin necesidad de preocuparse por como se mantiene el servicio ni como se gestiona la infraestructura subyacente.
+
+**Ejemplo:** Amazon WorkSpaces, servicios de correo electronico gestionados, aplicaciones de productividad.
+
+| Modelo | Gestion del usuario | Gestion del proveedor | Ejemplo AWS |
+|--------|--------------------|-----------------------|-------------|
+| IaaS | SO, Apps, Datos | Hardware, Red, Virtualizacion | Amazon EC2 |
+| PaaS | Apps, Datos | SO, Hardware, Red | Elastic Beanstalk |
+| SaaS | Solo uso | Todo | Amazon WorkSpaces |
+
+---
+
+## 5. Descripcion general de AWS
+
+Amazon Web Services (AWS) es la plataforma de servicios en la nube mas completa y ampliamente adoptada del mundo. AWS ofrece mas de 200 servicios completos desde centros de datos distribuidos globalmente, sirviendo a millones de clientes, incluidas startups de rapido crecimiento, grandes empresas y organismos gubernamentales.
+
+En 2023, AWS alcanzo 90 mil millones de dolares en ingresos anuales y representa aproximadamente el 31% del mercado de Cloud Computing. Ha sido reconocido como pionero y lider del mercado cloud durante mas de 13 anos consecutivos, con mas de un millon de usuarios activos.
+
+### Formas de acceder a los servicios de AWS
+
+Existen cuatro formas principales de interactuar con los servicios de AWS:
+
+- **AWS Management Console:** Interfaz web grafica que permite gestionar los servicios de AWS de forma visual e intuitiva. Es ideal para explorar servicios y realizar tareas puntuales.
+
+- **AWS Command Line Interface (CLI):** Herramienta de linea de comandos que permite interactuar con los servicios de AWS mediante comandos de texto. Es especialmente util para automatizar tareas y gestionar recursos de forma programatica.
+
+- **Software Development Kits (SDKs):** Bibliotecas disponibles para multiples lenguajes de programacion (Python, Java, JavaScript, .NET, etc.) que permiten integrar servicios de AWS directamente en las aplicaciones.
+
+- **API Reference:** Documentacion de las APIs REST que permiten llamadas directas a los servicios de AWS mediante solicitudes HTTP.
+
+---
+
+## 6. Modelo de precios de AWS
+
+AWS sigue un modelo de precios de pago por uso (pay-as-you-go) basado en tres pilares fundamentales:
+
+**Compute (Computo):** Se paga por el tiempo de computacion utilizado. Esto incluye las horas o segundos que las instancias EC2 estan en ejecucion, las invocaciones de funciones Lambda, etc.
+
+**Storage (Almacenamiento):** Se paga por la cantidad de datos almacenados en la nube. Cada servicio de almacenamiento tiene su propio esquema de precios basado en el volumen de datos y la clase de almacenamiento seleccionada.
+
+**Data Transfer OUT (Transferencia de datos de salida):** Se paga por los datos que salen de la nube de AWS. Es importante destacar que la transferencia de datos de entrada (Data Transfer IN) hacia AWS es gratuita, lo cual incentiva la migracion de datos a la nube.
+
+:::info Importante para el examen
+Recuerda que la transferencia de datos de entrada a AWS es gratuita. Solo se cobra por la transferencia de datos de salida. Este concepto aparece frecuentemente en las preguntas del examen de certificacion.
+:::
+
+---
+
+## 7. Infraestructura global de AWS
+
+La infraestructura global de AWS se compone de tres elementos principales que trabajan en conjunto para proporcionar servicios de nube confiables, escalables y de baja latencia en todo el mundo.
+
+### AWS Regions
+
+Una Region de AWS es un area geografica que contiene un cluster de centros de datos. Cada Region es completamente independiente y esta aislada de las demas, lo que proporciona la maxima tolerancia a fallos y estabilidad. Las regiones se identifican con nombres como `us-east-1` (Norte de Virginia), `eu-west-3` (Paris) o `eu-central-1` (Frankfurt). La mayoria de los servicios de AWS tienen alcance regional, lo que significa que los recursos creados en una Region no se replican automaticamente en otras.
+
+### Availability Zones (AZ)
+
+Cada Region contiene multiples Availability Zones (generalmente 3, con un minimo de 3 y un maximo de 6). Cada AZ consiste en uno o mas centros de datos discretos con alimentacion electrica, redes y conectividad redundantes. Las AZs estan fisicamente separadas entre si dentro de una Region para aislarlas de desastres locales, pero estan conectadas entre si mediante redes de alta velocidad y baja latencia. Por ejemplo, la Region `eu-west-3` (Paris) tiene tres AZs: `eu-west-3a`, `eu-west-3b` y `eu-west-3c`.
+
+### Edge Locations (Points of Presence)
+
+AWS cuenta con mas de 600 Points of Presence (Edge Locations) distribuidos en mas de 90 ciudades en mas de 40 paises. Estas ubicaciones se utilizan para entregar contenido a los usuarios finales con la menor latencia posible, principalmente a traves de Amazon CloudFront (la red de distribucion de contenido de AWS).
+
+:::tip Como elegir una Region
+Al seleccionar una Region de AWS, se deben considerar cuatro factores clave:
+1. **Compliance (Cumplimiento normativo):** Los datos nunca salen de una Region sin permiso explicito. Algunas regulaciones exigen que los datos permanezcan en ubicaciones geograficas especificas.
+2. **Proximity (Proximidad):** Elegir la Region mas cercana a los usuarios finales reduce la latencia.
+3. **Available Services (Servicios disponibles):** No todos los servicios ni las funcionalidades mas recientes estan disponibles en todas las Regiones.
+4. **Pricing (Precios):** Los precios varian entre Regiones y son transparentes en las paginas de precios de cada servicio.
+:::
+
+### Servicios globales vs. servicios regionales
+
+Algunos servicios de AWS son globales (no estan vinculados a una Region especifica), mientras que la mayoria son regionales:
+
+| Servicios Globales | Servicios Regionales |
+|-------------------|---------------------|
+| IAM (Identity and Access Management) | Amazon EC2 (IaaS) |
+| Route 53 (DNS) | Elastic Beanstalk (PaaS) |
+| CloudFront (CDN) | Lambda (FaaS) |
+| WAF (Web Application Firewall) | Amazon Rekognition (SaaS) |
+
+---
+
+## 8. Shared Responsibility Model
+
+El Shared Responsibility Model (Modelo de Responsabilidad Compartida) es un concepto fundamental en AWS que define claramente que aspectos de la seguridad y el cumplimiento normativo son responsabilidad de AWS y cuales son responsabilidad del cliente.
+
+**Responsabilidad de AWS ("Seguridad DE la nube"):** AWS es responsable de proteger la infraestructura que ejecuta todos los servicios ofrecidos en la nube. Esta infraestructura incluye el hardware, el software, las redes y las instalaciones fisicas que ejecutan los servicios de AWS. AWS se encarga del mantenimiento fisico de los centros de datos, la seguridad del hipervisor, la gestion de la red fisica y la destruccion segura del hardware.
+
+**Responsabilidad del cliente ("Seguridad EN la nube"):** El cliente es responsable de la gestion y configuracion de seguridad de los servicios que utiliza. Esto incluye la gestion de identidades y accesos (IAM), la configuracion de firewalls y grupos de seguridad, el cifrado de datos (tanto en transito como en reposo), la configuracion de red y la gestion de parches del sistema operativo en instancias EC2.
+
+:::info Importante para el examen
+El Shared Responsibility Model es uno de los temas mas preguntados en las certificaciones de AWS. La regla general es: si puedes configurarlo en la consola de AWS, probablemente es tu responsabilidad como cliente. Si no puedes verlo ni acceder a ello, es responsabilidad de AWS.
+:::
+
+---
+
+## 9. AWS Acceptable Use Policy
+
+La AWS Acceptable Use Policy (Politica de Uso Aceptable) define las actividades prohibidas al utilizar los servicios de AWS. Su objetivo es garantizar que todos los usuarios utilicen la plataforma de manera responsable y legal. Las principales restricciones incluyen:
+
+- **No se permite el uso ilegal, danino u ofensivo:** Queda prohibido utilizar los servicios de AWS para cualquier actividad ilegal, que infrinja los derechos de terceros o que implique contenido ofensivo.
+- **No se permiten violaciones de seguridad:** Esta prohibido acceder sin autorizacion a redes, cuentas o sistemas, asi como realizar pruebas de penetracion no autorizadas.
+- **No se permite el abuso de red:** Queda prohibido monitorear o rastrear trafico de red sin autorizacion, asi como cualquier actividad que degrade la calidad del servicio para otros usuarios.
+- **No se permite el abuso de correo electronico u otros mensajes:** Esta prohibido el envio de spam, mensajes no solicitados o cualquier forma de distribucion masiva de correo no autorizado.
+
+---
+
+## 10. Fundamentos de VPC
+
+### CIDR (Classless Inter-Domain Routing)
+
+CIDR es un metodo para asignar direcciones IP y enrutar trafico de red. En el contexto de AWS, se utiliza para definir los rangos de direcciones IP de las redes virtuales. Un bloque CIDR se compone de dos elementos:
+
+- **IP base:** Representa una direccion IP contenida en el rango (por ejemplo, `10.0.0.0`, `192.168.0.0`).
+- **Mascara de subred:** Define cuantos bits pueden variar en la direccion IP. Se expresa con una barra seguida de un numero (por ejemplo, `/24`, `/16`).
+
+| Notacion CIDR | Formato alternativo | Direcciones IP disponibles |
+|---------------|---------------------|---------------------------|
+| /8 | 255.0.0.0 | 16.777.216 |
+| /16 | 255.255.0.0 | 65.536 |
+| /24 | 255.255.255.0 | 256 |
+| /32 | 255.255.255.255 | 1 |
+
+### VPC (Virtual Private Cloud)
+
+Una VPC (Virtual Private Cloud) es una red virtual aislada logicamente dentro de la nube de AWS. Cada cuenta nueva de AWS incluye una VPC predeterminada. Las caracteristicas principales de una VPC son:
+
+- Se pueden tener multiples VPCs en una Region de AWS (maximo 5 por Region, limite flexible que se puede solicitar aumentar).
+- Cada VPC puede tener hasta 5 bloques CIDR asociados.
+- El tamano minimo de un bloque CIDR es `/28` (16 direcciones IP) y el maximo es `/16` (65.536 direcciones IP).
+- Al ser una red privada, solo se permiten los rangos de direcciones IPv4 privadas:
+  - `10.0.0.0/8` (10.0.0.0 - 10.255.255.255)
+  - `172.16.0.0/12` (172.16.0.0 - 172.31.255.255)
+  - `192.168.0.0/16` (192.168.0.0 - 192.168.255.255)
+
+:::info Importante
+El bloque CIDR de tu VPC no debe solaparse con los rangos de otras redes (por ejemplo, redes corporativas) si se planea establecer conectividad entre ellas. Este es un error comun que puede causar problemas graves de enrutamiento.
+:::

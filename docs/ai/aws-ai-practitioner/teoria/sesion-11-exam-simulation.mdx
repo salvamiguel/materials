@@ -1,0 +1,92 @@
+---
+sidebar_position: 11
+title: "Simulacro de Examen 1"
+description: "Primer simulacro de examen de la certificación AWS AI Practitioner y laboratorio práctico."
+---
+
+import { FaAws } from "react-icons/fa";
+
+# Simulacro de Examen 1 <FaAws />
+
+Esta sesion esta dedicada a la realizacion del primer simulacro de examen de la certificacion AWS AI Practitioner (AIF-C01). El objetivo es evaluar el nivel de preparacion actual, identificar areas de mejora y familiarizarse con el formato y la presion temporal del examen real.
+
+---
+
+## 1. Formato del Examen AIF-C01
+
+El examen AWS Certified AI Practitioner (AIF-C01) tiene un formato especifico que conviene conocer bien antes de presentarse:
+
+| Parametro | Valor |
+|-----------|-------|
+| **Numero de preguntas** | 65 |
+| **Tiempo disponible** | 100 minutos |
+| **Puntuacion para aprobar** | 46/65 (aproximadamente 70%) |
+| **Tipo de preguntas** | Seleccion unica y seleccion multiple |
+| **Idiomas disponibles** | Ingles y otros idiomas (con posibilidad de solicitar tiempo extra para no nativos) |
+
+Las preguntas cubren los cinco dominios del examen: fundamentos de IA y ML, fundamentos de IA generativa, aplicaciones de Foundation Models, directrices de IA Responsable, y seguridad, cumplimiento y gobernanza de soluciones de IA.
+
+---
+
+## 2. Estrategia para el Examen
+
+### Gestion del Tiempo
+
+Con 65 preguntas en 100 minutos, dispones de aproximadamente 1 minuto y 30 segundos por pregunta. Esta restriccion temporal es deliberada: obliga a tomar decisiones rapidas y a no quedarse atascado en preguntas dificiles.
+
+La estrategia recomendada es hacer una primera pasada respondiendo todas las preguntas que puedas resolver con confianza, marcando las que te generen duda para revisarlas en una segunda pasada. No dediques mas de 2 minutos a ninguna pregunta en la primera pasada.
+
+### Tecnica de Eliminacion
+
+La mayoria de las preguntas de certificacion AWS siguen un patron: de las cuatro opciones de respuesta, normalmente puedes descartar al menos una o dos de forma rapida. La tecnica de eliminacion consiste en identificar primero las opciones que claramente no son correctas y luego evaluar las restantes con mas cuidado.
+
+Presta especial atencion a:
+- Opciones que mezclan servicios de AWS incorrectamente (por ejemplo, atribuir funcionalidades de SageMaker Clarify a SageMaker Canvas).
+- Opciones que incluyen tecnologias o servicios que no existen en AWS.
+- Opciones que son tecniamente correctas pero no responden a lo que se pregunta.
+
+### Lectura Cuidadosa
+
+Muchas preguntas incluyen calificadores como "mas eficiente", "menor coste", "mejor practica" o "mas adecuado". Estos calificadores cambian completamente la respuesta correcta. Lee cada pregunta completa, incluyendo el escenario, antes de mirar las opciones de respuesta.
+
+:::tip Preguntas de seleccion multiple
+Cuando una pregunta indica "seleccione dos" o "seleccione tres", el numero de opciones correctas es exactamente el indicado. Si la pregunta pide dos respuestas, hay exactamente dos opciones correctas entre las disponibles.
+:::
+
+---
+
+## 3. Areas Clave de Repaso
+
+Basandose en la experiencia de simulacros anteriores, las areas donde los candidatos suelen tener mas dificultad son:
+
+- **Diferencias entre servicios similares**: SageMaker Clarify vs. Model Monitor vs. A2I; Bedrock vs. SageMaker JumpStart.
+- **Tipos de inferencia en SageMaker**: real-time, serverless, asynchronous y batch, incluyendo sus limitaciones de payload y latencia.
+- **Shared Responsibility Model**: que es responsabilidad de AWS y que del cliente en el contexto de servicios de IA.
+- **Terminologia de ML**: precision vs. recall vs. F1-score, supervised vs. unsupervised learning, overfitting vs. underfitting.
+- **Servicios de IA generativa de AWS**: Knowledge Bases, Guardrails, Agents en Amazon Bedrock.
+
+---
+
+## 4. Recomendaciones Generales de Preparacion
+
+Para maximizar las probabilidades de exito en el examen real:
+
+1. **Realiza multiples simulacros**: la practica repetida es la mejor forma de familiarizarse con el formato y el tipo de preguntas.
+2. **Revisa las preguntas falladas**: cada pregunta erronea es una oportunidad de aprendizaje. Entiende por que la respuesta correcta es correcta y por que tu eleccion fue incorrecta.
+3. **Utiliza los recursos de AWS Skill Builder**: los laboratorios practicos y los cursos oficiales de AWS son la fuente de preparacion mas alineada con el contenido real del examen.
+4. **No memorices, comprende**: el examen evalua la comprension de conceptos y la capacidad de aplicarlos a escenarios reales, no la memorizacion de datos.
+5. **Descansa antes del examen**: la fatiga mental reduce significativamente el rendimiento. Asegurate de llegar al examen descansado y con la mente clara.
+
+---
+
+## 5. Laboratorio Practico: Serverless Chatbot Using Private Data
+
+Como complemento al simulacro, esta sesion incluye un laboratorio practico en AWS Skill Builder titulado **"AWS SimuLearn: Serverless Chatbot Using Private Data"**. Este laboratorio permite experimentar de primera mano con la construccion de un chatbot serverless que utiliza datos privados, integrando conceptos de Amazon Bedrock, Knowledge Bases y arquitectura serverless.
+
+El laboratorio refuerza los conceptos teoricos vistos en sesiones anteriores sobre Foundation Models, RAG (Retrieval Augmented Generation) y la arquitectura de aplicaciones de IA generativa en AWS.
+
+---
+
+## Resumen
+
+El simulacro de examen es una herramienta esencial de preparacion que permite evaluar el nivel actual de conocimiento, identificar lagunas y practicar la gestion del tiempo bajo presion. La clave del exito en el AIF-C01 es combinar comprension teorica solida con practica repetida en formato de examen y experiencia practica con los servicios de AWS a traves de los laboratorios de Skill Builder.

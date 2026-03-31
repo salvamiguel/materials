@@ -1,0 +1,132 @@
+---
+sidebar_position: 12
+title: "Repaso del Examen"
+description: "Repaso de conceptos clave para el examen: tipos de inferencia en SageMaker, chips Inferentia y Trainium."
+---
+
+import { FaAws } from "react-icons/fa";
+
+# Repaso del Examen <FaAws />
+
+Esta sesion esta dedicada al repaso de los conceptos clave que aparecen con mayor frecuencia en el examen AIF-C01. Se centra en los tipos de inferencia de SageMaker, los chips de hardware especializados de AWS (Inferentia y Trainium), conceptos fundamentales de infraestructura de AWS como las Availability Zones, y un repaso de conceptos de ML que son recurrentes en el examen.
+
+---
+
+## 1. Tipos de Inferencia en SageMaker
+
+Uno de los temas mas preguntados en el examen es la diferencia entre los cuatro tipos de inferencia que ofrece Amazon SageMaker. Cada uno esta disenado para un patron de uso diferente, y saber cuando usar cada uno es fundamental.
+
+### Real-Time Inference
+
+La inferencia en tiempo real esta disenada para escenarios que requieren predicciones rapidas e inmediatas, como aplicaciones web o moviles donde el usuario espera una respuesta en milisegundos. El endpoint esta siempre activo y listo para recibir peticiones.
+
+### Serverless Inference
+
+La inferencia serverless es similar a la inferencia en tiempo real en cuanto a latencia y tamano de payload, pero no requiere gestionar infraestructura. Es ideal para cargas de trabajo esporadicas y de corta duracion donde no quieres pagar por un endpoint permanentemente activo. La contrapartida es que puede haber cold starts: si el endpoint no ha recibido peticiones en un tiempo, necesita "despertar" antes de procesar la siguiente peticion.
+
+### Asynchronous Inference
+
+La inferencia asincrona esta disenada para payloads grandes (hasta 1 GB) y tiempos de procesamiento mas largos (hasta 1 hora). El cliente envia la peticion y recibe una notificacion cuando el resultado esta listo, sin tener que esperar activamente. Es lo que AWS denomina "near real-time" y es adecuada cuando el resultado no se necesita de forma inmediata.
+
+### Batch Transform
+
+Batch Transform esta disenado para el procesamiento masivo de grandes datasets. Permite procesar multiples registros de forma concurrente, con payloads de hasta 100 MB por invocacion. La latencia es alta (de minutos a horas), pero el rendimiento total es maximo. Es ideal para escenarios como la generacion de predicciones nocturnas sobre todo un catalogo de productos.
+
+### Tabla Comparativa
+
+| Tipo de Inferencia | Latencia | Tamano de Payload | Tiempo de Procesamiento | Caso de Uso |
+|-------------------|----------|-------------------|------------------------|-------------|
+| **Real-Time Inference** | Baja (milisegundos a segundos) | Hasta 6 MB (un registro) | Max 60 segundos | Predicciones rapidas para apps web/moviles |
+| **Serverless Inference** | Baja (milisegundos a segundos) | Hasta 6 MB (un registro) | Max 60 segundos | Inferencia esporadica sin infraestructura, tolera cold starts |
+| **Asynchronous Inference** | Media a alta ("near real-time") | Hasta 1 GB (un registro) | Max 1 hora | Payloads grandes que requieren tiempos de procesamiento largos |
+| **Batch Transform** | Alta (minutos a horas) | Hasta 100 MB por invocacion (por mini batch) | Max 1 hora | Procesamiento masivo de datasets grandes, procesamiento concurrente |
+
+:::warning Pregunta tipica del examen
+Un escenario comun en el examen describe una empresa que procesa datasets de menos de 1 GB, no necesita respuestas inmediatas y utiliza los resultados para reuniones semanales. La respuesta correcta es **Asynchronous Inference**, ya que el payload es menor a 1 GB (limite de async) y no se requiere baja latencia. Batch Transform seria excesivo para un solo dataset, y Real-Time/Serverless no soportan payloads tan grandes.
+:::
+
+---
+
+## 2. AWS Inferentia
+
+AWS Inferentia es una familia de chips disenados por AWS especificamente para cargas de trabajo de **inferencia** de deep learning e IA generativa. El objetivo es ofrecer el mayor rendimiento al menor coste posible para predicciones en produccion.
+
+La primera generacion de AWS Inferentia alimenta las instancias **Amazon EC2 Inf1**, que ofrecen hasta 2.3x mayor throughput y hasta un 70% menos de coste por inferencia comparado con instancias EC2 equivalentes basadas en GPU. Empresas como Finch AI, Sprinklr, Money Forward y Amazon Alexa ya utilizan instancias Inf1 y se benefician de su rendimiento y ahorro de costes.
+
+:::info Inferentia = Inferencia
+La pista esta en el nombre: **Inferentia** esta disenado para **inferencia** (ejecutar predicciones con modelos ya entrenados), no para entrenamiento. Si una pregunta del examen menciona optimizar el coste o rendimiento de inferencia, Inferentia (instancias Inf1) es probablemente la respuesta.
+:::
+
+---
+
+## 3. AWS Trainium
+
+AWS Trainium es una familia de chips disenados por AWS especificamente para el **entrenamiento** de modelos de IA. Complementa a Inferentia cubriendo la otra mitad del ciclo de vida del modelo.
+
+La primera generacion de AWS Trainium alimenta las instancias **Amazon EC2 Trn1**, que ofrecen hasta un 50% menos en costes de entrenamiento comparado con instancias EC2 equivalentes. Empresas como Databricks, Ricoh, NinjaTech AI y Arcee AI ya utilizan instancias Trn1 para entrenar sus modelos.
+
+| Chip | Proposito | Instancias EC2 | Ahorro |
+|------|-----------|----------------|--------|
+| **Inferentia** | Inferencia (predicciones) | Inf1 | Hasta 70% menos coste por inferencia |
+| **Trainium** | Entrenamiento de modelos | Trn1 | Hasta 50% menos coste de entrenamiento |
+
+:::tip Inferentia vs. Trainium en el examen
+La diferencia es simple pero critica: **Inferentia = inferencia** (usar el modelo), **Trainium = training** (entrenar el modelo). Si el escenario habla de desplegar un modelo en produccion y optimizar costes de inferencia, la respuesta es Inferentia/Inf1. Si habla de entrenar un modelo grande, es Trainium/Trn1.
+:::
+
+---
+
+## 4. Availability Zones
+
+Las Availability Zones (AZs) son un concepto fundamental de la infraestructura de AWS que aparece en el examen. Cada Region de AWS contiene multiples Availability Zones (normalmente 3, con un minimo de 3 y un maximo de 6).
+
+Cada Availability Zone es uno o mas centros de datos discretos con alimentacion electrica, redes y conectividad redundantes. Estan separadas fisicamente unas de otras para aislarlas de desastres (un incendio o inundacion en una AZ no afecta a las otras), pero estan conectadas entre si con redes de alto ancho de banda y latencia ultra-baja.
+
+Por ejemplo, la Region `eu-west-3` (Paris) tiene tres Availability Zones: `eu-west-3a`, `eu-west-3b` y `eu-west-3c`. Desplegar aplicaciones en multiples AZs es una practica fundamental para garantizar alta disponibilidad y tolerancia a fallos.
+
+---
+
+## 5. Conceptos Clave de ML para el Examen
+
+### Supervised vs. Unsupervised Learning
+
+El examen espera que distingas claramente entre aprendizaje supervisado y no supervisado:
+
+- **Supervised Learning**: el modelo se entrena con datos etiquetados (labeled data) donde se conocen los resultados. Ejemplos: clasificacion (predecir si un cliente abandonara el servicio) y regresion (predecir el precio de una vivienda). Algoritmos tipicos: Linear Regression, Logistic Regression, Decision Trees, Random Forest, SVM.
+
+- **Unsupervised Learning**: el modelo se entrena con datos sin etiquetas y debe encontrar patrones o estructuras por si mismo. Ejemplos: clustering (agrupar clientes similares) y reduccion de dimensionalidad. Algoritmos tipicos: K-Means, DBSCAN, PCA.
+
+:::info Pregunta frecuente
+El examen suele presentar escenarios donde debes identificar si una tarea es de supervised o unsupervised learning. La clave es si los datos de entrenamiento tienen etiquetas (resultados conocidos) o no. Predecir churn y detectar fraude con datos historicos etiquetados son **supervised learning**.
+:::
+
+### Overfitting y sus Soluciones
+
+El overfitting ocurre cuando un modelo funciona excepcionalmente bien con los datos de entrenamiento pero su rendimiento cae significativamente con datos nuevos que no ha visto antes. El modelo ha "memorizado" los datos de entrenamiento en lugar de aprender patrones generalizables.
+
+Las soluciones mas comunes para el overfitting son:
+
+- **Regularizacion**: anadir penalizaciones que desincentiven modelos excesivamente complejos (L1, L2).
+- **Cross-validation**: dividir los datos en multiples conjuntos de entrenamiento y validacion para evaluar la generalizacion.
+- **Mas datos de entrenamiento**: un dataset mas grande y diverso reduce la probabilidad de que el modelo memorice patrones especificos.
+- **Reducir la complejidad del modelo**: usar menos features, menos capas o menos nodos en redes neuronales.
+- **Early stopping**: detener el entrenamiento cuando el rendimiento en el conjunto de validacion deja de mejorar.
+- **Dropout**: en redes neuronales, desactivar aleatoriamente nodos durante el entrenamiento para forzar al modelo a aprender representaciones mas robustas.
+
+### Seleccion de Modelos
+
+Cuando el examen pregunta sobre la seleccion del mejor modelo para una aplicacion, la respuesta correcta suele involucrar que el equipo de investigacion debe evaluar multiples modelos utilizando metricas de rendimiento apropiadas (accuracy, precision, recall, F1-score) en un dataset de validacion representativo, y seleccionar el modelo que mejor se ajuste a los requisitos del caso de uso especifico.
+
+---
+
+## 6. Laboratorio Practico: Amazon Comprehend Custom Entity Recognition
+
+Esta sesion incluye un laboratorio practico en AWS Skill Builder titulado **"Getting Started with Amazon Comprehend: Custom Entity Recognition"**. Amazon Comprehend es un servicio de procesamiento de lenguaje natural (NLP) que permite extraer informacion de textos. La funcionalidad de Custom Entity Recognition permite entrenar modelos personalizados para identificar entidades especificas del dominio que no estan cubiertas por los modelos predeterminados.
+
+Este laboratorio refuerza los conceptos de NLP y la capacidad de personalizar servicios de IA de AWS para casos de uso especificos, un tema relevante para el examen.
+
+---
+
+## Resumen
+
+Este repaso cubre los conceptos que aparecen con mayor frecuencia en el examen AIF-C01. Los tipos de inferencia en SageMaker, la diferencia entre Inferentia y Trainium, los fundamentos de la infraestructura de AWS y los conceptos basicos de ML como overfitting y la distincion entre supervised y unsupervised learning son temas que debes dominar antes de presentarte al examen. Recuerda que el examen evalua la comprension aplicada: no basta con conocer las definiciones, sino que debes saber aplicar los conceptos a escenarios reales.
