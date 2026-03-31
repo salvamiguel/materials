@@ -7,7 +7,10 @@ description: "Fundamentos de Infrastructure as Code, comparativa de herramientas
 import InstallExtension from '@site/src/components/shared/InstallExtension';
 import { SiTerraform } from "react-icons/si";
 
-# Introducción a Terraform <SiTerraform />
+import Drawio from '@theme/Drawio';
+import terraformArchitecture from '!!raw-loader!./terraform.drawio';
+
+# Introducción a Terraform 
 
 ## 1. Qué es Infrastructure as Code (IaC)
 
@@ -106,7 +109,7 @@ En 2023, HashiCorp cambió la licencia de Terraform de MPL 2.0 a BSL 1.1 (Busine
 
 ## 3. Arquitectura de Terraform
 
-Terraform se compone de tres elementos fundamentales que interactúan entre sí:
+Terraform <SiTerraform /> se compone de tres elementos fundamentales que interactúan entre sí:
 
 ### Terraform Core
 
@@ -145,13 +148,7 @@ El archivo de state puede contener contraseñas, claves de acceso, direcciones I
 
 ### Diagrama conceptual
 
-```mermaid
-graph LR
-    A["Archivos .tf<br/>(Configuración)"] --> B["Terraform<br/>Core"]
-    B <--> C["State<br/>(.tfstate)"]
-    B <--> D["Providers<br/>(plugins)"]
-    D --> E["APIs externas<br/>(AWS, Azure, GCP, Docker...)"]
-```
+<Drawio content={terraformArchitecture} />
 
 El flujo es siempre el mismo:
 

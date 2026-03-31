@@ -2,45 +2,29 @@
   margin: 1.25rem 0;
 }
 
-.buttons {
+.ghBtn {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-bottom: 0.75rem;
-}
-
-.btn {
-  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.82rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition: opacity 0.15s ease, transform 0.1s ease;
-  white-space: nowrap;
-}
-
-.btn:hover {
-  opacity: 0.85;
-  transform: translateY(-1px);
+  background: var(--prism-background-color);
+  color: var(--prism-color);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--ifm-global-radius);
+  padding: 0.4rem;
+  line-height: 0;
+  transition: opacity var(--ifm-transition-fast) ease-in-out;
+  opacity: 0;
+  cursor: pointer;
   text-decoration: none;
 }
 
-.btn:active {
-  transform: translateY(0);
+.ghBtn:hover {
+  opacity: 1 !important;
+  text-decoration: none;
+  color: var(--prism-color);
 }
 
-.btn svg {
-  flex-shrink: 0;
-}
-
-.btnSecondary {
-  background: transparent;
-  color: var(--ifm-color-primary);
-  border: 1px solid var(--ifm-color-primary);
+:global(.theme-code-block:hover) .ghBtn {
+  opacity: 0.4;
 }
 
 .error {
