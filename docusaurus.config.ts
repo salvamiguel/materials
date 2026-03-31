@@ -14,7 +14,22 @@ const config: Config = {
   markdown: {
     mermaid: true,
   },
-  plugins: ['drawio'],
+  plugins: [
+    'drawio',
+    function webpackIgnoreVSCodePlugin() {
+      return {
+        name: 'webpack-ignore-vscode-languageserver',
+        configureWebpack() {
+          return {
+            ignoreWarnings: [
+              { message: /Critical dependency: require function/ },
+              { module: /vscode-languageserver-types/ },
+            ],
+          };
+        },
+      };
+    },
+  ],
 
   themes: [
     '@docusaurus/theme-mermaid',
