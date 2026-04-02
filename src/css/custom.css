@@ -272,6 +272,97 @@ th {
   padding: 0 !important;
 }
 
+/* ── Mermaid diagrams ── */
+.docusaurus-mermaid-container {
+  background: var(--ifm-background-surface-color);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+  margin: 1.25rem 0;
+  overflow-x: auto;
+}
+
+[data-theme='dark'] .docusaurus-mermaid-container {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.docusaurus-mermaid-container svg {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Nodes */
+.docusaurus-mermaid-container .node rect,
+.docusaurus-mermaid-container .node circle,
+.docusaurus-mermaid-container .node ellipse,
+.docusaurus-mermaid-container .node polygon {
+  fill: rgba(0, 163, 92, 0.1) !important;
+  stroke: #00A35C !important;
+  stroke-width: 1.5px !important;
+}
+
+[data-theme='dark'] .docusaurus-mermaid-container .node rect,
+[data-theme='dark'] .docusaurus-mermaid-container .node circle,
+[data-theme='dark'] .docusaurus-mermaid-container .node ellipse,
+[data-theme='dark'] .docusaurus-mermaid-container .node polygon {
+  fill: rgba(74, 255, 160, 0.08) !important;
+  stroke: #4AFFA0 !important;
+}
+
+.docusaurus-mermaid-container .node .label {
+  color: var(--ifm-font-color-base) !important;
+  fill: var(--ifm-font-color-base) !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.875rem !important;
+}
+
+/* Edges */
+.docusaurus-mermaid-container .edgePath .path {
+  stroke: rgba(0, 163, 92, 0.5) !important;
+  stroke-width: 1.5px !important;
+}
+
+[data-theme='dark'] .docusaurus-mermaid-container .edgePath .path {
+  stroke: rgba(74, 255, 160, 0.4) !important;
+}
+
+/* Arrows */
+.docusaurus-mermaid-container marker path {
+  fill: #00A35C !important;
+}
+
+[data-theme='dark'] .docusaurus-mermaid-container marker path {
+  fill: #4AFFA0 !important;
+}
+
+/* Edge labels */
+.docusaurus-mermaid-container .edgeLabel {
+  background-color: var(--ifm-background-surface-color) !important;
+  color: var(--ifm-font-color-base) !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.8rem !important;
+}
+
+/* Clusters (subgraphs) */
+.docusaurus-mermaid-container .cluster rect {
+  fill: rgba(0, 163, 92, 0.04) !important;
+  stroke: rgba(0, 163, 92, 0.2) !important;
+}
+
+[data-theme='dark'] .docusaurus-mermaid-container .cluster rect {
+  fill: rgba(74, 255, 160, 0.04) !important;
+  stroke: rgba(74, 255, 160, 0.15) !important;
+}
+
+.docusaurus-mermaid-container .cluster text {
+  fill: var(--ifm-font-color-base) !important;
+  font-family: 'Syne', system-ui, sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   * {
