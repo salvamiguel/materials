@@ -110,7 +110,7 @@ const config: Config = {
       additionalLanguages: ['bash', 'hcl', 'yaml', 'docker'],
     },
     mermaid: {
-      theme: { light: 'neutral', dark: 'dark' },
+      theme: { light: 'base', dark: 'base' },
     },
   } satisfies Preset.ThemeConfig,
 };
