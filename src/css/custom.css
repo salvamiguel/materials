@@ -301,6 +301,8 @@ th {
   fill: rgba(0, 163, 92, 0.1) !important;
   stroke: #00A35C !important;
   stroke-width: 1.5px !important;
+  rx: 6px !important;
+  ry: 6px !important;
 }
 
 [data-theme='dark'] .docusaurus-mermaid-container .node rect,
@@ -311,7 +313,10 @@ th {
   stroke: #4AFFA0 !important;
 }
 
-.docusaurus-mermaid-container .node .label {
+.docusaurus-mermaid-container .node .label,
+.docusaurus-mermaid-container .nodeLabel,
+.docusaurus-mermaid-container .node text,
+.docusaurus-mermaid-container .node foreignObject div {
   color: var(--ifm-font-color-base) !important;
   fill: var(--ifm-font-color-base) !important;
   font-family: 'Inter', system-ui, sans-serif !important;
@@ -319,30 +324,58 @@ th {
 }
 
 /* Edges */
-.docusaurus-mermaid-container .edgePath .path {
-  stroke: rgba(0, 163, 92, 0.5) !important;
+.docusaurus-mermaid-container .edgePath .path,
+.docusaurus-mermaid-container .flowchart-link,
+.docusaurus-mermaid-container .edge-pattern-solid,
+.docusaurus-mermaid-container .edge-pattern-dashed,
+.docusaurus-mermaid-container .edge-pattern-dotted,
+.docusaurus-mermaid-container .edge-thickness-normal,
+.docusaurus-mermaid-container .edge-thickness-thick {
+  stroke: #00A35C !important;
   stroke-width: 1.5px !important;
 }
 
-[data-theme='dark'] .docusaurus-mermaid-container .edgePath .path {
-  stroke: rgba(74, 255, 160, 0.4) !important;
+[data-theme='dark'] .docusaurus-mermaid-container .edgePath .path,
+[data-theme='dark'] .docusaurus-mermaid-container .flowchart-link,
+[data-theme='dark'] .docusaurus-mermaid-container .edge-pattern-solid,
+[data-theme='dark'] .docusaurus-mermaid-container .edge-pattern-dashed,
+[data-theme='dark'] .docusaurus-mermaid-container .edge-pattern-dotted,
+[data-theme='dark'] .docusaurus-mermaid-container .edge-thickness-normal,
+[data-theme='dark'] .docusaurus-mermaid-container .edge-thickness-thick {
+  stroke: #4AFFA0 !important;
 }
 
 /* Arrows */
-.docusaurus-mermaid-container marker path {
+.docusaurus-mermaid-container marker path,
+.docusaurus-mermaid-container .arrowMarkerAbs path {
   fill: #00A35C !important;
 }
 
-[data-theme='dark'] .docusaurus-mermaid-container marker path {
+[data-theme='dark'] .docusaurus-mermaid-container marker path,
+[data-theme='dark'] .docusaurus-mermaid-container .arrowMarkerAbs path {
   fill: #4AFFA0 !important;
 }
 
 /* Edge labels */
 .docusaurus-mermaid-container .edgeLabel {
-  background-color: var(--ifm-background-surface-color) !important;
+  background-color: transparent !important;
   color: var(--ifm-font-color-base) !important;
   font-family: 'Inter', system-ui, sans-serif !important;
   font-size: 0.8rem !important;
+}
+
+.docusaurus-mermaid-container .edgeLabel rect {
+  fill: var(--ifm-background-surface-color) !important;
+  stroke: none !important;
+}
+
+.docusaurus-mermaid-container .edgeLabel text,
+.docusaurus-mermaid-container .edgeLabel span,
+.docusaurus-mermaid-container .edgeLabel foreignObject div,
+.docusaurus-mermaid-container .edgeLabel p {
+  color: var(--ifm-font-color-base) !important;
+  fill: var(--ifm-font-color-base) !important;
+  background: var(--ifm-background-surface-color)  !important;
 }
 
 /* Clusters (subgraphs) */
