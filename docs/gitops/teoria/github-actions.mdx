@@ -341,10 +341,20 @@ jobs:
 
 Con esta configuración, GitHub Actions genera **6 jobs en paralelo** (3 versiones × 2 sistemas operativos):
 
-```
-Node 18 / Ubuntu    Node 18 / macOS
-Node 20 / Ubuntu    Node 20 / macOS
-Node 22 / Ubuntu    Node 22 / macOS
+```mermaid
+graph LR
+  M["strategy.matrix"] --> N18["Node 18"]
+  M --> N20["Node 20"]
+  M --> N22["Node 22"]
+
+  N18 --> U18["Ubuntu"]
+  N18 --> Mac18["macOS"]
+
+  N20 --> U20["Ubuntu"]
+  N20 --> Mac20["macOS"]
+
+  N22 --> U22["Ubuntu"]
+  N22 --> Mac22["macOS"]
 ```
 
 ### Exclusiones e inclusiones
