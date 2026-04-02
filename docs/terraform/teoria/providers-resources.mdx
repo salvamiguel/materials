@@ -762,7 +762,7 @@ Creará los recursos en ese orden y los destruirá en orden inverso.
 
 En ocasiones, existe una dependencia entre recursos que Terraform no puede detectar por referencias de atributos. Para estos casos, usas `depends_on`:
 
-```hcl
+```hcl {1-2,24}
 resource "aws_iam_role_policy" "s3_access" {
   name   = "s3-access"
   role   = aws_iam_role.app.id
@@ -967,7 +967,7 @@ Los data sources son la herramienta correcta en estos escenarios:
 
 Un patrón muy común es consultar una VPC creada previamente (quizá por otro equipo o stack) y crear recursos dentro de ella:
 
-```hcl
+```hcl {1,11}
 data "aws_vpc" "existing" {
   filter {
     name   = "tag:Name"
@@ -1012,7 +1012,7 @@ Los meta-argumentos son argumentos especiales que Terraform soporta en cualquier
 
 El meta-argumento `count` permite crear **múltiples instancias** del mismo resource. El valor de `count` indica cuántas copias se crean:
 
-```hcl
+```hcl {2}
 resource "aws_instance" "worker" {
   count         = 3
   ami           = "ami-0c55b159cbfafe1f0"
@@ -1046,7 +1046,7 @@ output "all_worker_ips" {
 
 El meta-argumento `for_each` permite crear múltiples instancias de un resource usando un **map o set** en lugar de un número:
 
-```hcl
+```hcl {2-6}
 resource "aws_instance" "servers" {
   for_each = {
     web = "t2.micro"

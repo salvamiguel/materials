@@ -289,32 +289,9 @@ mkdir tf-first-example && cd tf-first-example
 
 Crea un archivo llamado `main.tf` con el siguiente contenido:
 
-```hcl
-# Bloque terraform: configuracion global del proyecto
-terraform {
-  # Declaramos los providers que necesitamos y sus versiones
-  required_providers {
-    local = {
-      source  = "hashicorp/local"
-      version = "~> 2.5"
-    }
-  }
+import GitHubCode from '@site/src/components/shared/GitHubCode';
 
-  # Version minima de Terraform necesaria
-  required_version = ">= 1.0"
-}
-
-# Bloque provider: configuracion especifica del provider
-# El provider "local" no necesita configuracion adicional
-provider "local" {}
-
-# Bloque resource: define un recurso que Terraform gestionara
-# Sintaxis: resource "<TIPO>" "<NOMBRE_LOCAL>" { ... }
-resource "local_file" "saludo" {
-  content  = "Hola desde Terraform! Este archivo ha sido creado automaticamente."
-  filename = "${path.module}/saludo.txt"
-}
-```
+<GitHubCode url="https://github.com/salvamiguel/tf-first-example/blob/main/main.tf" language='hcl' />
 
 Analicemos cada bloque:
 
@@ -360,7 +337,7 @@ terraform plan
 
 Terraform compara la configuración con el state (que está vacío, ya que es la primera ejecución) y muestra qué acciones realizará:
 
-```
+```text {7-20}
 Terraform used the selected providers to generate the following execution plan.
 Resource actions are indicated with the following symbols:
   + create
@@ -436,7 +413,7 @@ terraform destroy
 
 Terraform mostrará un plan de destrucción (los recursos marcados con `-`) y pedirá confirmación:
 
-```
+```text {9-14}
 local_file.saludo: Refreshing state... [id=a1b2c3d4...]
 
 Terraform used the selected providers to generate the following execution plan.
