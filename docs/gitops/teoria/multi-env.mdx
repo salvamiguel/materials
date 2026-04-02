@@ -10,12 +10,17 @@ import LabActions from '@site/src/components/shared/LabActions';
 Gestionar múltiples entornos (dev, staging, prod) es uno de los mayores retos en GitOps. Kustomize ofrece un mecanismo nativo de Kubernetes para reutilizar manifiestos base y personalizar cada entorno sin duplicar código.
 
 :::tip Repositorios de ejemplo reales
-Los ejemplos de esta seccion usan los repositorios reales del demo:
-- **App**: [gitops-status-demo-app](https://github.com/salvamiguel/gitops-status-demo-app)
-- **Config**: [gitops-status-demo-config](https://github.com/salvamiguel/gitops-status-demo-config)
+Los ejemplos de esta seccion usan los repositorios reales de la demo de status:
+- **Repositorio de la applicación**: gitops-status-demo-app
+- **Repositorio de la configuración**: gitops-status-demo-config
 
 Puedes clonarlos y ejecutar el flujo completo en local con `kind`.
 :::
+
+<LabActions title="Repositorio de la aplicación (docker & go)" repo="https://github.com/salvamiguel/gitops-status-demo-app" codespace={false} fork={false} />
+<LabActions title="Repositorio de la configuración (kustomize & argocd)" repo="https://github.com/salvamiguel/gitops-status-demo-config" codespace={false} fork={false} />
+
+
 
 ## 1. El problema del multi-entorno
 
@@ -60,168 +65,56 @@ k8s/
 
 ### base/kustomization.yaml
 
-Define los recursos comunes a todos los entornos:
+import GitHubCode from '@site/src/components/shared/GitHubCode';
 
-```yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-  - deployment.yaml
-  - service.yaml
-
-# Etiqueta común aplicada a todos los recursos
-commonLabels:
-  app: gitops-status-demo
-  managed-by: kustomize
-```
+<GitHubCode
+  title="Define los recursos comunes a todos los entornos: k8s/base/kustomization.yaml"
+  url="https://github.com/salvamiguel/gitops-status-demo-config/blob/main/k8s/base/kustomization.yaml"
+  language="yaml"
+/>
 
 ### base/deployment.yaml
 
-Deployment genérico sin valores específicos de entorno:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: gitops-status-demo
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: gitops-status-demo
-  template:
-    metadata:
-      labels:
-        app: gitops-status-demo
-    spec:
-      containers:
-      - name: gitops-status-demo
-        image: ghcr.io/salvamiguel/gitops-status-demo-app:latest
-        ports:
-        - containerPort: 8080
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "200m"
-            memory: "256Mi"
-```
+<GitHubCode
+  title="Deployment genérico sin valores específicos de entorno: k8s/base/deployment.yaml"
+  url="https://github.com/salvamiguel/gitops-status-demo-config/blob/main/k8s/base/deployment.yaml"
+  language="yaml"
+/>
 
 ### overlays/dev/kustomization.yaml
 
 El overlay de dev extiende la base y aplica sus parches específicos:
 
-```yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-# Referencia a la base común (path relativo)
-resources:
-  - ../../base
-
-# Nombre del namespace para este entorno
-namespace: status-dev
-
-# Sufijo aplicado a todos los nombres de recursos
-nameSuffix: -dev
-
-# Sobrescribir la imagen con la versión de dev
-images:
-  - name: ghcr.io/salvamiguel/gitops-status-demo-app
-    newTag: latest
-
-# Parches estratégicos sobre los recursos base
-patches:
-  - path: patch-replicas.yaml
-    target:
-      kind: Deployment
-      name: gitops-status-demo
-
-# Variables de entorno específicas de dev
-configMapGenerator:
-  - name: app-config
-    literals:
-      - LOG_LEVEL=debug
-      - ENV=development
-```
+<GitHubCode
+  title="El overlay de dev extiende la base y aplica sus parches específicos: k8s/overlays/dev/kustomization.yaml"
+  url="https://github.com/salvamiguel/gitops-status-demo-config/blob/main/k8s/overlays/dev/kustomization.yaml"
+  language="yaml"
+/>
 
 ### overlays/dev/patch-replicas.yaml
 
 Parche estratégico que solo modifica los campos que cambian entre entornos:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: gitops-status-demo
-spec:
-  replicas: 1
-  template:
-    spec:
-      containers:
-      - name: gitops-status-demo
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "200m"
-            memory: "256Mi"
-```
+<GitHubCode
+  title="Parche estratégico que solo modifica los campos que cambian entre entornos: k8s/overlays/dev/kustomization.yaml"
+  url="https://github.com/salvamiguel/gitops-status-demo-config/blob/main/k8s/overlays/dev/kustomization.yaml"
+  language="yaml"
+/>
 
 ### overlays/prod/kustomization.yaml
 
-El overlay de producción con configuración de alta disponibilidad:
-
-```yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-  - ../../base
-
-namespace: status-prod
-
-images:
-  - name: ghcr.io/salvamiguel/gitops-status-demo-app
-    newTag: v1.2.0    # Tag fijo y versionado en producción
-
-patches:
-  - path: patch-replicas.yaml
-    target:
-      kind: Deployment
-      name: gitops-status-demo
-
-configMapGenerator:
-  - name: app-config
-    literals:
-      - LOG_LEVEL=warn
-      - ENV=production
-```
+<GitHubCode
+  title="El overlay de producción con las configuraciones específicas: k8s/overlays/prod/kustomization.yaml"
+  url="https://github.com/salvamiguel/gitops-status-demo-config/blob/main/k8s/overlays/prod/kustomization.yaml"
+  language="yaml"
+/>
 
 ### overlays/prod/patch-replicas.yaml
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: gitops-status-demo
-spec:
-  replicas: 5
-  template:
-    spec:
-      containers:
-      - name: gitops-status-demo
-        resources:
-          requests:
-            cpu: "500m"
-            memory: "512Mi"
-          limits:
-            cpu: "1000m"
-            memory: "1Gi"
-```
+<GitHubCode
+  title="El overlay de producción con configuración de alta disponibilidad: k8s/overlays/prod/patch-replicas.yaml"
+  url="https://github.com/salvamiguel/gitops-status-demo-config/blob/main/k8s/overlays/prod/patch-replicas.yaml"
+  language="yaml"
+/>
 
 :::tip Parches estratégicos vs JSON patches
 Kustomize soporta dos tipos de parches: los **estratégicos** (como los de arriba, que fusionan inteligentemente) y los **JSON patches** (`patchesJson6902`), que son más precisos para modificar elementos específicos de listas. Para la mayoría de casos, los parches estratégicos son suficientes.
@@ -254,7 +147,12 @@ kubectl kustomize overlays/prod > rendered-prod.yaml
 :::info Kustomize standalone vs integrado en kubectl
 La versión integrada en `kubectl` (`kubectl kustomize`) puede ir por detrás de la versión standalone. Si necesitas las últimas funcionalidades, instala `kustomize` directamente:
 ```bash
-brew install kustomize  # macOS
+# macOS
+brew install kustomize  
+```
+```bash
+# Linux o Windows (WSL)
+curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash  # Linux
 ```
 :::
 
