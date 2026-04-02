@@ -1,0 +1,467 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <!-- Cloud gradients - green palette -->
+    <linearGradient id="cloudGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#16a34a" stop-opacity="0.18" />
+    </linearGradient>
+    <linearGradient id="cloudGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#86efac" stop-opacity="0.32" />
+      <stop offset="100%" stop-color="#4ade80" stop-opacity="0.12" />
+    </linearGradient>
+    <linearGradient id="cloudGrad3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#bbf7d0" stop-opacity="0.38" />
+      <stop offset="100%" stop-color="#86efac" stop-opacity="0.14" />
+    </linearGradient>
+    <linearGradient id="cloudGradFg1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#15803d" stop-opacity="0.22" />
+    </linearGradient>
+    <linearGradient id="cloudGradFg2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#86efac" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#22c55e" stop-opacity="0.2" />
+    </linearGradient>
+
+    <!-- Glow filter for stars -->
+    <filter id="starGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Stronger glow for accent stars -->
+    <filter id="starGlowBright" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Soft cloud edge glow -->
+    <filter id="cloudEdgeGlow" x="-3%" y="-3%" width="106%" height="112%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <style>
+      @keyframes blink1 { 0%, 100% { opacity: 0.15; } 50% { opacity: 1; } }
+      @keyframes blink2 { 0%, 100% { opacity: 0.8; } 50% { opacity: 0.1; } }
+      @keyframes blink3 { 0%, 100% { opacity: 0.5; } 30% { opacity: 1; } 70% { opacity: 0.08; } }
+      @keyframes blink4 { 0%, 100% { opacity: 0.25; } 40% { opacity: 0.95; } 60% { opacity: 0.05; } }
+      @keyframes drift1 { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(12px); } }
+      @keyframes drift2 { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-10px); } }
+      @keyframes drift3 { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(8px); } }
+      .sa { animation: blink1 3s ease-in-out infinite; }
+      .sb { animation: blink2 4.2s ease-in-out infinite; }
+      .sc { animation: blink3 2.6s ease-in-out infinite; }
+      .sd { animation: blink4 5.1s ease-in-out infinite; }
+      .se { animation: blink1 3.7s ease-in-out infinite; }
+      .sf { animation: blink2 2.1s ease-in-out infinite; }
+      .cd1 { animation: drift1 22s ease-in-out infinite; }
+      .cd2 { animation: drift2 28s ease-in-out infinite; }
+      .cd3 { animation: drift3 18s ease-in-out infinite; }
+    </style>
+  </defs>
+
+  <!-- ============================================== -->
+  <!-- STARS — scattered across the upper sky region  -->
+  <!-- ============================================== -->
+
+  <!-- Tiny distant stars -->
+  <circle cx="45"   cy="18"  r="0.8"  fill="#bbf7d0" class="sa" />
+  <circle cx="112"  cy="52"  r="0.7"  fill="#a7f3d0" class="sb" />
+  <circle cx="168"  cy="14"  r="1.0"  fill="#bbf7d0" class="sc" filter="url(#starGlow)" />
+  <circle cx="245"  cy="68"  r="0.6"  fill="#d9f99d" class="sd" />
+  <circle cx="298"  cy="32"  r="0.9"  fill="#bbf7d0" class="se" />
+  <circle cx="362"  cy="55"  r="0.7"  fill="#a7f3d0" class="sf" />
+  <circle cx="418"  cy="22"  r="1.0"  fill="#bbf7d0" class="sa" filter="url(#starGlow)" />
+  <circle cx="485"  cy="72"  r="0.6"  fill="#d9f99d" class="sb" />
+  <circle cx="542"  cy="38"  r="0.8"  fill="#bbf7d0" class="sc" />
+  <circle cx="610"  cy="15"  r="1.1"  fill="#a7f3d0" class="sd" filter="url(#starGlow)" />
+  <circle cx="678"  cy="60"  r="0.7"  fill="#bbf7d0" class="se" />
+  <circle cx="735"  cy="28"  r="0.9"  fill="#d9f99d" class="sf" />
+  <circle cx="808"  cy="48"  r="0.8"  fill="#bbf7d0" class="sa" />
+  <circle cx="862"  cy="20"  r="1.0"  fill="#a7f3d0" class="sb" filter="url(#starGlow)" />
+  <circle cx="935"  cy="62"  r="0.6"  fill="#bbf7d0" class="sc" />
+  <circle cx="998"  cy="35"  r="0.9"  fill="#d9f99d" class="sd" />
+  <circle cx="1058" cy="55"  r="0.7"  fill="#bbf7d0" class="se" filter="url(#starGlow)" />
+  <circle cx="1125" cy="22"  r="1.0"  fill="#a7f3d0" class="sf" />
+  <circle cx="1172" cy="45"  r="0.8"  fill="#bbf7d0" class="sa" />
+
+  <!-- Medium stars -->
+  <circle cx="78"   cy="95"  r="1.3"  fill="#4ade80" class="sd" filter="url(#starGlow)" />
+  <circle cx="215"  cy="88"  r="1.1"  fill="#86efac" class="se" filter="url(#starGlow)" />
+  <circle cx="390"  cy="105" r="1.4"  fill="#4ade80" class="sf" filter="url(#starGlow)" />
+  <circle cx="530"  cy="78"  r="1.2"  fill="#86efac" class="sa" filter="url(#starGlow)" />
+  <circle cx="665"  cy="98"  r="1.3"  fill="#4ade80" class="sb" filter="url(#starGlow)" />
+  <circle cx="820"  cy="82"  r="1.1"  fill="#86efac" class="sc" filter="url(#starGlow)" />
+  <circle cx="975"  cy="92"  r="1.4"  fill="#4ade80" class="sd" filter="url(#starGlow)" />
+  <circle cx="1140" cy="85"  r="1.2"  fill="#86efac" class="se" filter="url(#starGlow)" />
+
+  <!-- Bright cross-shaped accent stars -->
+  <g filter="url(#starGlowBright)" class="sc">
+    <line x1="145" y1="42" x2="157" y2="42" stroke="#bbf7d0" stroke-width="0.9" stroke-linecap="round" />
+    <line x1="151" y1="36" x2="151" y2="48" stroke="#bbf7d0" stroke-width="0.9" stroke-linecap="round" />
+    <circle cx="151" cy="42" r="1.8" fill="#dcfce7" />
+  </g>
+  <g filter="url(#starGlowBright)" class="se">
+    <line x1="454" y1="30" x2="466" y2="30" stroke="#d9f99d" stroke-width="0.9" stroke-linecap="round" />
+    <line x1="460" y1="24" x2="460" y2="36" stroke="#d9f99d" stroke-width="0.9" stroke-linecap="round" />
+    <circle cx="460" cy="30" r="1.8" fill="#fefce8" />
+  </g>
+  <g filter="url(#starGlowBright)" class="sa">
+    <line x1="768" y1="38" x2="780" y2="38" stroke="#bbf7d0" stroke-width="0.9" stroke-linecap="round" />
+    <line x1="774" y1="32" x2="774" y2="44" stroke="#bbf7d0" stroke-width="0.9" stroke-linecap="round" />
+    <circle cx="774" cy="38" r="1.8" fill="#dcfce7" />
+  </g>
+  <g filter="url(#starGlowBright)" class="sf">
+    <line x1="1088" y1="48" x2="1100" y2="48" stroke="#d9f99d" stroke-width="0.9" stroke-linecap="round" />
+    <line x1="1094" y1="42" x2="1094" y2="54" stroke="#d9f99d" stroke-width="0.9" stroke-linecap="round" />
+    <circle cx="1094" cy="48" r="1.8" fill="#fefce8" />
+  </g>
+
+  <!-- Extra scattered stars in mid-zone -->
+  <circle cx="32"   cy="130" r="0.9"  fill="#bbf7d0" class="sf" />
+  <circle cx="158"  cy="118" r="0.7"  fill="#86efac" class="sa" filter="url(#starGlow)" />
+  <circle cx="310"  cy="128" r="1.0"  fill="#d9f99d" class="sd" />
+  <circle cx="475"  cy="115" r="0.8"  fill="#bbf7d0" class="sb" filter="url(#starGlow)" />
+  <circle cx="590"  cy="125" r="0.7"  fill="#86efac" class="sc" />
+  <circle cx="740"  cy="112" r="1.0"  fill="#bbf7d0" class="se" filter="url(#starGlow)" />
+  <circle cx="895"  cy="122" r="0.8"  fill="#d9f99d" class="sf" />
+  <circle cx="1020" cy="115" r="0.9"  fill="#bbf7d0" class="sa" filter="url(#starGlow)" />
+  <circle cx="1165" cy="128" r="0.7"  fill="#86efac" class="sd" />
+
+  <!-- ============================================== -->
+  <!-- CLOUDS — proper vector-traced paths            -->
+  <!-- ============================================== -->
+
+  <!-- Distant cloud 1 (far background, small, left) -->
+  <g class="cd2" opacity="0.35" filter="url(#cloudEdgeGlow)">
+    <path d="
+      M 115,168
+      C 118,165 126,158 138,156
+      C 148,154 155,156 162,153
+      C 170,149 176,144 188,143
+      C 198,142 206,145 212,148
+      C 218,151 224,150 232,152
+      C 242,155 250,160 255,164
+      C 260,168 262,172 260,176
+      C 258,180 252,182 242,183
+      C 228,184 212,184 195,184
+      C 178,184 158,183 142,182
+      C 130,181 120,179 116,176
+      C 113,174 113,170 115,168
+      Z
+    " fill="url(#cloudGrad2)" />
+  </g>
+
+  <!-- Distant cloud 2 (far background, small, right) -->
+  <g class="cd3" opacity="0.3" filter="url(#cloudEdgeGlow)">
+    <path d="
+      M 855,148
+      C 858,145 865,139 876,136
+      C 886,134 894,136 902,133
+      C 912,129 918,124 930,122
+      C 940,121 948,124 955,128
+      C 961,131 968,130 976,132
+      C 984,135 990,139 994,143
+      C 998,148 998,152 995,156
+      C 992,160 984,162 974,163
+      C 960,164 944,164 928,164
+      C 912,164 895,163 882,162
+      C 872,161 862,159 858,156
+      C 854,153 854,150 855,148
+      Z
+    " fill="url(#cloudGrad2)" />
+  </g>
+
+  <!-- Distant cloud 3 (far background, wispy, center-right) -->
+  <g class="cd1" opacity="0.25" filter="url(#cloudEdgeGlow)">
+    <path d="
+      M 620,158
+      C 625,155 634,150 648,148
+      C 660,146 670,149 680,147
+      C 692,144 700,140 712,139
+      C 722,138 730,142 736,146
+      C 742,150 746,148 752,150
+      C 758,152 762,156 764,160
+      C 766,164 764,168 758,170
+      C 750,172 738,173 724,173
+      C 708,173 690,172 674,171
+      C 658,170 642,169 632,167
+      C 624,165 620,163 620,160
+      C 620,159 620,158 620,158
+      Z
+    " fill="url(#cloudGrad2)" />
+  </g>
+
+  <!-- ===== MAIN CLOUD 1 — large cumulus, left side ===== -->
+  <g class="cd1" filter="url(#cloudEdgeGlow)">
+    <path d="
+      M 28,272
+      C 30,268 36,260 48,254
+      C 58,249 66,250 74,244
+      C 82,238 86,230 96,224
+      C 106,218 116,216 126,214
+      C 136,212 144,214 152,210
+      C 162,205 168,196 180,192
+      C 192,188 204,190 214,194
+      C 222,197 228,202 236,200
+      C 244,198 250,192 260,190
+      C 270,188 280,190 288,196
+      C 294,200 298,206 304,210
+      C 310,214 318,216 324,222
+      C 330,228 332,236 330,244
+      C 328,250 324,254 322,260
+      C 320,266 322,270 318,276
+      C 314,282 308,286 298,288
+      C 284,290 268,290 248,290
+      C 224,290 196,289 168,288
+      C 140,287 108,286 82,284
+      C 62,282 44,280 36,278
+      C 30,276 28,274 28,272
+      Z
+    " fill="url(#cloudGrad1)" />
+    <!-- Inner highlight for volume -->
+    <path d="
+      M 96,248
+      C 102,240 112,232 126,226
+      C 138,221 148,222 158,218
+      C 168,214 176,206 190,200
+      C 202,196 214,198 224,204
+      C 232,208 236,214 244,212
+      C 252,210 258,204 268,202
+      C 276,200 284,204 290,210
+      C 296,216 298,224 296,232
+      C 294,240 288,246 278,250
+      C 264,254 246,256 224,256
+      C 200,256 172,254 148,252
+      C 128,250 108,250 96,248
+      Z
+    " fill="url(#cloudGrad3)" opacity="0.7" />
+  </g>
+
+  <!-- ===== MAIN CLOUD 2 — large cumulus, center ===== -->
+  <g class="cd2" filter="url(#cloudEdgeGlow)">
+    <path d="
+      M 388,248
+      C 390,244 396,236 408,228
+      C 418,222 428,220 436,214
+      C 446,206 452,196 466,188
+      C 478,181 490,178 502,176
+      C 512,174 520,177 530,174
+      C 540,170 548,162 562,157
+      C 574,153 586,154 596,158
+      C 604,161 610,168 620,166
+      C 628,164 636,156 648,152
+      C 660,148 672,150 682,156
+      C 690,161 694,168 702,174
+      C 710,180 720,182 728,188
+      C 736,194 740,202 742,212
+      C 744,220 740,228 738,234
+      C 736,240 738,244 734,250
+      C 730,256 722,260 710,262
+      C 694,264 672,264 648,264
+      C 620,264 588,263 556,262
+      C 524,261 492,260 464,258
+      C 440,256 420,254 408,252
+      C 398,250 392,248 390,246
+      C 388,244 388,248 388,248
+      Z
+    " fill="url(#cloudGrad1)" />
+    <!-- Inner highlight for volume -->
+    <path d="
+      M 462,236
+      C 468,226 480,216 496,208
+      C 510,201 522,200 534,194
+      C 546,188 556,178 572,170
+      C 586,164 598,166 608,172
+      C 616,176 620,184 630,182
+      C 638,180 646,172 658,168
+      C 668,164 678,168 686,176
+      C 694,184 696,194 692,204
+      C 688,212 680,218 668,224
+      C 652,230 632,232 608,234
+      C 580,236 548,236 520,234
+      C 496,232 474,232 462,236
+      Z
+    " fill="url(#cloudGrad3)" opacity="0.65" />
+    <!-- Small top puff detail -->
+    <path d="
+      M 540,182
+      C 544,176 552,168 564,162
+      C 574,158 584,160 592,164
+      C 598,167 600,172 596,178
+      C 592,184 582,188 570,190
+      C 558,192 546,188 540,182
+      Z
+    " fill="url(#cloudGrad3)" opacity="0.5" />
+  </g>
+
+  <!-- ===== MAIN CLOUD 3 — large cumulus, right side ===== -->
+  <g class="cd3" filter="url(#cloudEdgeGlow)">
+    <path d="
+      M 868,278
+      C 870,274 876,266 886,258
+      C 896,252 906,250 914,244
+      C 924,236 930,226 942,218
+      C 954,210 966,208 978,206
+      C 988,204 996,208 1006,204
+      C 1016,200 1024,192 1036,188
+      C 1048,184 1060,186 1070,190
+      C 1078,194 1084,200 1092,198
+      C 1100,196 1108,190 1118,188
+      C 1128,186 1138,190 1146,196
+      C 1152,202 1156,210 1160,218
+      C 1164,226 1166,234 1168,242
+      C 1170,250 1168,258 1164,264
+      C 1160,270 1154,274 1148,278
+      C 1140,282 1130,284 1116,286
+      C 1098,288 1076,288 1052,288
+      C 1024,288 992,287 964,286
+      C 940,285 918,284 902,282
+      C 890,280 878,278 874,276
+      C 870,274 868,278 868,278
+      Z
+    " fill="url(#cloudGrad1)" />
+    <!-- Inner highlight -->
+    <path d="
+      M 938,258
+      C 944,248 956,238 970,230
+      C 982,224 994,222 1006,218
+      C 1016,214 1024,206 1038,200
+      C 1050,196 1062,198 1072,204
+      C 1080,208 1084,216 1092,214
+      C 1100,212 1108,204 1118,202
+      C 1128,200 1136,204 1142,212
+      C 1148,220 1148,230 1144,240
+      C 1140,248 1132,254 1118,258
+      C 1100,262 1078,264 1054,264
+      C 1026,264 998,262 974,260
+      C 954,258 942,258 938,258
+      Z
+    " fill="url(#cloudGrad3)" opacity="0.65" />
+  </g>
+
+  <!-- ===== FOREGROUND CLOUD 1 — bottom-left, full silhouette ===== -->
+  <g class="cd2" filter="url(#cloudEdgeGlow)">
+    <path d="
+      M 18,370
+      C 24,366 34,358 48,350
+      C 60,344 70,342 80,336
+      C 92,328 100,318 114,310
+      C 126,303 138,300 150,296
+      C 160,293 168,296 178,292
+      C 188,287 196,278 210,272
+      C 222,267 234,268 244,272
+      C 252,275 258,280 266,278
+      C 274,276 282,270 294,266
+      C 304,263 316,265 324,270
+      C 332,275 336,282 342,288
+      C 348,294 356,298 362,306
+      C 368,314 370,324 368,334
+      C 366,342 362,348 358,354
+      C 354,360 352,364 346,370
+      C 340,376 330,380 318,383
+      C 302,386 282,388 258,389
+      C 230,390 198,390 168,389
+      C 138,388 108,386 84,384
+      C 64,382 46,379 36,377
+      C 28,375 22,373 18,370
+      Z
+    " fill="url(#cloudGradFg1)" />
+    <!-- Inner highlight -->
+    <path d="
+      M 100,348
+      C 108,338 120,328 136,320
+      C 150,314 162,312 174,306
+      C 186,300 196,290 210,284
+      C 222,278 234,280 244,284
+      C 252,288 256,294 264,292
+      C 272,290 280,284 292,280
+      C 302,277 312,280 318,286
+      C 324,292 326,302 322,312
+      C 318,320 310,326 298,330
+      C 282,336 264,338 242,340
+      C 216,342 188,340 162,338
+      C 140,336 120,338 104,344
+      C 100,346 100,348 100,348
+      Z
+    " fill="url(#cloudGradFg2)" opacity="0.6" />
+  </g>
+
+  <!-- ===== FOREGROUND CLOUD 2 — bottom-right, full silhouette ===== -->
+  <g class="cd1" filter="url(#cloudEdgeGlow)">
+    <path d="
+      M 720,378
+      C 726,374 736,366 748,358
+      C 760,350 770,348 780,342
+      C 792,334 800,324 814,316
+      C 826,309 838,306 850,302
+      C 860,299 868,302 878,298
+      C 888,293 896,284 910,278
+      C 922,273 934,274 944,278
+      C 952,281 958,286 966,284
+      C 974,282 982,276 994,272
+      C 1004,269 1016,271 1024,276
+      C 1032,281 1036,288 1042,294
+      C 1048,300 1056,304 1062,312
+      C 1068,320 1072,330 1070,340
+      C 1068,348 1064,354 1060,360
+      C 1056,366 1054,370 1048,376
+      C 1042,382 1032,386 1020,389
+      C 1004,392 984,394 960,395
+      C 932,396 900,396 870,395
+      C 842,394 816,392 792,390
+      C 772,388 754,386 742,383
+      C 734,381 726,379 722,376
+      C 720,374 720,378 720,378
+      Z
+    " fill="url(#cloudGradFg1)" />
+    <!-- Inner highlight -->
+    <path d="
+      M 804,360
+      C 812,350 824,340 840,332
+      C 854,326 866,324 878,318
+      C 890,312 900,302 914,296
+      C 926,290 938,292 948,296
+      C 956,300 960,306 968,304
+      C 976,302 984,296 996,292
+      C 1006,289 1016,292 1022,298
+      C 1028,304 1030,314 1026,324
+      C 1022,332 1014,338 1002,342
+      C 986,348 968,350 946,352
+      C 920,354 892,352 866,350
+      C 844,348 824,350 808,356
+      C 804,358 804,360 804,360
+      Z
+    " fill="url(#cloudGradFg2)" opacity="0.55" />
+  </g>
+
+  <!-- ===== SMALL WISPY CLOUD — mid-layer accent ===== -->
+  <g class="cd3" opacity="0.5" filter="url(#cloudEdgeGlow)">
+    <path d="
+      M 460,310
+      C 464,306 472,300 484,296
+      C 494,293 502,294 510,290
+      C 520,285 526,278 538,274
+      C 548,271 558,274 566,278
+      C 572,281 576,286 584,284
+      C 590,282 596,278 606,276
+      C 614,274 622,278 628,284
+      C 632,289 634,296 632,302
+      C 630,308 624,312 616,314
+      C 606,316 592,316 576,316
+      C 558,316 538,315 520,314
+      C 504,313 488,312 476,310
+      C 468,308 462,308 460,310
+      Z
+    " fill="url(#cloudGrad1)" />
+  </g>
+</svg>
