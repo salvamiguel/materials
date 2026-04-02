@@ -9,6 +9,14 @@ import LabActions from '@site/src/components/shared/LabActions';
 
 Gestionar múltiples entornos (dev, staging, prod) es uno de los mayores retos en GitOps. Kustomize ofrece un mecanismo nativo de Kubernetes para reutilizar manifiestos base y personalizar cada entorno sin duplicar código.
 
+:::tip Repositorios de ejemplo reales
+Los ejemplos de esta seccion usan los repositorios reales del demo:
+- **App**: [gitops-status-demo-app](https://github.com/salvamiguel/gitops-status-demo-app)
+- **Config**: [gitops-status-demo-config](https://github.com/salvamiguel/gitops-status-demo-config)
+
+Puedes clonarlos y ejecutar el flujo completo en local con `kind`.
+:::
+
 ## 1. El problema del multi-entorno
 
 En cualquier proyecto real necesitas desplegar la misma aplicación en al menos tres entornos con configuraciones distintas:
@@ -64,7 +72,7 @@ resources:
 
 # Etiqueta común aplicada a todos los recursos
 commonLabels:
-  app: mi-app
+  app: gitops-status-demo
   managed-by: kustomize
 ```
 
@@ -76,20 +84,20 @@ Deployment genérico sin valores específicos de entorno:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mi-app
+  name: gitops-status-demo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mi-app
+      app: gitops-status-demo
   template:
     metadata:
       labels:
-        app: mi-app
+        app: gitops-status-demo
     spec:
       containers:
-      - name: mi-app
-        image: ghcr.io/salvamiguel/mi-app:latest
+      - name: gitops-status-demo
+        image: ghcr.io/salvamiguel/gitops-status-demo-app:latest
         ports:
         - containerPort: 8080
         resources:
@@ -114,14 +122,14 @@ resources:
   - ../../base
 
 # Nombre del namespace para este entorno
-namespace: mi-app-dev
+namespace: status-dev
 
 # Sufijo aplicado a todos los nombres de recursos
 nameSuffix: -dev
 
 # Sobrescribir la imagen con la versión de dev
 images:
-  - name: ghcr.io/salvamiguel/mi-app
+  - name: ghcr.io/salvamiguel/gitops-status-demo-app
     newTag: latest
 
 # Parches estratégicos sobre los recursos base
@@ -129,11 +137,11 @@ patches:
   - path: patch-replicas.yaml
     target:
       kind: Deployment
-      name: mi-app
+      name: gitops-status-demo
 
 # Variables de entorno específicas de dev
 configMapGenerator:
-  - name: mi-app-config
+  - name: app-config
     literals:
       - LOG_LEVEL=debug
       - ENV=development
@@ -147,13 +155,13 @@ Parche estratégico que solo modifica los campos que cambian entre entornos:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mi-app
+  name: gitops-status-demo
 spec:
   replicas: 1
   template:
     spec:
       containers:
-      - name: mi-app
+      - name: gitops-status-demo
         resources:
           requests:
             cpu: "100m"
@@ -174,20 +182,20 @@ kind: Kustomization
 resources:
   - ../../base
 
-namespace: mi-app-prod
+namespace: status-prod
 
 images:
-  - name: ghcr.io/salvamiguel/mi-app
+  - name: ghcr.io/salvamiguel/gitops-status-demo-app
     newTag: v1.2.0    # Tag fijo y versionado en producción
 
 patches:
   - path: patch-replicas.yaml
     target:
       kind: Deployment
-      name: mi-app
+      name: gitops-status-demo
 
 configMapGenerator:
-  - name: mi-app-config
+  - name: app-config
     literals:
       - LOG_LEVEL=warn
       - ENV=production
@@ -199,13 +207,13 @@ configMapGenerator:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mi-app
+  name: gitops-status-demo
 spec:
   replicas: 5
   template:
     spec:
       containers:
-      - name: mi-app
+      - name: gitops-status-demo
         resources:
           requests:
             cpu: "500m"
@@ -284,18 +292,18 @@ ArgoCD detecta automáticamente que un directorio usa Kustomize cuando encuentra
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: mi-app-dev
+  name: gitops-status-demo-dev
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/salvamiguel/materials
+    repoURL: https://github.com/salvamiguel/gitops-status-demo-config
     targetRevision: HEAD
     path: k8s/overlays/dev     # ArgoCD detecta Kustomize automáticamente
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: mi-app-dev
+    namespace: status-dev
 
   syncPolicy:
     automated:
@@ -311,18 +319,18 @@ Para producción, con sync manual:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: mi-app-prod
+  name: gitops-status-demo-prod
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/salvamiguel/materials
+    repoURL: https://github.com/salvamiguel/gitops-status-demo-config
     targetRevision: HEAD
     path: k8s/overlays/prod
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: mi-app-prod
+    namespace: status-prod
 
   # Sin syncPolicy.automated — sync manual con aprobación
   syncPolicy:

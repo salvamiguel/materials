@@ -32,6 +32,14 @@ Mantiene dos entornos idénticos activos: el **Blue** (versión actual en produc
 ### Canary
 Dirige un pequeño porcentaje del tráfico a la nueva versión mientras el resto sigue yendo a la antigua. Si las métricas son buenas, el porcentaje aumenta progresivamente hasta el 100%. Es la estrategia con menor riesgo pero mayor complejidad operativa.
 
+:::tip Ejemplos reales con Argo Rollouts
+El repositorio [gitops-status-demo-config](https://github.com/salvamiguel/gitops-status-demo-config) tiene branches con implementaciones reales:
+- `strategy/blue-green` — Blue-Green con Argo Rollouts
+- `strategy/canary` — Canary con pasos progresivos (10% → 25% → 50% → 100%)
+
+Puedes probarlos en local con `kind` y `make rollouts`.
+:::
+
 ## 2. Rolling Update (Kubernetes nativo)
 
 Rolling Update es la estrategia por defecto de `Deployment`. Se configura directamente en el spec del Deployment:
@@ -40,7 +48,7 @@ Rolling Update es la estrategia por defecto de `Deployment`. Se configura direct
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mi-app
+  name: gitops-status-demo
 spec:
   replicas: 4
   strategy:
@@ -50,15 +58,15 @@ spec:
       maxSurge: 1         # Máximo de pods extra que pueden crearse temporalmente
   selector:
     matchLabels:
-      app: mi-app
+      app: gitops-status-demo
   template:
     metadata:
       labels:
-        app: mi-app
+        app: gitops-status-demo
     spec:
       containers:
-      - name: mi-app
-        image: ghcr.io/salvamiguel/mi-app:v2.0.0
+      - name: gitops-status-demo
+        image: ghcr.io/salvamiguel/gitops-status-demo-app:v2.0.0
         readinessProbe:
           httpGet:
             path: /health
@@ -78,16 +86,16 @@ Sin una `readinessProbe` correctamente configurada, Kubernetes puede enviar trá
 
 ```bash
 # Monitorear el progreso del rolling update
-kubectl rollout status deployment/mi-app -n mi-app-prod
+kubectl rollout status deployment/gitops-status-demo -n status-prod
 
 # Pausar un rolling update en curso
-kubectl rollout pause deployment/mi-app -n mi-app-prod
+kubectl rollout pause deployment/gitops-status-demo -n status-prod
 
 # Reanudar el rolling update
-kubectl rollout resume deployment/mi-app -n mi-app-prod
+kubectl rollout resume deployment/gitops-status-demo -n status-prod
 
 # Hacer rollback al estado anterior (Kubernetes nativo)
-kubectl rollout undo deployment/mi-app -n mi-app-prod
+kubectl rollout undo deployment/gitops-status-demo -n status-prod
 ```
 
 ## 3. Blue-Green con Argo Rollouts
@@ -98,27 +106,27 @@ Argo Rollouts es un controlador que extiende Kubernetes con estrategias de despl
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
-  name: mi-app
-  namespace: mi-app-prod
+  name: gitops-status-demo
+  namespace: status-prod
 spec:
   replicas: 4
   selector:
     matchLabels:
-      app: mi-app
+      app: gitops-status-demo
   template:
     metadata:
       labels:
-        app: mi-app
+        app: gitops-status-demo
     spec:
       containers:
-      - name: mi-app
-        image: ghcr.io/salvamiguel/mi-app:v2.0.0
+      - name: gitops-status-demo
+        image: ghcr.io/salvamiguel/gitops-status-demo-app:v2.0.0
         ports:
         - containerPort: 8080
   strategy:
     blueGreen:
-      activeService: mi-app-active       # Service que recibe tráfico de producción
-      previewService: mi-app-preview     # Service para probar la nueva versión
+      activeService: status-demo-active       # Service que recibe tráfico de producción
+      previewService: status-demo-preview     # Service para probar la nueva versión
       autoPromotionEnabled: false        # Requiere promoción manual
       scaleDownDelaySeconds: 30          # Tiempo antes de eliminar los pods antiguos
 ```
@@ -130,10 +138,10 @@ Los Services que gestiona Argo Rollouts:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mi-app-active
+  name: status-demo-active
 spec:
   selector:
-    app: mi-app
+    app: gitops-status-demo
   ports:
   - port: 80
     targetPort: 8080
@@ -142,10 +150,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mi-app-preview
+  name: status-demo-preview
 spec:
   selector:
-    app: mi-app
+    app: gitops-status-demo
   ports:
   - port: 80
     targetPort: 8080
@@ -153,9 +161,9 @@ spec:
 
 **Flujo Blue-Green:**
 
-1. Argo Rollouts despliega la nueva versión (Green) apuntada por `mi-app-preview`.
-2. El equipo valida la nueva versión en `mi-app-preview` (smoke tests, validación manual).
-3. Se promueve manualmente: `kubectl argo rollouts promote mi-app`.
+1. Argo Rollouts despliega la nueva versión (Green) apuntada por `status-demo-preview`.
+2. El equipo valida la nueva versión en `status-demo-preview` (smoke tests, validación manual).
+3. Se promueve manualmente: `kubectl argo rollouts promote gitops-status-demo`.
 4. El tráfico de producción conmuta instantáneamente a Green.
 5. Los pods Blue se mantienen `scaleDownDelaySeconds` segundos por si hay que hacer rollback.
 
@@ -164,13 +172,13 @@ spec:
 kubectl argo rollouts version
 
 # Ver el estado del rollout en tiempo real
-kubectl argo rollouts get rollout mi-app --watch
+kubectl argo rollouts get rollout gitops-status-demo --watch
 
 # Promover manualmente (Blue → Green)
-kubectl argo rollouts promote mi-app
+kubectl argo rollouts promote gitops-status-demo
 
 # Abortar y hacer rollback
-kubectl argo rollouts abort mi-app
+kubectl argo rollouts abort gitops-status-demo
 ```
 ### Demo interactiva: Blue-Green
 
@@ -184,25 +192,25 @@ La estrategia Canary es la más sofisticada y la más segura para producción. P
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
-  name: mi-app
-  namespace: mi-app-prod
+  name: gitops-status-demo
+  namespace: status-prod
 spec:
   replicas: 10
   selector:
     matchLabels:
-      app: mi-app
+      app: gitops-status-demo
   template:
     metadata:
       labels:
-        app: mi-app
+        app: gitops-status-demo
     spec:
       containers:
-      - name: mi-app
-        image: ghcr.io/salvamiguel/mi-app:v2.0.0
+      - name: gitops-status-demo
+        image: ghcr.io/salvamiguel/gitops-status-demo-app:v2.0.0
   strategy:
     canary:
-      canaryService: mi-app-canary     # Service del canary
-      stableService: mi-app-stable     # Service de la versión estable
+      canaryService: status-demo-canary     # Service del canary
+      stableService: status-demo-stable     # Service de la versión estable
       steps:
       - setWeight: 10                  # 10% del tráfico al canary
       - pause: {duration: 5m}          # Esperar 5 minutos
@@ -216,7 +224,7 @@ spec:
         - templateName: success-rate
         args:
         - name: service-name
-          value: mi-app-canary
+          value: status-demo-canary
 ```
 
 **Pasos del Canary:**
@@ -230,16 +238,16 @@ spec:
 
 ```bash
 # Ver el progreso del canary
-kubectl argo rollouts get rollout mi-app --watch
+kubectl argo rollouts get rollout gitops-status-demo --watch
 
 # Pausar el canary en el paso actual
-kubectl argo rollouts pause mi-app
+kubectl argo rollouts pause gitops-status-demo
 
 # Continuar al siguiente paso manualmente
-kubectl argo rollouts promote mi-app
+kubectl argo rollouts promote gitops-status-demo
 
 # Abortar y volver al 0% (rollback automático)
-kubectl argo rollouts abort mi-app
+kubectl argo rollouts abort gitops-status-demo
 ```
 
 :::tip Canary con análisis automático

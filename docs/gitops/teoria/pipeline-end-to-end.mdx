@@ -9,6 +9,14 @@ import LabActions from '@site/src/components/shared/LabActions';
 
 Hasta ahora hemos visto cada pieza del puzzle de forma independiente. En este tema unimos todo: el código fuente, la integración continua, el registro de imágenes, los manifiestos de Kubernetes y ArgoCD en un único flujo automatizado de principio a fin.
 
+:::tip Repositorios reales
+Este pipeline esta implementado en repositorios reales que puedes clonar y ejecutar:
+- **App repo**: [gitops-status-demo-app](https://github.com/salvamiguel/gitops-status-demo-app) — contiene el codigo Go y el workflow de GitHub Actions
+- **Config repo**: [gitops-status-demo-config](https://github.com/salvamiguel/gitops-status-demo-config) — contiene los manifiestos Kustomize y las Applications de ArgoCD
+
+Sigue las instrucciones del README del config repo para montar el entorno local con `kind`.
+:::
+
 ## 1. El flujo completo
 
 Este es el flujo GitOps completo desde que un desarrollador hace `git push` hasta que el cambio llega al clúster de Kubernetes:
@@ -85,7 +93,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          repository: salvamiguel/materials-config    # Config repo separado
+          repository: salvamiguel/gitops-status-demo-config    # Config repo separado
           token: ${{ secrets.CONFIG_REPO_TOKEN }}     # PAT con acceso al config repo
 
       - name: Update image tag in manifests
@@ -150,14 +158,14 @@ Este patrón es una best practice fundamental en GitOps y tiene razones sólidas
 
 ```mermaid
 graph LR
-  subgraph "App Repo (salvamiguel/mi-app)"
+  subgraph "App Repo (salvamiguel/gitops-status-demo-app)"
     src["src/<br/>main.go, ..."]
     Dockerfile
     CI[".github/workflows/ci.yaml"]
     tests["tests/"]
   end
 
-  subgraph "Config Repo (salvamiguel/mi-app-config)"
+  subgraph "Config Repo (salvamiguel/gitops-status-demo-config)"
     base["k8s/base/<br/>deployment.yaml<br/>service.yaml"]
     dev["k8s/overlays/dev/"]
     staging["k8s/overlays/staging/"]
@@ -223,16 +231,16 @@ Para debugging rápido durante un despliegue:
 
 ```bash
 # Ver todos los eventos del namespace en tiempo real
-kubectl get events -n mi-app-prod --watch
+kubectl get events -n status-prod --watch
 
 # Ver eventos ordenados por tiempo
-kubectl get events -n mi-app-prod --sort-by='.lastTimestamp'
+kubectl get events -n status-prod --sort-by='.lastTimestamp'
 
 # Ver logs del pod que está fallando
-kubectl logs -n mi-app-prod -l app=mi-app --tail=100 -f
+kubectl logs -n status-prod -l app=gitops-status-demo --tail=100 -f
 
 # Ver el estado detallado del deployment
-kubectl describe deployment mi-app -n mi-app-prod
+kubectl describe deployment gitops-status-demo -n status-prod
 ```
 
 :::tip Integra Prometheus + Grafana
@@ -278,12 +286,12 @@ En lugar de que la CI actualice el config repo directamente, puede abrir un PR p
   uses: peter-evans/create-pull-request@v6
   with:
     token: ${{ secrets.CONFIG_REPO_TOKEN }}
-    commit-message: "chore: update mi-app to ${{ github.sha }}"
-    title: "Promote mi-app ${{ github.sha }} to staging"
+    commit-message: "chore: update gitops-status-demo to ${{ github.sha }}"
+    title: "Promote gitops-status-demo ${{ github.sha }} to staging"
     body: |
       ## Promotion Request
 
-      **App**: mi-app
+      **App**: gitops-status-demo
       **New version**: `${{ github.sha }}`
       **Source**: ${{ github.repository }}@${{ github.sha }}
 
@@ -291,7 +299,7 @@ En lugar de que la CI actualice el config repo directamente, puede abrir un PR p
       - [ ] Tests pasados en CI
       - [ ] Revisión de cambios
       - [ ] Validado en dev
-    branch: promote/mi-app-${{ github.sha }}
+    branch: promote/gitops-status-demo-${{ github.sha }}
     base: main
 ```
 
@@ -304,12 +312,12 @@ ArgoCD Image Updater es un componente adicional que automatiza la actualización
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: mi-app
+  name: gitops-status-demo
   annotations:
     # Actualizar automáticamente cuando haya nueva imagen con semver
-    argocd-image-updater.argoproj.io/image-list: mi-app=ghcr.io/salvamiguel/mi-app
-    argocd-image-updater.argoproj.io/mi-app.update-strategy: semver
-    argocd-image-updater.argoproj.io/mi-app.allow-tags: regexp:^v[0-9]+\.[0-9]+\.[0-9]+$
+    argocd-image-updater.argoproj.io/image-list: gitops-status-demo=ghcr.io/salvamiguel/gitops-status-demo-app
+    argocd-image-updater.argoproj.io/gitops-status-demo.update-strategy: semver
+    argocd-image-updater.argoproj.io/gitops-status-demo.allow-tags: regexp:^v[0-9]+\.[0-9]+\.[0-9]+$
     argocd-image-updater.argoproj.io/write-back-method: git
 ```
 
