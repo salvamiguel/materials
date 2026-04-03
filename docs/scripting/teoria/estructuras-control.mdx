@@ -1,0 +1,1394 @@
+---
+sidebar_position: 2
+title: "Estructuras de Control y Funciones"
+description: "Condicionales, bucles, funciones y exit codes en Bash: control de flujo completo para scripts robustos."
+---
+
+# Estructuras de Control y Funciones
+
+## 1. Condicionales
+
+### La sentencia `if`
+
+La estructura condicional `if` es el mecanismo fundamental de toma de decisiones en Bash. Su sintaxis general es:
+
+```bash
+if condicion; then
+    # comandos si la condicion es verdadera
+elif otra_condicion; then
+    # comandos si la otra condicion es verdadera
+else
+    # comandos si ninguna condicion es verdadera
+fi
+```
+
+El punto y coma antes de `then` es necesario cuando `if` y `then` van en la misma linea. Si prefieres mayor legibilidad, puedes colocar `then` en una linea separada y omitir el punto y coma:
+
+```bash
+if condicion
+then
+    # comandos
+fi
+```
+
+Es importante entender que `if` en Bash no evalua expresiones booleanas como en otros lenguajes. Lo que evalua es el **exit code** del comando que le sigue: si el comando devuelve `0` (exito), la condicion es verdadera; cualquier otro valor es falso. Esto significa que puedes usar cualquier comando como condicion:
+
+```bash
+if grep -q "error" /var/log/syslog; then
+    echo "Se encontraron errores en el log"
+fi
+
+if ping -c 1 -W 2 google.com &>/dev/null; then
+    echo "Hay conexion a Internet"
+else
+    echo "Sin conexion a Internet"
+fi
+```
+
+### El comando `test`, `[ ]` y `[[ ]]`
+
+Para evaluar condiciones mas especificas (comparar cadenas, numeros, comprobar archivos), Bash ofrece tres mecanismos:
+
+- **`test`**: un comando externo (`/usr/bin/test`) que evalua expresiones y devuelve 0 (verdadero) o 1 (falso).
+- **`[ ]`**: sinonimo de `test`. El corchete de apertura `[` es literalmente un comando (existe como `/usr/bin/[`), y el `]` de cierre es un argumento obligatorio.
+- **`[[ ]]`**: una construccion interna de Bash (_keyword_) con mejoras significativas sobre `[ ]`.
+
+```bash
+# Estas tres formas son equivalentes para comparaciones simples:
+test -f /etc/passwd
+[ -f /etc/passwd ]
+[[ -f /etc/passwd ]]
+```
+
+#### Diferencias entre `[ ]` y `[[ ]]`
+
+| Caracteristica | `[ ]` (test) | `[[ ]]` (Bash keyword) |
+|----------------|-------------|----------------------|
+| **Tipo** | Comando externo / builtin | Keyword del shell |
+| **Entrecomillado de variables** | Obligatorio (`"$var"`) para evitar errores con cadenas vacias | Opcional, maneja cadenas vacias sin error |
+| **Operadores logicos** | `-a` (AND), `-o` (OR) | `&&` (AND), `\|\|` (OR) |
+| **Soporte regex** | No | Si, con `=~` |
+| **Globbing / pattern matching** | No | Si, con `==` (sin entrecomillar el patron) |
+| **Word splitting** | Si (problematico con variables sin comillas) | No |
+| **Portabilidad POSIX** | Si (funciona en `sh`, `dash`, etc.) | No (solo Bash, Zsh, Ksh) |
+
+:::tip Usa [[ ]] en scripts Bash
+Si tu script empieza con `#!/bin/bash` (o `#!/usr/bin/env bash`), usa siempre `[[ ]]`. Es mas seguro, mas legible y mas potente. Reserva `[ ]` unicamente para scripts que deben ser compatibles con POSIX `/bin/sh`.
+:::
+
+El problema mas comun con `[ ]` ocurre cuando una variable esta vacia:
+
+```bash
+nombre=""
+
+# Esto falla con error: "unary operator expected"
+if [ $nombre = "admin" ]; then
+    echo "Bienvenido"
+fi
+
+# Solucion con [ ]: entrecomillar siempre
+if [ "$nombre" = "admin" ]; then
+    echo "Bienvenido"
+fi
+
+# Con [[ ]] no hay problema, incluso sin comillas
+if [[ $nombre = "admin" ]]; then
+    echo "Bienvenido"
+fi
+```
+
+### Comparaciones de cadenas
+
+```bash
+# Igualdad
+[[ "$cadena1" == "$cadena2" ]]
+
+# Desigualdad
+[[ "$cadena1" != "$cadena2" ]]
+
+# Cadena vacia (zero-length)
+[[ -z "$cadena" ]]
+
+# Cadena no vacia (non-zero length)
+[[ -n "$cadena" ]]
+
+# Patron glob (no entrecomillar el patron)
+[[ "$archivo" == *.log ]]
+
+# Expresion regular (no entrecomillar la regex)
+[[ "$email" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]
+```
+
+:::info = vs == dentro de [[ ]]
+Dentro de `[[ ]]`, tanto `=` como `==` funcionan para comparar cadenas. Se recomienda usar `==` por consistencia con otros lenguajes y para diferenciarlo claramente de la asignacion (`=`).
+:::
+
+### Comparaciones numericas
+
+Para comparar numeros enteros, Bash utiliza operadores especificos en lugar de los simbolos matematicos habituales. Esto se debe a que `<` y `>` son operadores de redireccion en el shell:
+
+| Operador | Significado | Ejemplo |
+|----------|-------------|---------|
+| `-eq` | Igual (_equal_) | `[[ $a -eq $b ]]` |
+| `-ne` | Distinto (_not equal_) | `[[ $a -ne $b ]]` |
+| `-lt` | Menor que (_less than_) | `[[ $a -lt $b ]]` |
+| `-gt` | Mayor que (_greater than_) | `[[ $a -gt $b ]]` |
+| `-le` | Menor o igual (_less or equal_) | `[[ $a -le $b ]]` |
+| `-ge` | Mayor o igual (_greater or equal_) | `[[ $a -ge $b ]]` |
+
+```bash
+edad=25
+
+if [[ $edad -ge 18 ]]; then
+    echo "Mayor de edad"
+else
+    echo "Menor de edad"
+fi
+```
+
+:::info Aritmetica con (( ))
+Para comparaciones numericas tambien puedes usar la construccion aritmetica `(( ))`, que acepta los operadores matematicos habituales:
+
+```bash
+if (( edad >= 18 && edad <= 65 )); then
+    echo "Edad laboral"
+fi
+```
+
+Dentro de `(( ))` no es necesario el prefijo `$` para las variables y puedes usar `<`, `>`, `<=`, `>=`, `==`, `!=` con su significado matematico habitual.
+:::
+
+### Tests de archivos
+
+Bash proporciona un conjunto amplio de operadores para comprobar propiedades de archivos y directorios:
+
+| Operador | Comprueba | Ejemplo |
+|----------|-----------|---------|
+| `-f` | Es un archivo regular | `[[ -f "$ruta" ]]` |
+| `-d` | Es un directorio | `[[ -d "$ruta" ]]` |
+| `-e` | Existe (archivo, directorio, enlace, etc.) | `[[ -e "$ruta" ]]` |
+| `-r` | Es legible (readable) | `[[ -r "$ruta" ]]` |
+| `-w` | Es escribible (writable) | `[[ -w "$ruta" ]]` |
+| `-x` | Es ejecutable | `[[ -x "$ruta" ]]` |
+| `-s` | Existe y tiene tamano mayor que cero | `[[ -s "$ruta" ]]` |
+| `-L` | Es un enlace simbolico | `[[ -L "$ruta" ]]` |
+| `-nt` | Es mas reciente que otro archivo (_newer than_) | `[[ "$a" -nt "$b" ]]` |
+| `-ot` | Es mas antiguo que otro archivo (_older than_) | `[[ "$a" -ot "$b" ]]` |
+
+### Combinando condiciones
+
+Dentro de `[[ ]]` puedes combinar condiciones con operadores logicos:
+
+```bash
+# AND: ambas condiciones deben ser verdaderas
+if [[ -f "$archivo" && -r "$archivo" ]]; then
+    echo "El archivo existe y es legible"
+fi
+
+# OR: al menos una condicion debe ser verdadera
+if [[ "$rol" == "admin" || "$rol" == "root" ]]; then
+    echo "Acceso concedido"
+fi
+
+# NOT: niega la condicion
+if [[ ! -d "$directorio" ]]; then
+    echo "El directorio no existe"
+fi
+
+# Combinaciones complejas con parentesis
+if [[ (-f "$archivo" && -r "$archivo") || "$forzar" == "true" ]]; then
+    echo "Procesando archivo"
+fi
+```
+
+:::warning Operadores logicos dentro de [ ]
+Dentro de `[ ]`, los operadores logicos son diferentes: `-a` para AND y `-o` para OR. Sin embargo, POSIX desaconseja su uso porque generan ambiguedades. La alternativa POSIX es encadenar multiples comandos `[ ]` con `&&` y `||` del shell:
+
+```bash
+# Evita esto (operadores dentro de [ ]):
+[ -f "$archivo" -a -r "$archivo" ]
+
+# Prefiere esto (encadenamiento externo):
+[ -f "$archivo" ] && [ -r "$archivo" ]
+```
+:::
+
+### Ejemplo: comprobar si un archivo existe y es legible
+
+```bash
+#!/usr/bin/env bash
+
+archivo="${1:?Uso: $0 <archivo>}"
+
+if [[ ! -e "$archivo" ]]; then
+    echo "Error: '$archivo' no existe" >&2
+    exit 1
+elif [[ -d "$archivo" ]]; then
+    echo "Error: '$archivo' es un directorio, no un archivo" >&2
+    exit 1
+elif [[ ! -r "$archivo" ]]; then
+    echo "Error: '$archivo' existe pero no tienes permiso de lectura" >&2
+    exit 1
+elif [[ ! -s "$archivo" ]]; then
+    echo "Aviso: '$archivo' existe pero esta vacio"
+    exit 0
+else
+    lineas=$(wc -l < "$archivo")
+    echo "Archivo '$archivo': $lineas lineas, legible y listo para procesar"
+fi
+```
+
+---
+
+## 2. La sentencia `case`
+
+### Sintaxis basica
+
+La sentencia `case` es la alternativa elegante a las cadenas largas de `if/elif/else` cuando necesitas comparar una variable contra multiples patrones. Su sintaxis es:
+
+```bash
+case "$variable" in
+    patron1)
+        # comandos
+        ;;
+    patron2 | patron3)
+        # comandos para patron2 o patron3
+        ;;
+    *)
+        # caso por defecto (equivalente a else)
+        ;;
+esac
+```
+
+Cada patron soporta los mismos globs que el shell: `*` (cualquier cadena), `?` (un caracter), `[abc]` (un caracter del conjunto), `[a-z]` (un rango). El operador `|` permite agrupar multiples patrones para el mismo bloque de comandos.
+
+### Terminadores: `;;`, `;&` y `;;&`
+
+El terminador al final de cada bloque controla el comportamiento de `case` despues de encontrar una coincidencia:
+
+| Terminador | Comportamiento |
+|------------|---------------|
+| `;;` | Sale del `case` inmediatamente (comportamiento por defecto, equivalente a `break` implicito) |
+| `;&` | Ejecuta el siguiente bloque sin comprobar su patron (_fall-through_) |
+| `;;&` | Continua comprobando los siguientes patrones (_test-next_) |
+
+```bash
+nivel="warning"
+
+# Con ;; (comportamiento normal)
+case "$nivel" in
+    error)   echo "ERROR" ;;
+    warning) echo "WARNING" ;;   # Se detiene aqui
+    info)    echo "INFO" ;;
+esac
+
+# Con ;& (fall-through, como C sin break)
+case "$nivel" in
+    error)   echo "Registrar en sistema de alertas" ;&
+    warning) echo "Enviar notificacion" ;&         # Ejecuta este Y el siguiente
+    info)    echo "Escribir en log" ;;
+esac
+# Salida: "Enviar notificacion" + "Escribir en log"
+
+# Con ;;& (comprobar siguiente patron)
+valor=42
+case "$valor" in
+    4?)      echo "Tiene dos digitos y empieza por 4" ;;&
+    *2)      echo "Termina en 2" ;;&
+    [0-9]*)  echo "Es numerico" ;;
+esac
+# Salida: las tres lineas (todas las condiciones se cumplen)
+```
+
+### Ejemplo real: parseo de flags de linea de comandos
+
+```bash
+#!/usr/bin/env bash
+
+verbose=false
+output_file=""
+dry_run=false
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h | --help)
+            echo "Uso: $(basename "$0") [opciones] <archivo>"
+            echo ""
+            echo "Opciones:"
+            echo "  -h, --help       Muestra esta ayuda"
+            echo "  -v, --verbose    Modo detallado"
+            echo "  -o, --output     Archivo de salida"
+            echo "  -n, --dry-run    Simular sin ejecutar"
+            echo "  --version        Muestra la version"
+            exit 0
+            ;;
+        -v | --verbose)
+            verbose=true
+            shift
+            ;;
+        -o | --output)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --output requiere un argumento" >&2
+                exit 1
+            fi
+            output_file="$2"
+            shift 2
+            ;;
+        -n | --dry-run)
+            dry_run=true
+            shift
+            ;;
+        --version)
+            echo "v1.0.0"
+            exit 0
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            echo "Error: opcion desconocida '$1'" >&2
+            exit 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+$verbose && echo "Modo verbose activado"
+$dry_run && echo "Modo dry-run: no se ejecutaran cambios"
+[[ -n "$output_file" ]] && echo "Salida: $output_file"
+echo "Argumentos restantes: $*"
+```
+
+:::tip El patron -- en scripts
+El patron `--` (doble guion) es una convencion universal en CLI que indica el fin de las opciones. Todo lo que viene despues se trata como argumento posicional, incluso si empieza con `-`. Implementarlo es buena practica en cualquier script que acepte flags.
+:::
+
+---
+
+## 3. Bucles
+
+### `for`: iterar sobre listas
+
+Bash ofrece dos estilos de bucle `for`: el clasico **for-in** (iterar sobre una lista) y el estilo C (iterar con un contador numerico).
+
+#### for-in
+
+```bash
+# Iterar sobre una lista literal
+for fruta in manzana naranja platano; do
+    echo "Fruta: $fruta"
+done
+
+# Iterar sobre un rango numerico
+for i in {1..5}; do
+    echo "Iteracion $i"
+done
+
+# Rango con incremento
+for i in {0..100..10}; do
+    echo "Valor: $i"  # 0, 10, 20, ..., 100
+done
+
+# Iterar sobre archivos con glob
+for archivo in /var/log/*.log; do
+    echo "Log: $archivo ($(wc -l < "$archivo") lineas)"
+done
+
+# Iterar sobre la salida de un comando
+for usuario in $(cut -d: -f1 /etc/passwd); do
+    echo "Usuario: $usuario"
+done
+
+# Iterar sobre un array
+servicios=("nginx" "postgresql" "redis")
+for servicio in "${servicios[@]}"; do
+    systemctl is-active --quiet "$servicio" && echo "$servicio: activo" || echo "$servicio: inactivo"
+done
+```
+
+:::warning Globbing y word splitting
+Cuando iteras sobre la salida de un comando con `$(...)`, Bash aplica _word splitting_ (separacion por espacios, tabulaciones y saltos de linea). Esto causa problemas con nombres de archivo que contienen espacios. Para esos casos, usa `while read` en lugar de `for`:
+
+```bash
+# PELIGROSO: se rompe con espacios en nombres
+for f in $(find . -name "*.txt"); do
+    echo "$f"
+done
+
+# CORRECTO: maneja cualquier nombre de archivo
+find . -name "*.txt" -print0 | while IFS= read -r -d '' f; do
+    echo "$f"
+done
+```
+:::
+
+#### for estilo C
+
+```bash
+# Bucle clasico con contador
+for ((i = 0; i < 10; i++)); do
+    echo "Indice: $i"
+done
+
+# Multiples variables
+for ((i = 0, j = 10; i < j; i++, j--)); do
+    echo "i=$i, j=$j"
+done
+
+# Iterar sobre indices de un array
+colores=("rojo" "verde" "azul")
+for ((i = 0; i < ${#colores[@]}; i++)); do
+    echo "Color $i: ${colores[$i]}"
+done
+```
+
+### `while`: repetir mientras se cumpla una condicion
+
+El bucle `while` ejecuta su cuerpo mientras la condicion devuelva exit code 0:
+
+```bash
+# Contador basico
+contador=0
+while [[ $contador -lt 5 ]]; do
+    echo "Contador: $contador"
+    ((contador++))
+done
+
+# Esperar a que un servicio este disponible
+intentos=0
+max_intentos=30
+while ! curl -sf http://localhost:8080/health &>/dev/null; do
+    ((intentos++))
+    if [[ $intentos -ge $max_intentos ]]; then
+        echo "Error: el servicio no respondio tras $max_intentos intentos" >&2
+        exit 1
+    fi
+    echo "Esperando servicio... (intento $intentos/$max_intentos)"
+    sleep 2
+done
+echo "Servicio disponible"
+```
+
+#### Leer archivos linea por linea
+
+El patron mas comun con `while` es leer archivos o streams linea por linea:
+
+```bash
+# Forma correcta de leer un archivo linea por linea
+while IFS= read -r linea; do
+    echo "Linea: $linea"
+done < /etc/hosts
+```
+
+Desglosemos los componentes:
+
+- **`IFS=`**: establece el separador de campos interno como vacio, lo que evita que Bash elimine espacios en blanco al inicio y al final de cada linea.
+- **`read -r`**: el flag `-r` evita que `read` interprete las barras invertidas como caracteres de escape. Sin este flag, `\n` se convertiria en un salto de linea y `\\` en una sola barra invertida.
+- **`< archivo`**: redirige el contenido del archivo como entrada estandar del bucle.
+
+:::warning Cuidado con el word splitting al leer archivos
+Sin `IFS=` y sin `-r`, Bash modifica las lineas que lee:
+
+```bash
+# Archivo de ejemplo con espacios y barras invertidas:
+#   hola    mundo
+# ruta\narchivo
+
+# SIN IFS= ni -r (INCORRECTO):
+while read linea; do
+    echo ">>$linea<<"
+done < archivo.txt
+# Salida:  >>hola mundo<<         (espacios colapsados)
+#          >>ruta                   (barra interpretada)
+# archivo<<
+
+# CON IFS= y -r (CORRECTO):
+while IFS= read -r linea; do
+    echo ">>$linea<<"
+done < archivo.txt
+# Salida:  >>  hola    mundo<<    (espacios preservados)
+#          >>ruta\narchivo<<       (barra literal)
+```
+:::
+
+Tambien puedes leer campos separados por delimitadores:
+
+```bash
+# Leer un CSV con campos separados por comas
+while IFS=',' read -r nombre edad ciudad; do
+    echo "$nombre tiene $edad anos y vive en $ciudad"
+done < datos.csv
+
+# Procesar la salida de un comando con pipe
+ps aux | while IFS= read -r linea; do
+    echo "$linea"
+done
+```
+
+### `until`: repetir hasta que se cumpla una condicion
+
+`until` es el inverso logico de `while`: ejecuta su cuerpo mientras la condicion sea **falsa** (exit code distinto de 0):
+
+```bash
+# Equivalente al while anterior, pero con logica invertida
+contador=0
+until [[ $contador -ge 5 ]]; do
+    echo "Contador: $contador"
+    ((contador++))
+done
+
+# Esperar a que un archivo exista
+until [[ -f /tmp/proceso_completado.flag ]]; do
+    echo "Esperando a que el proceso termine..."
+    sleep 5
+done
+echo "Proceso completado"
+```
+
+En la practica, `until` se usa poco porque la mayoria de desarrolladores prefieren `while` con la condicion negada. Sin embargo, en ciertos casos `until` produce codigo mas legible.
+
+### `break` y `continue`
+
+Estos dos comandos controlan el flujo dentro de un bucle:
+
+- **`break`**: sale del bucle inmediatamente, continuando con el codigo posterior.
+- **`continue`**: salta a la siguiente iteracion, omitiendo el resto del cuerpo del bucle.
+
+```bash
+# break: detener el bucle cuando encontremos lo que buscamos
+for archivo in /var/log/*.log; do
+    if grep -q "CRITICAL" "$archivo"; then
+        echo "Encontrado error critico en: $archivo"
+        break
+    fi
+done
+
+# continue: saltar archivos que no cumplen un criterio
+for archivo in *.txt; do
+    # Saltar archivos vacios
+    if [[ ! -s "$archivo" ]]; then
+        continue
+    fi
+    echo "Procesando: $archivo ($(wc -l < "$archivo") lineas)"
+done
+```
+
+Ambos aceptan un argumento numerico para actuar sobre bucles anidados:
+
+```bash
+# break 2 sale de dos niveles de bucles
+for i in {1..3}; do
+    for j in {1..3}; do
+        if [[ $i -eq 2 && $j -eq 2 ]]; then
+            break 2  # Sale de AMBOS bucles
+        fi
+        echo "i=$i, j=$j"
+    done
+done
+```
+
+### Bucles infinitos
+
+Los bucles infinitos son utiles para demonios, menus interactivos o cualquier proceso que deba ejecutarse continuamente hasta que se le indique parar:
+
+```bash
+# Dos formas equivalentes de crear un bucle infinito
+while true; do
+    echo "Ejecutando..."
+    sleep 60
+done
+
+until false; do
+    echo "Ejecutando..."
+    sleep 60
+done
+
+# Forma compacta con : (comando nulo, siempre devuelve 0)
+while :; do
+    echo "Ejecutando..."
+    sleep 60
+done
+```
+
+Un patron habitual es un menu interactivo:
+
+```bash
+while true; do
+    echo ""
+    echo "=== Menu Principal ==="
+    echo "1) Listar archivos"
+    echo "2) Ver espacio en disco"
+    echo "3) Ver procesos"
+    echo "q) Salir"
+    echo ""
+    read -rp "Selecciona una opcion: " opcion
+
+    case "$opcion" in
+        1) ls -lh ;;
+        2) df -h ;;
+        3) ps aux --sort=-%mem | head -20 ;;
+        q) echo "Hasta luego"; break ;;
+        *) echo "Opcion no valida" ;;
+    esac
+done
+```
+
+### Ejemplo: procesar un archivo de log linea por linea
+
+```bash
+#!/usr/bin/env bash
+# Analiza un archivo de log y genera un resumen por nivel de severidad
+
+log_file="${1:?Uso: $0 <archivo_log>}"
+
+if [[ ! -f "$log_file" ]]; then
+    echo "Error: '$log_file' no es un archivo valido" >&2
+    exit 1
+fi
+
+declare -A contadores
+contadores[INFO]=0
+contadores[WARNING]=0
+contadores[ERROR]=0
+contadores[CRITICAL]=0
+lineas_total=0
+
+while IFS= read -r linea; do
+    ((lineas_total++))
+
+    for nivel in CRITICAL ERROR WARNING INFO; do
+        if [[ "$linea" == *"$nivel"* ]]; then
+            ((contadores[$nivel]++))
+            break  # Una linea solo cuenta una vez, con la severidad mas alta
+        fi
+    done
+done < "$log_file"
+
+echo "=== Resumen de $log_file ==="
+echo "Total de lineas: $lineas_total"
+echo ""
+for nivel in CRITICAL ERROR WARNING INFO; do
+    printf "  %-10s %d\n" "$nivel" "${contadores[$nivel]}"
+done
+```
+
+---
+
+## 4. Funciones
+
+### Declaracion de funciones
+
+Bash soporta dos sintaxis para declarar funciones:
+
+```bash
+# Sintaxis clasica (recomendada por compatibilidad POSIX)
+nombre_funcion() {
+    # cuerpo
+}
+
+# Sintaxis con keyword 'function' (solo Bash/Ksh)
+function nombre_funcion {
+    # cuerpo
+}
+
+# Ambas combinadas (solo Bash, redundante pero valida)
+function nombre_funcion() {
+    # cuerpo
+}
+```
+
+:::tip Recomendacion de estilo
+Usa la forma `nombre()` (sin el keyword `function`). Es compatible con POSIX, mas concisa y la preferida por guias de estilo como la de Google para Shell.
+:::
+
+### Argumentos dentro de funciones
+
+Las funciones reciben argumentos de la misma forma que los scripts: a traves de los parametros posicionales `$1`, `$2`, etc. Los parametros especiales tambien funcionan dentro de la funcion:
+
+| Parametro | Significado |
+|-----------|-------------|
+| `$1`, `$2`, ... | Argumentos posicionales |
+| `$@` | Todos los argumentos como palabras separadas |
+| `$*` | Todos los argumentos como una sola cadena |
+| `$#` | Numero de argumentos |
+| `$0` | Sigue siendo el nombre del script (no el de la funcion) |
+| `$FUNCNAME` | Nombre de la funcion actual |
+
+```bash
+saludar() {
+    local nombre="$1"
+    local apellido="$2"
+
+    if [[ -z "$nombre" ]]; then
+        echo "Uso: saludar <nombre> [apellido]" >&2
+        return 1
+    fi
+
+    echo "Hola, ${nombre} ${apellido:-}!"
+}
+
+saludar "Ana" "Garcia"    # "Hola, Ana Garcia!"
+saludar "Pedro"           # "Hola, Pedro !"
+saludar                   # Error de uso, return 1
+```
+
+### Variable scope: el keyword `local`
+
+:::warning Las variables en Bash son globales por defecto
+A diferencia de la mayoria de lenguajes de programacion, las variables declaradas dentro de una funcion en Bash son **globales**. Esto significa que cualquier variable que crees o modifiques dentro de una funcion afecta al ambito del script completo. Este comportamiento es una fuente constante de bugs sutiles y dificiles de depurar.
+:::
+
+```bash
+# PROBLEMA: contaminacion del ambito global
+procesar() {
+    resultado="procesado"  # Esta variable es GLOBAL
+    i=999                  # Sobreescribe cualquier 'i' externa
+}
+
+i=0
+resultado="pendiente"
+procesar
+echo "$resultado"  # "procesado"  (modificado por la funcion)
+echo "$i"          # "999"        (modificado por la funcion)
+```
+
+La solucion es usar `local` para limitar el alcance de las variables al cuerpo de la funcion:
+
+```bash
+# CORRECTO: variables locales
+procesar() {
+    local resultado="procesado"
+    local i=999
+    echo "$resultado"
+}
+
+i=0
+resultado="pendiente"
+procesar             # Imprime "procesado"
+echo "$resultado"    # "pendiente"  (no modificado)
+echo "$i"            # "0"          (no modificado)
+```
+
+**Regla de oro**: declara **todas** las variables dentro de funciones con `local`, salvo que intencionalmente necesites modificar el ambito global.
+
+### `return` vs `echo`: dos formas de devolver valores
+
+Las funciones en Bash tienen dos mecanismos para "devolver" informacion, y es fundamental entender la diferencia:
+
+**`return N`**: establece el exit code de la funcion (un entero entre 0 y 255). Se usa para indicar exito o fracaso, no para devolver datos.
+
+**`echo` (stdout)**: la forma de devolver datos es imprimirlos por la salida estandar. El llamante los captura con `$(...)`.
+
+```bash
+# return: para indicar exito/fracaso
+es_numero() {
+    local valor="$1"
+    [[ "$valor" =~ ^-?[0-9]+$ ]]
+    return $?  # Devuelve el exit code de [[ ]]
+}
+
+if es_numero "42"; then
+    echo "Es un numero"
+fi
+
+if ! es_numero "abc"; then
+    echo "No es un numero"
+fi
+
+# echo: para devolver datos
+obtener_extension() {
+    local archivo="$1"
+    local extension="${archivo##*.}"
+    echo "$extension"  # Este es el "valor de retorno"
+}
+
+ext=$(obtener_extension "documento.pdf")
+echo "Extension: $ext"  # "Extension: pdf"
+```
+
+:::danger No mezcles echo de datos con echo de mensajes
+Si tu funcion usa `echo` tanto para devolver datos como para imprimir mensajes informativos, el llamante capturara **todo**. Envia los mensajes informativos a stderr (`>&2`) para que no contaminen la salida:
+
+```bash
+# MAL: el mensaje se mezcla con el resultado
+calcular() {
+    echo "Calculando..."          # Esto contamina la salida
+    echo $(( $1 + $2 ))
+}
+resultado=$(calcular 3 5)
+echo "$resultado"  # "Calculando...\n8" (no es lo que queremos)
+
+# BIEN: mensajes a stderr, datos a stdout
+calcular() {
+    echo "Calculando..." >&2      # Esto va a stderr (visible en terminal)
+    echo $(( $1 + $2 ))           # Solo esto se captura
+}
+resultado=$(calcular 3 5)
+echo "$resultado"  # "8"
+```
+:::
+
+### Ejemplo: biblioteca de funciones de utilidad
+
+```bash
+#!/usr/bin/env bash
+# lib_utils.sh - Biblioteca de funciones reutilizables
+
+# --- Logging ---
+
+log() {
+    local nivel="$1"
+    shift
+    local mensaje="$*"
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "[$timestamp] [$nivel] $mensaje" >&2
+}
+
+log_info()    { log "INFO"    "$@"; }
+log_warn()    { log "WARNING" "$@"; }
+log_error()   { log "ERROR"   "$@"; }
+
+# --- Validacion ---
+
+es_numero_entero() {
+    local valor="$1"
+    [[ "$valor" =~ ^-?[0-9]+$ ]]
+}
+
+es_ip_valida() {
+    local ip="$1"
+    local regex='^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+
+    if [[ ! "$ip" =~ $regex ]]; then
+        return 1
+    fi
+
+    local IFS='.'
+    read -ra octetos <<< "$ip"
+    for octeto in "${octetos[@]}"; do
+        if (( octeto < 0 || octeto > 255 )); then
+            return 1
+        fi
+    done
+    return 0
+}
+
+# --- Archivos ---
+
+archivo_existe_y_legible() {
+    local ruta="$1"
+    [[ -f "$ruta" && -r "$ruta" ]]
+}
+
+tamano_archivo_legible() {
+    local ruta="$1"
+    if [[ ! -f "$ruta" ]]; then
+        echo "0B"
+        return 1
+    fi
+
+    local bytes
+    bytes=$(stat -f%z "$ruta" 2>/dev/null || stat -c%s "$ruta" 2>/dev/null)
+
+    if (( bytes < 1024 )); then
+        echo "${bytes}B"
+    elif (( bytes < 1048576 )); then
+        echo "$(( bytes / 1024 ))KB"
+    elif (( bytes < 1073741824 )); then
+        echo "$(( bytes / 1048576 ))MB"
+    else
+        echo "$(( bytes / 1073741824 ))GB"
+    fi
+}
+
+# --- Uso ---
+# source lib_utils.sh
+# log_info "Proceso iniciado"
+# es_ip_valida "192.168.1.1" && echo "IP valida"
+# tamano=$(tamano_archivo_legible "/var/log/syslog")
+```
+
+---
+
+## 5. Exit codes
+
+### Convenciones y significado
+
+Cada comando en Bash termina con un **exit code** (tambien llamado _exit status_ o _return code_): un numero entero entre 0 y 255 que indica el resultado de la ejecucion. El exit code se almacena en la variable especial `$?` inmediatamente despues de que un comando termina.
+
+La convencion es simple: **0 significa exito, cualquier otro valor significa error**. Sin embargo, existen convenciones mas especificas que la mayoria de herramientas y scripts respetan:
+
+| Exit code | Significado | Ejemplo |
+|-----------|-------------|---------|
+| `0` | Exito | Comando ejecutado correctamente |
+| `1` | Error general | Error generico, catch-all para fallos |
+| `2` | Uso incorrecto del comando | Argumentos invalidos, opciones desconocidas |
+| `126` | Comando encontrado pero no ejecutable | Permisos insuficientes |
+| `127` | Comando no encontrado | Binario no existe en `$PATH` |
+| `128` | Argumento invalido para `exit` | `exit 3.14` (no es entero) |
+| `128+N` | Proceso terminado por senal N | `130` = Ctrl+C (SIGINT=2), `137` = SIGKILL (9), `143` = SIGTERM (15) |
+| `255` | Exit code fuera de rango | `exit -1` se convierte en 255 |
+
+```bash
+# Comprobar el exit code del ultimo comando
+ls /directorio/existente
+echo "Exit code: $?"  # 0
+
+ls /directorio/inexistente 2>/dev/null
+echo "Exit code: $?"  # 2 (en GNU ls)
+
+comando_inventado 2>/dev/null
+echo "Exit code: $?"  # 127 (command not found)
+```
+
+:::info Exit codes de senales
+Cuando un proceso es terminado por una senal, su exit code es `128 + numero_de_senal`. Las mas comunes son:
+
+- **130** (128+2): el usuario presiono Ctrl+C (SIGINT)
+- **137** (128+9): el proceso fue matado con `kill -9` (SIGKILL)
+- **143** (128+15): el proceso recibio `kill` sin especificar senal (SIGTERM)
+
+Esto es util para distinguir entre un error del programa y una terminacion externa.
+:::
+
+### Ejecucion condicional con `&&` y `||`
+
+Bash permite encadenar comandos basandose en el exit code del comando anterior:
+
+- **`&&` (AND)**: el comando de la derecha solo se ejecuta si el de la izquierda tuvo exito (exit code 0).
+- **`||` (OR)**: el comando de la derecha solo se ejecuta si el de la izquierda fallo (exit code distinto de 0).
+
+```bash
+# AND: ejecutar solo si el anterior tuvo exito
+mkdir -p /tmp/trabajo && cd /tmp/trabajo && echo "Directorio listo"
+
+# OR: ejecutar solo si el anterior fallo
+cd /directorio/inexistente || echo "No se pudo cambiar de directorio"
+
+# Patron comun: accion && exito || fracaso
+ping -c 1 -W 2 google.com &>/dev/null && echo "Online" || echo "Offline"
+```
+
+:::danger El patron cmd && ok || fail no es un if/else fiable
+El patron `comando && exito || fracaso` parece un `if/else` compacto, pero tiene un fallo sutil: si el comando de **exito** falla (devuelve un exit code distinto de 0), el comando de **fracaso** tambien se ejecuta.
+
+```bash
+# PROBLEMA: si 'echo' falla por alguna razon, ambos se ejecutan
+true && echo "OK" || echo "FAIL"   # Solo imprime "OK" (correcto)
+
+# Pero si la parte "exito" puede fallar:
+true && { cp archivo.txt /destino/; echo "Copiado"; } || echo "Fallo"
+# Si cp falla, imprime tanto el error de cp como "Fallo"
+
+# SOLUCION: usa if/else para logica no trivial
+if comando; then
+    accion_compleja_que_puede_fallar
+else
+    manejar_error
+fi
+```
+:::
+
+### Usando exit codes en scripts
+
+```bash
+#!/usr/bin/env bash
+# Convenciones para exit codes en tus propios scripts
+
+# Definir codigos como constantes al inicio del script
+readonly EXIT_OK=0
+readonly EXIT_ERROR=1
+readonly EXIT_USO_INCORRECTO=2
+readonly EXIT_DEPENDENCIA=3
+readonly EXIT_PERMISOS=4
+
+comprobar_dependencias() {
+    local dependencias=("jq" "curl" "git")
+    for cmd in "${dependencias[@]}"; do
+        if ! command -v "$cmd" &>/dev/null; then
+            echo "Error: '$cmd' no esta instalado" >&2
+            return 1
+        fi
+    done
+    return 0
+}
+
+main() {
+    if [[ $# -lt 1 ]]; then
+        echo "Uso: $0 <argumento>" >&2
+        exit $EXIT_USO_INCORRECTO
+    fi
+
+    if ! comprobar_dependencias; then
+        exit $EXIT_DEPENDENCIA
+    fi
+
+    # Logica principal...
+    echo "Todo correcto"
+    exit $EXIT_OK
+}
+
+main "$@"
+```
+
+---
+
+## 6. Combinando todo: script completo
+
+El siguiente script aplica todos los conceptos vistos en esta unidad: condicionales, `case`, bucles, funciones con variables locales, exit codes y procesamiento de archivos. Es un analizador de archivos de log que acepta opciones por linea de comandos.
+
+```bash
+#!/usr/bin/env bash
+#
+# loganalyzer.sh - Analizador de archivos de log
+#
+# Uso: loganalyzer.sh [opciones] <archivo_log> [archivo_log2 ...]
+#
+# Opciones:
+#   -h, --help          Muestra esta ayuda
+#   -v, --verbose       Modo detallado
+#   -l, --level NIVEL   Filtrar por nivel minimo (INFO, WARNING, ERROR, CRITICAL)
+#   -o, --output FILE   Escribir resumen en archivo
+#   --version           Muestra la version
+#
+# Ejemplo:
+#   loganalyzer.sh --level WARNING -v /var/log/app.log
+
+set -euo pipefail
+
+# =============================================
+# Constantes
+# =============================================
+
+readonly VERSION="1.2.0"
+readonly SCRIPT_NAME="$(basename "$0")"
+
+readonly EXIT_OK=0
+readonly EXIT_ERROR=1
+readonly EXIT_USO=2
+
+# Niveles de severidad (orden de menor a mayor)
+readonly -a NIVELES=(INFO WARNING ERROR CRITICAL)
+
+# =============================================
+# Funciones de utilidad
+# =============================================
+
+mostrar_ayuda() {
+    cat <<EOF
+Uso: $SCRIPT_NAME [opciones] <archivo_log> [archivo_log2 ...]
+
+Analiza archivos de log y genera un resumen por nivel de severidad.
+
+Opciones:
+  -h, --help          Muestra esta ayuda
+  -v, --verbose       Modo detallado
+  -l, --level NIVEL   Filtrar por nivel minimo (INFO, WARNING, ERROR, CRITICAL)
+  -o, --output FILE   Escribir resumen en archivo
+  --version           Muestra la version
+
+Niveles (de menor a mayor severidad):
+  INFO < WARNING < ERROR < CRITICAL
+
+Ejemplos:
+  $SCRIPT_NAME /var/log/app.log
+  $SCRIPT_NAME --level WARNING -v /var/log/*.log
+  $SCRIPT_NAME -o resumen.txt /var/log/app.log
+EOF
+}
+
+log_msg() {
+    local nivel="$1"
+    shift
+    if [[ "$verbose" == true ]]; then
+        echo "[$nivel] $*" >&2
+    fi
+}
+
+# =============================================
+# Funciones de validacion
+# =============================================
+
+nivel_es_valido() {
+    local nivel_buscado="$1"
+    local n
+    for n in "${NIVELES[@]}"; do
+        if [[ "$n" == "$nivel_buscado" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+obtener_indice_nivel() {
+    local nivel_buscado="$1"
+    local i
+    for i in "${!NIVELES[@]}"; do
+        if [[ "${NIVELES[$i]}" == "$nivel_buscado" ]]; then
+            echo "$i"
+            return 0
+        fi
+    done
+    echo "-1"
+    return 1
+}
+
+validar_archivo() {
+    local archivo="$1"
+
+    if [[ ! -e "$archivo" ]]; then
+        echo "Error: '$archivo' no existe" >&2
+        return 1
+    elif [[ -d "$archivo" ]]; then
+        echo "Error: '$archivo' es un directorio" >&2
+        return 1
+    elif [[ ! -r "$archivo" ]]; then
+        echo "Error: sin permiso de lectura en '$archivo'" >&2
+        return 1
+    elif [[ ! -s "$archivo" ]]; then
+        echo "Aviso: '$archivo' esta vacio, se omite" >&2
+        return 1
+    fi
+    return 0
+}
+
+# =============================================
+# Funcion principal de analisis
+# =============================================
+
+analizar_archivo() {
+    local archivo="$1"
+    local nivel_minimo_idx="$2"
+    local lineas_total=0
+    local lineas_filtradas=0
+
+    # Contadores por nivel (array asociativo local)
+    local -A contadores
+    local n
+    for n in "${NIVELES[@]}"; do
+        contadores[$n]=0
+    done
+
+    log_msg "INFO" "Analizando: $archivo"
+
+    # Leer el archivo linea por linea
+    while IFS= read -r linea; do
+        ((lineas_total++))
+
+        # Comprobar cada nivel de severidad (de mayor a menor)
+        local i
+        for ((i = ${#NIVELES[@]} - 1; i >= 0; i--)); do
+            local nivel="${NIVELES[$i]}"
+            if [[ "$linea" == *"$nivel"* ]]; then
+                ((contadores[$nivel]++))
+
+                # Solo contar si supera el nivel minimo
+                if ((i >= nivel_minimo_idx)); then
+                    ((lineas_filtradas++))
+                fi
+                break
+            fi
+        done
+    done < "$archivo"
+
+    # Generar salida
+    local salida=""
+    salida+="--- $archivo ---\n"
+    salida+="Lineas totales: $lineas_total\n"
+    salida+="Lineas que superan nivel ${NIVELES[$nivel_minimo_idx]}: $lineas_filtradas\n"
+    salida+="\n"
+
+    for n in "${NIVELES[@]}"; do
+        local idx
+        idx=$(obtener_indice_nivel "$n")
+        local marca=""
+        if ((idx < nivel_minimo_idx)); then
+            marca=" (filtrado)"
+        fi
+        printf -v linea_formato "  %-12s %5d%s\n" "$n" "${contadores[$n]}" "$marca"
+        salida+="$linea_formato"
+    done
+
+    echo -e "$salida"
+}
+
+# =============================================
+# Parseo de argumentos
+# =============================================
+
+# Valores por defecto
+verbose=false
+nivel_filtro="INFO"
+archivo_salida=""
+archivos_log=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h | --help)
+            mostrar_ayuda
+            exit $EXIT_OK
+            ;;
+        --version)
+            echo "$SCRIPT_NAME v$VERSION"
+            exit $EXIT_OK
+            ;;
+        -v | --verbose)
+            verbose=true
+            shift
+            ;;
+        -l | --level)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --level requiere un argumento" >&2
+                exit $EXIT_USO
+            fi
+            nivel_filtro="${2^^}"  # Convertir a mayusculas
+            if ! nivel_es_valido "$nivel_filtro"; then
+                echo "Error: nivel '$nivel_filtro' no valido. Usa: ${NIVELES[*]}" >&2
+                exit $EXIT_USO
+            fi
+            shift 2
+            ;;
+        -o | --output)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --output requiere un argumento" >&2
+                exit $EXIT_USO
+            fi
+            archivo_salida="$2"
+            shift 2
+            ;;
+        --)
+            shift
+            archivos_log+=("$@")
+            break
+            ;;
+        -*)
+            echo "Error: opcion desconocida '$1'" >&2
+            echo "Usa '$SCRIPT_NAME --help' para ver las opciones disponibles" >&2
+            exit $EXIT_USO
+            ;;
+        *)
+            archivos_log+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# =============================================
+# Validaciones previas
+# =============================================
+
+if [[ ${#archivos_log[@]} -eq 0 ]]; then
+    echo "Error: debes especificar al menos un archivo de log" >&2
+    echo "Usa '$SCRIPT_NAME --help' para ver el modo de uso" >&2
+    exit $EXIT_USO
+fi
+
+nivel_minimo_idx=$(obtener_indice_nivel "$nivel_filtro")
+log_msg "INFO" "Nivel minimo de filtro: $nivel_filtro (indice $nivel_minimo_idx)"
+
+# =============================================
+# Procesamiento
+# =============================================
+
+resultados=""
+archivos_procesados=0
+archivos_con_error=0
+
+for archivo in "${archivos_log[@]}"; do
+    if ! validar_archivo "$archivo"; then
+        ((archivos_con_error++))
+        continue
+    fi
+
+    resultado=$(analizar_archivo "$archivo" "$nivel_minimo_idx")
+    resultados+="$resultado\n\n"
+    ((archivos_procesados++))
+done
+
+# =============================================
+# Salida
+# =============================================
+
+resumen="============================\n"
+resumen+="  RESUMEN DEL ANALISIS\n"
+resumen+="============================\n"
+resumen+="Archivos procesados: $archivos_procesados\n"
+resumen+="Archivos con error:  $archivos_con_error\n"
+resumen+="Nivel de filtro:     $nivel_filtro\n"
+resumen+="============================\n\n"
+resumen+="$resultados"
+
+if [[ -n "$archivo_salida" ]]; then
+    echo -e "$resumen" > "$archivo_salida"
+    log_msg "INFO" "Resumen escrito en: $archivo_salida"
+    echo "Resumen guardado en: $archivo_salida"
+else
+    echo -e "$resumen"
+fi
+
+# Exit code basado en resultado
+if [[ $archivos_con_error -gt 0 && $archivos_procesados -eq 0 ]]; then
+    exit $EXIT_ERROR
+fi
+
+exit $EXIT_OK
+```
+
+### Desglose del script
+
+El script anterior combina todos los conceptos de esta unidad. Veamos como se aplica cada uno:
+
+| Seccion | Conceptos aplicados |
+|---------|-------------------|
+| **Constantes** | `readonly` para valores inmutables, exit codes como constantes con nombre |
+| **`mostrar_ayuda()`** | Funcion con _here document_ (`<<EOF`) para texto multilinea |
+| **`log_msg()`** | Funcion con `local`, salida a stderr (`>&2`), condicional con variable global |
+| **`nivel_es_valido()`** | Bucle `for-in` sobre array, `return` para exit codes |
+| **`validar_archivo()`** | Tests de archivo (`-e`, `-d`, `-r`, `-s`), `if/elif/else` encadenados |
+| **`analizar_archivo()`** | `while IFS= read -r`, array asociativo local, bucle `for` estilo C, aritmetica con `(( ))` |
+| **Parseo de argumentos** | `case` con patrones multiples, `shift`, validacion de flags |
+| **Procesamiento** | Bucle `for-in`, `continue` para saltar errores, captura de salida con `$(...)` |
+| **Salida condicional** | Exit codes distintos segun el resultado del procesamiento |
+
+---
+
+## 7. Resumen
+
+Estos son los puntos clave de esta unidad:
+
+- **`if`** evalua el exit code del comando que le sigue: 0 es verdadero, cualquier otro valor es falso.
+- **`[[ ]]`** es preferible a `[ ]` en scripts Bash: maneja cadenas vacias, soporta regex, usa `&&`/`||` como operadores logicos y no sufre word splitting.
+- Los **tests de archivo** (`-f`, `-d`, `-e`, `-r`, `-w`, `-x`, `-s`) permiten validar la existencia y permisos de archivos y directorios antes de operar con ellos.
+- **`case`** simplifica las comparaciones multiples con soporte de patrones glob y el operador `|` para agrupar opciones.
+- **`for-in`** itera sobre listas, globs y arrays; el **for estilo C** es ideal para contadores numericos.
+- **`while IFS= read -r`** es la forma correcta de leer archivos linea por linea preservando espacios y barras invertidas.
+- Las **funciones** agrupan logica reutilizable. Usa `local` en todas las variables internas para evitar contaminar el ambito global.
+- **`return`** establece el exit code de la funcion (0-255); **`echo`** envia datos por stdout para capturar con `$(...)`.
+- Los **exit codes** siguen la convencion: 0 = exito, 1 = error general, 2 = uso incorrecto, 127 = comando no encontrado, 128+N = senal.
+- El patron **`cmd && ok || fail`** no es un `if/else` fiable porque `fail` se ejecuta tambien si `ok` falla.
+
+```mermaid
+graph TD
+    A["Inicio del script"] --> B{"Parsear<br/>argumentos"}
+    B -->|"--help / --version"| C["Mostrar info<br/>exit 0"]
+    B -->|"Flags validos"| D{"Validar<br/>archivos"}
+    B -->|"Flag desconocido"| E["Error de uso<br/>exit 2"]
+    D -->|"Archivo no valido"| F["Aviso por stderr<br/>continue"]
+    D -->|"Archivo valido"| G["Procesar con<br/>while read"]
+    G --> H{"Mas<br/>archivos?"}
+    F --> H
+    H -->|"Si"| D
+    H -->|"No"| I{"Algun archivo<br/>procesado?"}
+    I -->|"Si"| J["Mostrar resumen<br/>exit 0"]
+    I -->|"No"| K["Error: ningun archivo<br/>exit 1"]
+
+    style A fill:#2d6a4f,color:#ffffff
+    style C fill:#40916c,color:#ffffff
+    style E fill:#d00000,color:#ffffff
+    style J fill:#40916c,color:#ffffff
+    style K fill:#d00000,color:#ffffff
+    style G fill:#52b788,color:#000000

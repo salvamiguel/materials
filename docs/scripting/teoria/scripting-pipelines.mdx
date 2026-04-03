@@ -1,0 +1,1243 @@
+---
+sidebar_position: 5
+title: "Scripting en Pipelines CI/CD"
+description: "Integración de scripts Bash en GitHub Actions, wrapper scripts para Terraform y kubectl, y testing con bats."
+---
+
+# Scripting en Pipelines CI/CD
+
+Los scripts de Bash son el pegamento entre las herramientas de un pipeline CI/CD. En las unidades anteriores aprendimos a usar GitHub Actions para automatizar workflows y Terraform para gestionar infraestructura. En esta unidad vamos a conectar ambos mundos: escribir scripts que orquesten herramientas, validar configuraciones antes del despliegue y testear esos scripts con la misma disciplina que el codigo de aplicacion.
+
+---
+
+## 1. Scripts como pasos en CI/CD
+
+### El problema: comandos inline en YAML
+
+Cuando empezamos a escribir pipelines de CI/CD, la tentacion natural es poner toda la logica directamente en el archivo YAML del workflow:
+
+```yaml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and deploy
+        run: |
+          echo "Checking dependencies..."
+          if ! command -v terraform &> /dev/null; then
+            echo "ERROR: terraform not found"
+            exit 1
+          fi
+          terraform init -backend-config="bucket=$TF_STATE_BUCKET"
+          terraform fmt -check
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Terraform files not formatted"
+            exit 1
+          fi
+          terraform validate
+          terraform plan -out=tfplan
+          if [ "$APPLY" = "true" ]; then
+            terraform apply -auto-approve tfplan
+          fi
+          echo "Sending notification..."
+          curl -X POST "$SLACK_WEBHOOK" -d '{"text":"Deploy complete"}'
+```
+
+Este enfoque tiene problemas graves:
+
+| Problema | Descripcion |
+|---|---|
+| **No testeable** | No puedes ejecutar esa logica localmente sin simular todo el entorno de GitHub Actions. |
+| **No reutilizable** | Si otro workflow necesita la misma logica, hay que copiar y pegar. |
+| **Dificil de depurar** | Un error en la linea 15 de un bloque YAML multillinea es complicado de localizar. |
+| **Sin control de versiones granular** | Los cambios en la logica del script se mezclan con cambios en la estructura del workflow. |
+| **Sin linting** | Tu editor no puede aplicar shellcheck ni autocompletado dentro de un string YAML. |
+
+### La solucion: scripts externos
+
+El patron correcto es separar la logica en scripts independientes que viven en el repositorio:
+
+```
+mi-proyecto/
+  .github/
+    workflows/
+      deploy.yml        # Orquestacion: QUE ejecutar y CUANDO
+  scripts/
+    terraform-wrapper.sh  # Logica: COMO ejecutar Terraform
+    validate.sh           # Logica: COMO validar configuraciones
+    notify.sh             # Logica: COMO enviar notificaciones
+```
+
+Esto permite:
+
+- **Testear localmente**: ejecutas `./scripts/validate.sh` en tu maquina antes de hacer push.
+- **Reutilizar**: multiples workflows referencian el mismo script.
+- **Depurar**: aplicas `shellcheck`, `set -x`, y ejecutas paso a paso.
+- **Revisar**: los cambios en scripts tienen diffs claros en pull requests.
+
+### Referenciar scripts desde GitHub Actions
+
+La forma mas simple es usar `run` apuntando al script:
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run validation
+        run: ./scripts/validate.sh
+        shell: bash
+```
+
+:::tip Especifica siempre shell: bash
+Aunque `bash` es el shell por defecto en runners Linux, especificarlo explicitamente garantiza consistencia. En runners Windows el default es `pwsh` (PowerShell), y si tu script asume Bash, fallara silenciosamente o con errores confusos.
+:::
+
+### Permisos de ejecucion
+
+Un error frecuente es que el script no tenga permisos de ejecucion en el repositorio. Git rastrea el bit de ejecucion, asi que asegurate de configurarlo antes del commit:
+
+```bash
+chmod +x scripts/validate.sh
+git add scripts/validate.sh
+git commit -m "feat: add validation script with exec permissions"
+```
+
+Si olvidas este paso, veras un error `Permission denied` en el runner. La alternativa es invocarlo explicitamente con `bash`:
+
+```yaml
+- name: Run validation
+  run: bash scripts/validate.sh
+```
+
+### Scripts multilinea en YAML
+
+Para logica corta (2-3 lineas) que no justifica un archivo separado, puedes usar bloques multilinea con `|`:
+
+```yaml
+- name: Setup environment
+  run: |
+    echo "Setting up environment..."
+    npm install
+    npm test
+```
+
+El operador `|` preserva los saltos de linea. Cada linea se ejecuta como un comando independiente dentro del mismo shell. Si un comando falla y tienes `set -e` (o `shell: bash`), el step se detiene.
+
+:::warning Limite razonable para scripts inline
+Si tu bloque `run: |` supera las 10-15 lineas, es momento de extraerlo a un archivo en `scripts/`. Un buen criterio: si el script necesita funciones, parametros o logica condicional compleja, merece su propio archivo.
+:::
+
+---
+
+## 2. Variables de entorno en CI/CD
+
+Las variables de entorno son el mecanismo principal para pasar configuracion a los scripts dentro de un pipeline. GitHub Actions ofrece tres niveles de variables: las predefinidas del sistema, las personalizadas y los secrets.
+
+### Variables predefinidas de GitHub
+
+GitHub expone automaticamente un conjunto de variables en todos los runners. Estas son las mas utiles:
+
+| Variable | Contenido | Ejemplo |
+|---|---|---|
+| `GITHUB_SHA` | SHA completo del commit que disparo el workflow | `a1b2c3d4e5f6...` |
+| `GITHUB_REF` | Referencia completa (rama o tag) | `refs/heads/main` |
+| `GITHUB_REF_NAME` | Nombre corto de la rama o tag | `main` |
+| `GITHUB_REPOSITORY` | Propietario y nombre del repo | `mi-org/mi-proyecto` |
+| `GITHUB_ACTOR` | Usuario que disparo el evento | `salvamiguel` |
+| `GITHUB_RUN_ID` | ID unico de la ejecucion del workflow | `5678901234` |
+| `GITHUB_RUN_NUMBER` | Numero secuencial de ejecucion del workflow | `42` |
+| `GITHUB_WORKSPACE` | Directorio de trabajo del runner | `/home/runner/work/repo/repo` |
+| `GITHUB_EVENT_NAME` | Tipo de evento que disparo el workflow | `push`, `pull_request` |
+| `RUNNER_OS` | Sistema operativo del runner | `Linux`, `Windows`, `macOS` |
+
+Puedes usarlas directamente en tus scripts:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Desplegando commit ${GITHUB_SHA:0:7} en rama $GITHUB_REF_NAME"
+echo "Ejecutado por: $GITHUB_ACTOR"
+echo "Run ID: $GITHUB_RUN_ID"
+```
+
+### Variables personalizadas con env
+
+Puedes definir variables a tres niveles: workflow, job y step. La variable mas especifica gana:
+
+```yaml
+env:
+  APP_ENV: production          # Nivel workflow: disponible en todos los jobs
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      REGION: eu-west-1        # Nivel job: disponible en todos los steps de este job
+
+    steps:
+      - name: Deploy
+        env:
+          DEBUG: "true"        # Nivel step: solo disponible en este step
+        run: |
+          echo "Env: $APP_ENV, Region: $REGION, Debug: $DEBUG"
+```
+
+### Secrets
+
+Los secrets son variables cifradas que se configuran en `Settings > Secrets and variables > Actions` del repositorio. GitHub los enmascara automaticamente en los logs, pero conviene ser cuidadoso:
+
+```yaml
+- name: Configure cloud credentials
+  env:
+    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  run: ./scripts/terraform-wrapper.sh plan
+```
+
+:::warning Nunca hagas echo de un secret
+Aunque GitHub enmascara los secrets en los logs, hay formas en las que pueden filtrarse: codificandolos en base64, partiendolos en subcadenas, o redirigiendolos a archivos que luego se suben como artefactos. La regla es simple: nunca hagas `echo` de un secret bajo ninguna circunstancia.
+
+```bash
+# PELIGROSO - nunca hagas esto
+echo "Token: $MY_SECRET"
+echo "$MY_SECRET" | base64    # El valor codificado NO se enmascara
+
+# CORRECTO - usa el secret directamente
+curl -H "Authorization: Bearer $MY_SECRET" https://api.example.com
+```
+:::
+
+### Pasar datos entre steps
+
+GitHub Actions proporciona dos mecanismos para compartir datos entre steps del mismo job:
+
+**`$GITHUB_OUTPUT` -- outputs del step:**
+
+```yaml
+- name: Get version
+  id: version
+  run: |
+    VERSION=$(cat package.json | jq -r '.version')
+    echo "app_version=$VERSION" >> $GITHUB_OUTPUT
+
+- name: Use version
+  run: |
+    echo "Version: ${{ steps.version.outputs.app_version }}"
+```
+
+**`$GITHUB_ENV` -- variables de entorno para steps posteriores:**
+
+```yaml
+- name: Set deployment target
+  run: |
+    if [ "$GITHUB_REF_NAME" = "main" ]; then
+      echo "DEPLOY_ENV=production" >> $GITHUB_ENV
+    else
+      echo "DEPLOY_ENV=staging" >> $GITHUB_ENV
+    fi
+
+- name: Deploy
+  run: |
+    echo "Desplegando en $DEPLOY_ENV"
+    ./scripts/deploy.sh "$DEPLOY_ENV"
+```
+
+La diferencia clave: `$GITHUB_OUTPUT` crea valores asociados a un step especifico (accesibles con `${{ steps.id.outputs.name }}`), mientras que `$GITHUB_ENV` crea variables de entorno disponibles para todos los steps posteriores del job.
+
+---
+
+## 3. Wrapper script para Terraform
+
+### Que es un wrapper script
+
+Un wrapper script es un script de Bash que envuelve la ejecucion de una herramienta con logica adicional: validaciones previas, logging estructurado, manejo de errores y codigos de salida significativos. En lugar de ejecutar `terraform plan` directamente, ejecutas un script que orquesta todo el flujo.
+
+### Por que usar un wrapper
+
+Ejecutar `terraform plan` directamente en un pipeline parece sencillo, pero en la practica necesitas:
+
+- Verificar que el formato es correcto (`terraform fmt -check`) antes de planificar.
+- Validar la sintaxis (`terraform validate`) antes de gastar tiempo en un plan.
+- Guardar el plan en un archivo para aplicarlo de forma determinista.
+- Registrar con timestamps que paso en cada fase, para diagnosticar fallos.
+- Devolver codigos de salida que el pipeline pueda interpretar.
+- Implementar reintentos para errores transitorios de red.
+
+### Wrapper completo
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# =============================================================================
+# Wrapper para Terraform: fmt check -> validate -> plan -> apply
+# Uso: ./terraform-wrapper.sh <action> [options]
+#   action: plan | apply | destroy
+#   options:
+#     -e, --environment   Entorno (staging, production)
+#     -d, --directory     Directorio de configuracion Terraform
+#     -a, --auto-approve  Aplicar sin confirmacion (solo para CI)
+# =============================================================================
+
+# --- Colores y logging ---
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+log_info()    { echo -e "${BLUE}[INFO]  $(date '+%Y-%m-%d %H:%M:%S')${NC} $*"; }
+log_success() { echo -e "${GREEN}[OK]    $(date '+%Y-%m-%d %H:%M:%S')${NC} $*"; }
+log_warn()    { echo -e "${YELLOW}[WARN]  $(date '+%Y-%m-%d %H:%M:%S')${NC} $*"; }
+log_error()   { echo -e "${RED}[ERROR] $(date '+%Y-%m-%d %H:%M:%S')${NC} $*" >&2; }
+
+# --- Valores por defecto ---
+ACTION=""
+ENVIRONMENT="staging"
+TF_DIR="."
+AUTO_APPROVE=false
+
+# --- Parseo de argumentos ---
+usage() {
+    echo "Uso: $0 <plan|apply|destroy> [-e environment] [-d directory] [-a]"
+    exit 1
+}
+
+if [ $# -lt 1 ]; then
+    usage
+fi
+
+ACTION="$1"
+shift
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -e|--environment) ENVIRONMENT="$2"; shift 2 ;;
+        -d|--directory)   TF_DIR="$2"; shift 2 ;;
+        -a|--auto-approve) AUTO_APPROVE=true; shift ;;
+        *) log_error "Argumento desconocido: $1"; usage ;;
+    esac
+done
+
+# --- Validacion de argumentos ---
+if [[ ! "$ACTION" =~ ^(plan|apply|destroy)$ ]]; then
+    log_error "Accion invalida: $ACTION. Usa plan, apply o destroy."
+    exit 1
+fi
+
+if [ ! -d "$TF_DIR" ]; then
+    log_error "Directorio no encontrado: $TF_DIR"
+    exit 1
+fi
+
+cd "$TF_DIR"
+
+# --- Verificar que Terraform esta instalado ---
+if ! command -v terraform &> /dev/null; then
+    log_error "Terraform no esta instalado o no esta en el PATH"
+    exit 1
+fi
+
+TF_VERSION=$(terraform version -json | jq -r '.terraform_version')
+log_info "Terraform version: $TF_VERSION"
+log_info "Accion: $ACTION | Entorno: $ENVIRONMENT | Directorio: $TF_DIR"
+
+# --- Paso 1: Verificar formato ---
+log_info "Paso 1/4: Verificando formato (terraform fmt -check)..."
+if terraform fmt -check -recursive > /dev/null 2>&1; then
+    log_success "Formato correcto"
+else
+    log_error "Hay archivos sin formatear. Ejecuta 'terraform fmt -recursive' localmente."
+    terraform fmt -check -recursive -diff
+    exit 2
+fi
+
+# --- Paso 2: Inicializar ---
+log_info "Paso 2/4: Inicializando (terraform init)..."
+if ! terraform init -input=false -no-color; then
+    log_error "Fallo en terraform init"
+    exit 3
+fi
+log_success "Inicializacion completada"
+
+# --- Paso 3: Validar ---
+log_info "Paso 3/4: Validando configuracion (terraform validate)..."
+if ! terraform validate -no-color; then
+    log_error "Fallo en terraform validate"
+    exit 4
+fi
+log_success "Configuracion valida"
+
+# --- Paso 4: Ejecutar la accion ---
+PLAN_FILE="tfplan-${ENVIRONMENT}-$(date +%Y%m%d%H%M%S)"
+
+case "$ACTION" in
+    plan)
+        log_info "Paso 4/4: Generando plan (terraform plan)..."
+        if terraform plan -out="$PLAN_FILE" -no-color -input=false; then
+            log_success "Plan generado: $PLAN_FILE"
+            log_info "Para aplicar: $0 apply -e $ENVIRONMENT -d $TF_DIR"
+        else
+            log_error "Fallo en terraform plan"
+            exit 5
+        fi
+        ;;
+    apply)
+        log_info "Paso 4/4: Aplicando cambios (terraform apply)..."
+        # Buscar el plan mas reciente para este entorno
+        LATEST_PLAN=$(ls -t tfplan-${ENVIRONMENT}-* 2>/dev/null | head -1)
+        if [ -n "$LATEST_PLAN" ]; then
+            log_info "Usando plan existente: $LATEST_PLAN"
+            if [ "$AUTO_APPROVE" = true ]; then
+                terraform apply -no-color -input=false "$LATEST_PLAN"
+            else
+                terraform apply "$LATEST_PLAN"
+            fi
+        else
+            log_warn "No se encontro plan previo. Generando plan y aplicando..."
+            if [ "$AUTO_APPROVE" = true ]; then
+                terraform apply -auto-approve -no-color -input=false
+            else
+                terraform apply
+            fi
+        fi
+        log_success "Apply completado"
+        ;;
+    destroy)
+        log_warn "ATENCION: Se van a destruir recursos en $ENVIRONMENT"
+        if [ "$AUTO_APPROVE" = true ]; then
+            terraform destroy -auto-approve -no-color -input=false
+        else
+            terraform destroy
+        fi
+        log_success "Destroy completado"
+        ;;
+esac
+
+log_success "Wrapper finalizado correctamente (accion: $ACTION, entorno: $ENVIRONMENT)"
+exit 0
+```
+
+### Uso desde GitHub Actions
+
+```yaml
+name: Terraform Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths: ['infra/**']
+  pull_request:
+    branches: [main]
+    paths: ['infra/**']
+
+jobs:
+  terraform:
+    name: Terraform ${{ github.event_name == 'push' && 'Apply' || 'Plan' }}
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_WORKSPACE: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Terraform Plan
+        if: github.event_name == 'pull_request'
+        run: ./scripts/terraform-wrapper.sh plan -e staging -d infra/
+        shell: bash
+
+      - name: Terraform Apply
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: ./scripts/terraform-wrapper.sh apply -e production -d infra/ -a
+        shell: bash
+```
+
+:::info Conexion con los modulos de Terraform y GitOps
+Este patron conecta directamente con lo aprendido en las unidades anteriores. En el modulo de Terraform (S1-S2) vimos como estructurar configuraciones con HCL. En el modulo de GitOps (S3-S4) vimos como GitHub Actions orquesta el despliegue. El wrapper script es la pieza que une ambos mundos: encapsula la logica de Terraform en un script testeable y reutilizable que GitHub Actions ejecuta como un step mas.
+:::
+
+---
+
+## 4. Wrapper script para kubectl
+
+### El patron de despliegue seguro
+
+Desplegar en Kubernetes directamente con `kubectl apply` es arriesgado. Un manifiesto mal formado puede tumbar un servicio en produccion. El wrapper aplica el mismo principio que con Terraform: validar antes de actuar y tener un plan de reversion.
+
+### Wrapper completo
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# =============================================================================
+# Wrapper para kubectl: validar -> apply -> verificar rollout -> rollback si falla
+# Uso: ./kubectl-wrapper.sh <apply|rollback> -f <manifest> [-n namespace]
+# =============================================================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log_info()    { echo -e "${BLUE}[INFO]  $(date '+%Y-%m-%d %H:%M:%S')${NC} $*"; }
+log_success() { echo -e "${GREEN}[OK]    $(date '+%Y-%m-%d %H:%M:%S')${NC} $*"; }
+log_warn()    { echo -e "${YELLOW}[WARN]  $(date '+%Y-%m-%d %H:%M:%S')${NC} $*"; }
+log_error()   { echo -e "${RED}[ERROR] $(date '+%Y-%m-%d %H:%M:%S')${NC} $*" >&2; }
+
+ACTION=""
+MANIFEST=""
+NAMESPACE="default"
+TIMEOUT="120s"
+
+usage() {
+    echo "Uso: $0 <apply|rollback> -f <manifest.yaml> [-n namespace] [-t timeout]"
+    exit 1
+}
+
+if [ $# -lt 1 ]; then usage; fi
+ACTION="$1"; shift
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -f|--file)      MANIFEST="$2"; shift 2 ;;
+        -n|--namespace) NAMESPACE="$2"; shift 2 ;;
+        -t|--timeout)   TIMEOUT="$2"; shift 2 ;;
+        *) log_error "Argumento desconocido: $1"; usage ;;
+    esac
+done
+
+# --- Validaciones previas ---
+if [ -z "$MANIFEST" ]; then
+    log_error "Debes especificar un manifiesto con -f"
+    exit 1
+fi
+
+if [ ! -f "$MANIFEST" ]; then
+    log_error "Archivo no encontrado: $MANIFEST"
+    exit 1
+fi
+
+if ! command -v kubectl &> /dev/null; then
+    log_error "kubectl no esta instalado"
+    exit 1
+fi
+
+# --- Funciones ---
+validate_manifest() {
+    log_info "Validando manifiesto con dry-run..."
+    if kubectl apply --dry-run=client -f "$MANIFEST" -n "$NAMESPACE" > /dev/null 2>&1; then
+        log_success "Manifiesto valido"
+        return 0
+    else
+        log_error "Manifiesto invalido:"
+        kubectl apply --dry-run=client -f "$MANIFEST" -n "$NAMESPACE"
+        return 1
+    fi
+}
+
+get_deployment_name() {
+    # Extrae el nombre del Deployment del manifiesto
+    kubectl apply --dry-run=client -f "$MANIFEST" -n "$NAMESPACE" -o jsonpath='{.metadata.name}' 2>/dev/null
+}
+
+wait_for_rollout() {
+    local deployment="$1"
+    log_info "Esperando rollout de $deployment (timeout: $TIMEOUT)..."
+    if kubectl rollout status "deployment/$deployment" -n "$NAMESPACE" --timeout="$TIMEOUT"; then
+        log_success "Rollout completado: $deployment"
+        return 0
+    else
+        log_error "Rollout fallido o timeout alcanzado para $deployment"
+        return 1
+    fi
+}
+
+rollback_deployment() {
+    local deployment="$1"
+    log_warn "Ejecutando rollback de $deployment..."
+    if kubectl rollout undo "deployment/$deployment" -n "$NAMESPACE"; then
+        log_success "Rollback completado: $deployment"
+        wait_for_rollout "$deployment"
+    else
+        log_error "Fallo en el rollback de $deployment"
+        exit 1
+    fi
+}
+
+# --- Ejecucion ---
+case "$ACTION" in
+    apply)
+        validate_manifest
+
+        DEPLOYMENT_NAME=$(get_deployment_name)
+        log_info "Aplicando manifiesto: $MANIFEST (namespace: $NAMESPACE)"
+
+        kubectl apply -f "$MANIFEST" -n "$NAMESPACE"
+
+        if [ -n "$DEPLOYMENT_NAME" ]; then
+            if ! wait_for_rollout "$DEPLOYMENT_NAME"; then
+                log_error "Despliegue fallido. Iniciando rollback automatico..."
+                rollback_deployment "$DEPLOYMENT_NAME"
+                exit 1
+            fi
+        fi
+
+        log_success "Despliegue completado exitosamente"
+        ;;
+    rollback)
+        DEPLOYMENT_NAME=$(get_deployment_name)
+        if [ -z "$DEPLOYMENT_NAME" ]; then
+            log_error "No se pudo determinar el nombre del deployment"
+            exit 1
+        fi
+        rollback_deployment "$DEPLOYMENT_NAME"
+        ;;
+    *)
+        log_error "Accion invalida: $ACTION"
+        usage
+        ;;
+esac
+```
+
+### Uso desde GitHub Actions
+
+```yaml
+- name: Deploy to Kubernetes
+  run: ./scripts/kubectl-wrapper.sh apply -f k8s/deployment.yaml -n production -t 180s
+  shell: bash
+  env:
+    KUBECONFIG: ${{ secrets.KUBECONFIG }}
+```
+
+La clave de este wrapper es el **rollback automatico**: si el rollout falla (por ejemplo, porque la nueva imagen tiene un error y los pods no arrancan), el script revierte automaticamente al estado anterior sin intervencion humana.
+
+---
+
+## 5. Validacion de configuraciones
+
+Antes de ejecutar cualquier despliegue, un script de validacion puede detectar errores comunes que ahorrarian minutos (o horas) de depuracion. Este patron se conoce como **pre-flight checks**.
+
+### Script de validacion completo
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# =============================================================================
+# Pre-deploy validation: verifica que todo esta listo antes del despliegue
+# Uso: ./validate.sh [-e environment] [-c config.yaml]
+# =============================================================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+ERRORS=0
+WARNINGS=0
+
+check_pass() { echo -e "  ${GREEN}[PASS]${NC} $*"; }
+check_fail() { echo -e "  ${RED}[FAIL]${NC} $*"; ERRORS=$((ERRORS + 1)); }
+check_warn() { echo -e "  ${YELLOW}[WARN]${NC} $*"; WARNINGS=$((WARNINGS + 1)); }
+
+echo "========================================"
+echo " Pre-deploy Validation"
+echo "========================================"
+echo ""
+
+# --- 1. Herramientas requeridas ---
+echo "1. Verificando herramientas requeridas..."
+
+REQUIRED_TOOLS=("terraform" "kubectl" "jq" "curl" "git")
+for tool in "${REQUIRED_TOOLS[@]}"; do
+    if command -v "$tool" &> /dev/null; then
+        VERSION=$($tool --version 2>/dev/null | head -1 || echo "version desconocida")
+        check_pass "$tool encontrado ($VERSION)"
+    else
+        check_fail "$tool no encontrado en el PATH"
+    fi
+done
+
+echo ""
+
+# --- 2. Variables de entorno requeridas ---
+echo "2. Verificando variables de entorno..."
+
+REQUIRED_VARS=("AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY" "AWS_DEFAULT_REGION")
+for var in "${REQUIRED_VARS[@]}"; do
+    if [ -n "${!var:-}" ]; then
+        # Mostrar solo los primeros 4 caracteres por seguridad
+        VALUE="${!var}"
+        MASKED="${VALUE:0:4}****"
+        check_pass "$var configurada ($MASKED)"
+    else
+        check_fail "$var no esta definida"
+    fi
+done
+
+echo ""
+
+# --- 3. Validar sintaxis YAML ---
+echo "3. Verificando archivos de configuracion..."
+
+if [ -d "k8s/" ]; then
+    for file in k8s/*.yaml k8s/*.yml; do
+        [ -f "$file" ] || continue
+        if python3 -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null; then
+            check_pass "Sintaxis YAML valida: $file"
+        else
+            check_fail "Sintaxis YAML invalida: $file"
+        fi
+    done
+fi
+
+echo ""
+
+# --- 4. Buscar secretos hardcodeados ---
+echo "4. Buscando secretos hardcodeados..."
+
+PATTERNS=(
+    "password\s*[:=]\s*['\"][^'\"]+['\"]"
+    "secret\s*[:=]\s*['\"][^'\"]+['\"]"
+    "api[_-]?key\s*[:=]\s*['\"][^'\"]+['\"]"
+    "AKIA[0-9A-Z]{16}"    # AWS Access Key ID
+)
+
+for pattern in "${PATTERNS[@]}"; do
+    MATCHES=$(grep -rn -E "$pattern" --include="*.yaml" --include="*.yml" \
+              --include="*.tf" --include="*.sh" . 2>/dev/null | \
+              grep -v ".git/" | grep -v "node_modules/" || true)
+    if [ -n "$MATCHES" ]; then
+        check_fail "Posible secreto hardcodeado encontrado:"
+        echo "$MATCHES" | head -5 | sed 's/^/         /'
+    fi
+done
+
+if [ "$ERRORS" -eq 0 ]; then
+    check_pass "No se encontraron secretos hardcodeados"
+fi
+
+echo ""
+
+# --- 5. Verificar conexion ---
+echo "5. Verificando conectividad..."
+
+if curl -s --max-time 5 "https://registry.terraform.io/" > /dev/null 2>&1; then
+    check_pass "Terraform Registry accesible"
+else
+    check_warn "No se puede acceder a Terraform Registry"
+fi
+
+echo ""
+
+# --- Resumen ---
+echo "========================================"
+if [ "$ERRORS" -gt 0 ]; then
+    echo -e " ${RED}RESULTADO: $ERRORS errores, $WARNINGS advertencias${NC}"
+    echo " El despliegue NO debe continuar."
+    echo "========================================"
+    exit 1
+else
+    echo -e " ${GREEN}RESULTADO: 0 errores, $WARNINGS advertencias${NC}"
+    echo " Validacion completada. El despliegue puede continuar."
+    echo "========================================"
+    exit 0
+fi
+```
+
+:::tip Validacion como primer paso del pipeline
+Coloca siempre el script de validacion como el primer step de tu job de despliegue. Un fallo rapido en la validacion ahorra el tiempo de init, plan y apply. Ademas, los mensajes de error son mucho mas claros que los errores cripticos de Terraform o kubectl.
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+  - name: Pre-flight checks
+    run: ./scripts/validate.sh
+    shell: bash
+  - name: Deploy
+    run: ./scripts/terraform-wrapper.sh apply -e production
+    shell: bash
+```
+:::
+
+---
+
+## 6. Testing de scripts con bats
+
+### Que es bats
+
+**bats** (Bash Automated Testing System) es un framework de testing para scripts de Bash. Permite escribir tests con una sintaxis simple y ejecutarlos como parte del pipeline de CI/CD, aplicando al scripting las mismas practicas de testing que usamos con codigo de aplicacion.
+
+### Instalacion
+
+```bash
+# Con npm (la forma mas sencilla)
+npm install -g bats
+
+# En macOS con Homebrew
+brew install bats-core
+
+# Desde el repositorio oficial
+git clone https://github.com/bats-core/bats-core.git
+cd bats-core
+./install.sh /usr/local
+```
+
+Para funcionalidades adicionales, instala las librerias auxiliares:
+
+```bash
+# Aserciones mas expresivas
+npm install -g bats-assert
+
+# Funciones auxiliares para testing
+npm install -g bats-support
+```
+
+### Estructura de un test
+
+Los archivos de test de bats usan la extension `.bats` y siguen esta estructura:
+
+```bash
+#!/usr/bin/env bats
+
+# Cada bloque @test define un caso de prueba
+@test "validate.sh exits 0 on valid configuration" {
+    # Preparar entorno de prueba
+    export AWS_ACCESS_KEY_ID="test-key"
+    export AWS_SECRET_ACCESS_KEY="test-secret"
+    export AWS_DEFAULT_REGION="eu-west-1"
+
+    # Ejecutar el script bajo test
+    run ./scripts/validate.sh
+
+    # Verificar resultado
+    [ "$status" -eq 0 ]
+}
+
+@test "validate.sh exits 1 when required vars are missing" {
+    # No definimos las variables requeridas
+    unset AWS_ACCESS_KEY_ID 2>/dev/null || true
+
+    run ./scripts/validate.sh
+
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "no esta definida" ]]
+}
+
+@test "terraform-wrapper.sh rejects invalid action" {
+    run ./scripts/terraform-wrapper.sh invalid-action
+
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "Accion invalida" ]]
+}
+
+@test "terraform-wrapper.sh requires at least one argument" {
+    run ./scripts/terraform-wrapper.sh
+
+    [ "$status" -ne 0 ]
+    [[ "$output" =~ "Uso:" ]]
+}
+```
+
+### La variable especial `run`
+
+El comando `run` es el nucleo de bats. Ejecuta un comando y captura:
+
+| Variable | Contenido |
+|---|---|
+| `$status` | Codigo de salida del comando |
+| `$output` | Salida completa (stdout + stderr) |
+| `$lines` | Array con cada linea de la salida |
+| `${lines[0]}` | Primera linea de la salida |
+
+### setup() y teardown()
+
+Estas funciones se ejecutan antes y despues de cada test, respectivamente. Son ideales para preparar y limpiar el entorno:
+
+```bash
+#!/usr/bin/env bats
+
+# Se ejecuta ANTES de cada @test
+setup() {
+    # Crear directorio temporal para cada test
+    TEST_DIR=$(mktemp -d)
+    export TEST_DIR
+
+    # Copiar scripts al directorio temporal
+    cp -r scripts/ "$TEST_DIR/"
+
+    # Crear archivos de configuracion de prueba
+    mkdir -p "$TEST_DIR/k8s"
+    cat > "$TEST_DIR/k8s/deployment.yaml" << 'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+        - name: test
+          image: nginx:latest
+EOF
+}
+
+# Se ejecuta DESPUES de cada @test
+teardown() {
+    # Limpiar directorio temporal
+    rm -rf "$TEST_DIR"
+}
+
+@test "YAML validation passes for valid manifest" {
+    run python3 -c "import yaml; yaml.safe_load(open('$TEST_DIR/k8s/deployment.yaml'))"
+    [ "$status" -eq 0 ]
+}
+
+@test "YAML validation fails for invalid manifest" {
+    echo "invalid: yaml: [broken" > "$TEST_DIR/k8s/bad.yaml"
+    run python3 -c "import yaml; yaml.safe_load(open('$TEST_DIR/k8s/bad.yaml'))"
+    [ "$status" -ne 0 ]
+}
+```
+
+### Funciones auxiliares
+
+Para tests mas complejos, puedes definir funciones auxiliares en un archivo separado:
+
+```bash
+# tests/helpers.bash
+
+# Verifica que un comando existe
+assert_command_exists() {
+    local cmd="$1"
+    if ! command -v "$cmd" &> /dev/null; then
+        echo "Command not found: $cmd"
+        return 1
+    fi
+}
+
+# Verifica que un archivo contiene un patron
+assert_file_contains() {
+    local file="$1"
+    local pattern="$2"
+    if ! grep -q "$pattern" "$file"; then
+        echo "Pattern '$pattern' not found in $file"
+        echo "File contents:"
+        cat "$file"
+        return 1
+    fi
+}
+
+# Crea un mock de un comando
+mock_command() {
+    local cmd="$1"
+    local exit_code="${2:-0}"
+    local output="${3:-}"
+
+    local mock_dir="$TEST_DIR/mocks"
+    mkdir -p "$mock_dir"
+
+    cat > "$mock_dir/$cmd" << MOCK
+#!/usr/bin/env bash
+echo "$output"
+exit $exit_code
+MOCK
+    chmod +x "$mock_dir/$cmd"
+    export PATH="$mock_dir:$PATH"
+}
+```
+
+Uso en los tests:
+
+```bash
+#!/usr/bin/env bats
+
+load 'helpers'
+
+setup() {
+    TEST_DIR=$(mktemp -d)
+}
+
+teardown() {
+    rm -rf "$TEST_DIR"
+}
+
+@test "wrapper detects missing terraform" {
+    # Crear un PATH vacio para simular que terraform no existe
+    mock_command "terraform" 127 "command not found"
+
+    run ./scripts/terraform-wrapper.sh plan
+    [ "$status" -ne 0 ]
+    [[ "$output" =~ "no esta instalado" ]]
+}
+```
+
+### Ejecutar bats en CI
+
+```yaml
+jobs:
+  test-scripts:
+    name: Test Bash Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bats
+        run: |
+          npm install -g bats bats-assert bats-support
+
+      - name: Run script tests
+        run: bats tests/ --formatter tap
+        shell: bash
+```
+
+:::tip Testear scripts es tan importante como testear codigo
+Un script de despliegue roto puede causar mas danos que un bug en la aplicacion. Si tu script hace `terraform destroy` en lugar de `terraform apply` por un error de logica, las consecuencias son inmediatas e irreversibles. Testear scripts con bats es una inversion minima con un retorno enorme.
+:::
+
+---
+
+## 7. Automatizacion de releases
+
+Los scripts de Bash son ideales para automatizar el proceso de release: generar changelogs, calcular versiones, crear tags y notificar al equipo.
+
+### Script de release
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# =============================================================================
+# Automatizacion de releases: changelog -> version bump -> tag -> notificar
+# Uso: ./release.sh [major|minor|patch]
+# =============================================================================
+
+BUMP_TYPE="${1:-patch}"
+
+log_info() { echo "[INFO] $*"; }
+log_success() { echo "[OK]   $*"; }
+
+# --- 1. Obtener version actual ---
+CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+CURRENT_VERSION="${CURRENT_VERSION#v}"  # Quitar el prefijo 'v'
+
+IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+# --- 2. Calcular nueva version (Semantic Versioning) ---
+case "$BUMP_TYPE" in
+    major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+    minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+    patch) PATCH=$((PATCH + 1)) ;;
+    *)     echo "Uso: $0 [major|minor|patch]"; exit 1 ;;
+esac
+
+NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+log_info "Version actual: v$CURRENT_VERSION -> Nueva version: $NEW_VERSION"
+
+# --- 3. Generar changelog desde el ultimo tag ---
+log_info "Generando changelog..."
+
+CHANGELOG=$(git log "v${CURRENT_VERSION}..HEAD" --pretty=format:"- %s (%h)" --no-merges 2>/dev/null || echo "- Release inicial")
+
+CHANGELOG_ENTRY="## ${NEW_VERSION} ($(date +%Y-%m-%d))
+
+${CHANGELOG}
+"
+
+# Prepend al archivo CHANGELOG.md
+if [ -f CHANGELOG.md ]; then
+    echo -e "${CHANGELOG_ENTRY}\n$(cat CHANGELOG.md)" > CHANGELOG.md
+else
+    echo "$CHANGELOG_ENTRY" > CHANGELOG.md
+fi
+
+log_success "Changelog actualizado"
+
+# --- 4. Crear commit y tag ---
+git add CHANGELOG.md
+git commit -m "release: ${NEW_VERSION}"
+git tag -a "$NEW_VERSION" -m "Release ${NEW_VERSION}"
+
+log_success "Tag creado: $NEW_VERSION"
+
+# --- 5. Notificar (Slack webhook) ---
+if [ -n "${SLACK_WEBHOOK:-}" ]; then
+    log_info "Enviando notificacion a Slack..."
+    PAYLOAD=$(jq -n \
+        --arg version "$NEW_VERSION" \
+        --arg changes "$CHANGELOG" \
+        '{text: ("Nueva release: " + $version + "\n" + $changes)}')
+
+    curl -s -X POST "$SLACK_WEBHOOK" \
+         -H "Content-Type: application/json" \
+         -d "$PAYLOAD" > /dev/null
+
+    log_success "Notificacion enviada"
+else
+    log_info "SLACK_WEBHOOK no configurado. Omitiendo notificacion."
+fi
+
+echo ""
+log_success "Release $NEW_VERSION completada"
+echo "Ejecuta 'git push && git push --tags' para publicar."
+```
+
+### Uso desde GitHub Actions
+
+```yaml
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Tipo de version bump'
+        required: true
+        type: choice
+        options: [patch, minor, major]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    # Necesario para git log y tags
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create Release
+        run: ./scripts/release.sh ${{ inputs.bump }}
+        shell: bash
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Push release
+        run: |
+          git push origin main
+          git push origin --tags
+```
+
+---
+
+## 8. Buenas practicas de scripting en pipelines
+
+### Tabla de referencia
+
+| Practica | Descripcion | Ejemplo |
+|---|---|---|
+| **Fail fast** | Usa `set -euo pipefail` en la primera linea de cada script | Detiene la ejecucion al primer error |
+| **Idempotencia** | Ejecutar el script dos veces debe ser seguro | Usa `terraform plan` antes de `apply`, comprueba si un recurso existe antes de crearlo |
+| **Logging estructurado** | Prefija cada mensaje con timestamp, nivel y contexto | `[INFO] 2024-03-15 10:30:00 Iniciando despliegue...` |
+| **Codigos de salida** | Usa codigos diferentes para tipos de error distintos | `exit 2` para errores de formato, `exit 3` para errores de init |
+| **Scripts en el repo** | Mantiene los scripts en `scripts/`, nunca inline en YAML | Permite testing local y code review |
+| **Portabilidad** | Evita bashismos cuando el script deba correr en `sh` | Usa `$(command)` en lugar de `` `command` `` |
+| **Testa localmente** | Ejecuta el script en tu maquina antes de hacer push | `./scripts/validate.sh` funciona identico en local y en CI |
+| **Variables de entorno** | No hardcodees valores; usa `env:` en el workflow | Permite reutilizar el script en diferentes entornos |
+| **Manejo de secretos** | Nunca hagas echo de secrets ni los guardes en archivos | Pasalos como variables de entorno y usalos directamente |
+| **Dry-run** | Ofrece un modo de ejecucion sin efectos secundarios | `--dry-run` para verificar sin aplicar cambios |
+
+### Estructura recomendada de un script de pipeline
+
+Todo script que se ejecute en un pipeline deberia seguir esta plantilla:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# =============================================================================
+# Descripcion breve del script
+# Uso: ./script.sh <args>
+# =============================================================================
+
+# --- 1. Funciones de logging ---
+log_info()  { echo "[INFO]  $(date '+%H:%M:%S') $*"; }
+log_error() { echo "[ERROR] $(date '+%H:%M:%S') $*" >&2; }
+
+# --- 2. Parseo de argumentos ---
+# Validar que se recibieron los argumentos esperados
+
+# --- 3. Validaciones previas ---
+# Verificar prerrequisitos: herramientas, variables, permisos
+
+# --- 4. Logica principal ---
+# Ejecutar las acciones del script
+
+# --- 5. Limpieza y salida ---
+# trap para limpiar recursos temporales
+# Codigo de salida significativo
+```
+
+:::danger Nunca ignores los codigos de salida
+Sin `set -e`, un comando que falla no detiene el script. Esto puede llevar a situaciones donde `terraform plan` falla pero `terraform apply` se ejecuta igualmente con un plan anterior o sin plan. El resultado: cambios no deseados en infraestructura de produccion.
+
+```bash
+# SIN set -e: terraform apply se ejecuta aunque plan falle
+terraform plan -out=tfplan    # Fallo silencioso
+terraform apply tfplan        # Se ejecuta con un plan viejo o inexistente
+
+# CON set -euo pipefail: el script se detiene en el primer error
+set -euo pipefail
+terraform plan -out=tfplan    # Si falla, el script se detiene aqui
+terraform apply tfplan        # Solo se ejecuta si plan tuvo exito
+```
+:::
+
+---
+
+## 9. Resumen
+
+Estos son los puntos clave de esta unidad:
+
+- Los **scripts externos** son preferibles a los comandos inline en YAML: son testeables, reutilizables y mas faciles de depurar.
+- Las **variables de entorno** en GitHub Actions operan a tres niveles (workflow, job, step) y los secrets se pasan siempre mediante `env:`, nunca interpolados en `run:`.
+- Los **wrapper scripts** encapsulan la ejecucion de herramientas como Terraform y kubectl con validacion, logging y manejo de errores.
+- La **validacion previa** (pre-flight checks) detecta errores antes de que causen danos: herramientas ausentes, variables no definidas, YAML invalido, secretos hardcodeados.
+- **bats** permite testear scripts con la misma disciplina que el codigo de aplicacion, con `setup()`, `teardown()` y aserciones expresivas.
+- La **automatizacion de releases** con scripts estandariza el proceso de versionado, changelog y notificacion.
+- `set -euo pipefail` es **obligatorio** en cualquier script de pipeline para garantizar un comportamiento fail-fast.
+
+```mermaid
+graph LR
+    A["Pre-flight<br/>Checks<br/><i>validate.sh</i>"] --> B["Build /<br/>Lint<br/><i>build.sh</i>"]
+    B --> C["Test<br/>Scripts<br/><i>bats tests/</i>"]
+    C --> D["Terraform<br/>Plan<br/><i>tf-wrapper.sh plan</i>"]
+    D --> E["Terraform<br/>Apply<br/><i>tf-wrapper.sh apply</i>"]
+    E --> F["K8s<br/>Deploy<br/><i>kubectl-wrapper.sh</i>"]
+    F --> G["Release /<br/>Notify<br/><i>release.sh</i>"]
+
+    style A fill:#d4edda,stroke:#28a745
+    style B fill:#d4edda,stroke:#28a745
+    style C fill:#d4edda,stroke:#28a745
+    style D fill:#d4edda,stroke:#28a745
+    style E fill:#d4edda,stroke:#28a745
+    style F fill:#d4edda,stroke:#28a745
+    style G fill:#d4edda,stroke:#28a745
+```

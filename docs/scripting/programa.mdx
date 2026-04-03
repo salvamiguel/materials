@@ -1,0 +1,75 @@
+---
+sidebar_position: 0
+title: "Programa del módulo"
+description: "Visión general del módulo de Scripting: unidades didácticas, carga horaria, requisitos previos y herramientas necesarias."
+---
+
+# Programa del módulo de Scripting
+
+Este módulo capacita al alumno en **Bash scripting** como herramienta fundamental de automatización en entornos DevOps. La carga lectiva es de **6 horas** en formato entre semana (S5 4 h + S6 2 h) o de **4 horas** en formato fin de semana (S5 4 h). El recorrido parte de los fundamentos del shell scripting, avanza por procesamiento de texto y automatización de tareas, y culmina con la integración de scripts en **pipelines CI/CD** junto con Terraform y herramientas GitOps.
+
+---
+
+## Unidades didácticas
+
+| Unidad | Título | Páginas | Horas |
+|--------|--------|---------|-------|
+| UD 1 | Fundamentos de Bash Scripting | [Introducción a Bash](./teoria/intro), [Estructuras de Control y Funciones](./teoria/estructuras-control) | 2 h |
+| UD 2 | Procesamiento de Texto y Automatización | [Pipes y Herramientas de Texto](./teoria/pipes-herramientas), [Automatización y Manejo de Errores](./teoria/automatizacion) | 2 h |
+| UD 3 | Scripting en Pipelines CI/CD | [Scripting en Pipelines](./teoria/scripting-pipelines) | 2 h |
+
+---
+
+## Carga horaria
+
+| Formato | Sesiones | Teoría | Práctica | Total |
+|---------|----------|--------|----------|-------|
+| Entre semana (ES) | S5 (4 h) + S6 (2 h) | 3 h | 3 h | **6 h** |
+| Fin de semana (FS) | S5 (4 h) | 2 h | 2 h | **4 h** |
+
+:::note Formato fin de semana
+En formato FS el módulo se concentra en una única sesión de 4 h, cubriendo los fundamentos esenciales y la integración básica en pipelines. La UD 3 se cubre como demo e introducción al final de S5, con material complementario para profundización autónoma.
+:::
+
+---
+
+## Requisitos previos
+
+:::info Antes de empezar
+
+- Fundamentos de programación (variables, bucles, condicionales, funciones).
+- Familiaridad básica con línea de comandos Linux/macOS (navegación, archivos).
+- Conceptos de Terraform y GitOps cubiertos en los módulos anteriores (S1–S4).
+- Conocimientos básicos de **Git** (commits, branches, push).
+
+:::
+
+---
+
+## Herramientas necesarias
+
+| Herramienta | Versión mínima | Notas |
+|-------------|----------------|-------|
+| bash | >= 4.0 (5.x recomendado) | En macOS instalar bash 5 vía Homebrew |
+| Visual Studio Code | Última estable | Con la extensión **Bash IDE** o **ShellCheck** |
+| Git | >= 2.30 | Control de versiones |
+| jq | >= 1.6 | Procesador JSON — [stedolan.github.io/jq](https://stedolan.github.io/jq/) |
+| shellcheck | >= 0.9 | Linter de scripts Bash — [shellcheck.net](https://www.shellcheck.net/) |
+| Terminal bash o zsh | -- | Incluida en macOS/Linux; en Windows usar WSL2 |
+| Cuenta de GitHub | -- | Gratuita — necesaria para labs de integración en pipelines |
+
+:::tip Preparación previa
+Se recomienda verificar la versión de bash (`bash --version`), instalar jq y shellcheck, y confirmar acceso a una terminal con bash funcional antes de la primera sesión. En macOS la versión preinstalada es bash 3; se recomienda actualizar vía `brew install bash`.
+:::
+
+---
+
+## Recursos de referencia
+
+- [GNU Bash Manual](https://www.gnu.org/software/bash/manual/)
+- [ShellCheck Wiki](https://www.shellcheck.net/wiki/)
+- [jq Manual](https://stedolan.github.io/jq/manual/)
+- [Crontab Guru](https://crontab.guru/)
+- [ExplainShell](https://explainshell.com/)
+- [Pure Bash Bible](https://github.com/dylanaraps/pure-bash-bible)
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/) — wargame para practicar línea de comandos
