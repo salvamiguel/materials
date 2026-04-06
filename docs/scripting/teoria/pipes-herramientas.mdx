@@ -781,8 +781,8 @@ echo '[1,2,3,4,5]' | jq 'map(select(. > 3))'
 | `group_by(.campo)` | Agrupar por un campo | `jq 'group_by(.tipo)'` |
 | `unique` | Eliminar duplicados | `jq 'unique'` |
 | `flatten` | Aplanar arrays anidados | `jq 'flatten'` |
-| `to_entries` | Convertir objeto a array de {key, value} | `jq 'to_entries'` |
-| `from_entries` | Convertir array de {key, value} a objeto | `jq 'from_entries'` |
+| `to_entries` | Convertir objeto a array de \{key, value\} | `jq 'to_entries'` |
+| `from_entries` | Convertir array de \{key, value\} a objeto | `jq 'from_entries'` |
 | `@csv` | Formatear como CSV | `jq -r '.[] | [.a, .b] | @csv'` |
 
 ### Ejemplos con APIs y herramientas reales
