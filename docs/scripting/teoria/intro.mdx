@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
-title: "Introduccion a Bash"
-description: "Fundamentos del shell, variables, quoting, argumentos y configuracion del entorno de scripting."
+title: "Introducción a Bash"
+description: "Fundamentos del shell, variables, quoting, argumentos y configuración del entorno de scripting."
 ---
 
 import { VscTerminalBash } from "react-icons/vsc";
@@ -9,38 +9,38 @@ import InstallExtension from '@site/src/components/shared/InstallExtension';
 
 ![Bash scripting](/img/neon-scripting.svg)
 
-# Introduccion a Bash
+# Introducción a Bash
 
-## 1. Que es el Shell? <VscTerminalBash />
+## 1. ¿Qué es el Shell? <VscTerminalBash />
 
-### El intermediario entre tu y el sistema operativo
+### El intermediario entre tú y el sistema operativo
 
-Cuando abres una terminal en Linux, macOS o Windows (WSL), lo que aparece no es directamente el sistema operativo: es un **shell**, un programa interprete que recibe tus comandos en forma de texto, los interpreta y le pide al kernel del sistema operativo que los ejecute. El shell es, en esencia, una interfaz de texto entre el usuario y el nucleo del sistema.
+Cuando abres una terminal en Linux, macOS o Windows (WSL), lo que aparece no es directamente el sistema operativo: es un **shell**, un programa intérprete que recibe tus comandos en forma de texto, los interpreta y le pide al kernel del sistema operativo que los ejecute. El shell es, en esencia, una interfaz de texto entre el usuario y el núcleo del sistema.
 
 Este concepto es fundamental: el shell no ejecuta nada por si mismo. Su trabajo es traducir lo que escribes en llamadas al sistema operativo. Cuando ejecutas `ls -la /home`, el shell interpreta ese texto, localiza el binario `ls`, le pasa los argumentos `-la` y `/home`, y muestra en pantalla el resultado que devuelve el kernel.
 
 El shell cumple dos funciones principales:
 
-- **Interprete de comandos interactivo**: cuando escribes comandos uno a uno en la terminal y ves los resultados inmediatamente.
-- **Lenguaje de scripting**: cuando escribes una secuencia de comandos en un archivo y los ejecutas todos de una vez. Esto es lo que convierte al shell en una herramienta de automatizacion.
+- **Intérprete de comandos interactivo**: cuando escribes comandos uno a uno en la terminal y ves los resultados inmediatamente.
+- **Lenguaje de scripting**: cuando escribes una secuencia de comandos en un archivo y los ejecutas todos de una vez. Esto es lo que convierte al shell en una herramienta de automatización.
 
 ### Tipos de shell
 
-No existe un unico shell. A lo largo de la historia de Unix y Linux han aparecido varios, cada uno con sus particularidades. Los mas relevantes son:
+No existe un único shell. A lo largo de la historia de Unix y Linux han aparecido varios, cada uno con sus particularidades. Los más relevantes son:
 
-| Shell | Nombre completo | POSIX | Por defecto en | Caracteristicas principales |
+| Shell | Nombre completo | POSIX | Por defecto en | Características principales |
 |-------|----------------|-------|----------------|----------------------------|
-| **bash** | Bourne Again Shell | Parcial (superset) | La mayoria de distribuciones Linux, macOS (hasta Catalina) | El estandar de facto para scripting. Arrays, funciones, aritmetica, manipulacion de strings. Enorme base de scripts existentes. |
+| **bash** | Bourne Again Shell | Parcial (superset) | La mayoría de distribuciones Linux, macOS (hasta Catalina) | El estándar de facto para scripting. Arrays, funciones, aritmética, manipulación de strings. Enorme base de scripts existentes. |
 | **zsh** | Z Shell | Parcial (superset) | macOS (desde Catalina) | Compatible con bash en gran medida. Autocompletado avanzado, temas, plugins (Oh My Zsh). Mejor experiencia interactiva. |
-| **sh** | Bourne Shell / POSIX shell | Si | Sistemas Unix clasicos, `/bin/sh` como enlace simbolico | Shell minimo y portable. En muchos sistemas modernos, `/bin/sh` apunta a `dash` o `bash` en modo POSIX. |
-| **dash** | Debian Almquist Shell | Si | Debian/Ubuntu como `/bin/sh` | Extremadamente rapido y ligero. No tiene arrays ni muchas extensiones de bash. Usado para scripts de arranque del sistema por su velocidad. |
+| **sh** | Bourne Shell / POSIX shell | Sí | Sistemas Unix clásicos, `/bin/sh` como enlace simbólico | Shell mínimo y portable. En muchos sistemas modernos, `/bin/sh` apunta a `dash` o `bash` en modo POSIX. |
+| **dash** | Debian Almquist Shell | Sí | Debian/Ubuntu como `/bin/sh` | Extremadamente rápido y ligero. No tiene arrays ni muchas extensiones de bash. Usado para scripts de arranque del sistema por su velocidad. |
 
 ### Modo interactivo vs no interactivo
 
 Un shell puede ejecutarse en dos modos, y entender la diferencia es importante para el scripting:
 
-- **Interactivo**: el shell espera que el usuario escriba comandos. Muestra un prompt (`$`, `#`, o personalizado), procesa cada linea y muestra la salida. Es lo que usas cuando abres una terminal. Carga archivos de configuracion como `~/.bashrc`.
-- **No interactivo**: el shell ejecuta comandos desde un archivo (un script) sin interaccion del usuario. No muestra prompt, no espera entrada y termina cuando se acaban los comandos. Carga `~/.bash_profile` o `~/.profile` dependiendo de la configuracion, pero **no** carga `~/.bashrc` por defecto.
+- **Interactivo**: el shell espera que el usuario escriba comandos. Muestra un prompt (`$`, `#`, o personalizado), procesa cada línea y muestra la salida. Es lo que usas cuando abres una terminal. Carga archivos de configuración como `~/.bashrc`.
+- **No interactivo**: el shell ejecuta comandos desde un archivo (un script) sin interacción del usuario. No muestra prompt, no espera entrada y termina cuando se acaban los comandos. Carga `~/.bash_profile` o `~/.profile` dependiendo de la configuración, pero **no** carga `~/.bashrc` por defecto.
 
 Esta distincion explica por que a veces un script no se comporta igual que cuando ejecutas los comandos manualmente en la terminal: los archivos de configuracion cargados son diferentes.
 
@@ -54,24 +54,24 @@ Bash no es solo "esa cosa que usas en la terminal". Es una herramienta omniprese
 - **Cron jobs**: las tareas programadas del sistema se definen como comandos shell que `cron` ejecuta periodicamente.
 - **Provisionamiento**: herramientas como Terraform usan `provisioner "local-exec"` para ejecutar scripts bash como parte del despliegue de infraestructura.
 
-:::info Por que bash y no zsh para scripting?
-Aunque macOS usa zsh como shell interactivo por defecto desde Catalina (2019), **bash sigue siendo el estandar para scripting**. La razon es simple: bash esta disponible en practicamente todos los servidores Linux, contenedores Docker y pipelines de CI/CD. Un script bash funciona en cualquier sitio. Un script zsh requiere que zsh este instalado, lo cual no esta garantizado en servidores ni en contenedores minimos. En este curso escribiremos scripts en bash por portabilidad.
+:::info ¿Por qué bash y no zsh para scripting?
+Aunque macOS usa zsh como shell interactivo por defecto desde Catalina (2019), **bash sigue siendo el estándar para scripting**. La razón es simple: bash está disponible en prácticamente todos los servidores Linux, contenedores Docker y pipelines de CI/CD. Un script bash funciona en cualquier sitio. Un script zsh requiere que zsh esté instalado, lo cual no está garantizado en servidores ni en contenedores mínimos. En este curso escribiremos scripts en bash por portabilidad.
 :::
 
 ---
 
-## 2. El shebang y permisos de ejecucion
+## 2. El shebang y permisos de ejecución
 
-### La linea mas importante de un script
+### La línea más importante de un script
 
-Todo script bash debe comenzar con una linea especial llamada **shebang** (tambien conocida como hashbang). Esta linea le indica al sistema operativo que interprete debe usar para ejecutar el archivo:
+Todo script bash debe comenzar con una línea especial llamada **shebang** (también conocida como hashbang). Esta línea le indica al sistema operativo qué intérprete debe usar para ejecutar el archivo:
 
 ```bash
 #!/usr/bin/env bash
 ```
 
 El shebang se compone de dos partes:
-- `#!` -- el marcador magico que el kernel reconoce como indicador de interprete.
+- `#!` -- el marcador mágico que el kernel reconoce como indicador de intérprete.
 - `/usr/bin/env bash` -- el comando que localiza y ejecuta bash.
 
 ### Ruta directa vs `env`
@@ -87,29 +87,29 @@ La diferencia es crucial para la portabilidad:
 
 | Shebang | Ventaja | Problema |
 |---------|---------|----------|
-| `#!/bin/bash` | Simple y directo | Asume que bash esta en `/bin/bash`. En algunos sistemas (NixOS, algunos BSDs, macOS con brew) bash esta en otra ruta. |
-| `#!/usr/bin/env bash` | Busca bash donde sea que este instalado usando el `PATH` | Funciona en practicamente cualquier sistema Unix/Linux/macOS. |
+| `#!/bin/bash` | Simple y directo | Asume que bash está en `/bin/bash`. En algunos sistemas (NixOS, algunos BSDs, macOS con brew) bash está en otra ruta. |
+| `#!/usr/bin/env bash` | Busca bash donde sea que esté instalado usando el `PATH` | Funciona en prácticamente cualquier sistema Unix/Linux/macOS. |
 
 :::tip Usa siempre `#!/usr/bin/env bash`
-La forma portable `#!/usr/bin/env bash` es la recomendada por la comunidad y por herramientas como ShellCheck. Garantiza que tu script funcione independientemente de donde este instalado bash en el sistema. La unica excepcion es si necesitas una version especifica de bash en una ruta concreta.
+La forma portable `#!/usr/bin/env bash` es la recomendada por la comunidad y por herramientas como ShellCheck. Garantiza que tu script funcione independientemente de dónde esté instalado bash en el sistema. La única excepción es si necesitas una versión específica de bash en una ruta concreta.
 :::
 
-### Permisos de ejecucion
+### Permisos de ejecución
 
-Un archivo con extension `.sh` no es automaticamente ejecutable. En sistemas Unix/Linux, necesitas otorgar permisos de ejecucion:
+Un archivo con extensión `.sh` no es automáticamente ejecutable. En sistemas Unix/Linux, necesitas otorgar permisos de ejecución:
 
 ```bash
-# Dar permisos de ejecucion al propietario
+# Dar permisos de ejecución al propietario
 chmod +x mi_script.sh
 
 # Verificar los permisos
 ls -la mi_script.sh
 # -rwxr-xr-x 1 usuario grupo 256 mar 15 10:00 mi_script.sh
 #  ^^^
-#  La 'x' indica permiso de ejecucion
+#  La 'x' indica permiso de ejecución
 ```
 
-El sistema de permisos Unix asigna tres tipos de permisos (lectura `r`, escritura `w`, ejecucion `x`) a tres niveles (propietario, grupo, otros). Con `chmod +x` estas anadiendo el permiso de ejecucion para los tres niveles.
+El sistema de permisos Unix asigna tres tipos de permisos (lectura `r`, escritura `w`, ejecución `x`) a tres niveles (propietario, grupo, otros). Con `chmod +x` estás añadiendo el permiso de ejecución para los tres niveles.
 
 ### Tres formas de ejecutar un script
 
@@ -130,23 +130,23 @@ source mi_script.sh
 
 La diferencia es fundamental:
 
-| Metodo | Subshell | Requiere `+x` | Requiere shebang | Las variables persisten |
+| Método | Subshell | Requiere `+x` | Requiere shebang | Las variables persisten |
 |--------|----------|----------------|-------------------|------------------------|
-| `./script.sh` | Si | Si | Si | No -- mueren con el subshell |
-| `bash script.sh` | Si | No | No | No -- mueren con el subshell |
-| `source script.sh` | No | No | No | Si -- modifican el shell actual |
+| `./script.sh` | Sí | Sí | Sí | No -- mueren con el subshell |
+| `bash script.sh` | Sí | No | No | No -- mueren con el subshell |
+| `source script.sh` | No | No | No | Sí -- modifican el shell actual |
 
 :::warning Cuidado con `source`
-Usar `source` ejecuta el script en tu shell actual. Esto significa que cualquier variable que el script defina, cualquier `cd` que haga, o cualquier `export` que ejecute, **afectara a tu sesion de terminal**. Usa `source` solo cuando necesites que el script modifique tu entorno (por ejemplo, para cargar variables de entorno de un archivo `.env`).
+Usar `source` ejecuta el script en tu shell actual. Esto significa que cualquier variable que el script defina, cualquier `cd` que haga, o cualquier `export` que ejecute, **afectará a tu sesión de terminal**. Usa `source` solo cuando necesites que el script modifique tu entorno (por ejemplo, para cargar variables de entorno de un archivo `.env`).
 :::
 
 ---
 
 ## 3. Variables
 
-### Declaracion y asignacion
+### Declaración y asignación
 
-En bash, las variables se declaran asignandoles un valor. No existen tipos de datos explicitos: todo es, en esencia, una cadena de texto (aunque bash permite operaciones aritmeticas).
+En bash, las variables se declaran asignándoles un valor. No existen tipos de datos explícitos: todo es, en esencia, una cadena de texto (aunque bash permite operaciones aritméticas).
 
 La regla mas importante de la sintaxis de variables en bash es: **no puede haber espacios alrededor del `=`**:
 
@@ -164,20 +164,20 @@ nombre= "Juan"     # Ejecuta 'Juan' con la variable nombre vacia temporalmente
 
 Este es probablemente el error mas comun de principiantes en bash. El parser del shell interpreta el primer token de una linea como un comando a ejecutar. Si hay un espacio despues de `nombre`, bash piensa que `nombre` es un comando.
 
-### Expansion de variables
+### Expansión de variables
 
 Para acceder al valor de una variable, se usa el operador `$`:
 
 ```bash
 nombre="mundo"
 
-# Ambas formas son validas
+# Ambas formas son válidas
 echo $nombre        # mundo
 echo ${nombre}      # mundo
 echo "Hola, ${nombre}!"  # Hola, mundo!
 ```
 
-Las llaves `${}` son opcionales en casos simples, pero **necesarias** cuando la variable esta adyacente a otros caracteres:
+Las llaves `${}` son opcionales en casos simples, pero **necesarias** cuando la variable está adyacente a otros caracteres:
 
 ```bash
 archivo="informe"
@@ -187,7 +187,7 @@ echo "${archivo}_final"   # informe_final -- correcto
 ```
 
 :::tip Usa siempre `${variable}` con llaves
-Aunque `$variable` funciona en muchos casos, usar siempre `${variable}` con llaves previene errores de ambiguedad y hace el codigo mas legible. Es una buena practica que herramientas como ShellCheck recomiendan.
+Aunque `$variable` funciona en muchos casos, usar siempre `${variable}` con llaves previene errores de ambigüedad y hace el código más legible. Es una buena práctica que herramientas como ShellCheck recomiendan.
 :::
 
 ### `readonly` y `unset`
@@ -211,13 +211,13 @@ unset FIJO  # Error: FIJO: cannot unset: readonly variable
 
 ### Quoting: comillas simples, dobles y sin comillas
 
-El quoting es uno de los conceptos mas criticos y confusos de bash. Determina como el shell interpreta los caracteres especiales y las variables dentro de una cadena.
+El quoting es uno de los conceptos más críticos y confusos de bash. Determina cómo el shell interpreta los caracteres especiales y las variables dentro de una cadena.
 
-| Tipo | Sintaxis | Expande variables | Expande comandos | Expande globbing | Cuando usar |
+| Tipo | Sintaxis | Expande variables | Expande comandos | Expande globbing | Cuándo usar |
 |------|----------|-------------------|-------------------|------------------|-------------|
-| **Sin comillas** | `$var` | Si | Si | Si | Casi nunca -- peligroso. El shell aplica word splitting y globbing. |
-| **Comillas dobles** | `"$var"` | Si | Si | No | La opcion por defecto. Protege contra word splitting y globbing. |
-| **Comillas simples** | `'$var'` | No | No | No | Cuando quieres texto literal sin ninguna expansion. |
+| **Sin comillas** | `$var` | Sí | Sí | Sí | Casi nunca -- peligroso. El shell aplica word splitting y globbing. |
+| **Comillas dobles** | `"$var"` | Sí | Sí | No | La opción por defecto. Protege contra word splitting y globbing. |
+| **Comillas simples** | `'$var'` | No | No | No | Cuando quieres texto literal sin ninguna expansión. |
 
 Veamos un ejemplo que ilustra la diferencia:
 
@@ -239,7 +239,7 @@ echo '$archivos'  # $archivos
 ```
 
 :::danger Siempre entrecomilla tus variables
-La ausencia de comillas es la fuente numero uno de bugs en scripts bash. Sin comillas, una variable con espacios se divide en multiples palabras, y los patrones glob se expanden. Ejemplo clasico:
+La ausencia de comillas es la fuente número uno de bugs en scripts bash. Sin comillas, una variable con espacios se divide en múltiples palabras, y los patrones glob se expanden. Ejemplo clásico:
 
 ```bash
 archivo="mi documento.txt"
@@ -260,21 +260,21 @@ nombre="Bash Scripting"
 # Longitud de la cadena
 echo "${#nombre}"           # 14
 
-# Valor por defecto si la variable esta vacia o no existe
+# Valor por defecto si la variable está vacía o no existe
 echo "${no_existe:-default}"        # default (usa el valor por defecto)
-echo "${no_existe:=asignado}"       # asignado (ademas, asigna la variable)
+echo "${no_existe:=asignado}"       # asignado (además, asigna la variable)
 
-# Valor alternativo si la variable SI existe
+# Valor alternativo si la variable SÍ existe
 version="2.0"
 echo "${version:+disponible}"       # disponible (porque version tiene valor)
-echo "${vacia:+disponible}"         # (vacio, porque 'vacia' no tiene valor)
+echo "${vacia:+disponible}"         # (vacío, porque 'vacia' no tiene valor)
 
 # Error si la variable no existe
-echo "${obligatoria:?La variable obligatoria no esta definida}"
+echo "${obligatoria:?La variable obligatoria no está definida}"
 # Si 'obligatoria' no existe, imprime el error y sale del script
 ```
 
-Estas expansiones son extremadamente utiles en scripts para manejar valores por defecto y validar que las variables requeridas estan definidas:
+Estas expansiones son extremadamente útiles en scripts para manejar valores por defecto y validar que las variables requeridas están definidas:
 
 ```bash
 # Patron comun: variables de configuracion con defaults
@@ -283,9 +283,9 @@ DB_PORT="${DB_PORT:-5432}"
 DB_NAME="${DB_NAME:?Debes definir DB_NAME}"  # Falla si no esta definida
 ```
 
-### Sustitucion de comandos
+### Sustitución de comandos
 
-La sustitucion de comandos permite capturar la salida de un comando y almacenarla en una variable:
+La sustitución de comandos permite capturar la salida de un comando y almacenarla en una variable:
 
 ```bash
 # Sintaxis moderna (recomendada)
@@ -293,18 +293,18 @@ fecha=$(date +%Y-%m-%d)
 archivos_total=$(ls -1 | wc -l)
 usuario_actual=$(whoami)
 
-# Sintaxis clasica con backticks (evitar)
+# Sintaxis clásica con backticks (evitar)
 fecha=`date +%Y-%m-%d`
 ```
 
 :::tip Prefiere `$(comando)` sobre backticks
-La sintaxis `$(comando)` es mas legible, se puede anidar facilmente y no tiene problemas con caracteres de escape. Los backticks `` `comando` `` son la forma clasica, pero presentan problemas al anidarlos y son mas dificiles de leer. ShellCheck tambien recomienda `$()`.
+La sintaxis `$(comando)` es más legible, se puede anidar fácilmente y no tiene problemas con caracteres de escape. Los backticks `` `comando` `` son la forma clásica, pero presentan problemas al anidarlos y son más difíciles de leer. ShellCheck también recomienda `$()`.
 
 ```bash
-# Anidamiento facil con $()
+# Anidamiento fácil con $()
 directorio=$(basename $(dirname $(pwd)))
 
-# Anidamiento problematico con backticks
+# Anidamiento problemático con backticks
 directorio=`basename \`dirname \\\`pwd\\\`\``
 ```
 :::
@@ -432,19 +432,19 @@ if ! [[ "$edad" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
-echo "Hola, ${nombre}. Tienes ${edad} anos."
+echo "Hola, ${nombre}. Tienes ${edad} años."
 echo "Script ejecutado: $0"
 echo "PID del proceso: $$"
-echo "Codigo de salida previo: $?"
+echo "Código de salida previo: $?"
 ```
 
 ```bash
-# Ejecucion:
+# Ejecución:
 $ ./validar.sh Juan 30
-Hola, Juan. Tienes 30 anos.
+Hola, Juan. Tienes 30 años.
 Script ejecutado: ./validar.sh
 PID del proceso: 12345
-Codigo de salida previo: 0
+Código de salida previo: 0
 
 $ ./validar.sh Juan
 Error: se requieren exactamente 2 argumentos.
@@ -457,11 +457,11 @@ Uso: ./validar.sh <nombre> <edad>
 
 ### Arrays indexados
 
-Los arrays indexados son listas ordenadas de elementos, accesibles por su posicion numerica (empezando en 0):
+Los arrays indexados son listas ordenadas de elementos, accesibles por su posición numérica (empezando en 0):
 
 ```bash
-# Declaracion e inicializacion
-frutas=("manzana" "platano" "naranja" "uva")
+# Declaración e inicialización
+frutas=("manzana" "plátano" "naranja" "uva")
 
 # Declaracion explicita
 declare -a numeros
@@ -477,20 +477,20 @@ echo "${frutas[@]}"    # manzana platano naranja uva
 # Numero de elementos
 echo "${#frutas[@]}"   # 4
 
-# Longitud de un elemento especifico
+# Longitud de un elemento específico
 echo "${#frutas[0]}"   # 7 (longitud de "manzana")
 
-# Anadir elementos
-frutas+=("melon")
-echo "${frutas[@]}"    # manzana platano naranja uva melon
+# Añadir elementos
+frutas+=("melón")
+echo "${frutas[@]}"    # manzana plátano naranja uva melón
 
 # Modificar un elemento
 frutas[1]="pera"
-echo "${frutas[@]}"    # manzana pera naranja uva melon
+echo "${frutas[@]}"    # manzana pera naranja uva melón
 
-# Eliminar un elemento (deja un hueco en el indice)
+# Eliminar un elemento (deja un hueco en el índice)
 unset frutas[2]
-echo "${frutas[@]}"    # manzana pera uva melon
+echo "${frutas[@]}"    # manzana pera uva melón
 ```
 
 ### Iterar sobre arrays
@@ -521,7 +521,7 @@ echo "${numeros[@]:7}"      # 7 8 9 (desde el indice 7 hasta el final)
 
 ### Arrays asociativos
 
-Los arrays asociativos (tambien llamados diccionarios o hash maps) permiten usar cadenas como claves en lugar de indices numericos:
+Los arrays asociativos (también llamados diccionarios o hash maps) permiten usar cadenas como claves en lugar de índices numéricos:
 
 ```bash
 # REQUIERE: declare -A (obligatorio)
@@ -542,7 +542,7 @@ echo "${!configuracion[@]}"         # host puerto base_datos usuario
 # Todos los valores
 echo "${configuracion[@]}"          # localhost 5432 mi_app admin
 
-# Numero de elementos
+# Número de elementos
 echo "${#configuracion[@]}"         # 4
 
 # Iterar sobre pares clave-valor
@@ -552,10 +552,10 @@ done
 ```
 
 :::warning Arrays asociativos requieren bash 4+
-Los arrays asociativos (`declare -A`) fueron introducidos en **bash 4.0** (2009). Si tu script necesita ejecutarse en macOS con el bash por defecto (version 3.2), no podras usar esta funcionalidad. Esto es relevante porque macOS no actualiza bash mas alla de la 3.2 por cuestiones de licencia (GPLv3). Consulta la seccion de instalacion para resolver este problema.
+Los arrays asociativos (`declare -A`) fueron introducidos en **bash 4.0** (2009). Si tu script necesita ejecutarse en macOS con el bash por defecto (versión 3.2), no podrás usar esta funcionalidad. Esto es relevante porque macOS no actualiza bash más allá de la 3.2 por cuestiones de licencia (GPLv3). Consulta la sección de instalación para resolver este problema.
 :::
 
-### Ejemplo practico: configuracion con arrays
+### Ejemplo práctico: configuración con arrays
 
 ```bash
 #!/usr/bin/env bash
@@ -580,60 +580,60 @@ done
 
 ---
 
-## 6. Instalacion y configuracion del entorno
+## 6. Instalación y configuración del entorno
 
 ### Actualizar bash en macOS
 
-macOS incluye bash, pero la version que viene preinstalada es la **3.2** (de 2007). Apple no la actualiza porque a partir de bash 4.0, la licencia cambio de GPLv2 a **GPLv3**, y Apple no distribuye software con esa licencia.
+macOS incluye bash, pero la versión que viene preinstalada es la **3.2** (de 2007). Apple no la actualiza porque a partir de bash 4.0, la licencia cambió de GPLv2 a **GPLv3**, y Apple no distribuye software con esa licencia.
 
-:::info Por que macOS tiene bash 3.2?
-Cuando GNU Bash paso a la licencia GPLv3 con la version 4.0 en 2009, Apple dejo de actualizar el bash incluido en macOS. La GPLv3 tiene clausulas sobre patentes y restricciones de uso que Apple no acepta para el software incluido por defecto. Por eso macOS cambio su shell por defecto a zsh (licencia MIT) a partir de Catalina. Bash 3.2 seguira estando disponible, pero nunca se actualizara.
+:::info ¿Por qué macOS tiene bash 3.2?
+Cuando GNU Bash pasó a la licencia GPLv3 con la versión 4.0 en 2009, Apple dejó de actualizar el bash incluido en macOS. La GPLv3 tiene cláusulas sobre patentes y restricciones de uso que Apple no acepta para el software incluido por defecto. Por eso macOS cambió su shell por defecto a zsh (licencia MIT) a partir de Catalina. Bash 3.2 seguirá estando disponible, pero nunca se actualizará.
 :::
 
-Para instalar una version moderna de bash en macOS:
+Para instalar una versión moderna de bash en macOS:
 
 ```bash
-# Instalar bash moderno via Homebrew
+# Instalar bash moderno vía Homebrew
 brew install bash
 
-# Verificar la version instalada
+# Verificar la versión instalada
 /opt/homebrew/bin/bash --version
 # GNU bash, version 5.2.x(1)-release
 
-# La version del sistema sigue siendo la vieja
+# La versión del sistema sigue siendo la vieja
 /bin/bash --version
 # GNU bash, version 3.2.57(1)-release
 
-# Verificar que usa la version correcta con env
+# Verificar que usa la versión correcta con env
 /usr/bin/env bash --version
-# Deberia mostrar la version de Homebrew si /opt/homebrew/bin esta en el PATH
+# Debería mostrar la versión de Homebrew si /opt/homebrew/bin está en el PATH
 ```
 
-### Verificar la version de bash
+### Verificar la versión de bash
 
-Independientemente del sistema operativo, comprueba tu version:
+Independientemente del sistema operativo, comprueba tu versión:
 
 ```bash
 bash --version
 ```
 
-Para este curso necesitas bash **4.0 o superior**. La version 5.x es la recomendada.
+Para este curso necesitas bash **4.0 o superior**. La versión 5.x es la recomendada.
 
-### Configuracion de VSCode
+### Configuración de VSCode
 
-Visual Studio Code es el editor recomendado para escribir scripts bash. Instala la extension **Bash IDE** que proporciona:
+Visual Studio Code es el editor recomendado para escribir scripts bash. Instala la extensión **Bash IDE** que proporciona:
 
 - Resaltado de sintaxis para archivos `.sh` y `.bash`.
 - Autocompletado basado en el contexto del script.
-- Navegacion a definiciones de funciones y variables.
-- Integracion con ShellCheck para deteccion de errores en tiempo real.
+- Navegación a definiciones de funciones y variables.
+- Integración con ShellCheck para detección de errores en tiempo real.
 - Soporte para snippets comunes de bash.
 
 <InstallExtension id="mads-hartmann.bash-ide-vscode" label="Bash IDE" />
 
 #### settings.json
 
-Anade esta configuracion a tu `settings.json` de VSCode para mejorar la experiencia de desarrollo:
+Añade esta configuración a tu `settings.json` de VSCode para mejorar la experiencia de desarrollo:
 
 ```json
 {
@@ -649,7 +649,7 @@ Anade esta configuracion a tu `settings.json` de VSCode para mejorar la experien
 
 ### ShellCheck: tu mejor aliado
 
-[ShellCheck](https://www.shellcheck.net/) es un analizador estatico de scripts shell. Detecta errores comunes, malas practicas y problemas de portabilidad **antes de ejecutar el script**. Es el equivalente a ESLint para JavaScript o pylint para Python.
+[ShellCheck](https://www.shellcheck.net/) es un analizador estático de scripts shell. Detecta errores comunes, malas prácticas y problemas de portabilidad **antes de ejecutar el script**. Es el equivalente a ESLint para JavaScript o pylint para Python.
 
 ```bash
 # Instalar en macOS
@@ -691,7 +691,7 @@ rm $archivo
 ```
 
 :::tip Integra ShellCheck en tu workflow
-ShellCheck se integra con la extension Bash IDE de VSCode, mostrando errores directamente en el editor. Tambien se puede integrar en pipelines de CI/CD para rechazar scripts con errores antes de que lleguen a produccion:
+ShellCheck se integra con la extensión Bash IDE de VSCode, mostrando errores directamente en el editor. También se puede integrar en pipelines de CI/CD para rechazar scripts con errores antes de que lleguen a producción:
 
 ```yaml
 # En GitHub Actions
@@ -846,14 +846,14 @@ Observa como cada concepto de esta unidad aparece en el script:
 
 Estos son los puntos clave de esta unidad:
 
-- El **shell** es un interprete de comandos que actua como intermediario entre el usuario y el kernel del sistema operativo. Bash es el estandar de facto para scripting por su portabilidad y ubicuidad.
-- El **shebang** (`#!/usr/bin/env bash`) le dice al sistema que interprete usar. Siempre usa la forma portable con `env`.
-- Los **permisos de ejecucion** (`chmod +x`) son necesarios para ejecutar un script directamente. Conocer la diferencia entre `./`, `bash` y `source` es fundamental.
-- Las **variables** se asignan sin espacios (`var=valor`) y se expanden con `$` o `${}`. El quoting (comillas dobles vs simples) controla que expansiones se aplican.
-- Las **variables especiales** (`$@`, `$#`, `$?`, `$$`) dan acceso a los argumentos del script, codigos de salida y metadatos del proceso.
+- El **shell** es un intérprete de comandos que actúa como intermediario entre el usuario y el kernel del sistema operativo. Bash es el estándar de facto para scripting por su portabilidad y ubicuidad.
+- El **shebang** (`#!/usr/bin/env bash`) le dice al sistema qué intérprete usar. Siempre usa la forma portable con `env`.
+- Los **permisos de ejecución** (`chmod +x`) son necesarios para ejecutar un script directamente. Conocer la diferencia entre `./`, `bash` y `source` es fundamental.
+- Las **variables** se asignan sin espacios (`var=valor`) y se expanden con `$` o `${}`. El quoting (comillas dobles vs simples) controla qué expansiones se aplican.
+- Las **variables especiales** (`$@`, `$#`, `$?`, `$$`) dan acceso a los argumentos del script, códigos de salida y metadatos del proceso.
 - Los **arrays indexados** almacenan listas ordenadas; los **arrays asociativos** (`declare -A`) permiten claves de texto, pero requieren bash 4+.
-- **ShellCheck** es una herramienta indispensable para detectar errores y malas practicas antes de ejecutar un script.
-- macOS incluye bash 3.2 por defecto; usa `brew install bash` para obtener una version moderna.
+- **ShellCheck** es una herramienta indispensable para detectar errores y malas prácticas antes de ejecutar un script.
+- macOS incluye bash 3.2 por defecto; usa `brew install bash` para obtener una versión moderna.
 
 ```mermaid
 graph LR

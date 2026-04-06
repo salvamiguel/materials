@@ -13,25 +13,25 @@ description: "Condicionales, bucles, funciones y exit codes en Bash: control de 
 La estructura condicional `if` es el mecanismo fundamental de toma de decisiones en Bash. Su sintaxis general es:
 
 ```bash
-if condicion; then
-    # comandos si la condicion es verdadera
-elif otra_condicion; then
-    # comandos si la otra condicion es verdadera
+if condición; then
+    # comandos si la condición es verdadera
+elif otra_condición; then
+    # comandos si la otra condición es verdadera
 else
-    # comandos si ninguna condicion es verdadera
+    # comandos si ninguna condición es verdadera
 fi
 ```
 
-El punto y coma antes de `then` es necesario cuando `if` y `then` van en la misma linea. Si prefieres mayor legibilidad, puedes colocar `then` en una linea separada y omitir el punto y coma:
+El punto y coma antes de `then` es necesario cuando `if` y `then` van en la misma línea. Si prefieres mayor legibilidad, puedes colocar `then` en una línea separada y omitir el punto y coma:
 
 ```bash
-if condicion
+if condición
 then
     # comandos
 fi
 ```
 
-Es importante entender que `if` en Bash no evalua expresiones booleanas como en otros lenguajes. Lo que evalua es el **exit code** del comando que le sigue: si el comando devuelve `0` (exito), la condicion es verdadera; cualquier otro valor es falso. Esto significa que puedes usar cualquier comando como condicion:
+Es importante entender que `if` en Bash no evalúa expresiones booleanas como en otros lenguajes. Lo que evalúa es el **exit code** del comando que le sigue: si el comando devuelve `0` (éxito), la condición es verdadera; cualquier otro valor es falso. Esto significa que puedes usar cualquier comando como condicion:
 
 ```bash
 if grep -q "error" /var/log/syslog; then
@@ -47,7 +47,7 @@ fi
 
 ### El comando `test`, `[ ]` y `[[ ]]`
 
-Para evaluar condiciones mas especificas (comparar cadenas, numeros, comprobar archivos), Bash ofrece tres mecanismos:
+Para evaluar condiciones más específicas (comparar cadenas, números, comprobar archivos), Bash ofrece tres mecanismos:
 
 - **`test`**: un comando externo (`/usr/bin/test`) que evalua expresiones y devuelve 0 (verdadero) o 1 (falso).
 - **`[ ]`**: sinonimo de `test`. El corchete de apertura `[` es literalmente un comando (existe como `/usr/bin/[`), y el `]` de cierre es un argumento obligatorio.

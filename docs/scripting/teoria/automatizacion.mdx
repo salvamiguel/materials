@@ -4,13 +4,13 @@ title: "Automatizacion y Manejo de Errores"
 description: "Manejo robusto de errores, debugging de scripts, cron jobs y automatizacion de tareas operativas."
 ---
 
-# Automatizacion y Manejo de Errores
+# Automatización y Manejo de Errores
 
 ## 1. Manejo robusto de errores
 
 ### El problema: Bash no falla por defecto
 
-Uno de los errores mas comunes entre quienes empiezan a escribir scripts en Bash es asumir que el script se detendrá cuando algo vaya mal. **No es asi.** Por defecto, Bash ejecuta cada linea sin importar si la anterior ha fallado. Esto puede tener consecuencias desastrosas.
+Uno de los errores más comunes entre quienes empiezan a escribir scripts en Bash es asumir que el script se detendrá cuando algo vaya mal. **No es así.** Por defecto, Bash ejecuta cada línea sin importar si la anterior ha fallado. Esto puede tener consecuencias desastrosas.
 
 Observa este ejemplo aparentemente inocente:
 
@@ -21,17 +21,17 @@ cd "$DIRECTORIO_DESTINO"
 rm -rf *
 ```
 
-Si la variable `DIRECTORIO_DESTINO` no esta definida o contiene una ruta invalida, el `cd` fallara silenciosamente. Bash continuara ejecutando `rm -rf *` **en el directorio actual**, que podria ser tu home, la raiz del proyecto o cualquier otro lugar. El resultado: archivos eliminados de forma irreversible en un lugar que no era el previsto.
+Si la variable `DIRECTORIO_DESTINO` no está definida o contiene una ruta inválida, el `cd` fallará silenciosamente. Bash continuará ejecutando `rm -rf *` **en el directorio actual**, que podría ser tu home, la raíz del proyecto o cualquier otro lugar. El resultado: archivos eliminados de forma irreversible en un lugar que no era el previsto.
 
-Este no es un caso hipotetico. Es un patron que ha causado incidentes reales en produccion, incluyendo casos documentados donde empresas han perdido datos criticos por scripts que asumian que una variable estaria definida.
+Este no es un caso hipotético. Es un patrón que ha causado incidentes reales en producción, incluyendo casos documentados donde empresas han perdido datos críticos por scripts que asumían que una variable estaría definida.
 
-La solucion es configurar Bash para que sea estricto con los errores. Veamos las tres opciones fundamentales.
+La solución es configurar Bash para que sea estricto con los errores. Veamos las tres opciones fundamentales.
 
 ---
 
 ### `set -e`: salir inmediatamente ante un error
 
-Cuando activas `set -e` (tambien conocido como `errexit`), Bash terminara la ejecucion del script en cuanto un comando devuelva un codigo de salida distinto de cero:
+Cuando activas `set -e` (también conocido como `errexit`), Bash terminará la ejecución del script en cuanto un comando devuelva un código de salida distinto de cero:
 
 ```bash
 #!/usr/bin/env bash
@@ -47,7 +47,7 @@ echo "Paso 3: procesando..."
 ./procesar_datos.sh
 ```
 
-Sin `set -e`, si `curl` falla (servidor caido, URL incorrecta), Bash seguiria con `tar` sobre un archivo que no existe, y luego intentaria ejecutar `procesar_datos.sh` con datos corruptos o inexistentes. Con `set -e`, el script se detiene en el momento exacto del fallo.
+Sin `set -e`, si `curl` falla (servidor caído, URL incorrecta), Bash seguiría con `tar` sobre un archivo que no existe, y luego intentaría ejecutar `procesar_datos.sh` con datos corruptos o inexistentes. Con `set -e`, el script se detiene en el momento exacto del fallo.
 
 :::warning Excepciones de set -e
 `set -e` **no** se activa en los siguientes contextos:

@@ -6,7 +6,7 @@ description: "Integración de scripts Bash en GitHub Actions, wrapper scripts pa
 
 # Scripting en Pipelines CI/CD
 
-Los scripts de Bash son el pegamento entre las herramientas de un pipeline CI/CD. En las unidades anteriores aprendimos a usar GitHub Actions para automatizar workflows y Terraform para gestionar infraestructura. En esta unidad vamos a conectar ambos mundos: escribir scripts que orquesten herramientas, validar configuraciones antes del despliegue y testear esos scripts con la misma disciplina que el codigo de aplicacion.
+Los scripts de Bash son el pegamento entre las herramientas de un pipeline CI/CD. En las unidades anteriores aprendimos a usar GitHub Actions para automatizar workflows y Terraform para gestionar infraestructura. En esta unidad vamos a conectar ambos mundos: escribir scripts que orquesten herramientas, validar configuraciones antes del despliegue y testear esos scripts con la misma disciplina que el código de aplicación.
 
 ---
 
@@ -14,7 +14,7 @@ Los scripts de Bash son el pegamento entre las herramientas de un pipeline CI/CD
 
 ### El problema: comandos inline en YAML
 
-Cuando empezamos a escribir pipelines de CI/CD, la tentacion natural es poner toda la logica directamente en el archivo YAML del workflow:
+Cuando empezamos a escribir pipelines de CI/CD, la tentación natural es poner toda la lógica directamente en el archivo YAML del workflow:
 
 ```yaml
 jobs:
@@ -46,39 +46,39 @@ jobs:
 
 Este enfoque tiene problemas graves:
 
-| Problema | Descripcion |
+| Problema | Descripción |
 |---|---|
-| **No testeable** | No puedes ejecutar esa logica localmente sin simular todo el entorno de GitHub Actions. |
-| **No reutilizable** | Si otro workflow necesita la misma logica, hay que copiar y pegar. |
-| **Dificil de depurar** | Un error en la linea 15 de un bloque YAML multillinea es complicado de localizar. |
-| **Sin control de versiones granular** | Los cambios en la logica del script se mezclan con cambios en la estructura del workflow. |
+| **No testeable** | No puedes ejecutar esa lógica localmente sin simular todo el entorno de GitHub Actions. |
+| **No reutilizable** | Si otro workflow necesita la misma lógica, hay que copiar y pegar. |
+| **Difícil de depurar** | Un error en la línea 15 de un bloque YAML multilinea es complicado de localizar. |
+| **Sin control de versiones granular** | Los cambios en la lógica del script se mezclan con cambios en la estructura del workflow. |
 | **Sin linting** | Tu editor no puede aplicar shellcheck ni autocompletado dentro de un string YAML. |
 
-### La solucion: scripts externos
+### La solución: scripts externos
 
-El patron correcto es separar la logica en scripts independientes que viven en el repositorio:
+El patrón correcto es separar la lógica en scripts independientes que viven en el repositorio:
 
 ```
 mi-proyecto/
   .github/
     workflows/
-      deploy.yml        # Orquestacion: QUE ejecutar y CUANDO
+      deploy.yml        # Orquestación: QUE ejecutar y CUANDO
   scripts/
-    terraform-wrapper.sh  # Logica: COMO ejecutar Terraform
-    validate.sh           # Logica: COMO validar configuraciones
-    notify.sh             # Logica: COMO enviar notificaciones
+    terraform-wrapper.sh  # Lógica: COMO ejecutar Terraform
+    validate.sh           # Lógica: COMO validar configuraciones
+    notify.sh             # Lógica: COMO enviar notificaciones
 ```
 
 Esto permite:
 
-- **Testear localmente**: ejecutas `./scripts/validate.sh` en tu maquina antes de hacer push.
-- **Reutilizar**: multiples workflows referencian el mismo script.
+- **Testear localmente**: ejecutas `./scripts/validate.sh` en tu máquina antes de hacer push.
+- **Reutilizar**: múltiples workflows referencian el mismo script.
 - **Depurar**: aplicas `shellcheck`, `set -x`, y ejecutas paso a paso.
 - **Revisar**: los cambios en scripts tienen diffs claros en pull requests.
 
 ### Referenciar scripts desde GitHub Actions
 
-La forma mas simple es usar `run` apuntando al script:
+La forma más simple es usar `run` apuntando al script:
 
 ```yaml
 jobs:
@@ -93,12 +93,12 @@ jobs:
 ```
 
 :::tip Especifica siempre shell: bash
-Aunque `bash` es el shell por defecto en runners Linux, especificarlo explicitamente garantiza consistencia. En runners Windows el default es `pwsh` (PowerShell), y si tu script asume Bash, fallara silenciosamente o con errores confusos.
+Aunque `bash` es el shell por defecto en runners Linux, especificarlo explícitamente garantiza consistencia. En runners Windows el default es `pwsh` (PowerShell), y si tu script asume Bash, fallará silenciosamente o con errores confusos.
 :::
 
-### Permisos de ejecucion
+### Permisos de ejecución
 
-Un error frecuente es que el script no tenga permisos de ejecucion en el repositorio. Git rastrea el bit de ejecucion, asi que asegurate de configurarlo antes del commit:
+Un error frecuente es que el script no tenga permisos de ejecución en el repositorio. Git rastrea el bit de ejecución, así que asegúrate de configurarlo antes del commit:
 
 ```bash
 chmod +x scripts/validate.sh
@@ -106,7 +106,7 @@ git add scripts/validate.sh
 git commit -m "feat: add validation script with exec permissions"
 ```
 
-Si olvidas este paso, veras un error `Permission denied` en el runner. La alternativa es invocarlo explicitamente con `bash`:
+Si olvidas este paso, verás un error `Permission denied` en el runner. La alternativa es invocarlo explícitamente con `bash`:
 
 ```yaml
 - name: Run validation
@@ -115,7 +115,7 @@ Si olvidas este paso, veras un error `Permission denied` en el runner. La altern
 
 ### Scripts multilinea en YAML
 
-Para logica corta (2-3 lineas) que no justifica un archivo separado, puedes usar bloques multilinea con `|`:
+Para lógica corta (2-3 líneas) que no justifica un archivo separado, puedes usar bloques multilinea con `|`:
 
 ```yaml
 - name: Setup environment
@@ -125,10 +125,10 @@ Para logica corta (2-3 lineas) que no justifica un archivo separado, puedes usar
     npm test
 ```
 
-El operador `|` preserva los saltos de linea. Cada linea se ejecuta como un comando independiente dentro del mismo shell. Si un comando falla y tienes `set -e` (o `shell: bash`), el step se detiene.
+El operador `|` preserva los saltos de línea. Cada línea se ejecuta como un comando independiente dentro del mismo shell. Si un comando falla y tienes `set -e` (o `shell: bash`), el step se detiene.
 
-:::warning Limite razonable para scripts inline
-Si tu bloque `run: |` supera las 10-15 lineas, es momento de extraerlo a un archivo en `scripts/`. Un buen criterio: si el script necesita funciones, parametros o logica condicional compleja, merece su propio archivo.
+:::warning Límite razonable para scripts inline
+Si tu bloque `run: |` supera las 10-15 líneas, es momento de extraerlo a un archivo en `scripts/`. Un buen criterio: si el script necesita funciones, parámetros o lógica condicional compleja, merece su propio archivo.
 :::
 
 ---
@@ -139,19 +139,19 @@ Las variables de entorno son el mecanismo principal para pasar configuracion a l
 
 ### Variables predefinidas de GitHub
 
-GitHub expone automaticamente un conjunto de variables en todos los runners. Estas son las mas utiles:
+GitHub expone automáticamente un conjunto de variables en todos los runners. Estas son las más útiles:
 
 | Variable | Contenido | Ejemplo |
 |---|---|---|
-| `GITHUB_SHA` | SHA completo del commit que disparo el workflow | `a1b2c3d4e5f6...` |
+| `GITHUB_SHA` | SHA completo del commit que disparó el workflow | `a1b2c3d4e5f6...` |
 | `GITHUB_REF` | Referencia completa (rama o tag) | `refs/heads/main` |
 | `GITHUB_REF_NAME` | Nombre corto de la rama o tag | `main` |
 | `GITHUB_REPOSITORY` | Propietario y nombre del repo | `mi-org/mi-proyecto` |
-| `GITHUB_ACTOR` | Usuario que disparo el evento | `salvamiguel` |
-| `GITHUB_RUN_ID` | ID unico de la ejecucion del workflow | `5678901234` |
-| `GITHUB_RUN_NUMBER` | Numero secuencial de ejecucion del workflow | `42` |
+| `GITHUB_ACTOR` | Usuario que disparó el evento | `salvamiguel` |
+| `GITHUB_RUN_ID` | ID único de la ejecución del workflow | `5678901234` |
+| `GITHUB_RUN_NUMBER` | Número secuencial de ejecución del workflow | `42` |
 | `GITHUB_WORKSPACE` | Directorio de trabajo del runner | `/home/runner/work/repo/repo` |
-| `GITHUB_EVENT_NAME` | Tipo de evento que disparo el workflow | `push`, `pull_request` |
+| `GITHUB_EVENT_NAME` | Tipo de evento que disparó el workflow | `push`, `pull_request` |
 | `RUNNER_OS` | Sistema operativo del runner | `Linux`, `Windows`, `macOS` |
 
 Puedes usarlas directamente en tus scripts:
@@ -167,7 +167,7 @@ echo "Run ID: $GITHUB_RUN_ID"
 
 ### Variables personalizadas con env
 
-Puedes definir variables a tres niveles: workflow, job y step. La variable mas especifica gana:
+Puedes definir variables a tres niveles: workflow, job y step. La variable más específica gana:
 
 ```yaml
 env:
@@ -189,7 +189,7 @@ jobs:
 
 ### Secrets
 
-Los secrets son variables cifradas que se configuran en `Settings > Secrets and variables > Actions` del repositorio. GitHub los enmascara automaticamente en los logs, pero conviene ser cuidadoso:
+Los secrets son variables cifradas que se configuran en `Settings > Secrets and variables > Actions` del repositorio. GitHub los enmascara automáticamente en los logs, pero conviene ser cuidadoso:
 
 ```yaml
 - name: Configure cloud credentials
@@ -200,7 +200,7 @@ Los secrets son variables cifradas que se configuran en `Settings > Secrets and 
 ```
 
 :::warning Nunca hagas echo de un secret
-Aunque GitHub enmascara los secrets en los logs, hay formas en las que pueden filtrarse: codificandolos en base64, partiendolos en subcadenas, o redirigiendolos a archivos que luego se suben como artefactos. La regla es simple: nunca hagas `echo` de un secret bajo ninguna circunstancia.
+Aunque GitHub enmascara los secrets en los logs, hay formas en las que pueden filtrarse: codificándolos en base64, partiéndolos en subcadenas, o redireciéndolos a archivos que luego se suben como artefactos. La regla es simple: nunca hagas `echo` de un secret bajo ninguna circunstancia.
 
 ```bash
 # PELIGROSO - nunca hagas esto
@@ -253,19 +253,19 @@ La diferencia clave: `$GITHUB_OUTPUT` crea valores asociados a un step especific
 
 ## 3. Wrapper script para Terraform
 
-### Que es un wrapper script
+### ¿Qué es un wrapper script
 
-Un wrapper script es un script de Bash que envuelve la ejecucion de una herramienta con logica adicional: validaciones previas, logging estructurado, manejo de errores y codigos de salida significativos. En lugar de ejecutar `terraform plan` directamente, ejecutas un script que orquesta todo el flujo.
+Un wrapper script es un script de Bash que envuelve la ejecución de una herramienta con lógica adicional: validaciones previas, logging estructurado, manejo de errores y códigos de salida significativos. En lugar de ejecutar `terraform plan` directamente, ejecutas un script que orquesta todo el flujo.
 
-### Por que usar un wrapper
+### ¿Por qué usar un wrapper
 
-Ejecutar `terraform plan` directamente en un pipeline parece sencillo, pero en la practica necesitas:
+Ejecutar `terraform plan` directamente en un pipeline parece sencillo, pero en la práctica necesitas:
 
 - Verificar que el formato es correcto (`terraform fmt -check`) antes de planificar.
 - Validar la sintaxis (`terraform validate`) antes de gastar tiempo en un plan.
 - Guardar el plan en un archivo para aplicarlo de forma determinista.
-- Registrar con timestamps que paso en cada fase, para diagnosticar fallos.
-- Devolver codigos de salida que el pipeline pueda interpretar.
+- Registrar con timestamps qué pasó en cada fase, para diagnosticar fallos.
+- Devolver códigos de salida que el pipeline pueda interpretar.
 - Implementar reintentos para errores transitorios de red.
 
 ### Wrapper completo
@@ -280,8 +280,8 @@ set -euo pipefail
 #   action: plan | apply | destroy
 #   options:
 #     -e, --environment   Entorno (staging, production)
-#     -d, --directory     Directorio de configuracion Terraform
-#     -a, --auto-approve  Aplicar sin confirmacion (solo para CI)
+#     -d, --directory     Directorio de configuración Terraform
+#     -a, --auto-approve  Aplicar sin confirmación (solo para CI)
 # =============================================================================
 
 # --- Colores y logging ---

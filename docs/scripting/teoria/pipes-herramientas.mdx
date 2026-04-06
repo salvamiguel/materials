@@ -6,19 +6,19 @@ description: "Redirección de flujos, pipes y herramientas de procesamiento de t
 
 # Pipes y Herramientas de Texto
 
-## 1. Flujos estandar y redireccion
+## 1. Flujos estándar y redirección
 
-### Los tres canales de comunicacion
+### Los tres canales de comunicación
 
-Cada proceso en un sistema Unix/Linux nace con tres canales de comunicacion abiertos, conocidos como **file descriptors** (descriptores de archivo):
+Cada proceso en un sistema Unix/Linux nace con tres canales de comunicación abiertos, conocidos como **file descriptors** (descriptores de archivo):
 
-| File Descriptor | Nombre | Abreviatura | Descripcion |
+| File Descriptor | Nombre | Abreviatura | Descripción |
 |:-:|---------|-------------|-------------|
 | **0** | Standard Input | `stdin` | Canal de entrada. Por defecto, el teclado. Es por donde el proceso recibe datos. |
 | **1** | Standard Output | `stdout` | Canal de salida normal. Por defecto, la terminal. Es por donde el proceso emite resultados. |
-| **2** | Standard Error | `stderr` | Canal de salida de errores. Por defecto, tambien la terminal. Es por donde el proceso emite mensajes de error. |
+| **2** | Standard Error | `stderr` | Canal de salida de errores. Por defecto, también la terminal. Es por donde el proceso emite mensajes de error. |
 
-El hecho de que `stdout` y `stderr` sean canales independientes es una decision de diseno fundamental. Permite separar la salida util (resultados) de los mensajes de error, lo que hace posible procesar una sin que la otra interfiera.
+El hecho de que `stdout` y `stderr` sean canales independientes es una decisión de diseño fundamental. Permite separar la salida útil (resultados) de los mensajes de error, lo que hace posible procesar una sin que la otra interfiera.
 
 ```
                ┌─────────────────┐
@@ -30,9 +30,9 @@ El hecho de que `stdout` y `stderr` sean canales independientes es una decision 
 
 Por ejemplo, cuando ejecutas `ls /home /noexiste`, la lista de archivos de `/home` sale por `stdout` y el mensaje de error sobre `/noexiste` sale por `stderr`. Ambos aparecen en la terminal, pero son flujos distintos.
 
-### Redireccion de salida
+### Redirección de salida
 
-La redireccion permite cambiar el destino (o el origen) de estos canales. En lugar de que la salida vaya a la terminal, puedes enviarla a un archivo.
+La redirección permite cambiar el destino (o el origen) de estos canales. En lugar de que la salida vaya a la terminal, puedes enviarla a un archivo.
 
 **Sobrescribir con `>`**
 
@@ -43,10 +43,10 @@ El operador `>` redirige `stdout` a un archivo. Si el archivo existe, lo sobresc
 ls -la > listado.txt
 
 # El contenido anterior de listado.txt se pierde
-echo "nueva linea" > listado.txt
+echo "nueva línea" > listado.txt
 ```
 
-**Anadir con `>>`**
+**Añadir con `>>`**
 
 El operador `>>` redirige `stdout` al final del archivo sin borrar el contenido previo:
 
