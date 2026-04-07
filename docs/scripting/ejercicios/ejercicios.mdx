@@ -1,0 +1,513 @@
+---
+sidebar_position: 1
+title: "Ejercicios prácticos de Scripting"
+description: "Ejercicios progresivos para practicar Bash scripting: desde fundamentos hasta integración en pipelines CI/CD."
+---
+
+# Ejercicios practicos de Scripting
+
+Esta pagina contiene los ejercicios practicos del modulo de Scripting, organizados en tres laboratorios que corresponden a las tres unidades didacticas del curso. Cada laboratorio incluye **ejercicios guiados** (con solucion completa paso a paso) y **retos opcionales** (sin solucion, para practicar de forma autonoma).
+
+Los ejercicios estan disenados para ser progresivos: cada uno construye sobre conceptos de los anteriores. Se recomienda completarlos en orden.
+
+:::tip Antes de empezar
+Asegurate de tener configurado tu entorno de desarrollo:
+- Bash 4.0 o superior (`bash --version`)
+- ShellCheck instalado (`shellcheck --version`)
+- La extension Bash IDE y las otras recomendadas en VSCode
+- Permisos de ejecucion en tus scripts (`chmod +x script.sh`)
+:::
+
+import InstallExtension from '@site/src/components/shared/InstallExtension';
+
+<InstallExtension id="mads-hartmann.bash-ide-vscode" label="Bash IDE" />
+<InstallExtension id="jetmartin.bats" label="BATS (Bash Automated Testing)" />
+<InstallExtension id="timonwong.shellcheck" label="shellcheck" />
+
+---
+
+## Lab 1: Fundamentos de Bash (UD 1)
+
+Este laboratorio cubre los conceptos fundamentales: variables, quoting, argumentos, estructuras de control, funciones y arrays.
+
+import LabActions from '@site/src/components/shared/LabActions';
+
+<LabActions
+  repo="https://github.com/salvamiguel/scripting-exercises"
+  title="Descarga los laboratorios"
+  codespace={false}
+  devcontainer={false}
+
+  fork={true}
+/>
+
+
+---
+
+### Ejercicio 1.1 — Saludo personalizado con validacion
+
+Escribe un script llamado `saludo.sh` que reciba **nombre** y **edad** como argumentos posicionales. El script debe:
+
+1. Validar que se han pasado exactamente 2 argumentos.
+2. Validar que el nombre no esta vacio.
+3. Validar que la edad es un numero entero positivo.
+4. Si la edad es menor de 18, mostrar `"Hola, <nombre>. Eres menor de edad."`.
+5. Si la edad esta entre 18 y 64, mostrar `"Hola, <nombre>. Estas en edad laboral."`.
+6. Si la edad es 65 o mayor, mostrar `"Hola, <nombre>. Estas en edad de jubilacion."`.
+7. Ante cualquier error de validacion, mostrar un mensaje de uso por stderr y salir con codigo 1.
+
+**Ejemplo de uso:**
+```bash {2,5-7}
+./saludo.sh "Ana Garcia" 25
+# Hola, Ana Garcia. Estas en edad laboral.
+
+./saludo.sh Juan abc
+# Error: la edad debe ser un numero entero positivo.
+# Uso: ./saludo.sh <nombre> <edad>
+```
+
+:::tip Pistas
+- Usa `$#` para comprobar el numero de argumentos.
+- La regex `^[0-9]+$` permite validar que una cadena es un numero entero positivo con `[[ "$var" =~ regex ]]`.
+- Usa `if/elif/else` con operadores de comparacion numerica (`-lt`, `-ge`).
+- Recuerda enviar los mensajes de error a stderr con `>&2`.
+:::
+
+---
+
+### Ejercicio 1.2 — Clasificador de archivos por tipo
+
+Escribe un script llamado `clasificar.sh` que reciba una **ruta de directorio** como argumento y liste los archivos clasificados por tipo. El script debe:
+
+1. Validar que se ha pasado exactamente 1 argumento.
+2. Validar que la ruta proporcionada es un directorio existente y legible.
+3. Definir tres funciones: `listar_regulares`, `listar_directorios` y `listar_enlaces`, cada una recibiendo la ruta como argumento.
+4. Cada funcion debe iterar sobre los elementos del directorio y mostrar los que correspondan a su tipo.
+5. Al final, mostrar un resumen con el conteo total de cada tipo.
+
+**Ejemplo de uso:**
+```bash
+./clasificar.sh /etc
+# === Archivos regulares ===
+#   /etc/hostname
+#   /etc/hosts
+#   ...
+#
+# === Directorios ===
+#   /etc/apt
+#   /etc/cron.d
+#   ...
+#
+# === Enlaces simbolicos ===
+#   /etc/localtime -> /usr/share/zoneinfo/Europe/Madrid
+#   ...
+#
+# === Resumen ===
+#   Archivos regulares: 42
+#   Directorios: 15
+#   Enlaces simbolicos: 8
+```
+
+:::tip Pistas
+- Usa los tests de archivos: `-f` (regular), `-d` (directorio), `-L` (enlace simbolico).
+- Comprueba `-L` **antes** de `-f` y `-d`, porque un enlace simbolico que apunta a un archivo regular devuelve `true` para `-f`.
+- Usa `local` en las variables de las funciones para evitar contaminar el ambito global.
+- `readlink` o `ls -la` permiten ver hacia donde apunta un enlace simbolico.
+:::
+
+---
+
+### Ejercicio 1.3 — Calculadora con case
+
+Escribe un script llamado `calculadora.sh` que funcione como una calculadora basica. Debe:
+
+1. Recibir exactamente 3 argumentos: `<numero1> <operador> <numero2>`.
+2. Validar que ambos numeros son enteros (pueden ser negativos).
+3. Usar una sentencia `case` para determinar la operacion (`+`, `-`, `*`, `/`).
+4. Manejar la division entre cero como un error.
+5. Mostrar el resultado con el formato `"<num1> <op> <num2> = <resultado>"`.
+
+**Ejemplo de uso:**
+```bash
+./calculadora.sh 15 + 27
+# 15 + 27 = 42
+
+./calculadora.sh 100 / 0
+# Error: division entre cero.
+
+./calculadora.sh 8 % 3
+# Error: operador '%' no soportado. Usa +, -, * o /
+```
+
+:::tip Pistas
+- La regex `^-?[0-9]+$` valida enteros (positivos y negativos).
+- Bash solo soporta aritmetica entera. Para division, el resultado sera truncado (sin decimales).
+- Usa `$(( ))` para las operaciones aritmeticas.
+- En `case`, el asterisco `*` se usa como patron de comodin, asi que para el operador de multiplicacion necesitaras el patron literal `'*'` o `\*`.
+:::
+
+---
+
+### Reto 1.4 — Piedra, papel o tijera
+
+Implementa un script `ppt.sh` que permita jugar a **piedra, papel o tijera** contra la maquina. El script debe:
+
+1. Pedir al usuario que introduzca su eleccion (`piedra`, `papel` o `tijera`) usando `read`.
+2. Generar una eleccion aleatoria para la maquina (usa `$RANDOM` y un array con las tres opciones).
+3. Determinar el ganador y mostrar el resultado.
+4. Permitir jugar multiples rondas en un bucle hasta que el usuario escriba `salir`.
+5. Al terminar, mostrar el marcador final (victorias, derrotas, empates).
+
+---
+
+### Reto 1.5 — Generador de contrasenas
+
+Escribe un script `genpass.sh` que genere contrasenas aleatorias con longitud y complejidad configurables. Debe aceptar los siguientes flags:
+
+- `-l <longitud>` — longitud de la contrasena (por defecto: 16).
+- `-n <cantidad>` — numero de contrasenas a generar (por defecto: 1).
+- `--no-symbols` — excluir caracteres especiales.
+- `--no-uppercase` — excluir mayusculas.
+- `--no-numbers` — excluir numeros.
+
+Usa `case` para parsear los flags, y combina `/dev/urandom` con `tr` para generar los caracteres aleatorios. Muestra cada contrasena en una linea, y al final indica la entropia estimada en bits.
+
+---
+
+## Lab 2: Procesamiento de Texto y Automatizacion (UD 2)
+
+Este laboratorio se centra en pipes, herramientas de procesamiento de texto (`awk`, `sort`, `uniq`, `grep`), manejo robusto de errores, `trap`, logging y automatizacion con cron.
+
+---
+
+### Ejercicio 2.1 — Analisis de logs con pipes
+
+Dado el siguiente archivo de logs de servidor (`access.log`), escribe un script `top_ips.sh` que extraiga las **10 direcciones IP mas frecuentes** y muestre el resultado ordenado de mayor a menor frecuencia.
+
+**Archivo de ejemplo** (`access.log`):
+```
+192.168.1.100 - - [15/Mar/2025:10:15:32 +0100] "GET /index.html HTTP/1.1" 200 1234
+10.0.0.55 - - [15/Mar/2025:10:15:33 +0100] "POST /api/login HTTP/1.1" 401 89
+192.168.1.100 - - [15/Mar/2025:10:15:34 +0100] "GET /styles.css HTTP/1.1" 200 5678
+172.16.0.1 - - [15/Mar/2025:10:15:35 +0100] "GET /favicon.ico HTTP/1.1" 404 0
+10.0.0.55 - - [15/Mar/2025:10:15:36 +0100] "POST /api/login HTTP/1.1" 401 89
+10.0.0.55 - - [15/Mar/2025:10:15:37 +0100] "POST /api/login HTTP/1.1" 200 512
+192.168.1.100 - - [15/Mar/2025:10:15:38 +0100] "GET /dashboard HTTP/1.1" 200 8765
+192.168.1.200 - - [15/Mar/2025:10:15:39 +0100] "GET /index.html HTTP/1.1" 200 1234
+172.16.0.1 - - [15/Mar/2025:10:15:40 +0100] "GET /api/status HTTP/1.1" 200 128
+192.168.1.100 - - [15/Mar/2025:10:15:41 +0100] "GET /images/logo.png HTTP/1.1" 200 4567
+```
+
+El script debe:
+1. Recibir el archivo de log como argumento.
+2. Validar que el archivo existe y es legible.
+3. Usar un pipeline de `awk`, `sort`, `uniq` y `head` para extraer las IPs.
+4. Mostrar la salida con formato tabular.
+5. Adicionalmente, mostrar cuantas peticiones con codigo 4xx y 5xx hubo en total.
+
+**Salida esperada:**
+```
+=== Top 10 IPs mas frecuentes ===
+   4 192.168.1.100
+   3 10.0.0.55
+   2 172.16.0.1
+   1 192.168.1.200
+
+=== Resumen de errores ===
+  Peticiones 4xx: 3
+  Peticiones 5xx: 0
+```
+
+:::tip Pistas
+- En un log de Apache/Nginx estandar, la IP es el primer campo (`$1` en `awk`).
+- El pipeline clasico es: `awk '{print $1}' | sort | uniq -c | sort -rn | head -10`.
+- Para contar errores 4xx, filtra con `awk` las lineas cuyo codigo de respuesta (campo 9 en este formato) empieza por `4`.
+- `grep -c` cuenta lineas que coinciden con un patron.
+:::
+
+---
+
+### Ejercicio 2.2 — Monitor de disco con trap y manejo de errores
+
+Escribe un script llamado `monitor_disco.sh` que monitorice el uso de disco y alerte si alguna particion supera un umbral configurable. El script debe:
+
+1. Aceptar un flag `-t <umbral>` para el porcentaje de uso (por defecto: 80).
+2. Usar `set -euo pipefail` para manejo estricto de errores.
+3. Crear un archivo temporal para almacenar los resultados intermedios.
+4. Usar `trap` para garantizar la limpieza del archivo temporal, incluso si el script falla o es interrumpido.
+5. Recorrer las particiones con `df` y comparar el porcentaje de uso con el umbral.
+6. Registrar la informacion con funciones de logging (`info`, `warn`, `error`) que incluyan timestamp.
+7. Salir con codigo 0 si todo esta bien, o codigo 2 si alguna particion supera el umbral.
+
+**Ejemplo de uso:**
+```bash
+./monitor_disco.sh -t 50
+# [2025-03-15 10:30:00] [INFO] Iniciando monitor de disco (umbral: 50%)
+# [2025-03-15 10:30:00] [INFO] Verificando particiones...
+# [2025-03-15 10:30:00] [OK]   /dev/sda1 montada en / - uso: 35% (por debajo del umbral)
+# [2025-03-15 10:30:00] [WARN] /dev/sda2 montada en /home - uso: 72% (SUPERA el umbral de 50%)
+# [2025-03-15 10:30:00] [INFO] Resultado: 1 particion(es) por encima del umbral.
+```
+
+:::tip Pistas
+- `df -h` muestra el uso de disco en formato legible. Para parsear, usa `df --output=source,pcent,target` (Linux) o `df -h | awk`.
+- El porcentaje de uso tiene un `%` al final que necesitaras eliminar con `tr -d '%'` o con sustitucion de cadenas `${var%\%}`.
+- Crea el archivo temporal con `mktemp` y limpialo en la funcion `trap cleanup EXIT`.
+- Filtra las lineas de cabecera y sistemas de archivos virtuales (`tmpfs`, `devtmpfs`) para evitar falsos positivos.
+:::
+
+---
+
+### Ejercicio 2.3 — Script de backup con rotacion
+
+Escribe un script llamado `backup.sh` que realice un backup comprimido de un directorio con rotacion automatica. El script debe:
+
+1. Recibir como argumentos: `-s <directorio_origen>`, `-d <directorio_destino>` y `-n <max_backups>` (por defecto: 5).
+2. Usar `set -euo pipefail` y `trap` para limpieza.
+3. Comprimir el directorio origen en un archivo `.tar.gz` con timestamp en el nombre.
+4. Copiar el archivo comprimido al directorio destino.
+5. Rotar los backups: si hay mas de N backups en el destino, eliminar los mas antiguos.
+6. Registrar cada operacion con funciones de logging que incluyan timestamps.
+7. Verificar que el backup se creo correctamente (comprobar que el archivo no esta vacio y que `tar` puede listar su contenido).
+
+**Ejemplo de uso:**
+```bash
+./backup.sh -s /home/usuario/proyecto -d /backups -n 3
+# [2025-03-15 03:00:01] [INFO] Iniciando backup de /home/usuario/proyecto
+# [2025-03-15 03:00:01] [INFO] Comprimiendo en backup_proyecto_20250315_030001.tar.gz...
+# [2025-03-15 03:00:05] [INFO] Backup creado: 12M
+# [2025-03-15 03:00:05] [INFO] Verificando integridad del backup...
+# [2025-03-15 03:00:06] [INFO] Backup verificado correctamente (247 archivos).
+# [2025-03-15 03:00:06] [INFO] Rotando backups (maximo: 3)...
+# [2025-03-15 03:00:06] [INFO] Eliminado backup antiguo: backup_proyecto_20250312_030001.tar.gz
+# [2025-03-15 03:00:06] [INFO] Backup completado exitosamente.
+```
+
+:::tip Pistas
+- `tar czf archivo.tar.gz -C /ruta/padre directorio` comprime sin incluir la ruta completa.
+- `tar tzf archivo.tar.gz | wc -l` cuenta los archivos dentro del tarball (verificacion de integridad).
+- `du -h archivo` muestra el tamano del archivo.
+- Para rotar: `ls -t` lista por fecha de modificacion (mas reciente primero). Usa `tail -n +N` para obtener los archivos que sobran.
+- Crea el directorio destino si no existe con `mkdir -p`.
+:::
+
+---
+
+### Reto 2.4 — Analizador de CSV con awk
+
+Crea un script `csv_report.sh` que reciba un archivo CSV como argumento y genere un informe formateado. El CSV tiene la estructura: `nombre,departamento,salario,fecha_alta`. El script debe:
+
+1. Validar que el archivo existe y tiene al menos una linea de datos (aparte de la cabecera).
+2. Mostrar el numero total de empleados.
+3. Calcular el salario medio, minimo y maximo.
+4. Agrupar por departamento y mostrar el numero de empleados y salario medio de cada uno.
+5. Listar los 3 empleados con mayor salario.
+6. Formatear la salida de forma tabular y legible, usando `awk` y `printf`.
+
+---
+
+### Reto 2.5 — Health check con cron
+
+Escribe un script `healthcheck.sh` que verifique el estado de una lista de servicios web y registre los resultados en un log. El script debe:
+
+1. Leer las URLs a comprobar desde un archivo de configuracion (`urls.txt`, una URL por linea).
+2. Para cada URL, hacer un `curl` con timeout de 5 segundos y registrar el codigo HTTP.
+3. Registrar cada resultado en un archivo de log con timestamp.
+4. Si alguna URL no responde o devuelve un codigo 5xx, escribir un mensaje de alerta en un fichero separado (`alertas.log`).
+5. Usar `flock` para evitar ejecuciones simultaneas.
+
+Ademas, documenta como configurar un cron job para que ejecute el script cada 5 minutos:
+```
+*/5 * * * * /usr/bin/flock -n /tmp/healthcheck.lock /home/user/scripts/healthcheck.sh
+```
+
+---
+
+## Lab 3: Scripting en Pipelines (UD 3)
+
+Este laboratorio integra los scripts con pipelines de CI/CD: wrapper scripts para herramientas de infraestructura, workflows de GitHub Actions y testing con bats.
+
+---
+
+### Ejercicio 3.1 — Wrapper script para Terraform
+
+Escribe un wrapper script llamado `tf-wrapper.sh` que orqueste la ejecucion de Terraform con las siguientes fases:
+
+1. **Verificar formato** (`terraform fmt -check`): si hay archivos sin formatear, mostrar cuales son y salir con codigo 2.
+2. **Validar configuracion** (`terraform validate`): si falla, salir con codigo 3.
+3. **Generar plan** (`terraform plan -out=tfplan`): si falla, salir con codigo 4.
+
+El script debe:
+- Aceptar un argumento `-d <directorio>` para indicar donde estan los archivos `.tf` (por defecto: `.`).
+- Verificar que `terraform` esta instalado antes de hacer nada.
+- Usar funciones de logging con colores y timestamps.
+- Usar `set -euo pipefail` y `trap` para cleanup (eliminar archivos temporales si falla).
+- Devolver codigos de salida significativos (distintos para cada tipo de error).
+
+**Ejemplo de uso:**
+```bash
+./tf-wrapper.sh -d infra/
+# [INFO]  2025-03-15 10:30:00 Terraform v1.9.5 detectado
+# [INFO]  2025-03-15 10:30:00 Paso 1/3: Verificando formato...
+# [OK]    2025-03-15 10:30:01 Formato correcto
+# [INFO]  2025-03-15 10:30:01 Paso 2/3: Validando configuracion...
+# [OK]    2025-03-15 10:30:02 Configuracion valida
+# [INFO]  2025-03-15 10:30:02 Paso 3/3: Generando plan...
+# [OK]    2025-03-15 10:30:10 Plan generado: tfplan
+# [OK]    2025-03-15 10:30:10 Wrapper finalizado correctamente
+```
+
+:::tip Pistas
+- Usa codigos de color ANSI: `\033[0;32m` (verde), `\033[0;31m` (rojo), `\033[0;34m` (azul), `\033[0m` (reset).
+- `command -v terraform &> /dev/null` comprueba si Terraform esta instalado.
+- En la funcion de cleanup con `trap`, puedes comprobar `$?` para saber si el script termino con error.
+- `terraform fmt -check -diff` muestra las diferencias de formato, util para el mensaje de error.
+:::
+
+---
+
+### Ejercicio 3.2 — Workflow de GitHub Actions
+
+Crea un archivo de workflow para GitHub Actions (`.github/workflows/terraform.yml`) que utilice el wrapper script del ejercicio anterior. El workflow debe:
+
+1. Dispararse en `push` a `main` y en `pull_request` contra `main`, solo cuando se modifiquen archivos en el directorio `infra/`.
+2. Usar `ubuntu-latest` como runner.
+3. Instalar Terraform usando la action oficial `hashicorp/setup-terraform@v3`.
+4. En pull requests: ejecutar solo `./scripts/tf-wrapper.sh -d infra/` (plan).
+5. En push a main: ejecutar el plan y, si tiene exito, aplicar con `terraform apply`.
+6. Pasar las credenciales de AWS como variables de entorno desde secrets del repositorio.
+
+**Estructura del repositorio:**
+```
+scripting-exercices/
+  .github/workflows/terraform.yml
+  scripts/tf-wrapper.sh
+  infra/
+    main.tf
+    variables.tf
+```
+
+:::tip Pistas
+- Usa `on.push.paths` y `on.pull_request.paths` para filtrar por directorio.
+- `if: github.event_name == 'pull_request'` permite ejecutar pasos condicionalmente.
+- Los secrets se pasan como `env` en el step, no directamente en `run`.
+- Especifica siempre `shell: bash` en los steps que ejecutan scripts.
+:::
+
+---
+
+### Ejercicio 3.3 — Tests con bats
+
+Escribe tests con **bats** (Bash Automated Testing System) para validar que el wrapper script de Terraform maneja errores correctamente. Crea un archivo `tests/tf-wrapper.bats` con los siguientes tests:
+
+1. **El script falla si terraform no esta instalado**: simular que `terraform` no esta en el PATH y verificar que el script sale con codigo 1.
+2. **El script falla si el directorio no existe**: pasar un directorio inexistente y verificar que sale con codigo 1.
+3. **El script muestra ayuda con -h**: verificar que la flag `-h` muestra informacion de uso y sale con codigo 0.
+4. **El script falla con formato incorrecto**: crear un archivo `.tf` mal formateado y verificar que sale con codigo 2.
+
+**Estructura:**
+```
+mi-proyecto/
+  scripts/tf-wrapper.sh
+  tests/tf-wrapper.bats
+```
+
+**Ejecucion:**
+```bash
+bats tests/tf-wrapper.bats
+# 1..4
+# ok 1 falla si terraform no esta instalado
+# ok 2 falla si el directorio no existe
+# ok 3 muestra ayuda con -h
+# ok 4 falla con formato incorrecto
+```
+
+:::tip Pistas
+- bats usa funciones `setup()` y `teardown()` que se ejecutan antes y despues de cada test.
+- Para simular que un comando no existe, modifica el `PATH` temporalmente: `PATH="/usr/bin"`.
+- `run` ejecuta un comando y captura el codigo de salida en `$status` y la salida en `$output`.
+- `[[ "$output" == *"texto"* ]]` comprueba que la salida contiene un texto.
+- Crea un directorio temporal en `setup` y limpialo en `teardown`.
+:::
+
+---
+
+### Reto 3.4 — Wrapper para kubectl con rollback
+
+Escribe un wrapper script `k8s-deploy.sh` para despliegues en Kubernetes que siga el patron de despliegue seguro:
+
+1. **Validar el manifiesto** con `kubectl apply --dry-run=client`.
+2. **Aplicar el manifiesto** con `kubectl apply`.
+3. **Esperar al rollout** con `kubectl rollout status` y un timeout configurable.
+4. **Rollback automatico** si el rollout falla: ejecutar `kubectl rollout undo`.
+
+Acepta los flags: `-f <manifiesto>`, `-n <namespace>` (default: `default`) y `-t <timeout>` (default: `120s`). Usa funciones de logging con colores y codigos de salida significativos.
+
+---
+
+### Reto 3.5 — Release automation
+
+Crea un script `release.sh` que automatice el proceso de release de un proyecto:
+
+1. Leer la version actual desde un archivo `VERSION` o `package.json`.
+2. Generar un changelog automatico a partir de los mensajes de commit desde el ultimo tag, agrupados por tipo (feat, fix, docs, etc.).
+3. Incrementar la version siguiendo SemVer (el tipo de incremento se pasa como argumento: `major`, `minor` o `patch`).
+4. Crear un commit con el cambio de version.
+5. Crear un tag Git con la nueva version.
+6. Mostrar un resumen del release antes de confirmar.
+
+El script debe tener un modo `--dry-run` que muestre todo lo que haria sin ejecutar ningun cambio.
+
+---
+
+## Proyecto Final (evaluable)
+
+El proyecto final del modulo de Scripting consiste en desarrollar un **script de automatizacion completo** para una tarea real de operaciones. El proyecto se entrega como un repositorio Git y debe demostrar el dominio de todos los conceptos del curso.
+
+### Requisitos obligatorios
+
+1. **Repositorio Git** con historial de commits limpio y un `README.md` que documente:
+   - Que hace el script.
+   - Como instalarlo y configurarlo.
+   - Ejemplos de uso.
+   - Dependencias necesarias.
+
+2. **Manejo robusto de errores**:
+   - `set -euo pipefail` al inicio.
+   - `trap` para limpieza de recursos temporales.
+   - Mensajes de error descriptivos por stderr.
+   - Codigos de salida significativos (distintos para cada tipo de error).
+
+3. **Logging estructurado**:
+   - Funciones de logging con timestamps (`info`, `warn`, `error`).
+   - Opcion de redirigir a fichero.
+
+4. **Tests con bats**:
+   - Minimo 5 tests que cubran: caso de exito, validacion de argumentos, manejo de errores y al menos un caso limite.
+   - Los tests deben pasar en un entorno limpio.
+
+5. **Calidad de codigo**:
+   - Pasar `shellcheck` sin errores ni warnings.
+   - Funciones con variables locales.
+   - Argumentos parseados con `case` y documentacion de uso (`--help`).
+
+### Opciones sugeridas
+
+Elige una de las siguientes opciones (o propone una propia al profesor):
+
+| Opcion | Descripcion |
+|--------|-------------|
+| **Backup system** | Script de backup con compresion, rotacion, verificacion de integridad y notificaciones. Configurable via archivo `.conf`. |
+| **Health check dashboard** | Script que monitoriza una lista de servicios (HTTP, puertos, procesos) y genera un informe HTML con el estado de cada uno. Integrable con cron. |
+| **Deployment helper** | Wrapper script para despliegues que orqueste multiples herramientas (Docker, Terraform, kubectl) con validaciones pre-deploy, rollback y notificaciones. |
+| **Log analyzer** | Script que analiza logs de servidor, genera estadisticas (top IPs, codigos de error, endpoints lentos), detecta patrones anomalos y genera un informe. |
+
+### Criterios de evaluacion
+
+| Criterio | Peso |
+|----------|------|
+| Funcionalidad completa y correcta | 30% |
+| Manejo de errores y robustez | 20% |
+| Tests con bats (cobertura y calidad) | 20% |
+| Calidad de codigo (shellcheck, funciones, estilo) | 15% |
+| Documentacion (README, comentarios, --help) | 15% |

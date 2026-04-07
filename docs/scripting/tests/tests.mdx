@@ -1,0 +1,20 @@
+---
+sidebar_position: 1
+title: "Autoevaluación y tests"
+description: "Tests interactivos para evaluar tus conocimientos en Bash scripting: desde fundamentos hasta integración en pipelines."
+---
+
+import ModuleTest from '@site/src/components/test/ModuleTest';
+import { testFundamentos, testEstructurasControl, testPipesHerramientas, testAutomatizacion, testScriptingPipelines } from './test-data';
+
+# Tests de Scripting
+
+Evalúa tus conocimientos con estos tests interactivos. Tu progreso se guarda automáticamente en el navegador.
+
+<ModuleTest title='Scripting' tests={[
+  { id: 'sh-fundamentos', title: 'Fundamentos de Bash', config: testFundamentos },
+  { id: 'sh-control', title: 'Estructuras de Control y Funciones', config: testEstructurasControl },
+  { id: 'sh-pipes', title: 'Pipes y Herramientas de Texto', config: testPipesHerramientas },
+  { id: 'sh-auto', title: 'Automatización y Manejo de Errores', config: testAutomatizacion },
+  { id: 'sh-pipelines', title: 'Scripting en Pipelines CI/CD', config: testScriptingPipelines },
+]} />

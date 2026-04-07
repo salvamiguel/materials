@@ -30,7 +30,7 @@ export default function LabActions({ repo, codespace = false, fork = false, titl
           href={repo}
           target="_blank"
           rel="noopener noreferrer"
-          className={`${styles.btn} ${styles.btnSecondary}`}
+          className={`${styles.btn} ${styles.btnPrimary}`}
         >
           <VscGithub /> Abrir en GitHub
         </a>
