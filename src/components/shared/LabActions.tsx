@@ -8,6 +8,8 @@ interface LabActionsProps {
   codespace?: boolean;
   devcontainer?: boolean;
   fork?: boolean;
+  vscode?: boolean;
+  vscodeDev?: boolean;
   title?: string;
 }
 
@@ -16,7 +18,7 @@ function repoToPath(repo: string): string {
   return match ? match[1] : repo;
 }
 
-export default function LabActions({ repo, codespace = false, fork = false, title }: LabActionsProps) {
+export default function LabActions({ repo, codespace = false, fork = false, vscode = false, vscodeDev = false, title }: LabActionsProps) {
   const repoPath = repoToPath(repo);
   const vscodeUrl = `vscode://vscode.git/clone?url=${encodeURIComponent(repo)}`;
   const vscodeDevUrl = `https://vscode.dev/github/${repoPath}`;
@@ -36,21 +38,25 @@ export default function LabActions({ repo, codespace = false, fork = false, titl
         </a>
 
 
-        <a
-          href={vscodeUrl}
-          className={`${styles.btn} ${styles.btnSecondary}`}
-        >
-          <VscVscode /> Clonar en VSCode
-        </a>
+        {vscode && (
+          <a
+            href={vscodeUrl}
+            className={`${styles.btn} ${styles.btnSecondary}`}
+          >
+            <VscVscode /> Clonar en VSCode
+          </a>
+        )}
 
-        <a
-          href={vscodeDevUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`${styles.btn} ${styles.btnSecondary}`}
-        >
-          <VscRemote /> Abrir en vscode.dev
-        </a>
+        {vscodeDev && (
+          <a
+            href={vscodeDevUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${styles.btn} ${styles.btnSecondary}`}
+          >
+            <VscRemote /> Abrir en vscode.dev
+          </a>
+        )}
 
         {fork && (
           <a
