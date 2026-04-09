@@ -18,7 +18,7 @@ function repoToPath(repo: string): string {
   return match ? match[1] : repo;
 }
 
-export default function LabActions({ repo, codespace = false, fork = false, vscode = false, vscodeDev = false, title }: LabActionsProps) {
+export default function LabActions({ repo, codespace = false, fork = false, vscode = true, vscodeDev = true, title }: LabActionsProps) {
   const repoPath = repoToPath(repo);
   const vscodeUrl = `vscode://vscode.git/clone?url=${encodeURIComponent(repo)}`;
   const vscodeDevUrl = `https://vscode.dev/github/${repoPath}`;
