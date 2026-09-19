@@ -1,0 +1,94 @@
+---
+sidebar_position: 0
+title: "Calendario"
+description: "Cronograma del Máster en IA: dos cohortes (online y presencial) compartiendo el mismo temario de certificación, con vista semanal, por profesor, mensual y notas."
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Stats from '@site/src/components/ai/calendar/Stats';
+import WeekRail from '@site/src/components/ai/calendar/WeekRail';
+import WeekTable from '@site/src/components/ai/calendar/WeekTable';
+import TeacherBlocks from '@site/src/components/ai/calendar/TeacherBlocks';
+import MonthCalendar from '@site/src/components/ai/calendar/MonthCalendar';
+
+# Calendario
+
+**AWS AI Practitioner → DP-900 → AI-901.** Los martes online y los miércoles presenciales son
+**grupos distintos de alumnos**, así que cada tema se imparte dos veces en la misma semana: una
+preparación por profesor, dos entregas. Horario fijo 18:30–21:00 en las dos cohortes.
+
+<Stats />
+
+:::info Qué combina esta página
+
+- **Cohorte online (martes)** y **cohorte presencial (miércoles)** comparten el mismo temario de
+  certificación, desfasadas dos semanas.
+- Las dos semanas de desfase se usan para arrancar (presentación y nivelación), no para avanzar
+  temario: ningún contenido de examen se imparte ahí.
+- Cada profesor prepara un solo tema por semana y lo imparte a las dos cohortes en días
+  consecutivos.
+
+:::
+
+## Las dos vías, semana a semana
+
+<WeekRail />
+
+<Tabs groupId="calendario-master" queryString>
+  <TabItem value="semanas" label="Semana a semana" default>
+    <WeekTable />
+  </TabItem>
+  <TabItem value="bloques" label="Bloques por profesor">
+    <TeacherBlocks />
+  </TabItem>
+  <TabItem value="calendario" label="Calendario mensual">
+    <MonthCalendar />
+  </TabItem>
+  <TabItem value="notas" label="Notas y supuestos">
+
+### Por qué 20 presenciales y 18 online
+
+El cronograma oficial fija 20 miércoles presenciales (21/10/2026 → 14/04/2027) y 18 martes online,
+que arrancan dos semanas más tarde. Ese desfase no se puede tocar, así que la propuesta lo absorbe
+donde no hace daño: en el arranque.
+
+- **Semana 1 · 21/10** — Presentación del módulo, mapa de las tres certificaciones y alta de
+  cuentas AWS y Azure.
+- **Semana 2 · 28/10** — Nivelación técnica: datos, Python/notebooks y consolas cloud para las
+  prácticas.
+- La cohorte online recibe ese arranque como material asíncrono (guía de alta de cuentas y vídeo
+  de bienvenida) y se repasa en los primeros 20–30 minutos de su primera sesión, el 3 de noviembre.
+
+### Reparto docente
+
+Bloques de dos semanas por profesor, con 19 sesiones cada uno. Cada bloque cubre las dos cohortes,
+de forma que la preparación de un tema se amortiza en dos clases consecutivas.
+
+### Parones del calendario
+
+- **Navidad:** entre la semana 9 (15–16/12) y la semana 10 (12–13/01). El bloque DP-900 queda
+  partido: fundamentos antes del parón, datos relacionales después.
+- **Marzo:** entre la semana 18 (9–10/03) y la semana 19 (6–7/04) no hay clase. Es la ventana
+  natural para que los alumnos se presenten a las convocatorias oficiales con el temario ya
+  cerrado y los simulacros hechos.
+
+### Cómo se han compactado los contenidos
+
+El temario común son 18 sesiones. Dos ajustes clave:
+
+- **AWS dominios 4 y 5** van juntos en la semana 7 (IA responsable + seguridad, cumplimiento y
+  gobernanza): 14 % + 14 % del examen, muy solapados en la práctica.
+- **AI-901 conceptos de IA** ocupa una sola sesión (semana 14), porque el peso del examen está en
+  la parte de implementación con Microsoft Foundry, que conserva sus tres sesiones.
+
+### Supuestos y pendientes
+
+- Horario idéntico para las dos cohortes: 18:30–21:00, martes online y miércoles presencial.
+- *Por confirmar:* convocatorias y vouchers de examen oficial, y si la cohorte online necesita una
+  sesión 0 grabada además del material asíncrono.
+- *Por confirmar con secretaría:* aula asignada para la vía presencial y plataforma de la vía
+  online.
+
+</TabItem>
+</Tabs>
