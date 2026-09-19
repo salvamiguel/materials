@@ -16,7 +16,6 @@ export default function Stats(): React.ReactElement {
       { n: total, l: 'sesiones en total' },
       { n: presenciales, l: 'presenciales · miércoles' },
       { n: online, l: 'online · martes' },
-      { n: online, l: 'temas espejo (sem. 3–20)' },
       { n: `${porProfesor.Salva ?? 0} / ${porProfesor.Javier ?? 0}`, l: 'Salva / Javier' },
     ];
   }, []);
