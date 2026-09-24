@@ -12,6 +12,8 @@ export interface GrupoInfo {
   lugar: string;
   /** Líneas de dirección para mostrar en la tarjeta; sin ella se muestra `lugar`. */
   direccion?: [string, string];
+  /** Búsqueda de Google Maps; incluye el nombre del sitio porque la dirección sola resuelve a otro lugar. */
+  mapa?: string;
 }
 
 export const GRUPOS: Record<Grupo, GrupoInfo> = {
@@ -25,8 +27,9 @@ export const GRUPOS: Record<Grupo, GrupoInfo> = {
     archivo: 'ai-26-27-presencial.ics',
     nombre: 'Máster IA 26/27 · Presencial',
     dia: 'Miércoles',
-    lugar: 'C/ de Guillem de Castro, 175, Extramurs, 46008 València, Valencia',
-    direccion: ['C/ de Guillem de Castro, 175', 'Extramurs, 46008 València'],
+    lugar: 'Universidad Europea de Valencia, Campus Turia, C/ de Guillem de Castro, 175, Extramurs, 46008 València, Valencia',
+    direccion: ['UEV · Campus Turia', 'C/ de Guillem de Castro, 175, 46008 València'],
+    mapa: 'Universidad Europea de Valencia Campus Turia, C/ de Guillem de Castro, 175, 46008 València',
   },
 };
 

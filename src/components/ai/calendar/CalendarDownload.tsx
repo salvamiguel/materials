@@ -75,7 +75,7 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
             {g.direccion ? (
               <a
                 className={styles.map}
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(g.lugar)}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(g.mapa ?? g.lugar)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Ver en Google Maps"
