@@ -39,7 +39,7 @@ export const ICS_DIR = 'calendario';
 /** Host público para las URLs de suscripción y los enlaces dentro del .ics (en lugar de `siteConfig.url`). */
 export const ICS_HOST = 'https://salvamiguel.com';
 
-const EVENT_PREFIX = 'Master AI - Módulo Certificaciones - UEV - ';
+const EVENT_PREFIX = 'Máster AI - Módulo Certificaciones - UEV - ';
 
 // Fijo para que el fichero generado sea idéntico entre builds si no cambian los datos.
 const DTSTAMP = '20260901T000000Z';
