@@ -1,0 +1,9 @@
+{
+  "_comment": "hashicorp/local is built with terraform-plugin-framework; defaults listed by hand. Every argument forces replacement (handled by the engine), checksums are computed at apply.",
+  "defaults": {
+    "local_file": {"directory_permission": "0777", "file_permission": "0777"},
+    "local_sensitive_file": {"directory_permission": "0700", "file_permission": "0700"}
+  },
+  "resources": {},
+  "data_sources": {}
+}

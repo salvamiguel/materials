@@ -1,0 +1,287 @@
+{
+  "_comment": "Mock templates for hashicorp/google (see aws.json for the placeholder list; {project} and {zone} come from the resource or the provider block). Attributes without a template get generic GCP-looking values (engine/mock.go googleString).",
+  "resources": {
+    "google_compute_network": {
+      "id": "projects/{project}/global/networks/{attr:name}",
+      "self_link": "https://www.googleapis.com/compute/v1/{id}",
+      "gateway_ipv4": "",
+      "network_id": "{digits:19}",
+      "numeric_id": "{attr:network_id}",
+      "routing_mode": "REGIONAL",
+      "bgp_best_path_selection_mode": "LEGACY",
+      "bgp_always_compare_med": false,
+      "bgp_inter_region_cost": ""
+    },
+    "google_compute_subnetwork": {
+      "id": "projects/{project}/regions/{region}/subnetworks/{attr:name}",
+      "self_link": "https://www.googleapis.com/compute/v1/{id}",
+      "region": "{region}",
+      "gateway_address": "{ip:10.0.0}",
+      "subnetwork_id": "{digits:19}",
+      "stack_type": "IPV4_ONLY",
+      "purpose": "PRIVATE",
+      "private_ipv6_google_access": "DISABLE_GOOGLE_ACCESS"
+    },
+    "google_compute_firewall": {
+      "id": "projects/{project}/global/firewalls/{attr:name}",
+      "self_link": "https://www.googleapis.com/compute/v1/{id}",
+      "direction": "INGRESS",
+      "enable_logging": false
+    },
+    "google_compute_instance": {
+      "id": "projects/{project}/zones/{zone}/instances/{attr:name}",
+      "self_link": "https://www.googleapis.com/compute/v1/{id}",
+      "instance_id": "{digits:19}",
+      "cpu_platform": "Intel Broadwell",
+      "current_status": "RUNNING",
+      "min_cpu_platform": ""
+    },
+    "google_compute_address": {
+      "id": "projects/{project}/regions/{region}/addresses/{attr:name}",
+      "self_link": "https://www.googleapis.com/compute/v1/{id}",
+      "address": "34.{digits:2}.{digits:2}.{digits:2}",
+      "address_type": "EXTERNAL",
+      "network_tier": "PREMIUM",
+      "region": "{region}"
+    },
+    "google_compute_global_address": {
+      "id": "projects/{project}/global/addresses/{attr:name}",
+      "self_link": "https://www.googleapis.com/compute/v1/{id}",
+      "address": "34.{digits:3}.{digits:2}.{digits:2}"
+    },
+    "google_compute_router": {
+      "id": "projects/{project}/regions/{region}/routers/{attr:name}",
+      "self_link": "https://www.googleapis.com/compute/v1/{id}",
+      "region": "{region}"
+    },
+    "google_compute_router_nat": {
+      "id": "{project}/{region}/{attr:router}/{attr:name}",
+      "region": "{region}"
+    },
+    "google_compute_disk": {
+      "id": "projects/{project}/zones/{zone}/disks/{attr:name}",
+      "self_link": "https://www.googleapis.com/compute/v1/{id}",
+      "disk_id": "{digits:19}",
+      "type": "pd-standard"
+    },
+    "google_compute_instance_template": {
+      "id": "projects/{project}/global/instanceTemplates/{attr:name}",
+      "self_link": "https://www.googleapis.com/compute/v1/{id}",
+      "name": "terraform-{digits:26}"
+    },
+    "google_storage_bucket": {
+      "id": "{attr:name}",
+      "self_link": "https://www.googleapis.com/storage/v1/b/{attr:name}",
+      "url": "gs://{attr:name}",
+      "project": "{project}",
+      "project_number": "{digits:12}",
+      "rpo": "DEFAULT",
+      "public_access_prevention": "inherited",
+      "time_created": "{now}",
+      "updated": "{now}"
+    },
+    "google_storage_bucket_object": {
+      "id": "{attr:bucket}-{attr:name}",
+      "self_link": "https://www.googleapis.com/storage/v1/b/{attr:bucket}/o/{attr:name}",
+      "media_link": "https://storage.googleapis.com/download/storage/v1/b/{attr:bucket}/o/{attr:name}?generation={digits:16}&alt=media",
+      "output_name": "{attr:name}",
+      "md5hash": "{alnum:22}==",
+      "crc32c": "{alnum:6}==",
+      "content_type": "text/plain; charset=utf-8",
+      "storage_class": "STANDARD",
+      "generation": "{digits:16}"
+    },
+    "google_service_account": {
+      "id": "projects/{project}/serviceAccounts/{attr:email}",
+      "name": "{id}",
+      "unique_id": "{digits:21}",
+      "project": "{project}"
+    },
+    "google_service_account_key": {
+      "id": "projects/{project}/serviceAccounts/{attr:service_account_id}/keys/{hex:40}",
+      "name": "{id}",
+      "private_key": "{alnum:64}",
+      "public_key": "{alnum:64}",
+      "valid_after": "{now}",
+      "valid_before": "9999-12-31T23:59:59Z"
+    },
+    "google_project_iam_member": {
+      "id": "{attr:project}/{attr:role}/{attr:member}",
+      "etag": "BwY{alnum:9}="
+    },
+    "google_project_iam_binding": {
+      "id": "{attr:project}/{attr:role}",
+      "etag": "BwY{alnum:9}="
+    },
+    "google_project_service": {
+      "id": "{project}/{attr:service}"
+    },
+    "google_container_cluster": {
+      "id": "projects/{project}/locations/{attr:location}/clusters/{attr:name}",
+      "self_link": "https://container.googleapis.com/v1/{id}",
+      "endpoint": "34.{digits:2}.{digits:3}.{digits:2}",
+      "master_version": "1.33.4-gke.1134000",
+      "current_master_version": "{attr:master_version}",
+      "services_ipv4_cidr": "34.118.224.0/20",
+      "cluster_ipv4_cidr": "10.8.0.0/14",
+      "label_fingerprint": "{alnum:8}",
+      "operation": ""
+    },
+    "google_container_node_pool": {
+      "id": "projects/{project}/locations/{attr:location}/clusters/{attr:cluster}/nodePools/{attr:name}",
+      "version": "1.33.4-gke.1134000",
+      "operation": ""
+    },
+    "google_sql_database_instance": {
+      "id": "{attr:name}",
+      "self_link": "https://sqladmin.googleapis.com/sql/v1beta4/projects/{project}/instances/{attr:name}",
+      "connection_name": "{project}:{region}:{attr:name}",
+      "public_ip_address": "34.{digits:2}.{digits:2}.{digits:2}",
+      "first_ip_address": "{attr:public_ip_address}",
+      "private_ip_address": "",
+      "service_account_email_address": "p{digits:12}-{lower:6}@gcp-sa-cloud-sql.iam.gserviceaccount.com",
+      "dns_name": "",
+      "psc_service_attachment_link": ""
+    },
+    "google_sql_database": {
+      "id": "projects/{project}/instances/{attr:instance}/databases/{attr:name}",
+      "self_link": "https://sqladmin.googleapis.com/sql/v1beta4/{id}"
+    },
+    "google_sql_user": {
+      "id": "{attr:name}//{attr:instance}"
+    },
+    "google_cloud_run_v2_service": {
+      "id": "projects/{project}/locations/{attr:location}/services/{attr:name}",
+      "uid": "{uuid}",
+      "uri": "https://{attr:name}-{lower:10}-{lower:2}.a.run.app",
+      "urls": ["https://{attr:name}-{digits:12}.{attr:location}.run.app"],
+      "latest_ready_revision": "{id}/revisions/{attr:name}-00001-{lower:3}",
+      "latest_created_revision": "{attr:latest_ready_revision}",
+      "generation": "1",
+      "observed_generation": "1",
+      "reconciling": false,
+      "etag": "\"{alnum:20}\"",
+      "creator": "playground@{project}.iam.gserviceaccount.com",
+      "last_modifier": "{attr:creator}",
+      "create_time": "{now}",
+      "update_time": "{now}"
+    },
+    "google_cloudfunctions2_function": {
+      "id": "projects/{project}/locations/{attr:location}/functions/{attr:name}",
+      "url": "https://{attr:location}-{project}.cloudfunctions.net/{attr:name}",
+      "state": "ACTIVE",
+      "environment": "GEN_2",
+      "update_time": "{now}"
+    },
+    "google_pubsub_topic": {
+      "id": "projects/{project}/topics/{attr:name}"
+    },
+    "google_pubsub_subscription": {
+      "id": "projects/{project}/subscriptions/{attr:name}"
+    },
+    "google_artifact_registry_repository": {
+      "id": "projects/{project}/locations/{attr:location}/repositories/{attr:repository_id}",
+      "name": "{attr:repository_id}",
+      "create_time": "{now}",
+      "update_time": "{now}"
+    },
+    "google_secret_manager_secret": {
+      "id": "projects/{project}/secrets/{attr:secret_id}",
+      "name": "projects/{digits:12}/secrets/{attr:secret_id}",
+      "create_time": "{now}"
+    },
+    "google_secret_manager_secret_version": {
+      "id": "{attr:secret}/versions/1",
+      "name": "{attr:secret}/versions/1",
+      "version": "1",
+      "create_time": "{now}"
+    },
+    "google_dns_managed_zone": {
+      "id": "projects/{project}/managedZones/{attr:name}",
+      "managed_zone_id": "{digits:19}",
+      "name_servers": ["ns-cloud-a1.googledomains.com.", "ns-cloud-a2.googledomains.com.", "ns-cloud-a3.googledomains.com.", "ns-cloud-a4.googledomains.com."],
+      "creation_time": "{now}"
+    },
+    "google_dns_record_set": {
+      "id": "projects/{project}/managedZones/{attr:managed_zone}/rrsets/{attr:name}/{attr:type}"
+    },
+    "google_bigquery_dataset": {
+      "id": "projects/{project}/datasets/{attr:dataset_id}",
+      "self_link": "https://bigquery.googleapis.com/bigquery/v2/{id}",
+      "creation_time": 1767268800000,
+      "last_modified_time": 1767268800000
+    },
+    "google_kms_key_ring": {
+      "id": "projects/{project}/locations/{attr:location}/keyRings/{attr:name}"
+    },
+    "google_kms_crypto_key": {
+      "id": "{attr:key_ring}/cryptoKeys/{attr:name}"
+    }
+  },
+  "data_sources": {
+    "google_client_config": {
+      "id": "projects/{project}/regions/{region}/zones/{zone}",
+      "project": "{project}",
+      "region": "{region}",
+      "zone": "{zone}",
+      "access_token": "ya29.{alnum:60}"
+    },
+    "google_project": {
+      "id": "projects/{project}",
+      "project_id": "{project}",
+      "number": "{digits:12}",
+      "name": "{project}"
+    },
+    "google_compute_zones": {
+      "id": "projects/{project}/regions/{region}",
+      "names": ["{region}-b", "{region}-c", "{region}-d"],
+      "project": "{project}",
+      "region": "{region}"
+    },
+    "google_compute_image": {
+      "id": "projects/debian-cloud/global/images/debian-12-bookworm-v20250910",
+      "name": "debian-12-bookworm-v20250910",
+      "self_link": "https://www.googleapis.com/compute/v1/{id}",
+      "family": "debian-12",
+      "image_id": "{digits:19}",
+      "disk_size_gb": 10,
+      "status": "READY"
+    },
+    "google_compute_network": {
+      "id": "projects/{project}/global/networks/{attr:name}",
+      "self_link": "https://www.googleapis.com/compute/v1/{id}",
+      "network_id": "{digits:19}"
+    },
+    "google_compute_subnetwork": {
+      "id": "projects/{project}/regions/{region}/subnetworks/{attr:name}",
+      "self_link": "https://www.googleapis.com/compute/v1/{id}",
+      "ip_cidr_range": "10.128.0.0/20",
+      "network": "https://www.googleapis.com/compute/v1/projects/{project}/global/networks/default",
+      "gateway_address": "10.128.0.1"
+    },
+    "google_service_account": {
+      "id": "projects/{project}/serviceAccounts/{attr:account_id}@{project}.iam.gserviceaccount.com",
+      "email": "{attr:account_id}@{project}.iam.gserviceaccount.com",
+      "member": "serviceAccount:{attr:email}",
+      "unique_id": "{digits:21}"
+    },
+    "google_client_openid_userinfo": {
+      "id": "playground@example.com",
+      "email": "playground@example.com"
+    },
+    "google_storage_bucket": {
+      "id": "{attr:name}",
+      "url": "gs://{attr:name}",
+      "self_link": "https://www.googleapis.com/storage/v1/b/{attr:name}",
+      "location": "EU"
+    },
+    "google_container_engine_versions": {
+      "id": "{project}",
+      "latest_master_version": "1.33.4-gke.1134000",
+      "latest_node_version": "1.33.4-gke.1134000",
+      "default_cluster_version": "1.33.4-gke.1134000",
+      "valid_master_versions": ["1.33.4-gke.1134000", "1.32.8-gke.1134000"],
+      "valid_node_versions": ["1.33.4-gke.1134000", "1.32.8-gke.1134000"]
+    }
+  }
+}

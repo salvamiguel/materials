@@ -1,0 +1,60 @@
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # null_resource.n will be created
+  + resource "null_resource" "n" {
+      + id       = (known after apply)
+      + triggers = {
+          + "v" = "1"
+        }
+    }
+
+  # random_pet.p will be created
+  + resource "random_pet" "p" {
+      + id        = (known after apply)
+      + length    = 2
+      + separator = "-"
+    }
+
+  # terraform_data.a will be created
+  + resource "terraform_data" "a" {
+      + id               = (known after apply)
+      + input            = "v1"
+      + output           = (known after apply)
+      + triggers_replace = "t1"
+    }
+
+  # terraform_data.b will be created
+  + resource "terraform_data" "b" {
+      + id     = (known after apply)
+      + input  = (known after apply)
+      + output = (known after apply)
+    }
+
+  # terraform_data.c will be created
+  + resource "terraform_data" "c" {
+      + id     = (known after apply)
+      + input  = "c1"
+      + output = (known after apply)
+    }
+
+  # terraform_data.old will be created
+  + resource "terraform_data" "old" {
+      + id     = (known after apply)
+      + input  = "moved"
+      + output = (known after apply)
+    }
+
+Plan: 6 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + pet = (known after apply)
+
+─────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.

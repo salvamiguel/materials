@@ -1,0 +1,600 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+import HclEditor from './HclEditor';
+import Terminal, { type TermEntry } from './Terminal';
+import GraphView from './GraphView';
+import StatePanel from './StatePanel';
+import { EXAMPLES, DEFAULT_EXAMPLE } from './examples';
+import { TfplayEngine, type ChangeInfo, type Diag, type GraphInfo, type RunResponse } from './engine';
+import styles from './playground.module.css';
+
+const STORAGE = 'tfplay:v1:';
+const LOCK_FILE = '.terraform.lock.hcl';
+
+function load<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(STORAGE + key);
+    return raw === null ? fallback : (JSON.parse(raw) as T);
+  } catch {
+    return fallback;
+  }
+}
+
+function save(key: string, value: unknown) {
+  try {
+    localStorage.setItem(STORAGE + key, JSON.stringify(value));
+  } catch {
+    // private mode / quota: the playground still works, it just forgets
+  }
+}
+
+// Splits a command line like a shell would (quotes, backslashes).
+function shellSplit(line: string): string[] {
+  const out: string[] = [];
+  let cur = '';
+  let quote: string | null = null;
+  let has = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (quote) {
+      if (c === quote) quote = null;
+      else if (c === '\\' && quote === '"' && i + 1 < line.length) cur += line[++i];
+      else cur += c;
+    } else if (c === '"' || c === "'") {
+      quote = c;
+      has = true;
+    } else if (c === ' ' || c === '\t') {
+      if (has || cur) out.push(cur);
+      cur = '';
+      has = false;
+    } else if (c === '\\' && i + 1 < line.length) {
+      cur += line[++i];
+      has = true;
+    } else {
+      cur += c;
+      has = true;
+    }
+  }
+  if (has || cur) out.push(cur);
+  return out;
+}
+
+async function encodeShare(files: Record<string, string>): Promise<string> {
+  const stream = new Blob([JSON.stringify(files)]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+  let bin = '';
+  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function decodeShare(code: string): Promise<Record<string, string>> {
+  const b64 = code.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return JSON.parse(await new Response(stream).text());
+}
+
+const HELP = `Comandos disponibles (el prefijo "terraform" es opcional):
+
+  init                      instala los proveedores que pide la configuración
+  validate                  valida la sintaxis y los tipos
+  fmt                       formatea los ficheros (terraform fmt)
+  plan [-destroy] [-var k=v] muestra el plan de ejecución
+  apply [-var k=v]          aplica el plan (se autoaprueba)
+  destroy                   destruye todo lo que hay en el estado
+  output [nombre]           muestra los outputs del estado
+  state list | state show ADDR
+  show                      muestra el estado completo
+  graph                     grafo de dependencias (formato DOT)
+  providers                 árbol de proveedores requeridos
+  console [expresión]       evalúa expresiones HCL (sin argumento: modo interactivo)
+  clear                     limpia la terminal
+
+Todo ocurre en tu navegador: los recursos son simulados, nadie crea
+infraestructura real ni se necesitan credenciales.`;
+
+const WELCOME = `Terraform playground: el motor (Go + hashicorp/hcl compilado a WebAssembly)
+se ejecuta en tu navegador. Proveedores: aws (≈1700 recursos), google (≈1350),
+random, null, local, terraform_data y los que definas en *.provider.json.
+Escribe "help" o usa los botones. Empieza por "init".`;
+
+const SUGGESTIONS = [
+  'init', 'validate', 'fmt', 'plan', 'plan -destroy', 'apply', 'destroy', 'output', 'state list',
+  'state show ', 'show', 'graph', 'providers', 'console', 'help', 'clear',
+];
+
+type Panel = 'state' | 'graph' | 'help';
+
+function languageLabel(name: string) {
+  if (name.endsWith('.provider.json')) return 'proveedor';
+  if (name.endsWith('.tfvars')) return 'tfvars';
+  if (name.endsWith('.tf')) return 'HCL';
+  return '';
+}
+
+export default function TerraformPlayground() {
+  const base = useBaseUrl('/tfplay/');
+  const engineRef = useRef<TfplayEngine | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [statusMsg, setStatusMsg] = useState('');
+
+  const [files, setFiles] = useState<Record<string, string>>(() => load('files', DEFAULT_EXAMPLE.files));
+  const [active, setActive] = useState<string>(() => load('active', Object.keys(DEFAULT_EXAMPLE.files)[0]));
+  const [state, setState] = useState<string>(() => load('state', ''));
+  const [installed, setInstalled] = useState<string[]>(() => load('installed', []));
+  const [initialized, setInitialized] = useState<boolean>(() => load('initialized', false));
+  const [exampleId, setExampleId] = useState<string>(() => load('example', DEFAULT_EXAMPLE.id));
+
+  const [entries, setEntries] = useState<TermEntry[]>([{ id: 0, prompt: '', command: undefined as any, output: WELCOME }]);
+  const [busy, setBusy] = useState(false);
+  const [consoleMode, setConsoleMode] = useState(false);
+  const [diags, setDiags] = useState<Diag[]>([]);
+  const [changes, setChanges] = useState<ChangeInfo[]>([]);
+  const [graph, setGraph] = useState<GraphInfo | undefined>();
+  const [graphError, setGraphError] = useState<string | undefined>();
+  const [panel, setPanel] = useState<Panel>('state');
+  const [shareMsg, setShareMsg] = useState('');
+  const seq = useRef(1);
+
+  // Boot the engine in a worker.
+  useEffect(() => {
+    const en = new TfplayEngine(base);
+    engineRef.current = en;
+    en.ready.then(
+      () => setStatus('ready'),
+      (err) => {
+        setStatus('error');
+        setStatusMsg(String(err.message || err));
+      },
+    );
+    return () => en.terminate();
+  }, [base]);
+
+  // Shared links: #code=<deflate+base64url of the files>
+  useEffect(() => {
+    const m = /^#code=(.+)$/.exec(window.location.hash);
+    if (!m) return;
+    decodeShare(m[1]).then(
+      (shared) => {
+        setFiles(shared);
+        setActive(Object.keys(shared).find((f) => f.endsWith('.tf')) || Object.keys(shared)[0]);
+        setState('');
+        setInstalled([]);
+        setInitialized(false);
+        setExampleId('');
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        addEntry('', 'Configuración cargada desde un enlace compartido. Ejecuta "init".');
+      },
+      () => addEntry('', 'Error: el enlace compartido no es válido.'),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => save('files', files), [files]);
+  useEffect(() => save('active', active), [active]);
+  useEffect(() => save('state', state), [state]);
+  useEffect(() => save('installed', installed), [installed]);
+  useEffect(() => save('initialized', initialized), [initialized]);
+  useEffect(() => save('example', exampleId), [exampleId]);
+
+  const fileNames = useMemo(
+    () =>
+      Object.keys(files).sort((a, b) => {
+        const rank = (n: string) => (n === LOCK_FILE ? 3 : n.includes('/') ? 2 : n.endsWith('.tf') ? 0 : 1);
+        return rank(a) - rank(b) || a.localeCompare(b);
+      }),
+    [files],
+  );
+  const current = files[active] !== undefined ? active : fileNames[0];
+
+  const addEntry = useCallback((command: string | undefined, output: string, prompt = '$ terraform ') => {
+    const id = seq.current++;
+    setEntries((e) => [...e, { id, prompt, command: command as string, output }]);
+    return id;
+  }, []);
+
+  // Live validation + graph refresh while typing (debounced).
+  useEffect(() => {
+    if (status !== 'ready') return;
+    const t = setTimeout(async () => {
+      const en = engineRef.current!;
+      try {
+        const g = await en.run({ command: 'graph', files });
+        if (g.graph) {
+          setGraph(g.graph);
+          setGraphError(undefined);
+        } else if (g.exit_code) {
+          setGraphError('No se puede dibujar el grafo: la configuración tiene errores (mira la terminal o ejecuta validate).');
+        }
+        const v = await en.run({ command: 'validate', files, installed });
+        const lockProblem = v.diagnostics.some((d) => d.summary === 'Inconsistent dependency lock file');
+        setDiags(lockProblem ? g.diagnostics : v.diagnostics);
+      } catch {
+        // ignore: the terminal reports real errors when commands run
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [files, installed, status]);
+
+  const runCommand = useCallback(
+    async (line: string) => {
+      const en = engineRef.current;
+      if (consoleMode) {
+        if (line === 'exit' || line === 'quit') {
+          setConsoleMode(false);
+          addEntry(line, '', '> ');
+          return;
+        }
+        if (!line) return;
+        const id = addEntry(line, '', '> ');
+        const r = await en!.run({ command: 'console', args: [line], files, state, installed });
+        setEntries((e) => e.map((x) => (x.id === id ? { ...x, output: r.output } : x)));
+        return;
+      }
+      let args = shellSplit(line);
+      if (args[0] === 'terraform') args = args.slice(1);
+      const display = args.join(' ');
+      if (args.length === 0) {
+        addEntry('', '');
+        return;
+      }
+      let cmd = args[0];
+      let rest = args.slice(1);
+      switch (cmd) {
+        case 'clear':
+          setEntries([]);
+          return;
+        case 'help':
+        case '-help':
+        case '--help':
+          addEntry(display, HELP);
+          return;
+        case 'version':
+        case '-version':
+          addEntry(display, 'Terraform v1.16.4 (playground)\non js_wasm\n');
+          return;
+      }
+      if (status !== 'ready' || !en) {
+        addEntry(display, status === 'error' ? `Error: el motor no se pudo cargar.\n\n${statusMsg}` : 'El motor todavía se está cargando…');
+        return;
+      }
+      if (cmd === 'state') {
+        const sub = rest[0];
+        if (sub !== 'list' && sub !== 'show') {
+          addEntry(display, 'Uso: terraform state <list|show> [dirección]\n\nEl playground implementa "state list" y "state show".');
+          return;
+        }
+        cmd = 'state_' + sub;
+        rest = rest.slice(1);
+      }
+      if (cmd === 'console' && rest.length === 0) {
+        setConsoleMode(true);
+        addEntry(display, 'Modo consola: escribe expresiones HCL (var.x, local.y, aws_vpc.main.id, cidrsubnet(...)).\nEscribe "exit" para salir.');
+        return;
+      }
+      const vars: Record<string, string> = {};
+      const positional: string[] = [];
+      let destroy = false;
+      for (let i = 0; i < rest.length; i++) {
+        const a = rest[i];
+        if (a === '-var' && i + 1 < rest.length) {
+          const [k, ...v] = rest[++i].split('=');
+          vars[k] = v.join('=');
+        } else if (a.startsWith('-var=')) {
+          const [k, ...v] = a.slice(5).split('=');
+          vars[k] = v.join('=');
+        } else if (a === '-destroy') {
+          destroy = true;
+        } else if (a.startsWith('-')) {
+          // -auto-approve, -no-color, -input=false... are accepted and ignored
+        } else {
+          positional.push(a);
+        }
+      }
+      if (cmd === 'console') positional.splice(0, positional.length, rest.join(' '));
+
+      const id = seq.current++;
+      setEntries((e) => [...e, { id, prompt: '$ terraform ', command: display, output: '', pending: true }]);
+      setBusy(true);
+      let resp: RunResponse;
+      try {
+        resp = await en.run({ command: cmd, args: positional, files, state, installed, vars, destroy });
+      } catch (err) {
+        resp = { output: `Error: ${(err as Error).message}\n`, exit_code: 1, diagnostics: [] };
+      }
+      setBusy(false);
+      setEntries((e) => e.map((x) => (x.id === id ? { ...x, output: resp.output, exitCode: resp.exit_code, pending: false } : x)));
+      if (resp.diagnostics?.length) setDiags(resp.diagnostics);
+      else if (['validate', 'plan', 'apply', 'destroy'].includes(cmd)) setDiags([]);
+      if (cmd === 'init' && resp.exit_code === 0) {
+        setInitialized(true);
+        setInstalled((prev) => Array.from(new Set([...prev, ...(resp.installed || [])])).sort());
+      }
+      if (resp.files && Object.keys(resp.files).length) {
+        setFiles((f) => ({ ...f, ...resp.files }));
+      }
+      if (resp.state !== undefined && resp.state !== null) setState(resp.state);
+      if (resp.changes && (cmd === 'plan' || cmd === 'apply' || cmd === 'destroy')) {
+        setChanges(cmd === 'plan' ? resp.changes : []);
+      }
+      if (cmd === 'graph' && resp.graph) {
+        setGraph(resp.graph);
+        setPanel('graph');
+      }
+      if ((cmd === 'apply' || cmd === 'destroy') && resp.exit_code === 0) setPanel('state');
+    },
+    [addEntry, consoleMode, files, installed, state, status, statusMsg],
+  );
+
+  const loadExample = (id: string) => {
+    const ex = EXAMPLES.find((e) => e.id === id);
+    if (!ex) return;
+    if (state.trim() && !window.confirm('Cargar un ejemplo reemplaza los ficheros y borra el estado actual. ¿Continuar?')) return;
+    setFiles(ex.files);
+    setActive(Object.keys(ex.files).find((f) => f === 'main.tf') || Object.keys(ex.files)[0]);
+    setState('');
+    setInstalled([]);
+    setInitialized(false);
+    setChanges([]);
+    setDiags([]);
+    setExampleId(ex.id);
+    addEntry(undefined, `Ejemplo cargado: ${ex.label}.\n${ex.description}`);
+  };
+
+  const addFile = () => {
+    const name = window.prompt('Nombre del fichero (p. ej. outputs.tf, terraform.tfvars, modules/red/main.tf o mi.provider.json):');
+    if (!name) return;
+    const clean = name.trim().replace(/^\.\//, '');
+    if (!clean || files[clean] !== undefined) return;
+    setFiles((f) => ({ ...f, [clean]: '' }));
+    setActive(clean);
+  };
+
+  const removeFile = (name: string) => {
+    if (!window.confirm(`¿Borrar ${name}?`)) return;
+    setFiles((f) => {
+      const next = { ...f };
+      delete next[name];
+      return next;
+    });
+  };
+
+  const renameFile = (name: string) => {
+    const next = window.prompt('Nuevo nombre:', name);
+    if (!next || next === name || files[next] !== undefined) return;
+    setFiles((f) => {
+      const copy: Record<string, string> = {};
+      for (const [k, v] of Object.entries(f)) copy[k === name ? next : k] = v;
+      return copy;
+    });
+    setActive(next);
+  };
+
+  const share = async () => {
+    try {
+      const code = await encodeShare(files);
+      const url = `${window.location.origin}${window.location.pathname}#code=${code}`;
+      await navigator.clipboard.writeText(url);
+      setShareMsg('Enlace copiado');
+    } catch {
+      setShareMsg('No se pudo copiar el enlace');
+    }
+    setTimeout(() => setShareMsg(''), 2500);
+  };
+
+  const resetAll = () => {
+    if (!window.confirm('Se borrarán el estado y los proveedores instalados (los ficheros se mantienen). ¿Continuar?')) return;
+    setState('');
+    setInstalled([]);
+    setInitialized(false);
+    setChanges([]);
+    setFiles((f) => {
+      const next = { ...f };
+      delete next[LOCK_FILE];
+      return next;
+    });
+    addEntry(undefined, 'Estado e inicialización borrados. Ejecuta "init" de nuevo.');
+  };
+
+  const fileDiags = useMemo(() => diags.filter((d) => d.filename === current), [diags, current]);
+  const errorCount = diags.filter((d) => d.severity === 'error').length;
+
+  const toolbar: { cmd: string; label: string; cls?: string; title: string }[] = [
+    { cmd: 'init', label: 'init', title: 'terraform init: instala los proveedores' },
+    { cmd: 'validate', label: 'validate', title: 'terraform validate' },
+    { cmd: 'fmt', label: 'fmt', title: 'terraform fmt: formatea el código' },
+    { cmd: 'plan', label: 'plan', cls: styles.btnPlan, title: 'terraform plan' },
+    { cmd: 'apply', label: 'apply', cls: styles.btnApply, title: 'terraform apply -auto-approve' },
+    { cmd: 'destroy', label: 'destroy', cls: styles.btnDestroy, title: 'terraform destroy -auto-approve' },
+  ];
+
+  return (
+    <div className={styles.playground}>
+      <div className={styles.topbar}>
+        <div className={styles.titleBlock}>
+          <h1 className={styles.title}>Terraform playground</h1>
+          <span
+            className={`${styles.status} ${status === 'ready' ? styles.statusOk : status === 'error' ? styles.statusErr : ''}`}
+            title={statusMsg}
+          >
+            {status === 'loading' ? 'Cargando motor…' : status === 'ready' ? 'Motor listo · 100 % en el navegador' : 'Error al cargar el motor'}
+          </span>
+        </div>
+        <div className={styles.topActions}>
+          <label className={styles.exampleLabel}>
+            Ejemplo
+            <select value={exampleId} onChange={(e) => loadExample(e.target.value)} className={styles.select}>
+              {!EXAMPLES.some((e) => e.id === exampleId) && <option value={exampleId}>Personalizado</option>}
+              {EXAMPLES.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button className={styles.btnGhost} onClick={share} title="Copia un enlace con todos los ficheros">
+            {shareMsg || 'Compartir'}
+          </button>
+          <button className={styles.btnGhost} onClick={resetAll} title="Borra estado y proveedores instalados">
+            Reiniciar
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.workspace}>
+        <section className={styles.editorPane} aria-label="Ficheros">
+          <div className={styles.tabs} role="tablist">
+            {fileNames.map((name) => (
+              <div
+                key={name}
+                role="tab"
+                aria-selected={name === current}
+                className={`${styles.tab} ${name === current ? styles.tabActive : ''}`}
+                onClick={() => setActive(name)}
+                onDoubleClick={() => renameFile(name)}
+                title="Doble clic para renombrar"
+              >
+                <span>{name}</span>
+                {diags.some((d) => d.filename === name && d.severity === 'error') && <i className={styles.tabDot} />}
+                {fileNames.length > 1 && (
+                  <button
+                    className={styles.tabClose}
+                    aria-label={`Borrar ${name}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFile(name);
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+            <button className={styles.tabAdd} onClick={addFile} aria-label="Nuevo fichero" title="Nuevo fichero">
+              +
+            </button>
+          </div>
+          {current !== undefined && (
+            <HclEditor
+              filename={current}
+              value={files[current] ?? ''}
+              onChange={(v) => setFiles((f) => ({ ...f, [current]: v }))}
+              diagnostics={fileDiags}
+            />
+          )}
+          <div className={styles.editorFooter}>
+            <span>{languageLabel(current || '')}</span>
+            {errorCount > 0 ? (
+              <span className={styles.footErr}>
+                {errorCount} {errorCount === 1 ? 'error' : 'errores'}: {diags.find((d) => d.severity === 'error')?.summary}
+              </span>
+            ) : (
+              <span>
+                {!initialized ? 'Sin inicializar' : installed.length ? `Proveedores: ${installed.join(', ')}` : 'Inicializado'}
+              </span>
+            )}
+          </div>
+        </section>
+
+        <section className={styles.termPane} aria-label="Terminal">
+          <div className={styles.toolbar}>
+            {toolbar.map((b) => (
+              <button
+                key={b.cmd}
+                className={`${styles.btn} ${b.cls || ''}`}
+                disabled={busy || status !== 'ready'}
+                onClick={() => runCommand(b.cmd)}
+                title={b.title}
+              >
+                {b.label}
+              </button>
+            ))}
+          </div>
+          <Terminal
+            entries={entries}
+            prompt={consoleMode ? '> ' : '$ terraform '}
+            busy={busy}
+            onCommand={runCommand}
+            suggestions={SUGGESTIONS}
+          />
+        </section>
+      </div>
+
+      <section className={styles.panels}>
+        <div className={styles.panelTabs} role="tablist">
+          {(
+            [
+              ['state', 'Estado (terraform.tfstate)'],
+              ['graph', 'Grafo de dependencias'],
+              ['help', 'Cómo funciona'],
+            ] as [Panel, string][]
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={panel === id}
+              className={`${styles.panelTab} ${panel === id ? styles.panelTabActive : ''}`}
+              onClick={() => setPanel(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className={styles.panelBody}>
+          {panel === 'state' && (
+            <StatePanel
+              state={state}
+              onChange={setState}
+              onReset={() => {
+                setState('');
+                addEntry(undefined, 'Estado borrado: la próxima vez Terraform planificará crearlo todo.');
+              }}
+              onShow={(addr) => runCommand(`state show '${addr}'`)}
+            />
+          )}
+          {panel === 'graph' && <GraphView graph={graph} changes={changes} error={graphError} />}
+          {panel === 'help' && <HowItWorks />}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function HowItWorks() {
+  return (
+    <div className={styles.help}>
+      <p>
+        Este playground no llama a ninguna nube ni a ningún servidor. Un pequeño motor escrito en Go con las mismas
+        librerías que usa Terraform (<code>hashicorp/hcl</code> y <code>go-cty</code>) está compilado a WebAssembly y se
+        ejecuta en tu navegador.
+      </p>
+      <ul>
+        <li>
+          <b>Lenguaje real</b>: expresiones, funciones, <code>for</code>, <code>count</code>, <code>for_each</code>,{' '}
+          <code>dynamic</code>, módulos locales, validaciones, <code>lifecycle</code> y <code>moved</code> se evalúan como
+          en Terraform. Los valores que solo existen tras crear algo aparecen como <i>(known after apply)</i>.
+        </li>
+        <li>
+          <b>Proveedores simulados</b>: los esquemas de <code>hashicorp/aws</code> (unos 1700 recursos) y{' '}
+          <code>hashicorp/google</code> (unos 1350) son los reales, así que Terraform sabe qué argumentos existen,
+          cuáles son obligatorios y cuáles fuerzan un reemplazo. Al hacer <code>apply</code> se inventan
+          identificadores, ARNs, <code>self_link</code> e IPs verosímiles.
+        </li>
+        <li>
+          <b>Estado</b>: se guarda en tu navegador. Puedes editarlo para simular cambios hechos a mano en la consola
+          (drift) y ver cómo <code>plan</code> propone deshacerlos.
+        </li>
+        <li>
+          <b>Proveedor propio</b>: crea un fichero <code>*.provider.json</code> con recursos y atributos (
+          <code>required</code>, <code>optional</code>, <code>computed</code>, <code>force_new</code>,{' '}
+          <code>default</code>) y valores <code>mock</code>. Mira el ejemplo «Proveedor propio».
+        </li>
+      </ul>
+      <p>
+        Limitaciones: no hay backends remotos, ni <code>import</code>, ni módulos del registry, y los data sources
+        devuelven datos de ejemplo. Para practicar con AWS de verdad, usa los laboratorios del curso.
+      </p>
+    </div>
+  );
+}
