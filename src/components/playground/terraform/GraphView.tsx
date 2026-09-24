@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import type { ChangeInfo, GraphInfo } from './engine';
-import styles from './playground.module.css';
+import styles from '../shared/playground.module.css';
 
 interface Props {
   graph?: GraphInfo;
