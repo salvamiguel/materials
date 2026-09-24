@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useCallback } from 'react';
 import { highlight } from './highlight';
 import type { Diag } from './engine';
-import styles from './playground.module.css';
+import styles from '../shared/playground.module.css';
 
 interface Props {
   filename: string;

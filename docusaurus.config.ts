@@ -112,7 +112,15 @@ const config: Config = {
         {type: 'docSidebar', sidebarId: 'gitops', label: 'GitOps', position: 'left'},
         {type: 'docSidebar', sidebarId: 'scripting', label: 'Scripting', position: 'left'},
         {type: 'docSidebar', sidebarId: 'ai', label: 'AI', position: 'left'},
-        {to: '/terraform-playground', label: 'Playground', position: 'left'},
+        {
+          type: 'dropdown',
+          label: 'Playgrounds',
+          position: 'left',
+          items: [
+            {to: '/terraform-playground', label: 'Terraform'},
+            {to: '/aws-playground', label: 'AWS CLI'},
+          ],
+        },
         {
           href: 'https://salvamiguel.com',
           label: '← salvamiguel.com',

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import HclEditor from './HclEditor';
-import styles from './playground.module.css';
+import styles from '../shared/playground.module.css';
 
 interface Props {
   state: string;

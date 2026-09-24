@@ -1,4 +1,4 @@
-/* Terraform playground */
+/* Playgrounds (Terraform, AWS CLI): shared layout, terminal and output colours */
 
 .playground {
   --tp-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -467,6 +467,11 @@
   min-height: 18px;
 }
 
+.termWrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .termInputLine {
   display: flex;
   align-items: center;
@@ -521,6 +526,18 @@
 
 .c_dim {
   color: var(--tp-dim);
+}
+
+.c_key {
+  color: #7ee787;
+}
+
+.c_str {
+  color: #a5d6ff;
+}
+
+.c_num {
+  color: #ffa657;
 }
 
 .c_bold {

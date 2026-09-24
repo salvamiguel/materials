@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { colorizeOutput } from './highlight';
 import styles from './playground.module.css';
 
 export interface TermEntry {
@@ -11,21 +10,51 @@ export interface TermEntry {
   pending?: boolean;
 }
 
+export interface OutToken {
+  text: string;
+  /** Space-separated colour classes; each maps to `styles.c_<name>`. */
+  cls?: string;
+}
+
+export interface OutLine {
+  tokens: OutToken[];
+  /** Keep on one line even in wrap mode (tables). */
+  nowrap?: boolean;
+}
+
+const plain = (text: string): OutLine[] =>
+  text
+    .replace(/\n$/, '')
+    .split('\n')
+    .map((line) => ({ tokens: line ? [{ text: line }] : [] }));
+
 interface Props {
   entries: TermEntry[];
   prompt: string;
   busy: boolean;
   onCommand: (line: string) => void;
-  suggestions: string[];
+  /** Static completions: Tab picks the first one that extends the current input. */
+  suggestions?: string[];
+  /** Context-aware completion; returns the new input, or undefined for no match. */
+  complete?: (input: string) => string | undefined;
+  colorize?: (text: string) => OutLine[];
+  ariaLabel?: string;
+  placeholder?: string;
+  /** Hides the typed characters (for secret prompts). */
+  secret?: boolean;
+  /** Puts text in the input line (e.g. a command clicked in a side panel); bump `seq` to repeat. */
+  insert?: { text: string; seq: number };
+  /** Wrap long lines instead of scrolling sideways. */
+  wrap?: boolean;
 }
 
-function Output({ text }: { text: string }) {
-  const lines = useMemo(() => colorizeOutput(text), [text]);
+function Output({ text, colorize, wrap }: { text: string; colorize: (text: string) => OutLine[]; wrap: boolean }) {
+  const lines = useMemo(() => colorize(text), [text, colorize]);
   return (
     <>
       {lines.map((l, i) => (
-        <div key={i} className={styles.termLine}>
-          {l.tokens.length === 0 ? ' ' : null}
+        <div key={i} className={`${styles.termLine} ${wrap && !l.nowrap ? styles.termWrap : ''}`}>
+          {l.tokens.length === 0 ? ' ' : null}
           {l.tokens.map((t, j) =>
             t.cls ? (
               <span key={j} className={t.cls.split(' ').map((c) => styles['c_' + c]).join(' ')}>
@@ -41,7 +70,20 @@ function Output({ text }: { text: string }) {
   );
 }
 
-export default function Terminal({ entries, prompt, busy, onCommand, suggestions }: Props) {
+export default function Terminal({
+  entries,
+  prompt,
+  busy,
+  onCommand,
+  suggestions = [],
+  complete,
+  colorize = plain,
+  ariaLabel = 'Línea de comandos',
+  placeholder = '',
+  secret = false,
+  insert,
+  wrap = false,
+}: Props) {
   const [input, setInput] = useState('');
   const [histIdx, setHistIdx] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -52,6 +94,13 @@ export default function Terminal({ entries, prompt, busy, onCommand, suggestions
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [entries]);
+
+  useEffect(() => {
+    if (!insert) return;
+    setInput(insert.text);
+    setHistIdx(null);
+    inputRef.current?.focus();
+  }, [insert]);
 
   const submit = () => {
     const line = input.trim();
@@ -73,8 +122,8 @@ export default function Terminal({ entries, prompt, busy, onCommand, suggestions
       setInput(idx === history.length ? '' : history[idx]);
     } else if (e.key === 'Tab') {
       e.preventDefault();
-      const match = suggestions.find((s) => s.startsWith(input) && s !== input);
-      if (match) setInput(match);
+      const next = complete?.(input) ?? suggestions.find((s) => s.startsWith(input) && s !== input);
+      if (next !== undefined) setInput(next);
     } else if (e.key === 'l' && e.ctrlKey) {
       e.preventDefault();
       onCommand('clear');
@@ -87,12 +136,16 @@ export default function Terminal({ entries, prompt, busy, onCommand, suggestions
         {entries.map((e) => (
           <div key={e.id} className={styles.termEntry}>
             {e.command !== undefined && (
-              <div className={styles.termLine}>
+              <div className={`${styles.termLine} ${wrap ? styles.termWrap : ''}`}>
                 <span className={styles.c_prompt}>{e.prompt}</span>
                 {e.command}
               </div>
             )}
-            {e.pending ? <div className={`${styles.termLine} ${styles.c_dim}`}>…</div> : <Output text={e.output} />}
+            {e.pending ? (
+              <div className={`${styles.termLine} ${styles.c_dim}`}>…</div>
+            ) : (
+              <Output text={e.output} colorize={colorize} wrap={wrap} />
+            )}
           </div>
         ))}
         <div className={styles.termInputLine}>
@@ -100,14 +153,15 @@ export default function Terminal({ entries, prompt, busy, onCommand, suggestions
           <input
             ref={inputRef}
             className={styles.termInput}
+            type={secret ? 'password' : 'text'}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
             spellCheck={false}
             autoCapitalize="off"
             autoComplete="off"
-            aria-label="Línea de comandos de terraform"
-            placeholder={busy ? '' : 'plan, apply, state list, console…'}
+            aria-label={ariaLabel}
+            placeholder={busy ? '' : placeholder}
           />
         </div>
       </div>

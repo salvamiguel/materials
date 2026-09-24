@@ -1,0 +1,377 @@
+/* AWS CLI playground: layout and side panels. Shared look (topbar, buttons,
+   terminal colours) comes from ../shared/playground.module.css. */
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 12px;
+  height: min(76vh, 820px);
+  min-height: 480px;
+}
+
+.termPane,
+.sidePane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--tp-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sidePane {
+  background: var(--tp-surface);
+}
+
+@media (max-width: 996px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+
+  .termPane {
+    height: 62vh;
+    min-height: 380px;
+  }
+
+  .sidePane {
+    max-height: 70vh;
+  }
+}
+
+/* ── side tabs ── */
+.sideTabs {
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--tp-border);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.sideTab {
+  flex: 1 0 auto;
+  padding: 9px 12px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--tp-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sideTab:hover {
+  color: var(--ifm-font-color-base);
+}
+
+.sideTabActive {
+  color: var(--ifm-font-color-base);
+  border-bottom-color: #ff9900;
+}
+
+.sideBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px;
+  font-size: 13.5px;
+}
+
+/* ── scenario ── */
+.scenarioHead {
+  margin-bottom: 12px;
+}
+
+.scenarioTitle {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.scenarioDesc {
+  color: var(--tp-muted);
+  margin: 2px 0 10px;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--tp-mono);
+  font-size: 12px;
+  color: var(--tp-muted);
+}
+
+.progressTrack {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--tp-border);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: #ff9900;
+  transition: width 0.3s ease;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--tp-border);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: transparent;
+  margin-top: 1px;
+}
+
+.stepDone .check {
+  background: var(--tp-add);
+  border-color: var(--tp-add);
+  color: #fff;
+}
+
+.stepNext .check {
+  border-color: #ff9900;
+  color: #ff9900;
+}
+
+.stepText {
+  margin-bottom: 4px;
+}
+
+.stepDone .stepText {
+  color: var(--tp-muted);
+}
+
+.expect {
+  font-size: 11px;
+  font-weight: 600;
+  color: #c45500;
+  margin-left: 6px;
+}
+
+[data-theme='dark'] .expect {
+  color: #ffb84d;
+}
+
+.cmd {
+  display: flex;
+  align-items: stretch;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--tp-border);
+  background: var(--tp-term-bg);
+}
+
+.cmdText {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  font-family: var(--tp-mono);
+  font-size: 12px;
+  color: var(--tp-term-fg);
+  white-space: pre-wrap;
+  word-break: break-all;
+  cursor: pointer;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.cmdRun {
+  flex-shrink: 0;
+  border: none;
+  border-left: 1px solid #30363d;
+  background: #161b22;
+  color: #ff9900;
+  font-family: var(--tp-mono);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.cmdRun:hover,
+.cmdText:hover {
+  background: #1f2630;
+}
+
+.cmdRun:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── resources ── */
+.group {
+  margin-bottom: 14px;
+}
+
+.groupTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.groupTitle select {
+  margin-left: auto;
+}
+
+.count {
+  font-family: var(--tp-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--tp-border);
+  color: var(--tp-muted);
+}
+
+.kind {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tp-muted);
+  margin: 8px 0 3px;
+}
+
+.items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--tp-mono);
+  font-size: 12px;
+}
+
+.item:hover {
+  background: var(--tp-border);
+}
+
+.itemName {
+  font-weight: 600;
+  color: var(--ifm-font-color-base);
+}
+
+.itemMeta {
+  color: var(--tp-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.empty {
+  color: var(--tp-muted);
+  font-style: italic;
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+.badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  flex-shrink: 0;
+}
+
+.st_running {
+  color: var(--tp-add);
+}
+
+.st_pending,
+.st_stopping,
+.st_shutting-down {
+  color: var(--tp-chg);
+}
+
+.st_stopped,
+.st_terminated {
+  color: var(--tp-dim);
+}
+
+.identity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px 10px;
+  font-family: var(--tp-mono);
+  font-size: 12px;
+  margin-bottom: 14px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--tp-editor-bg);
+  border: 1px solid var(--tp-border);
+}
+
+.identity dt {
+  color: var(--tp-muted);
+}
+
+.identity dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ── files ── */
+.fileList {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+}
+
+.fileContent {
+  margin: 0;
+  padding: 10px;
+  border-radius: 6px;
+  background: var(--tp-editor-bg);
+  border: 1px solid var(--tp-border);
+  font-family: var(--tp-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 46vh;
+  overflow: auto;
+}
+
+.help h3 {
+  font-size: 14px;
+  margin: 14px 0 6px;
+}
+
+.help p,
+.help li {
+  line-height: 1.5;
+}

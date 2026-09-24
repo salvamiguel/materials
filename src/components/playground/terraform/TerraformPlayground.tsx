@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import HclEditor from './HclEditor';
-import Terminal, { type TermEntry } from './Terminal';
+import Terminal, { type TermEntry } from '../shared/Terminal';
+import { shellSplit } from '../shared/shell';
+import { colorizeOutput } from './highlight';
 import GraphView from './GraphView';
 import StatePanel from './StatePanel';
 import { EXAMPLES, DEFAULT_EXAMPLE } from './examples';
 import { TfplayEngine, type ChangeInfo, type Diag, type GraphInfo, type RunResponse } from './engine';
-import styles from './playground.module.css';
+import styles from '../shared/playground.module.css';
 
 const STORAGE = 'tfplay:v1:';
 const LOCK_FILE = '.terraform.lock.hcl';
@@ -26,37 +28,6 @@ function save(key: string, value: unknown) {
   } catch {
     // private mode / quota: the playground still works, it just forgets
   }
-}
-
-// Splits a command line like a shell would (quotes, backslashes).
-function shellSplit(line: string): string[] {
-  const out: string[] = [];
-  let cur = '';
-  let quote: string | null = null;
-  let has = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (quote) {
-      if (c === quote) quote = null;
-      else if (c === '\\' && quote === '"' && i + 1 < line.length) cur += line[++i];
-      else cur += c;
-    } else if (c === '"' || c === "'") {
-      quote = c;
-      has = true;
-    } else if (c === ' ' || c === '\t') {
-      if (has || cur) out.push(cur);
-      cur = '';
-      has = false;
-    } else if (c === '\\' && i + 1 < line.length) {
-      cur += line[++i];
-      has = true;
-    } else {
-      cur += c;
-      has = true;
-    }
-  }
-  if (has || cur) out.push(cur);
-  return out;
 }
 
 async function encodeShare(files: Record<string, string>): Promise<string> {
@@ -517,6 +488,9 @@ export default function TerraformPlayground() {
             busy={busy}
             onCommand={runCommand}
             suggestions={SUGGESTIONS}
+            colorize={colorizeOutput}
+            ariaLabel="Línea de comandos de terraform"
+            placeholder="plan, apply, state list, console…"
           />
         </section>
       </div>
