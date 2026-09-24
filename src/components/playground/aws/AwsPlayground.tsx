@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FaAws } from 'react-icons/fa';
 import Terminal, { type TermEntry } from '../shared/Terminal';
 import { run, promptText, VERSION } from './engine/engine';
 import { initialState } from './engine/seed';
@@ -162,7 +163,10 @@ export default function AwsPlayground() {
     <div className={ui.playground}>
       <div className={ui.topbar}>
         <div className={ui.titleBlock}>
-          <h1 className={ui.title}>AWS CLI playground</h1>
+          <h1 className={ui.title}>
+            <FaAws className={`${ui.titleIcon} ${ui.titleIconAws}`} aria-hidden />
+            AWS CLI playground
+          </h1>
           <span className={`${ui.status} ${ui.statusOk}`}>100 % en el navegador · cuenta simulada 123456789012</span>
         </div>
         <div className={ui.topActions}>

@@ -62,14 +62,36 @@
 
 .titleBlock {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
 .title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-size: 1.5rem;
   margin: 0;
+}
+
+.titleIcon {
+  flex-shrink: 0;
+  font-size: 1.1em;
+}
+
+.titleIconAws {
+  /* The AWS logo is a wide wordmark: give it more room to match the text. */
+  font-size: 1.4em;
+  color: #ff9900;
+}
+
+.titleIconTf {
+  color: #7b42bc;
+}
+
+[data-theme='dark'] .titleIconTf {
+  color: #a47de0;
 }
 
 .status {
