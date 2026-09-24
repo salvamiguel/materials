@@ -5,6 +5,7 @@ description: "Fundamentos de IA Generativa, modelos fundacionales, arquitectura 
 ---
 
 import { FaAws } from "react-icons/fa";
+import SkillBuilderLab from '@site/src/components/shared/SkillBuilderLab';
 
 # IA Generativa y Amazon Bedrock <FaAws style={{ verticalAlign: 'middle' }} />
 
@@ -175,6 +176,12 @@ Los Agents de Bedrock permiten crear agentes autonomos que pueden **ejecutar acc
 
 Bedrock incluye capacidad de **deteccion de marcas de agua** (watermarking) en contenido generado por sus modelos, lo que permite verificar si un texto o imagen fue producido por un modelo de Bedrock.
 
+<SkillBuilderLab
+  tipo="lab"
+  title="Lab - Introduction to the Amazon Bedrock Console"
+  url="https://skillbuilder.aws/learn/CQ9BPN151C/lab--introduction-to-the-amazon-bedrock-console/WEHSPDEHJ9"
+/>
+
 ---
 
 ## 7. RAG (Retrieval Augmented Generation)
@@ -210,6 +217,12 @@ El proceso de RAG consta de varias fases:
 Amazon Q Business es un ejemplo de servicio AWS que utiliza RAG. Se conecta a fuentes de datos empresariales (S3, Jira, ServiceNow, Salesforce, Zendesk) y permite a los empleados hacer preguntas en lenguaje natural sobre la informacion interna de la empresa. Esta construido sobre Amazon Bedrock.
 :::
 
+<SkillBuilderLab
+  tipo="lab"
+  title="Lab - Build and Evaluate RAG Applications using Knowledge Bases for Amazon Bedrock"
+  url="https://skillbuilder.aws/learn/JRGWCFYT67/lab--build-and-evaluate-rag-applications-using-knowledge-bases-for-amazon-bedrock/A4MN58JB7A"
+/>
+
 ---
 
 ## 8. Prompt Engineering
@@ -238,6 +251,12 @@ Al enviar un prompt a un modelo, se pueden ajustar varios parametros que control
 :::info Temperatura y determinismo
 Si un cliente tiene un chatbot LLM que produce respuestas muy diversas para el mismo prompt y necesita respuestas mas consistentes, la solucion es **reducir la temperature**. Este es un escenario tipico del examen AIF-C01.
 :::
+
+<SkillBuilderLab
+  tipo="curso"
+  title="Prompt Engineering Best Practices for Amazon Bedrock Models"
+  url="https://skillbuilder.aws/learn/MHSGBX3396/prompt-engineering-best-practices-for-amazon-bedrock-models/SEAYU5EXRC"
+/>
 
 ---
 
