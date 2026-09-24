@@ -119,6 +119,15 @@ func RenderChange(c *Change) string {
 	return strings.Join(r.lines, "\n")
 }
 
+// annotateFirstLine appends a comment to the first line of a (possibly
+// multi-line) rendered attribute, where Terraform puts it.
+func annotateFirstLine(s, note string) string {
+	if i := strings.IndexByte(s, '\n'); i >= 0 {
+		return s[:i] + note + s[i:]
+	}
+	return s + note
+}
+
 func isEmptyString(v cty.Value) bool {
 	return v.IsKnown() && !v.IsNull() && v.Type() == cty.String && v.AsString() == ""
 }
@@ -213,7 +222,7 @@ func (r *renderer) body(b *Block, before, after cty.Value, indent int, mode stri
 		val := r.value(rw.bv, rw.av, indent+4, sym, sensitive, p, a.Nested != nil)
 		line := prefix(indent, sym) + fmt.Sprintf("%-*s = ", pad, rw.name) + val
 		if r.forces(p) {
-			line += " # forces replacement"
+			line = annotateFirstLine(line, " # forces replacement")
 		}
 		r.add(line)
 		wroteAttrs = true
@@ -701,7 +710,7 @@ func (r *renderer) mapDiff(bv, av cty.Value, indent int, path cty.Path, object b
 			line += r.value(eb, ea, indent+4, "~", r.isSensitive(p), p, false)
 		}
 		if r.forces(p) {
-			line += " # forces replacement"
+			line = annotateFirstLine(line, " # forces replacement")
 		}
 		sb.WriteString(line)
 	}

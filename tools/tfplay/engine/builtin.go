@@ -13,7 +13,7 @@ const builtinTerraformProvider = `{
         "id": {"type": "string", "computed": true},
         "input": {"type": "dynamic", "optional": true},
         "output": {"type": "dynamic", "computed": true},
-        "triggers_replace": {"type": "dynamic", "optional": true, "force_new": true}
+        "triggers_replace": {"type": "dynamic", "optional": true}
       }
     }
   },

@@ -306,7 +306,7 @@ func keyLess(a, b cty.Value) bool {
 }
 
 func providerAddrString(source, alias string) string {
-	s := fmt.Sprintf("provider[\"registry.terraform.io/%s\"]", source)
+	s := fmt.Sprintf("provider[%q]", registryAddr(source))
 	if alias != "" {
 		s += "." + alias
 	}

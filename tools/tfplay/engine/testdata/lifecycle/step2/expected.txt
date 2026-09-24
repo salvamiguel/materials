@@ -1,0 +1,43 @@
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+-/+ destroy and then create replacement
++/- create replacement and then destroy
+
+Terraform will perform the following actions:
+
+  # null_resource.n must be replaced
+-/+ resource "null_resource" "n" {
+      ~ id       = "0910711275780981790" -> (known after apply)
+      ~ triggers = { # forces replacement
+          ~ "v" = "1" -> "2"
+        }
+    }
+
+  # terraform_data.a must be replaced
++/- resource "terraform_data" "a" {
+      ~ id               = "b0fc0878-88c9-4a6f-ac9c-f8ae0d278f34" -> (known after apply)
+      ~ output           = "v1" -> (known after apply)
+      ~ triggers_replace = "t1" -> "t2"
+        # (1 unchanged attribute hidden)
+    }
+
+  # terraform_data.c will be replaced due to changes in replace_triggered_by
+-/+ resource "terraform_data" "c" {
+      ~ id     = "34147d5f-456b-4226-a5e3-c65fd0c66537" -> (known after apply)
+      ~ output = "c1" -> (known after apply)
+        # (1 unchanged attribute hidden)
+    }
+
+  # terraform_data.old has moved to terraform_data.new
+    resource "terraform_data" "new" {
+        id     = "a75e4056-305a-4ec2-9c9a-a71277231e03"
+        # (2 unchanged attributes hidden)
+    }
+
+Plan: 3 to add, 0 to change, 3 to destroy.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.

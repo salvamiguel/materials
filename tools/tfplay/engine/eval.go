@@ -203,12 +203,12 @@ func (e *evaluator) walkModule(mi *modInstance) {
 	g, diags := mi.mod.buildGraph()
 	e.diags = append(e.diags, diags...)
 	mi.graph = g
-	if diags.HasErrors() {
+	if g.Cyclic {
 		return
 	}
 	for _, id := range g.Order {
 		node := g.Nodes[id]
-		skip := false
+		skip := node.Invalid
 		for d := range node.Deps {
 			if mi.failed[d] {
 				skip = true
@@ -329,7 +329,7 @@ func (e *evaluator) evalVariable(mi *modInstance, v *Variable) bool {
 	}
 	mi.vars[v.Name] = conv
 	for _, cr := range v.Validations {
-		if !e.checkRule(mi, cr, nil, "Invalid value for variable", fmt.Sprintf("var.%s", v.Name)) {
+		if !e.checkRule(mi, cr, nil, "Invalid value for variable", v.DeclRange.Ptr(), true) {
 			return false
 		}
 	}
@@ -348,8 +348,9 @@ func parseVarFlag(v *Variable, raw string) (cty.Value, hcl.Diagnostics) {
 	return val, diags
 }
 
-// checkRule evaluates a validation / precondition / postcondition.
-func (e *evaluator) checkRule(mi *modInstance, cr *CheckRule, extra map[string]cty.Value, summary, what string) bool {
+// checkRule evaluates a validation / precondition / postcondition. subject
+// is where the error points; validation adds the "checked by" note.
+func (e *evaluator) checkRule(mi *modInstance, cr *CheckRule, extra map[string]cty.Value, summary string, subject *hcl.Range, validation bool) bool {
 	ctx := mi.ctx(extra)
 	cond, diags := cr.Condition.Value(ctx)
 	e.diags = append(e.diags, diags...)
@@ -380,11 +381,19 @@ func (e *evaluator) checkRule(mi *modInstance, cr *CheckRule, extra map[string]c
 			msg = mv.AsString()
 		}
 	}
+	if validation {
+		msg += fmt.Sprintf("\n\nThis was checked by the validation rule at %s.", cr.DeclRange.String())
+	}
+	if subject == nil {
+		subject = cr.Condition.Range().Ptr()
+	}
 	e.diags = append(e.diags, &hcl.Diagnostic{
-		Severity: hcl.DiagError,
-		Summary:  summary,
-		Detail:   fmt.Sprintf("%s\n\nThis was checked by the validation rule at %s.", msg, rangeShort(cr.Condition.Range())),
-		Subject:  cr.Condition.Range().Ptr(),
+		Severity:    hcl.DiagError,
+		Summary:     summary,
+		Detail:      msg,
+		Subject:     subject,
+		Expression:  cr.Condition,
+		EvalContext: ctx,
 	})
 	return false
 }
@@ -401,7 +410,7 @@ func (e *evaluator) evalLocal(mi *modInstance, l *Local) bool {
 
 func (e *evaluator) evalOutput(mi *modInstance, o *Output) bool {
 	for _, cr := range o.Preconditions {
-		if !e.checkRule(mi, cr, nil, "Module output value precondition failed", "output."+o.Name) {
+		if !e.checkRule(mi, cr, nil, "Module output value precondition failed", nil, false) {
 			return false
 		}
 	}
@@ -808,7 +817,7 @@ func (e *evaluator) evalManagedInstance(mi *modInstance, r *Resource, p *provide
 	addr := mi.prefix + r.Key() + k.String()
 	e.visited[addr] = true
 	for _, cr := range r.Preconditions {
-		if !e.checkRule(mi, cr, k.extra(), "Resource precondition failed", addr) {
+		if !e.checkRule(mi, cr, k.extra(), "Resource precondition failed", nil, false) {
 			return cty.NilVal, false
 		}
 	}
@@ -874,7 +883,7 @@ func (e *evaluator) evalManagedInstance(mi *modInstance, r *Resource, p *provide
 
 	for _, cr := range r.Postconditions {
 		self := planned
-		if !e.checkRule(mi, cr, mergeExtra(k.extra(), map[string]cty.Value{"self": self}), "Resource postcondition failed", addr) {
+		if !e.checkRule(mi, cr, mergeExtra(k.extra(), map[string]cty.Value{"self": self}), "Resource postcondition failed", nil, false) {
 			return cty.NilVal, false
 		}
 	}
@@ -997,7 +1006,7 @@ func (e *evaluator) evalDataInstance(mi *modInstance, r *Resource, p *providerCt
 	addr := mi.prefix + r.Key() + k.String()
 	e.visited[addr] = true
 	for _, cr := range r.Preconditions {
-		if !e.checkRule(mi, cr, k.extra(), "Resource precondition failed", addr) {
+		if !e.checkRule(mi, cr, k.extra(), "Resource precondition failed", nil, false) {
 			return cty.NilVal, false
 		}
 	}

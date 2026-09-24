@@ -22,6 +22,11 @@ func (e *evaluator) planManaged(p *providerCtx, r *Resource, schema *Block, prio
 	if forceNewProvider(p.Source) {
 		replace = append(replace, allConfigChanges(schema, prior, planned)...)
 	}
+	if r.Type == "terraform_data" && p.Source == builtinTerraformSource &&
+		!valuesEqual(prior.GetAttr("triggers_replace"), planned.GetAttr("triggers_replace")) {
+		// terraform_data replaces itself without flagging the attribute.
+		replace = append(replace, cty.Path{})
+	}
 	if len(replace) == 0 {
 		return planned, nil
 	}

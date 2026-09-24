@@ -13,14 +13,16 @@ import (
 // aws_instance.web, data.aws_ami.x, provider.aws, provider.aws.west
 
 type graphNode struct {
-	ID   string
-	Kind string // variable, local, output, module, resource, data, provider
-	Deps map[string]bool
+	ID      string
+	Kind    string // variable, local, output, module, resource, data, provider
+	Deps    map[string]bool
+	Invalid bool // has references to undeclared objects
 }
 
 type moduleGraph struct {
-	Nodes map[string]*graphNode
-	Order []string
+	Nodes  map[string]*graphNode
+	Order  []string
+	Cyclic bool
 }
 
 // bodyTraversals collects every variable traversal in a native syntax body,
@@ -212,6 +214,7 @@ func (m *Module) buildGraph() (*moduleGraph, hcl.Diagnostics) {
 			dep, d := m.resolveRef(t)
 			if d != nil {
 				diags = append(diags, d)
+				n.Invalid = true
 				continue
 			}
 			if dep != "" && dep != id {
@@ -325,20 +328,77 @@ func (m *Module) buildGraph() (*moduleGraph, hcl.Diagnostics) {
 		}
 	}
 	if len(g.Order) != len(g.Nodes) {
-		var cyc []string
-		for id, d := range indeg {
-			if d > 0 {
-				cyc = append(cyc, id)
-			}
+		g.Cyclic = true
+		for _, scc := range g.cycles() {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Cycle: " + strings.Join(scc, ", "),
+				Detail:   "These objects refer to each other, directly or through other objects, so Terraform cannot decide which one to evaluate first. Break the cycle by removing one of the references.",
+			})
 		}
-		sort.Strings(cyc)
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "Cycle: " + strings.Join(cyc, ", "),
-			Detail:   "The configuration contains a dependency cycle: these objects refer to each other, so Terraform cannot decide which one to create first.",
-		})
 	}
 	return g, diags
+}
+
+// cycles returns the strongly connected components with more than one node
+// (or a self reference), using Tarjan's algorithm.
+func (g *moduleGraph) cycles() [][]string {
+	index := map[string]int{}
+	low := map[string]int{}
+	onStack := map[string]bool{}
+	var stack []string
+	var out [][]string
+	i := 0
+	var strong func(v string)
+	strong = func(v string) {
+		index[v], low[v] = i, i
+		i++
+		stack = append(stack, v)
+		onStack[v] = true
+		deps := make([]string, 0, len(g.Nodes[v].Deps))
+		for d := range g.Nodes[v].Deps {
+			deps = append(deps, d)
+		}
+		sort.Strings(deps)
+		for _, w := range deps {
+			if g.Nodes[w] == nil {
+				continue
+			}
+			if _, seen := index[w]; !seen {
+				strong(w)
+				low[v] = min(low[v], low[w])
+			} else if onStack[w] {
+				low[v] = min(low[v], index[w])
+			}
+		}
+		if low[v] == index[v] {
+			var scc []string
+			for {
+				w := stack[len(stack)-1]
+				stack = stack[:len(stack)-1]
+				onStack[w] = false
+				scc = append(scc, w)
+				if w == v {
+					break
+				}
+			}
+			if len(scc) > 1 || g.Nodes[v].Deps[v] {
+				sort.Strings(scc)
+				out = append(out, scc)
+			}
+		}
+	}
+	ids := make([]string, 0, len(g.Nodes))
+	for id := range g.Nodes {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		if _, seen := index[id]; !seen {
+			strong(id)
+		}
+	}
+	return out
 }
 
 func (r *Resource) providerKey() string {

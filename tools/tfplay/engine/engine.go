@@ -1116,6 +1116,18 @@ func (e *evaluator) findResource(inst *InstanceState) (*Resource, string) {
 			m = child
 		}
 	}
+	if inst.Module != "" {
+		expanded := false
+		for addr := range e.visited {
+			if strings.HasPrefix(addr, inst.Module+".") {
+				expanded = true
+				break
+			}
+		}
+		if !expanded {
+			return nil, "because " + inst.Module + " is not in configuration"
+		}
+	}
 	key := inst.Type + "." + inst.Name
 	if inst.Mode == "data" {
 		key = "data." + key
@@ -1413,9 +1425,19 @@ func formatDiagsWithSource(diags hcl.Diagnostics, files map[string]string) strin
 				}
 			}
 		}
+		if d.Expression != nil && d.EvalContext != nil {
+			if vals := expressionValues(d.Expression, d.EvalContext); len(vals) > 0 {
+				lines = append(lines, "    ├────────────────")
+				for _, v := range vals {
+					lines = append(lines, "    │ "+v)
+				}
+			}
+		}
 		if d.Detail != "" {
 			lines = append(lines, "")
-			lines = append(lines, strings.Split(d.Detail, "\n")...)
+			for _, l := range strings.Split(d.Detail, "\n") {
+				lines = append(lines, wrapLine(l, 76)...)
+			}
 		}
 		sb.WriteString("╷\n")
 		for _, l := range lines {
@@ -1437,4 +1459,78 @@ func Format(src, filename string) (string, error) {
 		return "", d
 	}
 	return string(hclwrite.Format([]byte(src))), nil
+}
+
+// wrapLine word-wraps prose lines; indented lines (code samples) are kept.
+func wrapLine(l string, width int) []string {
+	if len(l) <= width || strings.HasPrefix(l, " ") {
+		return []string{l}
+	}
+	var out []string
+	cur := ""
+	for _, w := range strings.Fields(l) {
+		if cur != "" && len(cur)+1+len(w) > width {
+			out = append(out, cur)
+			cur = w
+			continue
+		}
+		if cur == "" {
+			cur = w
+		} else {
+			cur += " " + w
+		}
+	}
+	if cur != "" {
+		out = append(out, cur)
+	}
+	return out
+}
+
+// expressionValues describes the values referenced by an expression, like
+// Terraform does under the source snippet of a diagnostic.
+func expressionValues(expr hcl.Expression, ctx *hcl.EvalContext) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, t := range expr.Variables() {
+		name := traversalString(t)
+		if seen[name] {
+			continue
+		}
+		seen[name] = true
+		v, diags := t.TraverseAbs(ctx)
+		if diags.HasErrors() {
+			continue
+		}
+		out = append(out, name+" "+describeValue(v))
+	}
+	sort.Strings(out)
+	return out
+}
+
+func describeValue(v cty.Value) string {
+	if v.HasMark(markSensitive) {
+		return "has a sensitive value"
+	}
+	v, _ = v.UnmarkDeep()
+	ty := v.Type()
+	if !v.IsKnown() {
+		if ty == cty.DynamicPseudoType {
+			return "will be known only after apply"
+		}
+		return "is a " + ty.FriendlyName() + ", known only after apply"
+	}
+	if v.IsNull() {
+		return "is null"
+	}
+	switch {
+	case ty.IsPrimitiveType():
+		return "is " + FormatValue(v, 0)
+	case ty.IsListType() || ty.IsSetType() || ty.IsMapType():
+		return fmt.Sprintf("is %s with %s", ty.FriendlyName(), plural(v.LengthInt(), "element"))
+	case ty.IsTupleType():
+		return fmt.Sprintf("is tuple with %s", plural(v.LengthInt(), "element"))
+	case ty.IsObjectType():
+		return fmt.Sprintf("is object with %s", plural(len(ty.AttributeTypes()), "attribute"))
+	}
+	return "is " + ty.FriendlyName()
 }
