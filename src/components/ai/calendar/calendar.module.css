@@ -1,0 +1,446 @@
+/* src/components/ai/calendar/calendar.module.css */
+
+.calWrapper {
+  --cal-aws: #8a5a12;
+  --cal-aws-soft: #f3e9d6;
+  --cal-dp900: #1d64a4;
+  --cal-dp900-soft: #dee9f4;
+  --cal-ai901: #6a4595;
+  --cal-ai901-soft: #e8e1f3;
+  --cal-cierre: #2c7a58;
+  --cal-cierre-soft: #daeee4;
+  --cal-arranque: #5d6e7c;
+  --cal-arranque-soft: #e4eaee;
+  --cal-javier: #2f6fb0;
+  --cal-javier-soft: #e1ecf6;
+  --cal-salva: #b0552a;
+  --cal-salva-soft: #f6e6dc;
+
+  font-size: 0.95rem;
+}
+
+:global([data-theme='dark']) .calWrapper {
+  --cal-aws: #d7a153;
+  --cal-aws-soft: #392d17;
+  --cal-dp900: #74b2e8;
+  --cal-dp900-soft: #152b3f;
+  --cal-ai901: #b99ae6;
+  --cal-ai901-soft: #2a1f3d;
+  --cal-cierre: #6fc89b;
+  --cal-cierre-soft: #163326;
+  --cal-arranque: #9aabb8;
+  --cal-arranque-soft: #242e36;
+  --cal-javier: #7fb4e9;
+  --cal-javier-soft: #172836;
+  --cal-salva: #e2966b;
+  --cal-salva-soft: #33221a;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- stats ---------- */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 0 0 1.5rem;
+  border-top: 1px solid var(--ifm-toc-border-color);
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+
+.stat {
+  padding: 0.75rem 1.25rem 0.75rem 0;
+  margin-right: 1.25rem;
+  border-right: 1px solid var(--ifm-toc-border-color);
+}
+
+.stat:last-child {
+  border-right: none;
+  margin-right: 0;
+}
+
+.statNumber {
+  font-family: var(--ifm-heading-font-family);
+  font-weight: 700;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  opacity: 0.65;
+  margin-top: 0.25rem;
+}
+
+/* ---------- weekly rail ---------- */
+.railWrap {
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.rail {
+  min-width: 780px;
+  display: grid;
+  gap: 3px;
+}
+
+.railLine {
+  display: grid;
+  grid-template-columns: 120px repeat(20, minmax(28px, 1fr));
+  gap: 3px;
+  align-items: stretch;
+}
+
+.railLabel {
+  font-size: 0.78rem;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  padding-right: 0.5rem;
+}
+
+.railWeek {
+  font-size: 0.68rem;
+  opacity: 0.6;
+  text-align: center;
+}
+
+.blk {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 0.3rem 0.25rem;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cell {
+  height: 32px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.cellPresencial {
+  color: #fff;
+}
+
+.cellOnline {
+  background: transparent;
+  border: 1.5px dashed currentColor;
+}
+
+.cellNone {
+  background: repeating-linear-gradient(135deg, var(--ifm-background-surface-color) 0 4px, transparent 4px 8px);
+  border: 1px solid var(--ifm-toc-border-color);
+  opacity: 0.6;
+}
+
+.brk {
+  position: relative;
+}
+
+.brk::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: -2px;
+  bottom: -2px;
+  border-left: 2px dotted var(--ifm-color-emphasis-500);
+  opacity: 0.75;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.1rem;
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sw {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.swOutline {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1.5px dashed currentColor;
+  display: inline-block;
+}
+
+/* ---------- chips ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.who {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.1rem 0.55rem;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* ---------- week table ---------- */
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 6px;
+}
+
+.table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.table thead th {
+  text-align: left;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  background: var(--ifm-background-surface-color);
+  padding: 0.6rem;
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: 0.6rem;
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.rowSalva {
+  box-shadow: inset 3px 0 0 var(--cal-salva);
+}
+
+.rowJavier {
+  box-shadow: inset 3px 0 0 var(--cal-javier);
+}
+
+.dateCell {
+  white-space: nowrap;
+}
+
+.dateTrack {
+  display: block;
+  font-size: 0.68rem;
+  opacity: 0.6;
+}
+
+.noneCell {
+  opacity: 0.55;
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
+.temaCell {
+  min-width: 260px;
+}
+
+.breakNote {
+  font-size: 0.72rem;
+  opacity: 0.65;
+  padding: 0.4rem 0.6rem;
+  background: var(--ifm-background-surface-color);
+}
+
+/* ---------- teacher blocks ---------- */
+.blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.9rem;
+}
+
+.block {
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 6px;
+  padding: 0.95rem 1.05rem;
+}
+
+.blockSalva {
+  border-top: 3px solid var(--cal-salva);
+}
+
+.blockJavier {
+  border-top: 3px solid var(--cal-javier);
+}
+
+.blockHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+
+.blockWho {
+  font-family: var(--ifm-heading-font-family);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.blockSalva .blockWho {
+  color: var(--cal-salva);
+}
+
+.blockJavier .blockWho {
+  color: var(--cal-javier);
+}
+
+.blockWeeks {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.blockDates {
+  font-size: 0.72rem;
+  opacity: 0.6;
+  margin-bottom: 0.6rem;
+}
+
+.blockList {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.blockItem {
+  font-size: 0.8rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.blockItemMeta {
+  opacity: 0.65;
+}
+
+/* ---------- month calendars ---------- */
+.months {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.9rem;
+}
+
+.month {
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 6px;
+  padding: 0.8rem;
+}
+
+.month h3 {
+  font-size: 0.9rem;
+  text-transform: capitalize;
+  margin: 0 0 0.55rem;
+}
+
+.mgrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.wd {
+  font-size: 0.62rem;
+  opacity: 0.55;
+  text-align: center;
+  padding-bottom: 0.15rem;
+}
+
+.day {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: var(--ifm-background-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  font-size: 0.62rem;
+}
+
+.dayOut {
+  opacity: 0.25;
+}
+
+.dayHas {
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--ifm-toc-border-color);
+}
+
+.dnum {
+  font-size: 0.62rem;
+  opacity: 0.6;
+}
+
+.dmark {
+  font-size: 0.55rem;
+  font-weight: 600;
+  padding: 0 3px;
+  border-radius: 2px;
+  line-height: 1.3;
+}
+
+@media (max-width: 560px) {
+  .stat {
+    padding-right: 0.9rem;
+    margin-right: 0.9rem;
+  }
+
+  .statNumber {
+    font-size: 1.15rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calWrapper * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
