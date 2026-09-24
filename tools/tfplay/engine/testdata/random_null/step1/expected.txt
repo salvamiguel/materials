@@ -1,0 +1,103 @@
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # null_resource.h will be created
+  + resource "null_resource" "h" {
+      + id       = (known after apply)
+      + triggers = {
+          + "a" = "b"
+        }
+    }
+
+  # random_id.b will be created
+  + resource "random_id" "b" {
+      + b64_std     = (known after apply)
+      + b64_url     = (known after apply)
+      + byte_length = 4
+      + dec         = (known after apply)
+      + hex         = (known after apply)
+      + id          = (known after apply)
+    }
+
+  # random_integer.e will be created
+  + resource "random_integer" "e" {
+      + id     = (known after apply)
+      + max    = 9
+      + min    = 1
+      + result = (known after apply)
+    }
+
+  # random_password.d will be created
+  + resource "random_password" "d" {
+      + bcrypt_hash = (sensitive value)
+      + id          = (known after apply)
+      + length      = 16
+      + lower       = true
+      + min_lower   = 0
+      + min_numeric = 0
+      + min_special = 0
+      + min_upper   = 0
+      + number      = true
+      + numeric     = true
+      + result      = (sensitive value)
+      + special     = true
+      + upper       = true
+    }
+
+  # random_pet.a will be created
+  + resource "random_pet" "a" {
+      + id        = (known after apply)
+      + length    = 2
+      + separator = "-"
+    }
+
+  # random_shuffle.g will be created
+  + resource "random_shuffle" "g" {
+      + id     = (known after apply)
+      + input  = [
+          + "a",
+          + "b",
+          + "c",
+        ]
+      + result = (known after apply)
+    }
+
+  # random_string.c will be created
+  + resource "random_string" "c" {
+      + id          = (known after apply)
+      + length      = 12
+      + lower       = true
+      + min_lower   = 0
+      + min_numeric = 0
+      + min_special = 0
+      + min_upper   = 0
+      + number      = true
+      + numeric     = true
+      + result      = (known after apply)
+      + special     = true
+      + upper       = true
+    }
+
+  # random_uuid.f will be created
+  + resource "random_uuid" "f" {
+      + id     = (known after apply)
+      + result = (known after apply)
+    }
+
+  # terraform_data.i will be created
+  + resource "terraform_data" "i" {
+      + id     = (known after apply)
+      + input  = "x"
+      + output = (known after apply)
+    }
+
+Plan: 9 to add, 0 to change, 0 to destroy.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.

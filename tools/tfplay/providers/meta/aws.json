@@ -1,0 +1,490 @@
+{
+  "_comment": "Mock templates used at apply time to fill computed attributes. Placeholders: {id} {region} {account} {partition} {name} {az} {azid} {hex:N} {digits:N} {upper:N} {lower:N} {alnum:N} {uuid} {now} {pet} {attr:X} {dash:X} {ip:10.0} {pubip}",
+  "defaults": {
+    "aws_vpc": {"instance_tenancy": "default"},
+    "aws_lb": {"load_balancer_type": "application"},
+    "aws_alb": {"load_balancer_type": "application"},
+    "aws_lb_target_group": {"target_type": "instance"},
+    "aws_dynamodb_table": {"billing_mode": "PROVISIONED"}
+  },
+  "resources": {
+    "aws_instance": {
+      "id": "i-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:instance/{id}",
+      "availability_zone": "{az}",
+      "private_ip": "{ip:172.31}",
+      "public_ip": "{pubip}",
+      "private_dns": "ip-{dash:private_ip}.{region}.compute.internal",
+      "public_dns": "ec2-{dash:public_ip}.{region}.compute.amazonaws.com",
+      "primary_network_interface_id": "eni-0{hex:16}",
+      "instance_state": "running",
+      "subnet_id": "subnet-0{hex:16}",
+      "vpc_security_group_ids": ["sg-0{hex:16}"],
+      "security_groups": [],
+      "tenancy": "default",
+      "instance_initiated_shutdown_behavior": "stop",
+      "key_name": "",
+      "monitoring": false,
+      "ebs_optimized": false,
+      "associate_public_ip_address": true,
+      "iam_instance_profile": ""
+    },
+    "aws_vpc": {
+      "id": "vpc-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:vpc/{id}",
+      "default_network_acl_id": "acl-0{hex:16}",
+      "default_route_table_id": "rtb-0{hex:16}",
+      "main_route_table_id": "{attr:default_route_table_id}",
+      "default_security_group_id": "sg-0{hex:16}",
+      "dhcp_options_id": "dopt-0{hex:16}",
+      "owner_id": "{account}",
+      "enable_dns_hostnames": false,
+      "instance_tenancy": "default"
+    },
+    "aws_subnet": {
+      "id": "subnet-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:subnet/{id}",
+      "availability_zone": "{az}",
+      "availability_zone_id": "{azid}",
+      "owner_id": "{account}",
+      "private_dns_hostname_type_on_launch": "ip-name"
+    },
+    "aws_internet_gateway": {
+      "id": "igw-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:internet-gateway/{id}",
+      "owner_id": "{account}"
+    },
+    "aws_nat_gateway": {
+      "id": "nat-0{hex:16}",
+      "network_interface_id": "eni-0{hex:16}",
+      "private_ip": "{ip:10.0}",
+      "public_ip": "{pubip}",
+      "association_id": "eipassoc-0{hex:16}"
+    },
+    "aws_eip": {
+      "id": "eipalloc-0{hex:16}",
+      "allocation_id": "{id}",
+      "arn": "arn:aws:ec2:{region}:{account}:elastic-ip/{id}",
+      "public_ip": "{pubip}",
+      "public_dns": "ec2-{dash:public_ip}.{region}.compute.amazonaws.com",
+      "domain": "vpc",
+      "public_ipv4_pool": "amazon",
+      "network_border_group": "{region}"
+    },
+    "aws_route_table": {
+      "id": "rtb-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:route-table/{id}",
+      "owner_id": "{account}"
+    },
+    "aws_route_table_association": {
+      "id": "rtbassoc-0{hex:16}"
+    },
+    "aws_route": {
+      "id": "r-{attr:route_table_id}1080289494",
+      "state": "active",
+      "origin": "CreateRoute"
+    },
+    "aws_network_acl": {
+      "id": "acl-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:network-acl/{id}",
+      "owner_id": "{account}"
+    },
+    "aws_security_group": {
+      "id": "sg-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:security-group/{id}",
+      "owner_id": "{account}",
+      "name": "terraform-{digits:26}",
+      "vpc_id": "vpc-0{hex:16}"
+    },
+    "aws_security_group_rule": {
+      "id": "sgrule-{digits:10}",
+      "security_group_rule_id": "sgr-0{hex:16}"
+    },
+    "aws_vpc_security_group_ingress_rule": {
+      "id": "sgr-0{hex:16}",
+      "security_group_rule_id": "{id}",
+      "arn": "arn:aws:ec2:{region}:{account}:security-group-rule/{id}"
+    },
+    "aws_vpc_security_group_egress_rule": {
+      "id": "sgr-0{hex:16}",
+      "security_group_rule_id": "{id}",
+      "arn": "arn:aws:ec2:{region}:{account}:security-group-rule/{id}"
+    },
+    "aws_key_pair": {
+      "id": "{attr:key_name}",
+      "key_name": "terraform-{digits:26}",
+      "key_pair_id": "key-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:key-pair/{attr:key_name}",
+      "fingerprint": "{hex:2}:{hex:2}:{hex:2}:{hex:2}:{hex:2}:{hex:2}:{hex:2}:{hex:2}:{hex:2}:{hex:2}:{hex:2}:{hex:2}:{hex:2}:{hex:2}:{hex:2}:{hex:2}",
+      "key_type": "rsa"
+    },
+    "aws_ebs_volume": {
+      "id": "vol-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:volume/{id}",
+      "type": "gp3",
+      "iops": 3000,
+      "throughput": 125
+    },
+    "aws_launch_template": {
+      "id": "lt-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:launch-template/{id}",
+      "name": "terraform-{digits:26}",
+      "latest_version": 1,
+      "default_version": 1
+    },
+    "aws_s3_bucket": {
+      "bucket": "terraform-{digits:26}",
+      "id": "{attr:bucket}",
+      "arn": "arn:aws:s3:::{attr:bucket}",
+      "bucket_domain_name": "{attr:bucket}.s3.amazonaws.com",
+      "bucket_regional_domain_name": "{attr:bucket}.s3.{region}.amazonaws.com",
+      "bucket_region": "{region}",
+      "hosted_zone_id": "Z1BKCTXD74EZPE",
+      "request_payer": "BucketOwner",
+      "object_lock_enabled": false,
+      "acceleration_status": ""
+    },
+    "aws_s3_bucket_versioning": {"id": "{attr:bucket}"},
+    "aws_s3_bucket_public_access_block": {"id": "{attr:bucket}"},
+    "aws_s3_bucket_server_side_encryption_configuration": {"id": "{attr:bucket}"},
+    "aws_s3_bucket_policy": {"id": "{attr:bucket}"},
+    "aws_s3_bucket_ownership_controls": {"id": "{attr:bucket}"},
+    "aws_s3_bucket_website_configuration": {
+      "id": "{attr:bucket}",
+      "website_domain": "s3-website-{region}.amazonaws.com",
+      "website_endpoint": "{attr:bucket}.s3-website-{region}.amazonaws.com"
+    },
+    "aws_s3_bucket_acl": {"id": "{attr:bucket},{attr:acl}"},
+    "aws_s3_bucket_lifecycle_configuration": {"id": "{attr:bucket}"},
+    "aws_s3_object": {
+      "id": "{attr:key}",
+      "etag": "{hex:32}",
+      "content_type": "application/octet-stream",
+      "storage_class": "STANDARD",
+      "version_id": "",
+      "arn": "arn:aws:s3:::{attr:bucket}/{attr:key}"
+    },
+    "aws_iam_role": {
+      "name": "terraform-{digits:26}",
+      "id": "{attr:name}",
+      "arn": "arn:aws:iam::{account}:role/{attr:name}",
+      "unique_id": "AROA{upper:17}",
+      "create_date": "{now}"
+    },
+    "aws_iam_user": {
+      "id": "{attr:name}",
+      "arn": "arn:aws:iam::{account}:user/{attr:name}",
+      "unique_id": "AIDA{upper:17}"
+    },
+    "aws_iam_group": {
+      "id": "{attr:name}",
+      "arn": "arn:aws:iam::{account}:group/{attr:name}",
+      "unique_id": "AGPA{upper:17}"
+    },
+    "aws_iam_policy": {
+      "name": "terraform-{digits:26}",
+      "arn": "arn:aws:iam::{account}:policy/{attr:name}",
+      "id": "{attr:arn}",
+      "policy_id": "ANPA{upper:17}",
+      "attachment_count": 0
+    },
+    "aws_iam_role_policy": {"id": "{attr:role}:{attr:name}", "name": "terraform-{digits:26}"},
+    "aws_iam_role_policy_attachment": {"id": "{attr:role}-{digits:20}"},
+    "aws_iam_user_policy_attachment": {"id": "{attr:user}-{digits:20}"},
+    "aws_iam_instance_profile": {
+      "name": "terraform-{digits:26}",
+      "id": "{attr:name}",
+      "arn": "arn:aws:iam::{account}:instance-profile/{attr:name}",
+      "unique_id": "AIPA{upper:17}",
+      "create_date": "{now}"
+    },
+    "aws_iam_access_key": {
+      "id": "AKIA{upper:16}",
+      "secret": "{alnum:40}",
+      "status": "Active",
+      "create_date": "{now}"
+    },
+    "aws_lambda_function": {
+      "id": "{attr:function_name}",
+      "arn": "arn:aws:lambda:{region}:{account}:function:{attr:function_name}",
+      "invoke_arn": "arn:aws:apigateway:{region}:lambda:path/2015-03-31/functions/{attr:arn}/invocations",
+      "qualified_arn": "{attr:arn}:$LATEST",
+      "qualified_invoke_arn": "arn:aws:apigateway:{region}:lambda:path/2015-03-31/functions/{attr:arn}:$LATEST/invocations",
+      "version": "$LATEST",
+      "last_modified": "{now}",
+      "source_code_size": 312,
+      "source_code_hash": "{alnum:43}=",
+      "code_sha256": "{alnum:43}=",
+      "signing_job_arn": "",
+      "signing_profile_version_arn": ""
+    },
+    "aws_lambda_permission": {"id": "{attr:statement_id}", "statement_id": "terraform-{digits:26}"},
+    "aws_cloudwatch_log_group": {
+      "name": "terraform-{digits:26}",
+      "id": "{attr:name}",
+      "arn": "arn:aws:logs:{region}:{account}:log-group:{attr:name}"
+    },
+    "aws_db_instance": {
+      "identifier": "terraform-{digits:26}",
+      "id": "db-{upper:26}",
+      "resource_id": "{attr:id}",
+      "arn": "arn:aws:rds:{region}:{account}:db:{attr:identifier}",
+      "address": "{attr:identifier}.c{lower:12}.{region}.rds.amazonaws.com",
+      "endpoint": "{attr:address}:{attr:port}",
+      "hosted_zone_id": "Z29XKXDKYMONMX",
+      "status": "available",
+      "port": 3306,
+      "availability_zone": "{az}",
+      "engine_version_actual": "{attr:engine_version}"
+    },
+    "aws_db_subnet_group": {
+      "name": "terraform-{digits:26}",
+      "id": "{attr:name}",
+      "arn": "arn:aws:rds:{region}:{account}:subgrp:{attr:name}"
+    },
+    "aws_dynamodb_table": {
+      "id": "{attr:name}",
+      "arn": "arn:aws:dynamodb:{region}:{account}:table/{attr:name}",
+      "billing_mode": "PROVISIONED",
+      "stream_arn": "",
+      "stream_label": ""
+    },
+    "aws_sqs_queue": {
+      "name": "terraform-{digits:26}",
+      "id": "https://sqs.{region}.amazonaws.com/{account}/{attr:name}",
+      "url": "{attr:id}",
+      "arn": "arn:aws:sqs:{region}:{account}:{attr:name}"
+    },
+    "aws_sns_topic": {
+      "name": "terraform-{digits:26}",
+      "arn": "arn:aws:sns:{region}:{account}:{attr:name}",
+      "id": "{attr:arn}",
+      "owner": "{account}"
+    },
+    "aws_sns_topic_subscription": {
+      "arn": "{attr:topic_arn}:{uuid}",
+      "id": "{attr:arn}"
+    },
+    "aws_ecr_repository": {
+      "id": "{attr:name}",
+      "arn": "arn:aws:ecr:{region}:{account}:repository/{attr:name}",
+      "registry_id": "{account}",
+      "repository_url": "{account}.dkr.ecr.{region}.amazonaws.com/{attr:name}"
+    },
+    "aws_ecs_cluster": {
+      "id": "arn:aws:ecs:{region}:{account}:cluster/{attr:name}",
+      "arn": "{attr:id}"
+    },
+    "aws_ecs_task_definition": {
+      "arn": "arn:aws:ecs:{region}:{account}:task-definition/{attr:family}:1",
+      "arn_without_revision": "arn:aws:ecs:{region}:{account}:task-definition/{attr:family}",
+      "id": "{attr:family}",
+      "revision": 1
+    },
+    "aws_ecs_service": {
+      "id": "arn:aws:ecs:{region}:{account}:service/{attr:name}"
+    },
+    "aws_lb": {
+      "name": "tf-lb-{lower:20}",
+      "arn": "arn:aws:elasticloadbalancing:{region}:{account}:loadbalancer/app/{attr:name}/{hex:16}",
+      "id": "{attr:arn}",
+      "arn_suffix": "app/{attr:name}/{hex:16}",
+      "dns_name": "{attr:name}-{digits:10}.{region}.elb.amazonaws.com",
+      "zone_id": "Z32O12XQLNTSW2",
+      "vpc_id": "vpc-0{hex:16}"
+    },
+    "aws_lb_target_group": {
+      "name": "tf-{lower:26}",
+      "arn": "arn:aws:elasticloadbalancing:{region}:{account}:targetgroup/{attr:name}/{hex:16}",
+      "id": "{attr:arn}",
+      "arn_suffix": "targetgroup/{attr:name}/{hex:16}"
+    },
+    "aws_lb_listener": {
+      "arn": "arn:aws:elasticloadbalancing:{region}:{account}:listener/app/lb/{hex:16}/{hex:16}",
+      "id": "{attr:arn}"
+    },
+    "aws_lb_target_group_attachment": {"id": "{attr:target_group_arn}-{digits:20}"},
+    "aws_autoscaling_group": {
+      "name": "terraform-{digits:26}",
+      "id": "{attr:name}",
+      "arn": "arn:aws:autoscaling:{region}:{account}:autoScalingGroup:{uuid}:autoScalingGroupName/{attr:name}"
+    },
+    "aws_kms_key": {
+      "id": "{uuid}",
+      "key_id": "{id}",
+      "arn": "arn:aws:kms:{region}:{account}:key/{id}"
+    },
+    "aws_kms_alias": {
+      "id": "{attr:name}",
+      "arn": "arn:aws:kms:{region}:{account}:{attr:name}",
+      "target_key_arn": "arn:aws:kms:{region}:{account}:key/{attr:target_key_id}"
+    },
+    "aws_route53_zone": {
+      "id": "Z{upper:20}",
+      "zone_id": "{id}",
+      "arn": "arn:aws:route53:::hostedzone/{id}",
+      "name_servers": ["ns-{digits:3}.awsdns-{digits:2}.com", "ns-{digits:4}.awsdns-{digits:2}.org", "ns-{digits:3}.awsdns-{digits:2}.net", "ns-{digits:4}.awsdns-{digits:2}.co.uk"],
+      "primary_name_server": "ns-{digits:3}.awsdns-{digits:2}.com"
+    },
+    "aws_route53_record": {
+      "id": "{attr:zone_id}_{attr:name}_{attr:type}",
+      "fqdn": "{attr:name}"
+    },
+    "aws_acm_certificate": {
+      "arn": "arn:aws:acm:{region}:{account}:certificate/{uuid}",
+      "id": "{attr:arn}",
+      "status": "PENDING_VALIDATION"
+    },
+    "aws_ssm_parameter": {
+      "id": "{attr:name}",
+      "arn": "arn:aws:ssm:{region}:{account}:parameter/{attr:name}",
+      "version": 1,
+      "tier": "Standard"
+    },
+    "aws_secretsmanager_secret": {
+      "name": "terraform-{digits:26}",
+      "arn": "arn:aws:secretsmanager:{region}:{account}:secret:{attr:name}-{alnum:6}",
+      "id": "{attr:arn}"
+    },
+    "aws_secretsmanager_secret_version": {
+      "id": "{attr:secret_id}|{uuid}",
+      "version_id": "{uuid}",
+      "arn": "{attr:secret_id}"
+    },
+    "aws_cloudwatch_metric_alarm": {
+      "id": "{attr:alarm_name}",
+      "arn": "arn:aws:cloudwatch:{region}:{account}:alarm:{attr:alarm_name}"
+    },
+    "aws_cloudfront_distribution": {
+      "id": "E{upper:13}",
+      "arn": "arn:aws:cloudfront::{account}:distribution/{id}",
+      "domain_name": "d{lower:13}.cloudfront.net",
+      "hosted_zone_id": "Z2FDTNDATAQYW2",
+      "status": "Deployed",
+      "etag": "E{upper:13}"
+    },
+    "aws_api_gateway_rest_api": {
+      "id": "{lower:10}",
+      "root_resource_id": "{lower:10}",
+      "arn": "arn:aws:apigateway:{region}::/restapis/{id}",
+      "execution_arn": "arn:aws:execute-api:{region}:{account}:{id}"
+    },
+    "aws_apigatewayv2_api": {
+      "id": "{lower:10}",
+      "api_endpoint": "https://{id}.execute-api.{region}.amazonaws.com",
+      "arn": "arn:aws:apigateway:{region}::/apis/{id}",
+      "execution_arn": "arn:aws:execute-api:{region}:{account}:{id}"
+    },
+    "aws_eks_cluster": {
+      "id": "{attr:name}",
+      "arn": "arn:aws:eks:{region}:{account}:cluster/{attr:name}",
+      "endpoint": "https://{upper:32}.gr7.{region}.eks.amazonaws.com",
+      "status": "ACTIVE",
+      "platform_version": "eks.1"
+    }
+  },
+  "data_sources": {
+    "aws_ami": {
+      "id": "ami-0{hex:16}",
+      "image_id": "{id}",
+      "arn": "arn:aws:ec2:{region}::image/{id}",
+      "name": "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250601",
+      "architecture": "x86_64",
+      "creation_date": "2025-06-01T00:00:00.000Z",
+      "owner_id": "099720109477",
+      "root_device_name": "/dev/sda1",
+      "root_device_type": "ebs",
+      "virtualization_type": "hvm",
+      "state": "available",
+      "platform_details": "Linux/UNIX",
+      "description": "Canonical, Ubuntu, 24.04, amd64 noble image"
+    },
+    "aws_availability_zones": {
+      "id": "{region}",
+      "names": ["{region}a", "{region}b", "{region}c"],
+      "zone_ids": ["{azid}", "{azid}2", "{azid}3"],
+      "group_names": ["{region}"]
+    },
+    "aws_caller_identity": {
+      "id": "{account}",
+      "account_id": "{account}",
+      "arn": "arn:aws:iam::{account}:user/playground",
+      "user_id": "AIDA{upper:17}"
+    },
+    "aws_region": {
+      "id": "{region}",
+      "name": "{region}",
+      "region": "{region}",
+      "endpoint": "ec2.{region}.amazonaws.com",
+      "description": "{region}"
+    },
+    "aws_partition": {
+      "id": "aws",
+      "partition": "aws",
+      "dns_suffix": "amazonaws.com",
+      "reverse_dns_prefix": "com.amazonaws"
+    },
+    "aws_vpc": {
+      "id": "vpc-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:vpc/{id}",
+      "cidr_block": "172.31.0.0/16",
+      "default": true,
+      "owner_id": "{account}",
+      "main_route_table_id": "rtb-0{hex:16}",
+      "instance_tenancy": "default",
+      "state": "available"
+    },
+    "aws_subnets": {
+      "id": "{region}",
+      "ids": ["subnet-0{hex:16}", "subnet-0{hex:16}", "subnet-0{hex:16}"]
+    },
+    "aws_subnet": {
+      "id": "subnet-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:subnet/{id}",
+      "cidr_block": "172.31.0.0/20",
+      "availability_zone": "{az}",
+      "vpc_id": "vpc-0{hex:16}"
+    },
+    "aws_security_group": {
+      "id": "sg-0{hex:16}",
+      "arn": "arn:aws:ec2:{region}:{account}:security-group/{id}",
+      "name": "default"
+    },
+    "aws_s3_bucket": {
+      "arn": "arn:aws:s3:::{attr:bucket}",
+      "bucket_domain_name": "{attr:bucket}.s3.amazonaws.com",
+      "bucket_regional_domain_name": "{attr:bucket}.s3.{region}.amazonaws.com",
+      "hosted_zone_id": "Z1BKCTXD74EZPE",
+      "id": "{attr:bucket}"
+    },
+    "aws_iam_policy": {
+      "id": "arn:aws:iam::aws:policy/{attr:name}",
+      "arn": "arn:aws:iam::aws:policy/{attr:name}"
+    },
+    "aws_iam_role": {
+      "id": "{attr:name}",
+      "arn": "arn:aws:iam::{account}:role/{attr:name}",
+      "unique_id": "AROA{upper:17}"
+    },
+    "aws_route53_zone": {
+      "id": "Z{upper:20}",
+      "zone_id": "{id}",
+      "name_servers": ["ns-{digits:3}.awsdns-{digits:2}.com", "ns-{digits:4}.awsdns-{digits:2}.org"]
+    },
+    "aws_ssm_parameter": {
+      "id": "{attr:name}",
+      "arn": "arn:aws:ssm:{region}:{account}:parameter/{attr:name}",
+      "value": "ami-0{hex:16}",
+      "type": "String",
+      "version": 1
+    },
+    "aws_kms_key": {
+      "id": "{uuid}",
+      "arn": "arn:aws:kms:{region}:{account}:key/{id}"
+    },
+    "aws_ecr_repository": {
+      "id": "{attr:name}",
+      "repository_url": "{account}.dkr.ecr.{region}.amazonaws.com/{attr:name}"
+    }
+  }
+}

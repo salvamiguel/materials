@@ -1,0 +1,10 @@
+{
+  "_comment": "The random provider is built with terraform-plugin-framework; its defaults are listed by hand. Every argument forces replacement (handled by the engine).",
+  "defaults": {
+    "random_pet": {"length": 2, "separator": "-"},
+    "random_string": {"lower": true, "upper": true, "numeric": true, "number": true, "special": true, "min_lower": 0, "min_upper": 0, "min_numeric": 0, "min_special": 0},
+    "random_password": {"lower": true, "upper": true, "numeric": true, "number": true, "special": true, "min_lower": 0, "min_upper": 0, "min_numeric": 0, "min_special": 0}
+  },
+  "resources": {},
+  "data_sources": {}
+}
