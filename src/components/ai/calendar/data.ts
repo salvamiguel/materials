@@ -50,7 +50,7 @@ export const SESIONES: Sesion[] = [
   { n: 16, o: '23/02/2027', p: '24/02/2027', cert: 'ai901', tema: 'Microsoft Foundry (II): texto y voz, modelos multimodales', prof: 'Salva' },
   { n: 17, o: '02/03/2027', p: '03/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (III): visión, generación de imágenes, extracción de información', prof: 'Javier' },
   { n: 18, o: '09/03/2027', p: '10/03/2027', cert: 'ai901', tema: 'Repaso general AI-901 + simulacro práctico (Python/REST/SDK)', prof: 'Javier' },
-  { n: 19, o: '06/04/2027', p: '07/04/2027', cert: 'cierre', tema: 'Simulacros combinados de las tres certificaciones + resolución de dudas', prof: 'Salva', brk: 'Parón de marzo · ventana de exámenes oficiales' },
+  { n: 19, o: '06/04/2027', p: '07/04/2027', cert: 'cierre', tema: 'Simulacros combinados de las tres certificaciones + resolución de dudas', prof: 'Salva', brk: 'Parón de marzo' },
   { n: 20, o: '13/04/2027', p: '14/04/2027', cert: 'cierre', tema: 'Estrategia de examen, dudas finales y cierre del módulo', prof: 'Javier' },
 ];
 
