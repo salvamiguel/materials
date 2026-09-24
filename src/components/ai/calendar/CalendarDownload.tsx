@@ -46,28 +46,25 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
         <span className={styles.badge} aria-hidden="true">
           <Icon />
         </span>
+        <div className={styles.intro}>
+          <span className={styles.eyebrow}>Grupo {grupo}</span>
+          <h3 className={styles.title}>{g.dia}</h3>
+          <span className={styles.time}>
+            {HORARIO.inicio} – {HORARIO.fin}
+          </span>
+        </div>
         <div className={styles.count}>
           <span className={styles.countNumber}>{fechas.length}</span>
           <span className={styles.countLabel}>clases</span>
         </div>
       </header>
 
-      <div className={styles.intro}>
-        <span className={styles.eyebrow}>Grupo {grupo}</span>
-        <h3 className={styles.title}>{g.dia}</h3>
-        <span className={styles.time}>
-          {HORARIO.inicio} – {HORARIO.fin}
-        </span>
-      </div>
-
       <dl className={styles.details}>
         <div>
-          <dt>Inicio</dt>
-          <dd>{fecha(fechas[0])}</dd>
-        </div>
-        <div>
-          <dt>Fin</dt>
-          <dd>{fecha(fechas[fechas.length - 1])}</dd>
+          <dt>Fechas</dt>
+          <dd>
+            {fecha(fechas[0])} <span className={styles.muted}>→</span> {fecha(fechas[fechas.length - 1])}
+          </dd>
         </div>
         <div>
           <dt>Lugar</dt>

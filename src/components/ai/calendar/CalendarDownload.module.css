@@ -21,7 +21,7 @@
 
   display: flex;
   flex-direction: column;
-  padding: 1.6rem 1.6rem 1.4rem;
+  padding: 1.15rem 1.3rem 1.05rem;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--surface);
@@ -68,16 +68,16 @@
 /* ---------- header ---------- */
 .header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 1.4rem;
+  align-items: center;
+  gap: 0.85rem;
 }
 
 .badge {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--accent-soft);
   color: var(--accent);
@@ -85,6 +85,7 @@
 }
 
 .count {
+  margin-left: auto;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -93,15 +94,15 @@
 
 .countNumber {
   font-family: var(--ifm-heading-font-family);
-  font-size: 2rem;
+  font-size: 1.7rem;
   font-weight: 300;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
 .countLabel {
-  margin-top: 0.3rem;
-  font-size: 0.68rem;
+  margin-top: 0.2rem;
+  font-size: 0.62rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
@@ -111,11 +112,12 @@
 .intro {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.1rem;
+  min-width: 0;
 }
 
 .eyebrow {
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -125,29 +127,29 @@
 .title {
   margin: 0;
   font-family: var(--ifm-heading-font-family);
-  font-size: 1.75rem;
+  font-size: 1.35rem;
   font-weight: 600;
   letter-spacing: -0.02em;
-  line-height: 1.15;
+  line-height: 1.2;
 }
 
 .time {
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
 /* ---------- details ---------- */
 .details {
-  margin: 1.4rem 0;
+  margin: 0.9rem 0;
   border-top: 1px solid var(--line);
 }
 
 .details > div {
   display: grid;
-  grid-template-columns: 4.5rem 1fr;
-  gap: 1rem;
-  padding: 0.7rem 0;
+  grid-template-columns: 4rem 1fr;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -177,7 +179,7 @@
   gap: 0.35rem;
   color: inherit;
   text-decoration: none;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 .map svg {
@@ -202,7 +204,7 @@
   margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 0.6rem;
 }
 
 .download {
@@ -210,7 +212,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 1rem;
   border-radius: 999px;
   background: var(--btn-bg);
   color: var(--btn-fg);
@@ -236,8 +238,8 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem 0.75rem;
-  font-size: 0.8rem;
+  gap: 0.2rem 0.4rem;
+  font-size: 0.78rem;
 }
 
 .subscribeLabel {
@@ -254,7 +256,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0 0.6rem;
+  padding: 0 0.45rem;
   color: var(--ink);
   font-weight: 500;
   text-decoration: none;
