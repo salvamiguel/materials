@@ -1,11 +1,10 @@
 import React from 'react';
 import useBaseUrl from '@docusaurus/useBaseUrl';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { FaLaptop, FaUniversity, FaApple, FaGoogle, FaMicrosoft } from 'react-icons/fa';
 import { FiDownload, FiArrowUpRight, FiInfo } from 'react-icons/fi';
 
 import { SESIONES, parseFecha } from './data';
-import { GRUPOS, HORARIO, ICS_DIR, Grupo } from './ics';
+import { GRUPOS, HORARIO, ICS_DIR, ICS_HOST, Grupo } from './ics';
 import styles from './CalendarDownload.module.css';
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -13,10 +12,9 @@ const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'o
 const fecha = (d: Date) => `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}`;
 
 function GrupoCard({ grupo }: { grupo: Grupo }) {
-  const { siteConfig } = useDocusaurusContext();
   const g = GRUPOS[grupo];
   const path = useBaseUrl(`/${ICS_DIR}/${g.archivo}`);
-  const httpsUrl = `${siteConfig.url}${path}`;
+  const httpsUrl = `${ICS_HOST}${path}`;
   const webcalUrl = httpsUrl.replace(/^https?:\/\//, 'webcal://');
 
   const fechas = SESIONES.map((s) => (grupo === 'online' ? s.o : s.p))

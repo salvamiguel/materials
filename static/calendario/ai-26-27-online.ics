@@ -27,17 +27,16 @@ RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
 END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
-UID:ai-2627-online-sem03@salvamiguel.github.io
+UID:ai-2627-online-sem03@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261103T183000
 DTEND;TZID=Europe/Madrid:20261103T210000
 SUMMARY:AWS AIP · Dominio 1 · Fundamentos de IA y machine learning (20 %)
 DESCRIPTION:Semana 3 · Grupo online\nProfesor: Salva\nHorario: 18:30–21:
- 00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/cale
- ndario
+ 00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendario
 LOCATION:Online
 CATEGORIES:AWS AIP
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -48,17 +47,16 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem04@salvamiguel.github.io
+UID:ai-2627-online-sem04@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261110T183000
 DTEND;TZID=Europe/Madrid:20261110T210000
 SUMMARY:AWS AIP · Dominio 2 · Fundamentos de IA generativa (24 %)
 DESCRIPTION:Semana 4 · Grupo online\nProfesor: Salva\nHorario: 18:30–21:
- 00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/cale
- ndario
+ 00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendario
 LOCATION:Online
 CATEGORIES:AWS AIP
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -69,18 +67,18 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem05@salvamiguel.github.io
+UID:ai-2627-online-sem05@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261117T183000
 DTEND;TZID=Europe/Madrid:20261117T210000
 SUMMARY:AWS AIP · Dominio 3 (I) · Aplicaciones de foundation models: prom
  pting y RAG (28 %)
 DESCRIPTION:Semana 5 · Grupo online\nProfesor: Javier\nHorario: 18:30–21
- :00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/cal
- endario
+ :00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendari
+ o
 LOCATION:Online
 CATEGORIES:AWS AIP
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -91,18 +89,18 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem06@salvamiguel.github.io
+UID:ai-2627-online-sem06@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261124T183000
 DTEND;TZID=Europe/Madrid:20261124T210000
 SUMMARY:AWS AIP · Dominio 3 (II) · Evaluación\, personalización y Amazo
  n Bedrock (28 %)
 DESCRIPTION:Semana 6 · Grupo online\nProfesor: Javier\nHorario: 18:30–21
- :00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/cal
- endario
+ :00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendari
+ o
 LOCATION:Online
 CATEGORIES:AWS AIP
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -113,18 +111,17 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem07@salvamiguel.github.io
+UID:ai-2627-online-sem07@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261201T183000
 DTEND;TZID=Europe/Madrid:20261201T210000
 SUMMARY:AWS AIP · Dominios 4 y 5 · IA responsable\, seguridad\, cumplimie
  nto y gobernanza (28 %)
 DESCRIPTION:Semana 7 · Grupo online\nProfesor: Salva\nHorario: 18:30–21:
- 00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/cale
- ndario
+ 00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendario
 LOCATION:Online
 CATEGORIES:AWS AIP
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -135,17 +132,16 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem08@salvamiguel.github.io
+UID:ai-2627-online-sem08@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261208T183000
 DTEND;TZID=Europe/Madrid:20261208T210000
 SUMMARY:AWS AIP · Repaso general AWS AI Practitioner + simulacro de examen
 DESCRIPTION:Semana 8 · Grupo online\nProfesor: Salva\nHorario: 18:30–21:
- 00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/cale
- ndario
+ 00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendario
 LOCATION:Online
 CATEGORIES:AWS AIP
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -156,18 +152,18 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem09@salvamiguel.github.io
+UID:ai-2627-online-sem09@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261215T183000
 DTEND;TZID=Europe/Madrid:20261215T210000
 SUMMARY:DP-900 · Fundamentos de datos: estructurados\, semiestructurados y
   no estructurados\; roles
 DESCRIPTION:Semana 9 · Grupo online\nProfesor: Javier\nHorario: 18:30–21
- :00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/cal
- endario
+ :00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendari
+ o
 LOCATION:Online
 CATEGORIES:DP-900
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -178,18 +174,18 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem10@salvamiguel.github.io
+UID:ai-2627-online-sem10@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270112T183000
 DTEND;TZID=Europe/Madrid:20270112T210000
 SUMMARY:DP-900 · Datos relacionales en Azure: SQL\, normalización\, Azure
   SQL Database/Managed Instance
 DESCRIPTION:Semana 10 · Grupo online\nProfesor: Javier\nHorario: 18:30–2
- 1:00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/ca
- lendario
+ 1:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendar
+ io
 LOCATION:Online
 CATEGORIES:DP-900
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -200,18 +196,18 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem11@salvamiguel.github.io
+UID:ai-2627-online-sem11@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270119T183000
 DTEND;TZID=Europe/Madrid:20270119T210000
 SUMMARY:DP-900 · Datos no relacionales en Azure: Blob/Files/Tables\, Azure
   Cosmos DB
 DESCRIPTION:Semana 11 · Grupo online\nProfesor: Salva\nHorario: 18:30–21
- :00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/cal
- endario
+ :00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendari
+ o
 LOCATION:Online
 CATEGORIES:DP-900
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -222,18 +218,18 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem12@salvamiguel.github.io
+UID:ai-2627-online-sem12@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270126T183000
 DTEND;TZID=Europe/Madrid:20270126T210000
 SUMMARY:DP-900 · Cargas de trabajo analíticas: ingesta\, batch/streaming\
  , Power BI
 DESCRIPTION:Semana 12 · Grupo online\nProfesor: Salva\nHorario: 18:30–21
- :00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/cal
- endario
+ :00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendari
+ o
 LOCATION:Online
 CATEGORIES:DP-900
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -244,17 +240,17 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem13@salvamiguel.github.io
+UID:ai-2627-online-sem13@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270202T183000
 DTEND;TZID=Europe/Madrid:20270202T210000
 SUMMARY:DP-900 · Repaso general DP-900 + simulacro de examen
 DESCRIPTION:Semana 13 · Grupo online\nProfesor: Javier\nHorario: 18:30–2
- 1:00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/ca
- lendario
+ 1:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendar
+ io
 LOCATION:Online
 CATEGORIES:DP-900
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -265,18 +261,18 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem14@salvamiguel.github.io
+UID:ai-2627-online-sem14@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270209T183000
 DTEND;TZID=Europe/Madrid:20270209T210000
 SUMMARY:AI-901 · Conceptos de IA: IA responsable\, cargas de trabajo\, an
  álisis de texto\, voz y visión
 DESCRIPTION:Semana 14 · Grupo online\nProfesor: Javier\nHorario: 18:30–2
- 1:00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/ca
- lendario
+ 1:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendar
+ io
 LOCATION:Online
 CATEGORIES:AI-901
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -287,18 +283,18 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem15@salvamiguel.github.io
+UID:ai-2627-online-sem15@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270216T183000
 DTEND;TZID=Europe/Madrid:20270216T210000
 SUMMARY:AI-901 · Microsoft Foundry (I): apps y agentes generativos\, despl
  iegue de modelos\, SDKs
 DESCRIPTION:Semana 15 · Grupo online\nProfesor: Salva\nHorario: 18:30–21
- :00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/cal
- endario
+ :00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendari
+ o
 LOCATION:Online
 CATEGORIES:AI-901
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -309,18 +305,18 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem16@salvamiguel.github.io
+UID:ai-2627-online-sem16@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270223T183000
 DTEND;TZID=Europe/Madrid:20270223T210000
 SUMMARY:AI-901 · Microsoft Foundry (II): texto y voz\, modelos multimodale
  s
 DESCRIPTION:Semana 16 · Grupo online\nProfesor: Salva\nHorario: 18:30–21
- :00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/cal
- endario
+ :00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendari
+ o
 LOCATION:Online
 CATEGORIES:AI-901
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -331,18 +327,18 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem17@salvamiguel.github.io
+UID:ai-2627-online-sem17@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270302T183000
 DTEND;TZID=Europe/Madrid:20270302T210000
 SUMMARY:AI-901 · Microsoft Foundry (III): visión\, generación de imágen
  es\, extracción de información
 DESCRIPTION:Semana 17 · Grupo online\nProfesor: Javier\nHorario: 18:30–2
- 1:00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/ca
- lendario
+ 1:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendar
+ io
 LOCATION:Online
 CATEGORIES:AI-901
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -353,18 +349,18 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem18@salvamiguel.github.io
+UID:ai-2627-online-sem18@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270309T183000
 DTEND;TZID=Europe/Madrid:20270309T210000
 SUMMARY:AI-901 · Repaso general AI-901 + simulacro práctico (Python/REST/
  SDK)
 DESCRIPTION:Semana 18 · Grupo online\nProfesor: Javier\nHorario: 18:30–2
- 1:00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/ca
- lendario
+ 1:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendar
+ io
 LOCATION:Online
 CATEGORIES:AI-901
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -375,18 +371,18 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem19@salvamiguel.github.io
+UID:ai-2627-online-sem19@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270406T183000
 DTEND;TZID=Europe/Madrid:20270406T210000
 SUMMARY:Cierre · Simulacros combinados de las tres certificaciones + resol
  ución de dudas
 DESCRIPTION:Semana 19 · Grupo online\nProfesor: Salva\nHorario: 18:30–21
- :00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/cal
- endario
+ :00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendari
+ o
 LOCATION:Online
 CATEGORIES:Cierre
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0
@@ -397,17 +393,17 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem20@salvamiguel.github.io
+UID:ai-2627-online-sem20@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270413T183000
 DTEND;TZID=Europe/Madrid:20270413T210000
 SUMMARY:Cierre · Estrategia de examen\, dudas finales y cierre del módulo
 DESCRIPTION:Semana 20 · Grupo online\nProfesor: Javier\nHorario: 18:30–2
- 1:00\n\nCalendario completo: https://salvamiguel.github.io/materials/ai/ca
- lendario
+ 1:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendar
+ io
 LOCATION:Online
 CATEGORIES:Cierre
-URL:https://salvamiguel.github.io/materials/ai/calendario
+URL:https://salvamiguel.com/materials/ai/calendario
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 SEQUENCE:0

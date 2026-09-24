@@ -36,6 +36,9 @@ export const GRUPOS: Record<Grupo, GrupoInfo> = {
 /** Ruta pública (relativa al baseUrl) donde se sirven los .ics. */
 export const ICS_DIR = 'calendario';
 
+/** Host público para las URLs de suscripción y los enlaces dentro del .ics (en lugar de `siteConfig.url`). */
+export const ICS_HOST = 'https://salvamiguel.com';
+
 // Fijo para que el fichero generado sea idéntico entre builds si no cambian los datos.
 const DTSTAMP = '20260901T000000Z';
 
@@ -120,7 +123,7 @@ export function buildIcs(grupo: Grupo, pageUrl: string): string {
 
     lines.push(
       'BEGIN:VEVENT',
-      `UID:ai-2627-${grupo}-sem${String(s.n).padStart(2, '0')}@salvamiguel.github.io`,
+      `UID:ai-2627-${grupo}-sem${String(s.n).padStart(2, '0')}@salvamiguel.com`,
       `DTSTAMP:${DTSTAMP}`,
       `DTSTART;TZID=Europe/Madrid:${fechaHora(fecha, HORARIO.inicio)}`,
       `DTEND;TZID=Europe/Madrid:${fechaHora(fecha, HORARIO.fin)}`,

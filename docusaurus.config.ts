@@ -3,7 +3,7 @@ import path from 'path';
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config, LoadContext} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
-import {buildIcs, GRUPOS, ICS_DIR, type Grupo} from './src/components/ai/calendar/ics';
+import {buildIcs, GRUPOS, ICS_DIR, ICS_HOST, type Grupo} from './src/components/ai/calendar/ics';
 
 const config: Config = {
   title: 'Materials — DevOps · Cloud · Automation',
@@ -39,12 +39,12 @@ const config: Config = {
       return {
         name: 'ics-calendar',
         async loadContent() {
-          const {url, baseUrl} = context.siteConfig;
+          const {baseUrl} = context.siteConfig;
           const outDir = path.join(context.siteDir, 'static', ICS_DIR);
           fs.mkdirSync(outDir, {recursive: true});
           for (const grupo of Object.keys(GRUPOS) as Grupo[]) {
             const file = path.join(outDir, GRUPOS[grupo].archivo);
-            const ics = buildIcs(grupo, `${url}${baseUrl}ai/calendario`);
+            const ics = buildIcs(grupo, `${ICS_HOST}${baseUrl}ai/calendario`);
             // Solo escribe si cambia, para no disparar el watcher de static/ en `docusaurus start`.
             if (!fs.existsSync(file) || fs.readFileSync(file, 'utf8') !== ics) {
               fs.writeFileSync(file, ics);
