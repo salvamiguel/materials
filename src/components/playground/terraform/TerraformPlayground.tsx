@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import { SiTerraform } from 'react-icons/si';
 import HclEditor from './HclEditor';
 import Terminal, { type TermEntry } from '../shared/Terminal';
 import { shellSplit } from '../shared/shell';
@@ -384,7 +385,10 @@ export default function TerraformPlayground() {
     <div className={styles.playground}>
       <div className={styles.topbar}>
         <div className={styles.titleBlock}>
-          <h1 className={styles.title}>Terraform playground</h1>
+          <h1 className={styles.title}>
+            <SiTerraform className={`${styles.titleIcon} ${styles.titleIconTf}`} aria-hidden />
+            Terraform playground
+          </h1>
           <span
             className={`${styles.status} ${status === 'ready' ? styles.statusOk : status === 'error' ? styles.statusErr : ''}`}
             title={statusMsg}
