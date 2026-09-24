@@ -4,7 +4,17 @@ export type Grupo = 'online' | 'presencial';
 
 export const HORARIO = { inicio: '18:30', fin: '21:00' };
 
-export const GRUPOS: Record<Grupo, { archivo: string; nombre: string; dia: string; lugar: string }> = {
+export interface GrupoInfo {
+  archivo: string;
+  nombre: string;
+  dia: string;
+  /** LOCATION del .ics. */
+  lugar: string;
+  /** Líneas de dirección para mostrar en la tarjeta; sin ella se muestra `lugar`. */
+  direccion?: [string, string];
+}
+
+export const GRUPOS: Record<Grupo, GrupoInfo> = {
   online: {
     archivo: 'ai-26-27-online.ics',
     nombre: 'Máster IA 26/27 · Online',
@@ -15,7 +25,8 @@ export const GRUPOS: Record<Grupo, { archivo: string; nombre: string; dia: strin
     archivo: 'ai-26-27-presencial.ics',
     nombre: 'Máster IA 26/27 · Presencial',
     dia: 'Miércoles',
-    lugar: 'Universidad Europea de Valencia',
+    lugar: 'C/ de Guillem de Castro, 175, Extramurs, 46008 València, Valencia',
+    direccion: ['C/ de Guillem de Castro, 175', 'Extramurs, 46008 València'],
   },
 };
 
