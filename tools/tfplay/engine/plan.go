@@ -40,7 +40,7 @@ func (e *evaluator) planManaged(p *providerCtx, r *Resource, schema *Block, prio
 // replacement (random_*, null_resource, time_*).
 func forceNewProvider(source string) bool {
 	switch source {
-	case "hashicorp/random", "hashicorp/null", "hashicorp/time":
+	case "hashicorp/random", "hashicorp/null", "hashicorp/time", "hashicorp/local":
 		return true
 	}
 	return false

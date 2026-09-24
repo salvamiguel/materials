@@ -26,6 +26,9 @@ type Request struct {
 	Installed []string          `json:"installed"`
 	Workspace string            `json:"workspace"`
 	Destroy   bool              `json:"destroy"`
+	// Available lists providers that can be installed on demand (the
+	// browser only downloads a provider schema when init needs it).
+	Available []string `json:"available"`
 }
 
 type Diag struct {
@@ -330,14 +333,24 @@ func (en *Engine) cmdInit(req Request) Response {
 		for _, f := range failed {
 			out += fmt.Sprintf("- Finding latest version of %s...\n", f.Source)
 		}
+		availSet := map[string]bool{}
+		for src := range en.providers {
+			if src != builtinTerraformSource {
+				availSet[src] = true
+			}
+		}
+		for _, src := range req.Available {
+			availSet[src] = true
+		}
+		avail := sortedKeys(availSet)
 		var d hcl.Diagnostics
 		for _, f := range failed {
 			d = append(d, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Failed to query available provider packages",
 				Detail: fmt.Sprintf("Could not retrieve the list of available versions for provider %s: provider registry registry.terraform.io does not have a provider named %s\n\n"+
-					"The playground can only install hashicorp/aws, hashicorp/random, hashicorp/null and the built-in terraform provider. You can also describe your own provider in a *.provider.json file.",
-					f.Source, registryAddr(f.Source)),
+					"The playground can only install %s and the built-in terraform provider. You can also describe your own provider in a *.provider.json file.",
+					f.Source, registryAddr(f.Source), strings.Join(avail, ", ")),
 			})
 		}
 		resp := diagResponse(cfg, d, out)

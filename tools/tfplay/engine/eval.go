@@ -541,7 +541,7 @@ func (e *evaluator) expand(mi *modInstance, count, forEach hcl.Expression, what 
 		}
 		v, _ = v.UnmarkDeep()
 		if !v.IsKnown() && e.validating {
-			return []instKey{{Key: cty.UnknownVal(cty.Number)}}, "", true
+			return []instKey{{Key: cty.UnknownVal(cty.Number)}}, "unknown", true
 		}
 		if !v.IsKnown() {
 			e.diags = append(e.diags, &hcl.Diagnostic{
@@ -588,7 +588,7 @@ func (e *evaluator) expand(mi *modInstance, count, forEach hcl.Expression, what 
 		}
 		v, _ = v.UnmarkDeep()
 		if e.validating && !v.IsWhollyKnown() {
-			return []instKey{{Key: cty.UnknownVal(cty.String), Each: cty.DynamicVal}}, "", true
+			return []instKey{{Key: cty.UnknownVal(cty.String), Each: cty.DynamicVal}}, "unknown", true
 		}
 		ty := v.Type()
 		if v.IsNull() {
@@ -640,6 +640,9 @@ func (e *evaluator) expand(mi *modInstance, count, forEach hcl.Expression, what 
 
 func assemble(mode string, keys []instKey, vals []cty.Value) cty.Value {
 	switch mode {
+	case "unknown":
+		// validate with an unknown count / for_each: the shape is unknown too
+		return cty.DynamicVal
 	case "count":
 		if len(vals) == 0 {
 			return cty.EmptyTupleVal

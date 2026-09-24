@@ -1,6 +1,10 @@
 package engine
 
 import (
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -98,7 +102,8 @@ func (e *evaluator) finalize(p *providerCtx, rtype, addr, name string, schema *B
 	}
 	seed := []string{addr, e.prior.Lineage, fmt.Sprint(e.prior.Serial)}
 	if isData {
-		seed = []string{addr}
+		// The same query returns the same data, wherever it is made from.
+		seed = []string{rtype, planned.GoString()}
 	}
 	m := &mocker{
 		e: e, p: p, rtype: rtype, name: name, schema: schema, rng: newRNG(seed...),
@@ -553,6 +558,31 @@ func (m *mocker) special(isData bool) {
 		setIfUnknown("base64", cty.StringVal(base64.StdEncoding.EncodeToString(b)))
 		setIfUnknown("hex", cty.StringVal(hex.EncodeToString(b)))
 		setIfUnknown("id", cty.StringVal("none"))
+	case "local_file", "local_sensitive_file":
+		content := getStr("content", "")
+		if content == "" {
+			content = getStr("sensitive_content", "")
+		}
+		if b64 := getStr("content_base64", ""); b64 != "" {
+			if raw, err := base64.StdEncoding.DecodeString(b64); err == nil {
+				content = string(raw)
+			}
+		}
+		b := []byte(content)
+		s1, s256, s512, m5 := sha1.Sum(b), sha256.Sum256(b), sha512.Sum512(b), md5.Sum(b)
+		setIfUnknown("id", cty.StringVal(hex.EncodeToString(s1[:])))
+		setIfUnknown("content_sha1", cty.StringVal(hex.EncodeToString(s1[:])))
+		setIfUnknown("content_sha256", cty.StringVal(hex.EncodeToString(s256[:])))
+		setIfUnknown("content_sha512", cty.StringVal(hex.EncodeToString(s512[:])))
+		setIfUnknown("content_md5", cty.StringVal(hex.EncodeToString(m5[:])))
+		setIfUnknown("content_base64sha256", cty.StringVal(base64.StdEncoding.EncodeToString(s256[:])))
+		setIfUnknown("content_base64sha512", cty.StringVal(base64.StdEncoding.EncodeToString(s512[:])))
+		if isData {
+			if f, ok := m.e.files[strings.TrimPrefix(getStr("filename", ""), "./")]; ok {
+				setIfUnknown("content", cty.StringVal(f))
+				setIfUnknown("content_base64", cty.StringVal(base64.StdEncoding.EncodeToString([]byte(f))))
+			}
+		}
 	case "aws_iam_policy_document":
 		doc := policyDocument(m.vals)
 		pretty, _ := json.MarshalIndent(doc, "", "  ")

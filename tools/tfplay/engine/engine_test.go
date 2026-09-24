@@ -105,6 +105,11 @@ resource "aws_instance" "i" {
   instance_type = "t3.micro"
 }
 `})
+	s.files["main.tf"] += `
+resource "aws_eip" "e" {
+  instance = aws_instance.i[0].id
+}
+`
 	r := s.run("validate")
 	mustContain(t, r.Output, "Success! The configuration is valid.")
 	s.files["main.tf"] += `

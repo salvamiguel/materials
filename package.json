@@ -12,7 +12,9 @@
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "build:wasm": "bash tools/tfplay/build-wasm.sh",
+    "test:wasm": "cd tools/tfplay && go test ./..."
   },
   "dependencies": {
     "@docusaurus/core": "^3.10.0",
