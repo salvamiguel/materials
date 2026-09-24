@@ -59,6 +59,7 @@ export const BUNDLED_PROVIDERS: Record<string, string> = {
   'hashicorp/random': 'random',
   'hashicorp/null': 'null',
   'hashicorp/local': 'local',
+  'hashicorp/google': 'google',
 };
 
 type Pending = { resolve: (v: any) => void; reject: (e: Error) => void };

@@ -35,10 +35,11 @@ tools/tfplay/
 
 Los proveedores son genéricos y se describen con JSON:
 
-- `hashicorp/aws`, `random`, `null` y `local` se generan con `providers/generate.sh`
-  a partir del esquema real. Como el JSON de Terraform no incluye `ForceNew` ni
-  los valores por defecto, `schemagen` los extrae del código fuente del proveedor
-  AWS. `providers/meta/*.json` añade plantillas para inventar IDs/ARNs verosímiles
+- `hashicorp/aws`, `hashicorp/google`, `random`, `null` y `local` se generan con
+  `providers/generate.sh` a partir del esquema real. Como el JSON de Terraform no
+  incluye `ForceNew` ni los valores por defecto, `schemagen` los extrae del código
+  fuente de los proveedores AWS y Google (incluidos los helpers de CustomizeDiff
+  de Google que rellenan `project`/`region`/`zone`/`deletion_policy`). `providers/meta/*.json` añade plantillas para inventar IDs/ARNs verosímiles
   en el apply (`{hex:16}`, `{region}`, `{attr:bucket}`...).
 - `terraform_data` es el proveedor builtin.
 - El usuario puede crear los suyos en un fichero `*.provider.json`:

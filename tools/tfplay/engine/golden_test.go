@@ -116,6 +116,9 @@ func TestGolden(t *testing.T) {
 				if err != nil {
 					t.Fatalf("%s: %v (run with -update to generate)", step, err)
 				}
+				if os.Getenv("TFPLAY_DUMP") != "" {
+					os.WriteFile(filepath.Join(os.Getenv("TFPLAY_DUMP"), c.Name()+"-"+filepath.Base(step)+".txt"), []byte(resp.Output), 0o644)
+				}
 				if got, want := normalize(resp.Output), normalize(string(exp)); got != want {
 					t.Errorf("%s: plan differs from real terraform\n%s", filepath.Base(step), lineDiff(want, got))
 				}

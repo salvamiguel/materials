@@ -92,8 +92,8 @@ func TestInitRequired(t *testing.T) {
 	if !strings.Contains(r.Files[".terraform.lock.hcl"], `provider "registry.terraform.io/hashicorp/aws"`) {
 		t.Errorf("missing lock file: %v", r.Files)
 	}
-	r = en.Run(Request{Command: "init", Files: map[string]string{"main.tf": `resource "google_storage_bucket" "b" {}`}})
-	mustContain(t, r.Output, "Failed to query available provider packages", "hashicorp/google")
+	r = en.Run(Request{Command: "init", Files: map[string]string{"main.tf": `resource "azurerm_resource_group" "rg" {}`}})
+	mustContain(t, r.Output, "Failed to query available provider packages", "hashicorp/azurerm")
 }
 
 func TestValidate(t *testing.T) {

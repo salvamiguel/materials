@@ -32,11 +32,14 @@ type ProviderSchema struct {
 
 // Block describes the body of a resource, data source, provider or nested block.
 type Block struct {
-	SchemaVersion int                        `json:"schema_version,omitempty"`
-	Description   string                     `json:"description,omitempty"`
-	Attributes    map[string]*Attribute      `json:"attributes,omitempty"`
-	Blocks        map[string]*NestedBlock    `json:"blocks,omitempty"`
-	Mock          map[string]json.RawMessage `json:"mock,omitempty"`
+	SchemaVersion int `json:"schema_version,omitempty"`
+	// ProviderDefaults lists attributes (project, region, zone) that take
+	// the provider configuration's value when unset.
+	ProviderDefaults []string                   `json:"provider_defaults,omitempty"`
+	Description      string                     `json:"description,omitempty"`
+	Attributes       map[string]*Attribute      `json:"attributes,omitempty"`
+	Blocks           map[string]*NestedBlock    `json:"blocks,omitempty"`
+	Mock             map[string]json.RawMessage `json:"mock,omitempty"`
 
 	implied cty.Type
 	spec    hcldec.Spec

@@ -95,7 +95,7 @@ Todo ocurre en tu navegador: los recursos son simulados, nadie crea
 infraestructura real ni se necesitan credenciales.`;
 
 const WELCOME = `Terraform playground: el motor (Go + hashicorp/hcl compilado a WebAssembly)
-se ejecuta en tu navegador. Proveedores: aws (completo, ${'≈'}1700 recursos),
+se ejecuta en tu navegador. Proveedores: aws (≈1700 recursos), google (≈1350),
 random, null, local, terraform_data y los que definas en *.provider.json.
 Escribe "help" o usa los botones. Empieza por "init".`;
 
@@ -576,9 +576,10 @@ function HowItWorks() {
           en Terraform. Los valores que solo existen tras crear algo aparecen como <i>(known after apply)</i>.
         </li>
         <li>
-          <b>Proveedores simulados</b>: el esquema de <code>hashicorp/aws</code> es el real (unos 1700 recursos), así que
-          Terraform sabe qué argumentos existen, cuáles son obligatorios y cuáles fuerzan un reemplazo. Al hacer{' '}
-          <code>apply</code> se inventan identificadores y ARNs verosímiles.
+          <b>Proveedores simulados</b>: los esquemas de <code>hashicorp/aws</code> (unos 1700 recursos) y{' '}
+          <code>hashicorp/google</code> (unos 1350) son los reales, así que Terraform sabe qué argumentos existen,
+          cuáles son obligatorios y cuáles fuerzan un reemplazo. Al hacer <code>apply</code> se inventan
+          identificadores, ARNs, <code>self_link</code> e IPs verosímiles.
         </li>
         <li>
           <b>Estado</b>: se guarda en tu navegador. Puedes editarlo para simular cambios hechos a mano en la consola

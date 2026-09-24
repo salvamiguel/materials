@@ -151,6 +151,137 @@ output "ip_publica" {
     },
   },
   {
+    id: 'gcp',
+    label: 'Red en GCP: VPC, firewall y Compute Engine',
+    description: 'Proveedor google: project/region/zone heredados, labels, IAM y un reemplazo al cambiar la imagen.',
+    files: {
+      'main.tf': `terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 8.0"
+    }
+  }
+}
+
+provider "google" {
+  project = var.proyecto
+  region  = "europe-west1"
+  zone    = "europe-west1-b"
+
+  default_labels = {
+    curso = "terraform"
+  }
+}
+
+resource "google_compute_network" "vpc" {
+  name                    = "\${var.entorno}-vpc"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "app" {
+  name          = "\${var.entorno}-app"
+  ip_cidr_range = cidrsubnet(var.rango, 8, 1)
+  network       = google_compute_network.vpc.id
+}
+
+resource "google_compute_firewall" "web" {
+  name    = "\${var.entorno}-web"
+  network = google_compute_network.vpc.name
+
+  dynamic "allow" {
+    for_each = var.puertos
+    content {
+      protocol = "tcp"
+      ports    = [tostring(allow.value)]
+    }
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["web"]
+}
+
+resource "google_service_account" "vm" {
+  account_id   = "\${var.entorno}-vm"
+  display_name = "Cuenta de la VM"
+}
+
+resource "google_project_iam_member" "logs" {
+  project = var.proyecto
+  role    = "roles/logging.logWriter"
+  member  = google_service_account.vm.member
+}
+
+# Prueba: tras el apply, cambia machine_type (update in-place)
+# y luego la imagen (el disco de arranque fuerza un reemplazo).
+resource "google_compute_instance" "web" {
+  name         = "\${var.entorno}-web"
+  machine_type = "e2-micro"
+  tags         = ["web"]
+
+  labels = {
+    entorno = var.entorno
+  }
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+    }
+  }
+
+  network_interface {
+    subnetwork = google_compute_subnetwork.app.id
+    access_config {}
+  }
+
+  service_account {
+    email  = google_service_account.vm.email
+    scopes = ["cloud-platform"]
+  }
+}
+
+resource "google_storage_bucket" "estaticos" {
+  name                        = "\${var.proyecto}-\${var.entorno}-estaticos"
+  location                    = "EU"
+  uniform_bucket_level_access = true
+  force_destroy               = true
+}
+`,
+      'variables.tf': `variable "proyecto" {
+  type    = string
+  default = "mi-proyecto-curso"
+}
+
+variable "entorno" {
+  type    = string
+  default = "dev"
+}
+
+variable "rango" {
+  type    = string
+  default = "10.10.0.0/16"
+}
+
+variable "puertos" {
+  type    = list(number)
+  default = [80, 443]
+}
+`,
+      'outputs.tf': `output "ip_publica" {
+  value = google_compute_instance.web.network_interface[0].access_config[0].nat_ip
+}
+
+output "cuenta_servicio" {
+  value = google_service_account.vm.email
+}
+
+output "bucket" {
+  value = google_storage_bucket.estaticos.url
+}
+`,
+    },
+  },
+  {
     id: 's3',
     label: 'S3 con for_each y políticas IAM',
     description: 'for_each sobre un map de objetos, recursos condicionales y un data source que genera JSON.',

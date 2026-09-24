@@ -78,10 +78,11 @@ type pgProvider struct {
 }
 
 type pgBlock struct {
-	SchemaVersion int                        `json:"schema_version,omitempty"`
-	Attributes    map[string]*pgAttribute    `json:"attributes,omitempty"`
-	Blocks        map[string]*pgNestedBlock  `json:"blocks,omitempty"`
-	Mock          map[string]json.RawMessage `json:"mock,omitempty"`
+	SchemaVersion    int                        `json:"schema_version,omitempty"`
+	ProviderDefaults []string                   `json:"provider_defaults,omitempty"`
+	Attributes       map[string]*pgAttribute    `json:"attributes,omitempty"`
+	Blocks           map[string]*pgNestedBlock  `json:"blocks,omitempty"`
+	Mock             map[string]json.RawMessage `json:"mock,omitempty"`
 }
 
 type pgAttribute struct {
@@ -111,6 +112,7 @@ func main() {
 	srcDir := flag.String("src", "", "optional provider source dir to extract ForceNew/Default")
 	metaPath := flag.String("meta", "", "optional JSON with mock templates: {resources:{type:{attr:tpl}}, data_sources:{...}}")
 	include := flag.String("include", "", "optional comma-separated list of resource/data source type prefixes to keep")
+	iamRules := flag.Bool("google-iam", false, "apply the ForceNew rules of terraform-provider-google's generated IAM resources")
 	out := flag.String("out", "", "output file (.json or .json.gz)")
 	flag.Parse()
 
@@ -159,6 +161,12 @@ func main() {
 		info := extracted[t]
 		b := convertBlock(s.Block, info, "")
 		b.SchemaVersion = s.Version
+		if ri, ok := info[""]; ok {
+			b.ProviderDefaults = ri.ProviderDefaults
+			if a := b.Attributes["deletion_policy"]; a != nil && ri.DeletionPolicy != "" {
+				a.Default, _ = json.Marshal(ri.DeletionPolicy)
+			}
+		}
 		res.Resources[t] = b
 		for _, i := range info {
 			if i.ForceNew {
@@ -168,6 +176,15 @@ func main() {
 				stats.defaults++
 			}
 		}
+	}
+	if *iamRules {
+		n := 0
+		for t, b := range res.Resources {
+			if googleIAM(t, b) {
+				n++
+			}
+		}
+		log.Printf("applied IAM ForceNew rules to %d resources", n)
 	}
 	for t, s := range p.DataSourceSchemas {
 		if !keep(t) {
@@ -256,7 +273,7 @@ func convertBlock(b *tfBlock, info map[string]attrInfo, prefix string) *pgBlock 
 			Nesting:  bt.NestingMode,
 			MinItems: bt.MinItems,
 			MaxItems: bt.MaxItems,
-			Computed: info[prefix+n].Computed,
+			Computed: info[prefix+n].Computed && !info[prefix+n].Suppressed,
 		}
 		nb.pgBlock = *convertBlock(bt.Block, info, prefix+n+".")
 		out.Blocks[n] = nb
@@ -274,7 +291,9 @@ func convertAttr(a *tfAttribute, info map[string]attrInfo, path string) *pgAttri
 	}
 	if i, ok := info[path]; ok && !(a.Computed && !a.Optional) {
 		pa.ForceNew = i.ForceNew
-		if i.Default != nil && !a.Required {
+		// A nested default behind a DiffSuppressFunc is not planned on create
+		// (e.g. google_compute_instance boot_disk.force_attach).
+		if i.Default != nil && !a.Required && !(i.Suppressed && strings.Contains(path, ".")) {
 			pa.Default = i.Default
 		}
 	}
@@ -299,4 +318,35 @@ func check(err error) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+// googleIAM mirrors tpgiamresource: in *_iam_member / *_iam_binding /
+// *_iam_policy / *_iam_audit_config the role, the member, the condition and
+// every identifier of the parent resource force a replacement. Only the
+// member list of a binding, the policy document and audit configs update in
+// place.
+func googleIAM(t string, b *pgBlock) bool {
+	kinds := []string{"_iam_member", "_iam_binding", "_iam_policy", "_iam_audit_config"}
+	match := false
+	for _, k := range kinds {
+		if strings.HasSuffix(t, k) {
+			match = true
+		}
+	}
+	if !match {
+		return false
+	}
+	inPlace := map[string]bool{"members": true, "policy_data": true, "etag": true, "id": true}
+	for name, a := range b.Attributes {
+		if inPlace[name] || (a.Computed && !a.Optional) {
+			continue
+		}
+		a.ForceNew = true
+	}
+	if c, ok := b.Blocks["condition"]; ok {
+		for _, a := range c.Attributes {
+			a.ForceNew = true
+		}
+	}
+	return true
 }

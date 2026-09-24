@@ -553,6 +553,51 @@ func (e *evaluator) planHook(p *providerCtx, rtype string, schema *Block, prior,
 				}
 			}
 		}
+	case "hashicorp/google", "hashicorp/google-beta":
+		// CustomizeDiff DefaultProviderProject / Region / Zone.
+		for _, n := range schema.ProviderDefaults {
+			a, ok := schema.Attributes[n]
+			if !ok || !a.Computed || !config.GetAttr(n).IsNull() {
+				continue
+			}
+			if v := p.stringConfig(n); v != "" && (prior.IsNull() || !attrs[n].IsKnown() || attrs[n].IsNull()) {
+				set(n, cty.StringVal(v))
+			}
+		}
+		if rtype == "google_service_account" {
+			// CustomizeDiff: the email is derived from account_id and project.
+			id, proj := attrs["account_id"], attrs["project"]
+			if id.IsKnown() && !id.IsNull() && proj.IsKnown() && !proj.IsNull() && !attrs["email"].IsKnown() {
+				email := id.AsString() + "@" + proj.AsString() + ".iam.gserviceaccount.com"
+				set("email", cty.StringVal(email))
+				set("member", cty.StringVal("serviceAccount:"+email))
+			}
+		}
+		// labels -> terraform_labels / effective_labels
+		if _, ok := schema.Attributes["terraform_labels"]; ok && !isData {
+			labels := attrs["labels"]
+			if labels.IsKnown() {
+				merged := p.googleDefaultLabels()
+				if !labels.IsNull() {
+					for it := labels.ElementIterator(); it.Next(); {
+						k, v := it.Element()
+						merged[k.AsString()] = v
+					}
+				}
+				if p.googleAttributionLabel() {
+					merged["goog-terraform-provisioned"] = cty.StringVal("true")
+				}
+				if len(merged) > 0 {
+					set("terraform_labels", cty.MapVal(merged))
+					if _, ok := schema.Attributes["effective_labels"]; ok {
+						set("effective_labels", cty.MapVal(merged))
+					}
+				}
+			} else {
+				set("terraform_labels", cty.UnknownVal(cty.Map(cty.String)))
+				set("effective_labels", cty.UnknownVal(cty.Map(cty.String)))
+			}
+		}
 	case builtinTerraformSource:
 		if rtype == "terraform_data" {
 			// output mirrors input, but only becomes known after apply.
@@ -567,4 +612,41 @@ func (e *evaluator) planHook(p *providerCtx, rtype string, schema *Block, prior,
 		}
 	}
 	return cty.ObjectVal(attrs)
+}
+
+func (p *providerCtx) stringConfig(name string) string {
+	if p.Config.IsNull() || !p.Config.IsKnown() || !p.Config.Type().HasAttribute(name) {
+		return ""
+	}
+	v := p.Config.GetAttr(name)
+	if v.IsNull() || !v.IsKnown() || v.Type() != cty.String {
+		return ""
+	}
+	return v.AsString()
+}
+
+func (p *providerCtx) googleDefaultLabels() map[string]cty.Value {
+	out := map[string]cty.Value{}
+	if p.Config.IsNull() || !p.Config.Type().HasAttribute("default_labels") {
+		return out
+	}
+	dl := p.Config.GetAttr("default_labels")
+	if dl.IsNull() || !dl.IsKnown() {
+		return out
+	}
+	for it := dl.ElementIterator(); it.Next(); {
+		k, v := it.Element()
+		out[k.AsString()] = v
+	}
+	return out
+}
+
+// googleAttributionLabel: add_terraform_attribution_label defaults to true
+// and adds goog-terraform-provisioned = "true" to resources being created.
+func (p *providerCtx) googleAttributionLabel() bool {
+	if p.Config.IsNull() || !p.Config.Type().HasAttribute("add_terraform_attribution_label") {
+		return true
+	}
+	v := p.Config.GetAttr("add_terraform_attribution_label")
+	return v.IsNull() || !v.IsKnown() || v.True()
 }

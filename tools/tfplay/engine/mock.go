@@ -93,6 +93,9 @@ type mocker struct {
 	vals      map[string]cty.Value
 	resolving map[string]bool
 	aws       bool
+	google    bool
+	project   string
+	zone      string
 	region    string
 }
 
@@ -108,10 +111,35 @@ func (e *evaluator) finalize(p *providerCtx, rtype, addr, name string, schema *B
 	m := &mocker{
 		e: e, p: p, rtype: rtype, name: name, schema: schema, rng: newRNG(seed...),
 		vals: planned.AsValueMap(), resolving: map[string]bool{},
-		aws: p.Source == "hashicorp/aws",
+		aws:    p.Source == "hashicorp/aws",
+		google: p.Source == "hashicorp/google" || p.Source == "hashicorp/google-beta",
 	}
 	if m.vals == nil {
 		m.vals = map[string]cty.Value{}
+	}
+	if m.google {
+		m.region, m.project, m.zone = p.stringConfig("region"), p.stringConfig("project"), p.stringConfig("zone")
+		if m.project == "" {
+			m.project = "playground-project"
+		}
+		if m.region == "" {
+			m.region = "us-central1"
+		}
+		for _, n := range []string{"project", "region", "zone"} {
+			if v, ok := m.vals[n]; ok && v.IsKnown() && !v.IsNull() && v.Type() == cty.String && v.AsString() != "" {
+				switch n {
+				case "project":
+					m.project = v.AsString()
+				case "region":
+					m.region = v.AsString()
+				case "zone":
+					m.zone = v.AsString()
+				}
+			}
+		}
+		if m.zone == "" {
+			m.zone = m.region + "-b"
+		}
 	}
 	if m.aws {
 		m.region = p.awsRegion()
@@ -167,7 +195,13 @@ func (m *mocker) fillDeep(v cty.Value) cty.Value {
 				break
 			}
 		}
-		return m.generic(name, v.Type()), nil
+		// Each nested value gets its own seed so the result does not depend
+		// on the (map) iteration order of cty.Transform.
+		saved := m.rng
+		m.rng = newRNG(fmt.Sprint(saved.s), pathString(path))
+		out := m.generic(name, v.Type())
+		m.rng = saved
+		return out, nil
 	})
 	if err != nil {
 		return v
@@ -233,6 +267,10 @@ func (m *mocker) render(s string) string {
 			return m.str("id")
 		case "region":
 			return m.region
+		case "project":
+			return m.project
+		case "zone":
+			return m.zone
 		case "account":
 			return mockAccountID
 		case "partition":
@@ -368,6 +406,9 @@ func (m *mocker) generic(name string, ty cty.Type) cty.Value {
 }
 
 func (m *mocker) genericString(name string) string {
+	if m.google {
+		return m.googleString(name)
+	}
 	if !m.aws {
 		if name == "id" {
 			return seededUUID(m.rng.next())
@@ -583,6 +624,30 @@ func (m *mocker) special(isData bool) {
 				setIfUnknown("content_base64", cty.StringVal(base64.StdEncoding.EncodeToString([]byte(f))))
 			}
 		}
+	case "google_iam_policy":
+		type binding struct {
+			Members []string `json:"members"`
+			Role    string   `json:"role"`
+		}
+		var bindings []binding
+		if bs := m.vals["binding"]; bs.IsKnown() && !bs.IsNull() {
+			for it := bs.ElementIterator(); it.Next(); {
+				_, b := it.Element()
+				var members []string
+				if ms := b.GetAttr("members"); !ms.IsNull() && ms.IsKnown() {
+					for mit := ms.ElementIterator(); mit.Next(); {
+						_, mv := mit.Element()
+						members = append(members, mv.AsString())
+					}
+				}
+				sort.Strings(members)
+				bindings = append(bindings, binding{Members: members, Role: b.GetAttr("role").AsString()})
+			}
+		}
+		sort.Slice(bindings, func(i, j int) bool { return bindings[i].Role < bindings[j].Role })
+		doc, _ := json.Marshal(map[string]any{"bindings": bindings})
+		setIfUnknown("policy_data", cty.StringVal(string(doc)))
+		setIfUnknown("id", cty.StringVal(fmt.Sprint(int(crc32.ChecksumIEEE(doc)))))
 	case "aws_iam_policy_document":
 		doc := policyDocument(m.vals)
 		pretty, _ := json.MarshalIndent(doc, "", "  ")
@@ -752,4 +817,69 @@ func (e *evaluator) logApply(c *Change, result cty.Value) {
 		e.log = append(e.log, fmt.Sprintf("%s: Destroying... [id=%s]", c.Addr, oldID))
 		e.log = append(e.log, fmt.Sprintf("%s: Destruction complete after 1s", c.Addr))
 	}
+}
+
+// googleString invents GCP-looking values for attributes without template.
+func (m *mocker) googleString(name string) string {
+	short := strings.TrimPrefix(m.rtype, "google_")
+	kind := short
+	if i := strings.IndexByte(short, '_'); i > 0 {
+		kind = short[i+1:]
+	}
+	camel := ""
+	for i, part := range strings.Split(kind, "_") {
+		if i > 0 && part != "" {
+			part = strings.ToUpper(part[:1]) + part[1:]
+		}
+		camel += part
+	}
+	switch {
+	case name == "id":
+		n := m.str("name")
+		if n == "" {
+			n = m.rng.chars(10, lowerChars)
+		}
+		loc := "global"
+		if _, ok := m.vals["zone"]; ok {
+			loc = "zones/" + m.zone
+		} else if _, ok := m.vals["region"]; ok {
+			loc = "regions/" + m.region
+		} else if l := m.str("location"); l != "" {
+			loc = "locations/" + l
+		}
+		return fmt.Sprintf("projects/%s/%s/%ss/%s", m.project, loc, camel, n)
+	case name == "self_link":
+		id := m.str("id")
+		if strings.HasPrefix(short, "compute_") {
+			return "https://www.googleapis.com/compute/v1/" + id
+		}
+		return "https://" + strings.SplitN(short, "_", 2)[0] + ".googleapis.com/v1/" + id
+	case name == "project" || strings.HasSuffix(name, "_project"):
+		return m.project
+	case name == "region":
+		return m.region
+	case name == "zone":
+		return m.zone
+	case name == "nat_ip" || strings.HasSuffix(name, "public_ip_address") || name == "public_ip":
+		return fmt.Sprintf("34.%d.%d.%d", m.rng.intn(256), m.rng.intn(256), 1+m.rng.intn(254))
+	case name == "network_ip" || name == "gateway_address" || strings.HasSuffix(name, "private_ip_address") || name == "internal_ip":
+		return fmt.Sprintf("10.%d.%d.%d", m.rng.intn(256), m.rng.intn(256), 2+m.rng.intn(250))
+	case strings.HasSuffix(name, "_timestamp") || name == "create_time" || name == "update_time" || name == "creation_time":
+		return m.e.now.UTC().Format("2006-01-02T15:04:05.000-07:00")
+	case strings.HasSuffix(name, "fingerprint"):
+		return m.rng.chars(11, alnumChars) + "="
+	case name == "etag":
+		return "BwY" + m.rng.chars(9, alnumChars) + "="
+	case name == "unique_id" || name == "numeric_id" || name == "instance_id" || strings.HasSuffix(name, "network_id") || name == "project_number" || name == "number":
+		return m.rng.chars(19, digitChars)
+	case name == "name":
+		return "nic0"
+	case name == "cpu_platform":
+		return "Intel Broadwell"
+	case name == "current_status" || name == "status" || name == "state":
+		return "RUNNING"
+	case name == "direction":
+		return "INGRESS"
+	}
+	return ""
 }

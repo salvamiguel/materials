@@ -234,21 +234,28 @@ func (r *renderer) body(b *Block, before, after cty.Value, indent int, mode stri
 
 	// Nested blocks.
 	hiddenBlocks := 0
-	var chunks [][]string
+	// Blocks of the same type are rendered together; a blank line separates
+	// different block types.
+	var groups [][][]string
 	for _, n := range b.sortedBlockNames() {
 		nb := b.Blocks[n]
 		et := ty.AttributeType(n)
 		bv, av := objAttr(before, n, et), objAttr(after, n, et)
 		p := append(copyPath(path), cty.GetAttrStep{Name: n})
 		c, h := r.blockChunks(n, nb, bv, av, indent, mode, p)
-		chunks = append(chunks, c...)
+		if len(c) > 0 {
+			groups = append(groups, c)
+		}
 		hiddenBlocks += h
 	}
-	for i, c := range chunks {
+	chunks := groups
+	for i, g := range groups {
 		if i > 0 || wroteAttrs {
 			r.add("")
 		}
-		r.lines = append(r.lines, c...)
+		for _, c := range g {
+			r.lines = append(r.lines, c...)
+		}
 	}
 	if hiddenBlocks > 0 {
 		if wroteAttrs || len(chunks) > 0 {

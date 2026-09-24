@@ -20,14 +20,21 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
 
 type attrInfo struct {
-	ForceNew bool
-	Computed bool
-	Default  json.RawMessage
+	ForceNew   bool
+	Computed   bool
+	Suppressed bool // has a DiffSuppressFunc: defaults/computed blocks don't show at create
+	Default    json.RawMessage
+	// Resource level (stored under the "" key): terraform-provider-google's
+	// CustomizeDiff helpers DefaultProviderProject/Region/Zone and
+	// DefaultProviderDeletionPolicy("X").
+	ProviderDefaults []string
+	DeletionPolicy   string
 }
 
 var annotationRe = regexp.MustCompile(`@(SDKResource|FrameworkResource)\("([a-z0-9_]+)"`)
@@ -60,7 +67,18 @@ func extractFromSource(root string) (map[string]map[string]attrInfo, error) {
 	}
 
 	result := map[string]map[string]attrInfo{}
-	serviceRoot := filepath.Join(root, "internal", "service")
+	// terraform-provider-aws keeps services in internal/service,
+	// terraform-provider-google in google/services.
+	var serviceRoot string
+	for _, cand := range []string{filepath.Join(root, "internal", "service"), filepath.Join(root, "google", "services")} {
+		if st, err := os.Stat(cand); err == nil && st.IsDir() {
+			serviceRoot = cand
+			break
+		}
+	}
+	if serviceRoot == "" {
+		return nil, os.ErrNotExist
+	}
 	dirs, err := os.ReadDir(serviceRoot)
 	if err != nil {
 		return nil, err
@@ -89,6 +107,29 @@ func extractFromSource(root string) (map[string]map[string]attrInfo, error) {
 			}
 		}
 		x.pkg = p
+		roots := map[*ast.FuncDecl][]string{}
+		for _, f := range files {
+			for name, fd := range registrySchemas(f, p) {
+				roots[fd] = append(roots[fd], name)
+			}
+		}
+		for fd, names := range roots {
+			info := map[string]attrInfo{}
+			for _, body := range x.reachable(fd) {
+				x.walk(body, "", info)
+			}
+			providerHelpers(x.reachableAll(fd), info)
+			for _, n := range names {
+				out := result[n]
+				if out == nil {
+					out = map[string]attrInfo{}
+					result[n] = out
+				}
+				for k, v := range info {
+					out[k] = v
+				}
+			}
+		}
 		for _, fd := range p.funcs {
 			if fd.Doc == nil {
 				continue
@@ -101,6 +142,7 @@ func extractFromSource(root string) (map[string]map[string]attrInfo, error) {
 			for _, body := range x.reachable(fd) {
 				x.walk(body, "", info)
 			}
+			providerHelpers(x.reachableAll(fd), info)
 			// One function can register several aliases (aws_lb / aws_alb).
 			for _, m := range matches {
 				out := result[m[2]]
@@ -292,6 +334,8 @@ func (x *extractor) inspectAttr(v ast.Expr, path string, out map[string]attrInfo
 			if b, ok := kv.Value.(*ast.Ident); ok && b.Name == "true" {
 				info.Computed, found = true, true
 			}
+		case "DiffSuppressFunc":
+			info.Suppressed, found = true, true
 		case "PlanModifiers":
 			ast.Inspect(kv.Value, func(n ast.Node) bool {
 				if call, ok := n.(*ast.CallExpr); ok {
@@ -360,4 +404,92 @@ func (x *extractor) literal(e ast.Expr) json.RawMessage {
 		}
 	}
 	return nil
+}
+
+// registrySchemas finds the registrations used by terraform-provider-google:
+//
+//	registry.Schema{Name: "google_x", Type: registry.SchemaTypeResource, Schema: ResourceX()}.Register()
+func registrySchemas(f *ast.File, p *pkgInfo) map[string]*ast.FuncDecl {
+	out := map[string]*ast.FuncDecl{}
+	ast.Inspect(f, func(n ast.Node) bool {
+		cl, ok := n.(*ast.CompositeLit)
+		if !ok {
+			return true
+		}
+		sel, ok := cl.Type.(*ast.SelectorExpr)
+		if !ok || sel.Sel.Name != "Schema" {
+			return true
+		}
+		var name string
+		var fn *ast.FuncDecl
+		isResource := false
+		for _, elt := range cl.Elts {
+			kv, ok := elt.(*ast.KeyValueExpr)
+			if !ok {
+				continue
+			}
+			key, ok := kv.Key.(*ast.Ident)
+			if !ok {
+				continue
+			}
+			switch key.Name {
+			case "Name":
+				if bl, ok := kv.Value.(*ast.BasicLit); ok && bl.Kind == token.STRING {
+					name, _ = strconv.Unquote(bl.Value)
+				}
+			case "Type":
+				if ts, ok := kv.Value.(*ast.SelectorExpr); ok && ts.Sel.Name == "SchemaTypeResource" {
+					isResource = true
+				}
+			case "Schema":
+				if call, ok := kv.Value.(*ast.CallExpr); ok {
+					if id, ok := call.Fun.(*ast.Ident); ok {
+						fn = p.funcs[id.Name]
+					}
+				}
+			}
+		}
+		if name != "" && fn != nil && isResource {
+			out[name] = fn
+		}
+		return true
+	})
+	return out
+}
+
+// reachableAll is like reachable but does not skip CustomizeDiff and friends.
+func (x *extractor) reachableAll(fd *ast.FuncDecl) []ast.Node {
+	saved := skipKeys
+	skipKeys = map[string]bool{"StateUpgraders": true, "MigrateState": true}
+	defer func() { skipKeys = saved }()
+	return x.reachable(fd)
+}
+
+func providerHelpers(bodies []ast.Node, info map[string]attrInfo) {
+	res := info[""]
+	seen := map[string]bool{}
+	for _, b := range bodies {
+		ast.Inspect(b, func(n ast.Node) bool {
+			switch v := n.(type) {
+			case *ast.CallExpr:
+				if sel, ok := v.Fun.(*ast.SelectorExpr); ok && sel.Sel.Name == "DefaultProviderDeletionPolicy" && len(v.Args) == 1 {
+					if bl, ok := v.Args[0].(*ast.BasicLit); ok && bl.Kind == token.STRING {
+						res.DeletionPolicy, _ = strconv.Unquote(bl.Value)
+					}
+				}
+			case *ast.SelectorExpr:
+				for _, attr := range []string{"Project", "Region", "Zone"} {
+					if v.Sel.Name == "DefaultProvider"+attr && !seen[attr] {
+						seen[attr] = true
+						res.ProviderDefaults = append(res.ProviderDefaults, strings.ToLower(attr))
+					}
+				}
+			}
+			return true
+		})
+	}
+	if res.DeletionPolicy != "" || len(res.ProviderDefaults) > 0 {
+		sort.Strings(res.ProviderDefaults)
+		info[""] = res
+	}
 }
