@@ -39,6 +39,8 @@ export const ICS_DIR = 'calendario';
 /** Host público para las URLs de suscripción y los enlaces dentro del .ics (en lugar de `siteConfig.url`). */
 export const ICS_HOST = 'https://salvamiguel.com';
 
+const EVENT_PREFIX = 'Master AI - Módulo Certificaciones - UEV - ';
+
 // Fijo para que el fichero generado sea idéntico entre builds si no cambian los datos.
 const DTSTAMP = '20260901T000000Z';
 
@@ -127,7 +129,7 @@ export function buildIcs(grupo: Grupo, pageUrl: string): string {
       `DTSTAMP:${DTSTAMP}`,
       `DTSTART;TZID=Europe/Madrid:${fechaHora(fecha, HORARIO.inicio)}`,
       `DTEND;TZID=Europe/Madrid:${fechaHora(fecha, HORARIO.fin)}`,
-      `SUMMARY:${escapeText(`${cert.label} · ${s.tema}`)}`,
+      `SUMMARY:${escapeText(`${EVENT_PREFIX}${cert.label} · ${s.tema}`)}`,
       `DESCRIPTION:${escapeText(descripcion)}`,
       `LOCATION:${escapeText(g.lugar)}`,
       `CATEGORIES:${escapeText(cert.label)}`,

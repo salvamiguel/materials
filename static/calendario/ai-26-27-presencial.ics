@@ -31,8 +31,9 @@ UID:ai-2627-presencial-sem01@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261021T183000
 DTEND;TZID=Europe/Madrid:20261021T210000
-SUMMARY:Arranque · Presentación del módulo\, mapa de las tres certificac
- iones y alta de cuentas AWS/Azure
+SUMMARY:Master AI - Módulo Certificaciones - UEV - Arranque · Presentaci
+ ón del módulo\, mapa de las tres certificaciones y alta de cuentas AWS/A
+ zure
 DESCRIPTION:Semana 1 · Grupo presencial\nProfesor: Salva\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -54,8 +55,8 @@ UID:ai-2627-presencial-sem02@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261028T183000
 DTEND;TZID=Europe/Madrid:20261028T210000
-SUMMARY:Arranque · Nivelación técnica: datos\, Python/notebooks y consol
- as cloud para las prácticas
+SUMMARY:Master AI - Módulo Certificaciones - UEV - Arranque · Nivelación
+  técnica: datos\, Python/notebooks y consolas cloud para las prácticas
 DESCRIPTION:Semana 2 · Grupo presencial\nProfesor: Javier\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -77,7 +78,8 @@ UID:ai-2627-presencial-sem03@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261104T183000
 DTEND;TZID=Europe/Madrid:20261104T210000
-SUMMARY:AWS AIP · Dominio 1 · Fundamentos de IA y machine learning (20 %)
+SUMMARY:Master AI - Módulo Certificaciones - UEV - AWS AIP · Dominio 1 ·
+  Fundamentos de IA y machine learning (20 %)
 DESCRIPTION:Semana 3 · Grupo presencial\nProfesor: Salva\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -99,7 +101,8 @@ UID:ai-2627-presencial-sem04@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261111T183000
 DTEND;TZID=Europe/Madrid:20261111T210000
-SUMMARY:AWS AIP · Dominio 2 · Fundamentos de IA generativa (24 %)
+SUMMARY:Master AI - Módulo Certificaciones - UEV - AWS AIP · Dominio 2 ·
+  Fundamentos de IA generativa (24 %)
 DESCRIPTION:Semana 4 · Grupo presencial\nProfesor: Salva\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -121,8 +124,8 @@ UID:ai-2627-presencial-sem05@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261118T183000
 DTEND;TZID=Europe/Madrid:20261118T210000
-SUMMARY:AWS AIP · Dominio 3 (I) · Aplicaciones de foundation models: prom
- pting y RAG (28 %)
+SUMMARY:Master AI - Módulo Certificaciones - UEV - AWS AIP · Dominio 3 (I
+ ) · Aplicaciones de foundation models: prompting y RAG (28 %)
 DESCRIPTION:Semana 5 · Grupo presencial\nProfesor: Javier\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -144,8 +147,8 @@ UID:ai-2627-presencial-sem06@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261125T183000
 DTEND;TZID=Europe/Madrid:20261125T210000
-SUMMARY:AWS AIP · Dominio 3 (II) · Evaluación\, personalización y Amazo
- n Bedrock (28 %)
+SUMMARY:Master AI - Módulo Certificaciones - UEV - AWS AIP · Dominio 3 (I
+ I) · Evaluación\, personalización y Amazon Bedrock (28 %)
 DESCRIPTION:Semana 6 · Grupo presencial\nProfesor: Javier\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -167,8 +170,8 @@ UID:ai-2627-presencial-sem07@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261202T183000
 DTEND;TZID=Europe/Madrid:20261202T210000
-SUMMARY:AWS AIP · Dominios 4 y 5 · IA responsable\, seguridad\, cumplimie
- nto y gobernanza (28 %)
+SUMMARY:Master AI - Módulo Certificaciones - UEV - AWS AIP · Dominios 4 y
+  5 · IA responsable\, seguridad\, cumplimiento y gobernanza (28 %)
 DESCRIPTION:Semana 7 · Grupo presencial\nProfesor: Salva\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -190,7 +193,8 @@ UID:ai-2627-presencial-sem08@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261209T183000
 DTEND;TZID=Europe/Madrid:20261209T210000
-SUMMARY:AWS AIP · Repaso general AWS AI Practitioner + simulacro de examen
+SUMMARY:Master AI - Módulo Certificaciones - UEV - AWS AIP · Repaso gener
+ al AWS AI Practitioner + simulacro de examen
 DESCRIPTION:Semana 8 · Grupo presencial\nProfesor: Salva\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -212,8 +216,8 @@ UID:ai-2627-presencial-sem09@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261216T183000
 DTEND;TZID=Europe/Madrid:20261216T210000
-SUMMARY:DP-900 · Fundamentos de datos: estructurados\, semiestructurados y
-  no estructurados\; roles
+SUMMARY:Master AI - Módulo Certificaciones - UEV - DP-900 · Fundamentos d
+ e datos: estructurados\, semiestructurados y no estructurados\; roles
 DESCRIPTION:Semana 9 · Grupo presencial\nProfesor: Javier\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -235,8 +239,8 @@ UID:ai-2627-presencial-sem10@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270113T183000
 DTEND;TZID=Europe/Madrid:20270113T210000
-SUMMARY:DP-900 · Datos relacionales en Azure: SQL\, normalización\, Azure
-  SQL Database/Managed Instance
+SUMMARY:Master AI - Módulo Certificaciones - UEV - DP-900 · Datos relacio
+ nales en Azure: SQL\, normalización\, Azure SQL Database/Managed Instance
 DESCRIPTION:Semana 10 · Grupo presencial\nProfesor: Javier\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -258,8 +262,8 @@ UID:ai-2627-presencial-sem11@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270120T183000
 DTEND;TZID=Europe/Madrid:20270120T210000
-SUMMARY:DP-900 · Datos no relacionales en Azure: Blob/Files/Tables\, Azure
-  Cosmos DB
+SUMMARY:Master AI - Módulo Certificaciones - UEV - DP-900 · Datos no rela
+ cionales en Azure: Blob/Files/Tables\, Azure Cosmos DB
 DESCRIPTION:Semana 11 · Grupo presencial\nProfesor: Salva\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -281,8 +285,8 @@ UID:ai-2627-presencial-sem12@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270127T183000
 DTEND;TZID=Europe/Madrid:20270127T210000
-SUMMARY:DP-900 · Cargas de trabajo analíticas: ingesta\, batch/streaming\
- , Power BI
+SUMMARY:Master AI - Módulo Certificaciones - UEV - DP-900 · Cargas de tra
+ bajo analíticas: ingesta\, batch/streaming\, Power BI
 DESCRIPTION:Semana 12 · Grupo presencial\nProfesor: Salva\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -304,7 +308,8 @@ UID:ai-2627-presencial-sem13@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270203T183000
 DTEND;TZID=Europe/Madrid:20270203T210000
-SUMMARY:DP-900 · Repaso general DP-900 + simulacro de examen
+SUMMARY:Master AI - Módulo Certificaciones - UEV - DP-900 · Repaso genera
+ l DP-900 + simulacro de examen
 DESCRIPTION:Semana 13 · Grupo presencial\nProfesor: Javier\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -326,8 +331,9 @@ UID:ai-2627-presencial-sem14@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270210T183000
 DTEND;TZID=Europe/Madrid:20270210T210000
-SUMMARY:AI-901 · Conceptos de IA: IA responsable\, cargas de trabajo\, an
- álisis de texto\, voz y visión
+SUMMARY:Master AI - Módulo Certificaciones - UEV - AI-901 · Conceptos de 
+ IA: IA responsable\, cargas de trabajo\, análisis de texto\, voz y visió
+ n
 DESCRIPTION:Semana 14 · Grupo presencial\nProfesor: Javier\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -349,8 +355,8 @@ UID:ai-2627-presencial-sem15@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270217T183000
 DTEND;TZID=Europe/Madrid:20270217T210000
-SUMMARY:AI-901 · Microsoft Foundry (I): apps y agentes generativos\, despl
- iegue de modelos\, SDKs
+SUMMARY:Master AI - Módulo Certificaciones - UEV - AI-901 · Microsoft Fou
+ ndry (I): apps y agentes generativos\, despliegue de modelos\, SDKs
 DESCRIPTION:Semana 15 · Grupo presencial\nProfesor: Salva\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -372,8 +378,8 @@ UID:ai-2627-presencial-sem16@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270224T183000
 DTEND;TZID=Europe/Madrid:20270224T210000
-SUMMARY:AI-901 · Microsoft Foundry (II): texto y voz\, modelos multimodale
- s
+SUMMARY:Master AI - Módulo Certificaciones - UEV - AI-901 · Microsoft Fou
+ ndry (II): texto y voz\, modelos multimodales
 DESCRIPTION:Semana 16 · Grupo presencial\nProfesor: Salva\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -395,8 +401,9 @@ UID:ai-2627-presencial-sem17@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270303T183000
 DTEND;TZID=Europe/Madrid:20270303T210000
-SUMMARY:AI-901 · Microsoft Foundry (III): visión\, generación de imágen
- es\, extracción de información
+SUMMARY:Master AI - Módulo Certificaciones - UEV - AI-901 · Microsoft Fou
+ ndry (III): visión\, generación de imágenes\, extracción de informaci
+ ón
 DESCRIPTION:Semana 17 · Grupo presencial\nProfesor: Javier\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -418,8 +425,8 @@ UID:ai-2627-presencial-sem18@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270310T183000
 DTEND;TZID=Europe/Madrid:20270310T210000
-SUMMARY:AI-901 · Repaso general AI-901 + simulacro práctico (Python/REST/
- SDK)
+SUMMARY:Master AI - Módulo Certificaciones - UEV - AI-901 · Repaso genera
+ l AI-901 + simulacro práctico (Python/REST/SDK)
 DESCRIPTION:Semana 18 · Grupo presencial\nProfesor: Javier\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -441,8 +448,8 @@ UID:ai-2627-presencial-sem19@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270407T183000
 DTEND;TZID=Europe/Madrid:20270407T210000
-SUMMARY:Cierre · Simulacros combinados de las tres certificaciones + resol
- ución de dudas
+SUMMARY:Master AI - Módulo Certificaciones - UEV - Cierre · Simulacros co
+ mbinados de las tres certificaciones + resolución de dudas
 DESCRIPTION:Semana 19 · Grupo presencial\nProfesor: Salva\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
@@ -464,7 +471,8 @@ UID:ai-2627-presencial-sem20@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270414T183000
 DTEND;TZID=Europe/Madrid:20270414T210000
-SUMMARY:Cierre · Estrategia de examen\, dudas finales y cierre del módulo
+SUMMARY:Master AI - Módulo Certificaciones - UEV - Cierre · Estrategia de
+  examen\, dudas finales y cierre del módulo
 DESCRIPTION:Semana 20 · Grupo presencial\nProfesor: Javier\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
