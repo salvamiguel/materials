@@ -1,19 +1,30 @@
 import React from 'react';
-import { FaAws } from 'react-icons/fa';
-import { VscLinkExternal } from 'react-icons/vsc';
+import type { IconType } from 'react-icons';
+import {
+  FaAws,
+  FaFlask,
+  FaBookOpen,
+  FaComments,
+  FaGamepad,
+  FaTrophy,
+  FaClipboardCheck,
+  FaRoute,
+  FaArrowRight,
+  FaExternalLinkAlt,
+} from 'react-icons/fa';
 
 import styles from './SkillBuilderLab.module.css';
 
 type Tipo = 'lab' | 'curso' | 'simulearn' | 'cloud-quest' | 'jam' | 'examen' | 'plan';
 
-const TIPOS: Record<Tipo, string> = {
-  lab: 'Lab',
-  curso: 'Curso',
-  simulearn: 'AWS SimuLearn',
-  'cloud-quest': 'AWS Cloud Quest',
-  jam: 'AWS Jam',
-  examen: 'Examen de práctica',
-  plan: 'Plan de aprendizaje',
+const TIPOS: Record<Tipo, { label: string; cta: string; icon: IconType; className: string }> = {
+  lab: { label: 'Lab', cta: 'Abrir laboratorio', icon: FaFlask, className: styles.tipoLab },
+  curso: { label: 'Curso', cta: 'Abrir curso', icon: FaBookOpen, className: styles.tipoCurso },
+  simulearn: { label: 'AWS SimuLearn', cta: 'Abrir simulación', icon: FaComments, className: styles.tipoSimulearn },
+  'cloud-quest': { label: 'AWS Cloud Quest', cta: 'Jugar', icon: FaGamepad, className: styles.tipoQuest },
+  jam: { label: 'AWS Jam', cta: 'Entrar al Jam', icon: FaTrophy, className: styles.tipoJam },
+  examen: { label: 'Examen de práctica', cta: 'Hacer examen', icon: FaClipboardCheck, className: styles.tipoExamen },
+  plan: { label: 'Plan de aprendizaje', cta: 'Ver plan', icon: FaRoute, className: styles.tipoPlan },
 };
 
 interface SkillBuilderLabProps {
@@ -37,23 +48,43 @@ function abrirVentana(e: React.MouseEvent<HTMLAnchorElement>, url: string) {
 }
 
 export default function SkillBuilderLab({ title, url, tipo = 'lab', children }: SkillBuilderLabProps) {
+  const t = TIPOS[tipo];
+  const Icon = t.icon;
+
   return (
     <div className={styles.card}>
-      <FaAws className={styles.icon} aria-hidden="true" />
-      <div className={styles.body}>
-        <span className={styles.tipo}>AWS Skill Builder · {TIPOS[tipo]}</span>
-        <span className={styles.title}>{title}</span>
-        {children && <div className={styles.desc}>{children}</div>}
+      <FaAws className={styles.watermark} aria-hidden="true" />
+
+      <div className={styles.header}>
+        <div className={styles.logo} aria-hidden="true">
+          <FaAws />
+        </div>
+        <div className={styles.brand}>
+          <span className={styles.brandName}>AWS Skill Builder</span>
+          <span className={`${styles.tipo} ${t.className}`}>
+            <Icon aria-hidden="true" /> {t.label}
+          </span>
+        </div>
       </div>
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={styles.btn}
-        onClick={(e) => abrirVentana(e, url)}
-      >
-        Abrir <VscLinkExternal />
-      </a>
+
+      <div className={styles.title}>{title}</div>
+      {children && <div className={styles.desc}>{children}</div>}
+
+      <div className={styles.footer}>
+        <span className={styles.meta}>
+          <FaExternalLinkAlt aria-hidden="true" /> skillbuilder.aws · nueva ventana
+        </span>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.cta}
+          onClick={(e) => abrirVentana(e, url)}
+          aria-label={`${t.cta}: ${title} (se abre en una ventana nueva)`}
+        >
+          {t.cta} <FaArrowRight className={styles.arrow} aria-hidden="true" />
+        </a>
+      </div>
     </div>
   );
 }
