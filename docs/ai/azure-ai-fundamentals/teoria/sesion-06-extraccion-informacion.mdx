@@ -1,0 +1,64 @@
+---
+sidebar_position: 6
+title: "Extraccion de Informacion con Foundry"
+description: "Azure Content Understanding en Foundry Tools: extraer informacion de documentos, imagenes, audio y video."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# Extraccion de Informacion con Foundry
+
+Esta es la segunda mitad de "Microsoft Foundry (III)": extraer datos con valor de negocio a partir de contenido no estructurado — documentos, imagenes, audio y video — con **Azure Content Understanding**. Es un area nueva en el examen: AI-900 no la tenia como bloque propio, y en AI-901 es uno de los cuatro subdominios de implementacion con Foundry.
+
+## 1. Que es la extraccion de informacion
+
+La extraccion de informacion va un paso mas alla del OCR clasico (que solo lee texto de una imagen): consiste en identificar y extraer **datos con estructura y significado** a partir de contenido no estructurado o semiestructurado — por ejemplo, no solo leer el texto de una factura, sino identificar cuales de esos textos son el numero de factura, la fecha, el importe total y el NIF del proveedor, listos para cargarlos en un sistema.
+
+## 2. Azure Content Understanding
+
+**Azure Content Understanding**, una de las Foundry Tools, esta pensado precisamente para esto: se define un esquema de los campos que se quieren extraer (por ejemplo, "numero de factura", "fecha", "importe total") y el servicio analiza el contenido de entrada para rellenar ese esquema, funcionando sobre varios tipos de contenido:
+
+### Documentos y formularios
+
+Extrae campos estructurados de documentos como facturas, contratos, formularios o recibos: identifica pares clave-valor, tablas y firmas, y los devuelve en un formato estructurado (por ejemplo JSON) listo para integrarse con otros sistemas.
+
+### Imagenes
+
+Extrae informacion de imagenes que contienen datos relevantes mas alla del texto simple — por ejemplo, identificar el estado de un panel de control en una foto, o leer y estructurar los datos de una tarjeta de identificacion o una matricula.
+
+### Audio y video
+
+Extrae informacion de grabaciones de audio o video: transcripcion con marcas de tiempo, identificacion de quien habla (diarizacion), o deteccion de momentos clave dentro de una grabacion (por ejemplo, cuando se menciona un producto concreto en la llamada de un contact center).
+
+## 3. Construir una app ligera con extraccion de informacion
+
+El patron de integracion es el mismo que ya hemos visto para texto, voz y vision: se define el esquema de extraccion, se envia el contenido (documento, imagen, audio o video) al endpoint de Content Understanding, y se recibe una respuesta estructurada con los campos solicitados — que la aplicacion puede validar, mostrar o guardar directamente en una base de datos.
+
+## 4. Casos de uso tipicos
+
+| Tipo de contenido | Ejemplo de extraccion | Caso de uso |
+|---|---|---|
+| Documentos/formularios | Numero de factura, fecha, importe, NIF | Automatizar la contabilidad, digitalizar formularios en papel |
+| Imagenes | Datos de una tarjeta de identificacion, estado de un medidor | Verificacion de identidad, mantenimiento remoto |
+| Audio | Transcripcion, quien habla, temas mencionados | Analisis de llamadas de un contact center |
+| Video | Momentos clave, objetos o texto en pantalla | Indexar contenido multimedia, control de calidad en video |
+
+:::info Importante para el examen
+Si el escenario pide "leer texto de una imagen" sin mas, piensa en OCR/Image Analysis (sesion de vision). Si pide "convertir un documento, imagen, audio o video en datos estructurados con campos concretos" (numero de factura, quien habla, etc.), piensa en **Azure Content Understanding**.
+:::
+
+<MSLearnPath
+  tipo="modulo"
+  title="Introduction to AI-powered information extraction concepts"
+  url="https://learn.microsoft.com/en-us/training/modules/introduction-information-extraction/"
+>
+  Modulo conceptual (ruta "AI concepts"): que es la extraccion de informacion y que problemas resuelve.
+</MSLearnPath>
+
+<MSLearnPath
+  tipo="modulo"
+  title="Get started with AI-powered information extraction in Azure"
+  url="https://learn.microsoft.com/en-us/training/modules/get-started-information-extraction/"
+>
+  Implementacion practica: usar Azure Content Understanding en Foundry Tools para extraer informacion de documentos, imagenes, audio y video.
+</MSLearnPath>

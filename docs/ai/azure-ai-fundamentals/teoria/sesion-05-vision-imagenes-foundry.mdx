@@ -1,14 +1,14 @@
 ---
-sidebar_position: 2
-title: "Computer Vision y Azure AI Foundry"
-description: "Azure AI Vision, Custom Vision (clasificacion y deteccion de objetos) y una vision general de Azure AI Foundry: modelos, herramientas, agentes y RAG."
+sidebar_position: 5
+title: "Vision y Generacion de Imagenes con Foundry"
+description: "Azure Computer Vision, Custom Vision, y como Microsoft Foundry interpreta y genera contenido visual con modelos multimodales."
 ---
 
 import MSLearnPath from '@site/src/components/shared/MSLearnPath';
 
-# Computer Vision y Azure AI Foundry
+# Vision y Generacion de Imagenes con Foundry
 
-Esta es la parte practica de AI-901: pasamos de los conceptos generales de IA y la evaluacion de modelos a servicios concretos de Azure. Primero, como construir modelos de imagen a medida con Azure AI Custom Vision; despues, como Azure AI Foundry ayuda a gestionar soluciones de IA modernas de extremo a extremo. El foco esta en conceptos y flujos de trabajo, no en codigo.
+Esta sesion es "Microsoft Foundry (III)" del temario: la primera mitad, centrada en vision. Primero repasamos como construir modelos de imagen a medida con Azure AI Custom Vision (el enfoque clasico, todavia vigente en Azure aunque el examen ya no lo detalla tanto como AI-900); despues vemos como Microsoft Foundry interpreta y genera contenido visual con modelos multimodales, que es lo que realmente evalua AI-901 en este bloque. El foco esta en conceptos y flujos de trabajo, no en codigo.
 
 ## 1. Objetivos de la sesion
 
@@ -16,8 +16,8 @@ Esta es la parte practica de AI-901: pasamos de los conceptos generales de IA y 
 - Explicar cuando usar un modelo de vision prediseñado frente a uno personalizado.
 - Describir las capacidades de Azure AI Custom Vision.
 - Entender el flujo basico para entrenar y desplegar un modelo de Custom Vision.
-- Introducir Azure AI Foundry y sus componentes principales.
-- Relacionar estos servicios con los escenarios del examen AI-901.
+- Interpretar entradas visuales en prompts usando un modelo multimodal desplegado en Foundry.
+- Generar nuevas salidas visuales con modelos generativos de imagen.
 
 ## 2. Servicios de Azure Computer Vision
 
@@ -25,8 +25,6 @@ Esta es la parte practica de AI-901: pasamos de los conceptos generales de IA y 
 - **OCR / Document Intelligence:** lee y extrae texto y estructura de imagenes y documentos.
 - **Funciones relacionadas con rostros y personas:** detectan y analizan personas o rostros, sujeto a politicas de IA responsable y restricciones regionales.
 - **Custom Vision:** permite construir tus propios modelos de clasificacion de imagenes o deteccion de objetos con etiquetas personalizadas.
-
-AI-901 se centra en elegir el servicio correcto para cada escenario.
 
 ## 3. Que es Azure AI Custom Vision
 
@@ -76,52 +74,34 @@ En la nube, se publica una iteracion y se obtiene una URL y una clave de predicc
 Precision responde a "de lo que predije como positivo, cuanto era correcto"; recall responde a "de todo lo que era realmente positivo, cuanto detecte". No los confundas.
 :::
 
-## 5. Azure AI Foundry: vision general
+## 5. Vision multimodal en Microsoft Foundry
 
-Azure AI Foundry es la plataforma unificada de Microsoft en Azure para construir y gestionar aplicaciones de IA. Sus areas principales son los **modelos fundacionales** (LLMs, vision, embeddings, etc.), las **herramientas de IA** (vision, voz, lenguaje, busqueda, procesamiento de documentos) y los **agentes y flujos de IA** que orquestan modelos y herramientas.
+AI-901 pone el foco en un enfoque distinto al de Custom Vision: en lugar de entrenar un clasificador propio, se usa un **modelo multimodal** (que entiende texto e imagen a la vez) ya desplegado en Foundry, y se le pasa una imagen dentro del propio prompt.
 
-### Por que Azure AI Foundry
+- **Interpretar entradas visuales:** se envia una imagen (o varias) junto con una instruccion de texto al modelo multimodal — por ejemplo, "describe lo que ves en esta imagen" o "extrae la matricula de este coche" — y el modelo responde combinando ambas modalidades, sin necesidad de entrenar nada previamente.
+- **Casos de uso tipicos:** describir el contenido de una foto, responder preguntas sobre una imagen (visual question answering), comparar varias imagenes, o servir de primer paso para clasificacion o deteccion cuando no merece la pena entrenar un modelo de Custom Vision a medida.
+- **Cuando preferir esto sobre Custom Vision:** cuando las categorias no estan fijadas de antemano, cuando se necesita razonar sobre la imagen (no solo etiquetarla), o cuando no hay presupuesto de tiempo para recopilar y etiquetar un dataset propio.
 
-- **Experiencia unificada:** un unico lugar para explorar modelos, disenar soluciones y desplegar endpoints.
-- **Plataforma de nivel empresarial:** seguridad, gobernanza y cumplimiento integrados con los controles estandar de Azure.
-- **Productividad y colaboracion:** ayuda a los equipos a prototipar rapido, iterar y llevar soluciones a produccion de forma estructurada.
+### Generacion de imagenes
 
-### Elementos centrales
+Foundry tambien da acceso a **modelos generativos de imagen**, que crean contenido visual nuevo a partir de una descripcion en texto (text-to-image) o a partir de una imagen de partida (edicion, variaciones, expansion de la escena). Al igual que con los modelos de texto, se prueban primero en el playground del modelo, ajustando el prompt y parametros como el tamano o el estilo de salida, antes de integrarlos en una aplicacion.
 
-- **Modelos:** modelos fundacionales de texto, chat, vision y embeddings (Azure OpenAI y otros).
-- **Foundry Tools:** servicios como Vision, Speech, Language, Translator, Document Intelligence y busqueda.
-- **Agentes:** copilotos de IA que pueden invocar herramientas y APIs para completar tareas de varios pasos.
-
-El **catalogo de modelos** de Foundry reune modelos de Azure OpenAI (chat, completions, embeddings) junto con otros modelos de Microsoft y de partners (incluyendo modelos de vision o especializados); se puede filtrar por tarea (chat, QA, resumen, clasificacion, generacion...) y abrir un playground directamente desde la pagina de cada modelo para probarlo. El **playground de prompts** es un entorno interactivo para probar prompts con el modelo elegido, configurando el mensaje de sistema, la temperatura, el maximo de tokens y ajustes de seguridad, util para disenar y validar prompts antes de construir la aplicacion o el agente completo.
-
-### Flujos, orquestacion y RAG
-
-Los **flujos de IA** permiten definir pipelines multi-paso (recuperar -> razonar -> actuar -> responder), combinando LLMs, almacenes de busqueda o vectoriales, APIs externas y llamadas a herramientas, habilitando copilotos capaces de planificar y usar herramientas para tareas complejas de extremo a extremo.
-
-Foundry tambien facilita conectar modelos a datos empresariales (Blob Storage, Data Lake, Fabric y otras fuentes). El patron de **grounding / Retrieval-Augmented Generation (RAG)** recupera documentos o fragmentos relevantes y los pasa al modelo como contexto, lo que produce respuestas mas precisas, actualizadas y especificas de la organizacion, con mas transparencia sobre de donde viene cada respuesta.
-
-### Seguridad, gobernanza y despliegue
-
-El acceso se integra con RBAC de Azure, redes privadas, politicas e identidad; los filtros de seguridad aplican moderacion de contenido sobre entradas y salidas; y la monitorizacion registra uso, latencia, errores y senales de calidad de los endpoints y apps de IA, ayudando a implementar principios de IA responsable en produccion.
-
-Para el despliegue, Foundry ofrece **endpoints gestionados** (APIs de chat, completion o flujos de IA a medida) que se integran con apps web y moviles, servicios backend, Logic Apps, Power Apps o Power Automate, siguiendo los mismos principios de Azure (grupos de recursos, regiones, etiquetas, monitorizacion y gestion de costes) que cualquier otra carga de trabajo.
-
-:::tip AI-901 vs el antiguo AI-900
-El examen AI-900 fue retirado el 30 de junio de 2026. Su sucesor, **AI-901**, mantiene la certificacion "Azure AI Fundamentals" pero cambia el enfoque: ya no basta con describir servicios de IA, un 55-60% del examen evalua implementar soluciones sobre **Microsoft Foundry** (desplegar un modelo, construir un cliente ligero, crear y probar un agente). A diferencia de AI-900, que no exigia saber programar, AI-901 espera sintaxis basica de Python. Esta sesion es la puerta de entrada a esa parte practica; el programa del modulo tiene la comparativa completa AI-900 vs AI-901.
+:::tip Para el examen
+AI-901 evalua "interpretar" y "generar" contenido visual con modelos multimodales/generativos de Foundry, no los detalles de entrenamiento de Custom Vision. Custom Vision sigue siendo un servicio real y util en Azure, pero ya no es el centro de gravedad del examen — dedicale mas tiempo de estudio a la parte de Foundry.
 :::
-
-<MSLearnPath
-  tipo="ruta"
-  title="Get started with AI applications and agents on Azure"
-  url="https://learn.microsoft.com/en-us/training/paths/get-started-ai-apps-agents/"
->
-  Ruta oficial de Microsoft Learn (7 modulos, gratis): primeros pasos en Microsoft Foundry, IA generativa y agentes, texto, voz, vision, extraccion de informacion y Foundry IQ. Cubre directamente la parte "Implement AI solutions by using Microsoft Foundry" del examen AI-901.
-</MSLearnPath>
 
 <MSLearnPath
   tipo="modulo"
   title="Get started with computer vision in Azure"
   url="https://learn.microsoft.com/en-us/training/modules/get-started-vision-azure/"
 >
-  Modulo especifico sobre capacidades de vision en Foundry: analizar imagenes y generar contenido visual con modelos multimodales, de generacion de imagen y de video.
+  Modulo especifico sobre capacidades de vision en Foundry: analizar imagenes y generar contenido visual con modelos multimodales, de generacion de imagen y de video. Es la base directa de esta sesion.
+</MSLearnPath>
+
+<MSLearnPath
+  tipo="modulo"
+  title="Introduction to computer vision concepts"
+  url="https://learn.microsoft.com/en-us/training/modules/introduction-computer-vision/"
+>
+  Modulo conceptual previo (parte de la ruta "AI concepts"): que es la vision artificial y que tareas resuelve, antes de entrar en Foundry.
 </MSLearnPath>

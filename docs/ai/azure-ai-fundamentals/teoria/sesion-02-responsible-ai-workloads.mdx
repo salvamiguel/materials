@@ -1,0 +1,82 @@
+---
+sidebar_position: 2
+title: "IA Responsable y Cargas de Trabajo"
+description: "Los seis principios de IA responsable de Microsoft y como identificar cargas de trabajo de IA: texto, voz y vision."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# IA Responsable y Cargas de Trabajo
+
+Esta sesion cierra el bloque de conceptos de AI-901 (dominio "Identify AI concepts and capabilities"): los principios de IA responsable y como reconocer los tipos de carga de trabajo de IA mas comunes — analisis de texto, voz y vision — antes de entrar, en las proximas sesiones, en como implementarlos con Microsoft Foundry.
+
+## 1. Por que importa la IA responsable
+
+Cuanto mas capaces y accesibles se vuelven los modelos de IA, mas facil es tambien que causen dano si se disenan o se despliegan sin cuidado: decisiones sesgadas, respuestas inseguras, filtraciones de datos sensibles o sistemas opacos que nadie sabe explicar. Microsoft organiza sus practicas de IA responsable alrededor de seis principios, y AI-901 espera que sepas reconocerlos y aplicarlos a un escenario concreto.
+
+## 2. Los seis principios
+
+- **Fairness (equidad):** un sistema de IA debe tratar a todas las personas de forma justa, sin reforzar sesgos existentes en los datos de entrenamiento (por ejemplo, un modelo de contratacion que penalice sistematicamente a un grupo demografico por estar infrarrepresentado en los datos historicos).
+- **Reliability & safety (fiabilidad y seguridad):** el sistema debe funcionar de forma consistente y segura, incluso ante entradas inesperadas o casos limite; esto es especialmente critico en escenarios de alto riesgo (salud, vehiculos autonomos, infraestructura).
+- **Privacy & security (privacidad y seguridad):** los datos personales usados para entrenar o consultar el modelo deben protegerse — cifrado, control de acceso, minimizacion de datos — y el sistema debe resistir intentos de extraer esos datos del modelo.
+- **Inclusiveness (inclusion):** las soluciones de IA deben tener en cuenta a la mayor diversidad posible de personas, incluyendo idiomas, capacidades y contextos culturales distintos.
+- **Transparency (transparencia):** las personas deben poder entender como y por que un sistema de IA toma una decision, y saber cuando estan interactuando con IA en lugar de con una persona.
+- **Accountability (responsabilidad):** debe existir siempre una persona u organizacion que rinda cuentas por como se comporta el sistema de IA, con gobernanza y supervision claras.
+
+:::tip Conectando con la sesion anterior
+En la sesion de introduccion a la IA ya vimos "garbage in, garbage out": datos sesgados producen modelos sesgados. Eso es exactamente el principio de **fairness** en la practica — la calidad y representatividad de los datos de entrenamiento es la primera linea de defensa.
+:::
+
+### Como se aplican estos principios en la practica
+
+- **Human-in-the-loop:** mantener a una persona revisando o aprobando decisiones de alto impacto en lugar de automatizarlas por completo.
+- **Filtros de contenido:** los servicios de Azure AI y Microsoft Foundry incluyen filtros de seguridad que moderan entradas y salidas para bloquear contenido daño, discurso de odio o intentos de manipular al modelo (prompt injection).
+- **Documentacion y transparencia de modelo:** tarjetas de modelo (model cards) que describen capacidades, limitaciones y usos previstos de cada modelo del catalogo.
+- **Evaluacion continua:** medir el comportamiento del sistema en produccion, no solo en el momento de lanzarlo, porque el mundo real cambia.
+
+:::info Importante para el examen
+Ante un escenario de examen, identifica primero **que** salio mal (¿un dato sensible expuesto? ¿una decision injusta? ¿nadie entiende por que respondio asi?) y asocialo al principio correspondiente: expone datos -> privacy & security; decision sesgada -> fairness; nadie puede explicar la decision -> transparency; nadie responde por el fallo -> accountability.
+:::
+
+## 3. Identificar cargas de trabajo de IA
+
+AI-901 pide reconocer, a nivel conceptual, los tipos de carga de trabajo de IA mas comunes antes de ver como se implementan con Foundry en las proximas sesiones. Las cuatro grandes familias son **IA generativa y agentica**, **analisis de texto**, **voz** y **vision (incluida la generacion de imagenes)** — a las que se suma la **extraccion de informacion**, que veremos en su propia sesion.
+
+### IA generativa y agentica
+
+Modelos que generan contenido nuevo (texto, imagenes, codigo) y **agentes** que, ademas de generar, pueden planificar y ejecutar acciones usando herramientas para completar tareas de varios pasos sin supervision constante. Ejemplos: un asistente que redacta un email, un agente que reserva una cita consultando un calendario y confirmando por email.
+
+### Analisis de texto
+
+Tecnicas que extraen significado de texto libre: identificar palabras clave, detectar entidades (personas, lugares, organizaciones, fechas), medir el sentimiento (positivo/negativo/neutro) de una opinion, o resumir un documento largo en pocas frases. Se ve en detalle, junto a voz, en la siguiente sesion.
+
+### Voz
+
+Convertir voz en texto (speech-to-text, para transcribir o para que un agente entienda una instruccion hablada) y texto en voz (text-to-speech, para que una aplicacion responda hablando). Tambien se ve en detalle en la siguiente sesion.
+
+### Vision
+
+Interpretar el contenido de imagenes y video (que hay en la imagen, donde esta, que texto contiene) y, cada vez mas, tambien **generar** imagenes nuevas a partir de una descripcion. Se ve en detalle mas adelante, en la sesion dedicada a vision.
+
+| Carga de trabajo | Pregunta tipica que responde | Ejemplo |
+|---|---|---|
+| IA generativa y agentes | "Crea/haz esto por mi" | Redactar un resumen, ejecutar una tarea de varios pasos |
+| Analisis de texto | "Que dice y que significa este texto" | Sentimiento de una reseña, extraer el nombre de un cliente de un email |
+| Voz | "Que se dijo" / "dilo en voz alta" | Transcribir una llamada, leer una respuesta en voz alta |
+| Vision | "Que hay en esta imagen" / "crea esta imagen" | Describir una foto, generar una ilustracion a partir de un texto |
+
+<MSLearnPath
+  tipo="modulo"
+  title="Introduction to AI concepts"
+  url="https://learn.microsoft.com/en-us/training/modules/get-started-ai-fundamentals/"
+>
+  Modulo introductorio de la ruta "AI concepts for developers": vocabulario base de IA antes de entrar en responsabilidad y cargas de trabajo especificas.
+</MSLearnPath>
+
+<MSLearnPath
+  tipo="ruta"
+  title="AI concepts for developers and technology professionals"
+  url="https://learn.microsoft.com/en-us/training/paths/ai-concepts/"
+>
+  7 modulos, gratis: cubre en detalle IA responsable, IA generativa y agentes, NLP, voz, vision, extraccion de informacion y RAG — toda esta sesion y las siguientes se apoyan en esta ruta.
+</MSLearnPath>
