@@ -7,6 +7,7 @@ interface Props {
   graph?: GraphInfo;
   changes: ChangeInfo[];
   error?: string;
+  zoom?: number;
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -63,7 +64,7 @@ function actionFor(id: string, changes: ChangeInfo[]): string | undefined {
   return found;
 }
 
-export default function GraphView({ graph, changes, error }: Props) {
+export default function GraphView({ graph, changes, error, zoom = 1 }: Props) {
   const [onlyResources, setOnlyResources] = useState(false);
   const [hover, setHover] = useState<string>();
   const view = useMemo(() => {
@@ -93,7 +94,13 @@ export default function GraphView({ graph, changes, error }: Props) {
         <span className={styles.graphHint}>Las flechas indican orden: el origen se evalúa antes que el destino. Pasa el ratón por un nodo para resaltar sus dependencias.</span>
       </div>
       <div className={styles.graphScroll}>
-        <svg width={view.width} height={view.height} role="img" aria-label="Grafo de dependencias">
+        <svg
+          width={view.width * zoom}
+          height={view.height * zoom}
+          viewBox={`0 0 ${view.width} ${view.height}`}
+          role="img"
+          aria-label="Grafo de dependencias"
+        >
           <defs>
             <marker id="tfplay-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M 0 0 L 10 5 L 0 10 z" className={styles.graphArrow} />

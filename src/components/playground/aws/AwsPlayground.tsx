@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaAws } from 'react-icons/fa';
+import { MdSettingsBackupRestore } from 'react-icons/md';
 import Terminal, { type TermEntry } from '../shared/Terminal';
+import ZoomControl, { usePlaygroundZoom, zoomStyle } from '../shared/Zoom';
 import { run, promptText, VERSION } from './engine/engine';
 import { initialState } from './engine/seed';
 import { complete, completionOptions } from './engine/complete';
@@ -60,6 +62,7 @@ export default function AwsPlayground() {
   const [side, setSide] = useState<Side>(() => load('side', 'scenario'));
   const [progress, setProgress] = useState<Record<string, number>>(() => load('progress', {}));
   const [insert, setInsert] = useState<{ text: string; seq: number }>();
+  const zoom = usePlaygroundZoom();
   const seq = useRef(entries.reduce((m, e) => Math.max(m, e.id), 0) + 1);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -160,7 +163,7 @@ export default function AwsPlayground() {
   ];
 
   return (
-    <div className={ui.playground}>
+    <div className={ui.playground} style={zoomStyle(zoom.zoom)}>
       <div className={ui.topbar}>
         <div className={ui.titleBlock}>
           <h1 className={ui.title}>
@@ -170,6 +173,7 @@ export default function AwsPlayground() {
           <span className={`${ui.status} ${ui.statusOk}`}>100 % en el navegador · cuenta simulada 123456789012</span>
         </div>
         <div className={ui.topActions}>
+          <ZoomControl {...zoom} />
           <label className={ui.exampleLabel}>
             Escenario
             <select
@@ -193,7 +197,7 @@ export default function AwsPlayground() {
             </button>
           )}
           <button className={ui.btnGhost} onClick={reset} title="Vuelve a la cuenta inicial">
-            Reiniciar
+            <MdSettingsBackupRestore aria-hidden /> Reiniciar
           </button>
         </div>
       </div>

@@ -1,4 +1,6 @@
-/* Playgrounds (Terraform, AWS CLI): shared layout, terminal and output colours */
+/* Playgrounds (Terraform, AWS CLI): shared layout, terminal and output colours.
+ * Sizes that follow the text are multiplied by --pz, the playground zoom
+ * (set inline from usePlaygroundZoom in Zoom.tsx). */
 
 .playground {
   --tp-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -33,7 +35,18 @@
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
-  font-size: 14px;
+  font-size: calc(14px * var(--pz, 1));
+}
+
+/* Presentation mode: use the whole screen. */
+:global(html[data-presentation]) .playground {
+  max-width: none;
+}
+
+@media (min-width: 997px) {
+  :global(html[data-presentation]) .workspace {
+    height: max(460px, calc(100vh - 110px));
+  }
 }
 
 [data-theme='dark'] .playground {
@@ -52,7 +65,10 @@
 }
 
 /* ── top bar ── */
+/* The zoom is for what the class reads (editor, terminal, panels), not for
+   the page chrome: it would only make the bar wrap. */
 .topbar {
+  --pz: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -95,7 +111,7 @@
 }
 
 .status {
-  font-size: 12px;
+  font-size: calc(12px * var(--pz, 1));
   color: var(--tp-muted);
   font-family: var(--tp-mono);
 }
@@ -142,7 +158,7 @@
 
 .loadErrorMsg {
   font-family: var(--tp-mono);
-  font-size: 12px;
+  font-size: calc(12px * var(--pz, 1));
   color: var(--tp-muted);
   background: none;
   border: 0;
@@ -160,6 +176,49 @@
   text-decoration: none;
 }
 
+/* ── zoom ── */
+.zoom {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--tp-border);
+  border-radius: 6px;
+  background: var(--tp-surface);
+  overflow: hidden;
+}
+
+.zoom button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: none;
+  background: none;
+  color: var(--ifm-font-color-base);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.zoom button:hover:not(:disabled) {
+  color: var(--ifm-color-primary);
+  background: var(--ifm-color-emphasis-100);
+}
+
+.zoom button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.zoom .zoomValue {
+  min-width: 4.2em;
+  font-family: var(--tp-mono);
+  font-size: 12px;
+  color: var(--tp-muted);
+  border-left: 1px solid var(--tp-border);
+  border-right: 1px solid var(--tp-border);
+}
+
 .topActions {
   display: flex;
   align-items: center;
@@ -171,13 +230,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: calc(13px * var(--pz, 1));
   color: var(--tp-muted);
 }
 
 .select {
   font: inherit;
-  font-size: 13px;
+  font-size: calc(13px * var(--pz, 1));
   padding: 6px 8px;
   border-radius: 6px;
   border: 1px solid var(--tp-border);
@@ -193,7 +252,7 @@
 .btnSmallGhost {
   font: inherit;
   font-family: var(--tp-mono);
-  font-size: 13px;
+  font-size: calc(13px * var(--pz, 1));
   border-radius: 6px;
   cursor: pointer;
   border: 1px solid var(--tp-border);
@@ -205,6 +264,14 @@
 
 .btnGhost {
   font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btnGhost svg {
+  flex-shrink: 0;
+  font-size: 1.15em;
 }
 
 .btn:hover:not(:disabled),
@@ -234,7 +301,7 @@
 .btnSmall,
 .btnSmallGhost {
   font-family: inherit;
-  font-size: 12px;
+  font-size: calc(12px * var(--pz, 1));
   padding: 4px 10px;
 }
 
@@ -296,7 +363,7 @@
   gap: 6px;
   padding: 8px 10px 8px 12px;
   font-family: var(--tp-mono);
-  font-size: 12px;
+  font-size: calc(12px * var(--pz, 1));
   color: var(--tp-muted);
   cursor: pointer;
   white-space: nowrap;
@@ -308,6 +375,17 @@
   color: var(--ifm-font-color-base);
   background: var(--tp-editor-bg);
   box-shadow: inset 0 2px 0 var(--ifm-color-primary);
+}
+
+/* Files written by local_file (see localFiles.ts). */
+.tabCreated > span {
+  font-style: italic;
+}
+
+.tabCreated > span::before {
+  content: '⎘ ';
+  font-style: normal;
+  opacity: 0.7;
 }
 
 .tabDot {
@@ -324,7 +402,7 @@
   color: inherit;
   cursor: pointer;
   padding: 0 2px;
-  font-size: 15px;
+  font-size: calc(15px * var(--pz, 1));
   line-height: 1;
   opacity: 0.6;
 }
@@ -336,7 +414,7 @@
 
 .tabAdd {
   padding: 0 14px;
-  font-size: 18px;
+  font-size: calc(18px * var(--pz, 1));
 }
 
 /* ── editor ── */
@@ -348,13 +426,13 @@
   background: var(--tp-editor-bg);
   color: var(--tp-editor-fg);
   font-family: var(--tp-mono);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: calc(13px * var(--pz, 1));
+  line-height: calc(20px * var(--pz, 1));
 }
 
 .gutter {
   flex-shrink: 0;
-  width: 48px;
+  width: calc(48px * var(--pz, 1));
   overflow: hidden;
   text-align: right;
   color: var(--tp-gutter-fg);
@@ -364,7 +442,7 @@
 }
 
 .gutter > div > div {
-  height: 20px;
+  height: calc(20px * var(--pz, 1));
 }
 
 .gutterErr,
@@ -433,6 +511,147 @@
   color: transparent;
 }
 
+/* ── autocompletion ── */
+.measure {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+  pointer-events: none;
+}
+
+.completion {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  min-width: 12em;
+  overflow: hidden;
+  border: 1px solid var(--tp-border);
+  border-radius: 6px;
+  background: var(--tp-surface);
+  color: var(--ifm-font-color-base);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
+  line-height: 1.6;
+}
+
+.completionList {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 16em;
+  overflow-y: auto;
+  margin: 0;
+  padding: 2px 0;
+  list-style: none;
+}
+
+.completionItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0 0.6em 0 0.4em;
+  margin: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.completionActive {
+  background: color-mix(in srgb, var(--ifm-color-primary) 18%, transparent);
+}
+
+.completionIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 1.05em;
+}
+
+.ck_keyword {
+  color: var(--tk-kw);
+}
+
+.ck_block {
+  color: var(--tk-ref);
+}
+
+.ck_attribute {
+  color: var(--tk-attr);
+}
+
+.ck_type,
+.ck_function {
+  color: var(--tk-fn);
+}
+
+.ck_provider {
+  color: var(--tk-str);
+}
+
+.ck_reference,
+.ck_value {
+  color: var(--tk-num);
+}
+
+.completionLabel {
+  flex-shrink: 0;
+}
+
+.completionLabel b {
+  color: var(--ifm-color-primary-darker);
+}
+
+[data-theme='dark'] .completionLabel b {
+  color: var(--ifm-color-primary);
+}
+
+/* Required arguments carry a dot, like the error dot on file tabs. */
+.completionRequired {
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  margin-left: 0.4em;
+  border-radius: 50%;
+  background: var(--tp-chg);
+  vertical-align: 0.15em;
+}
+
+.completionDetail {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  color: var(--tp-muted);
+  font-size: 0.88em;
+}
+
+.completionDoc,
+.completionPending {
+  padding: 0.35em 0.7em;
+  font-family: var(--ifm-font-family-base);
+  font-size: 0.92em;
+  color: var(--tp-muted);
+  white-space: pre-wrap;
+}
+
+.completionDoc {
+  border-top: 1px solid var(--tp-border);
+}
+
+.completionPending {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .tk_comment {
   color: var(--tk-comment);
   font-style: italic;
@@ -473,7 +692,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: calc(12px * var(--pz, 1));
   color: var(--tp-muted);
   border-top: 1px solid var(--tp-border);
   background: var(--tp-surface);
@@ -509,8 +728,8 @@
   background: var(--tp-term-bg);
   color: var(--tp-term-fg);
   font-family: var(--tp-mono);
-  font-size: 12.5px;
-  line-height: 18px;
+  font-size: calc(12.5px * var(--pz, 1));
+  line-height: calc(18px * var(--pz, 1));
   display: flex;
   cursor: text;
 }
@@ -527,7 +746,7 @@
 
 .termLine {
   white-space: pre;
-  min-height: 18px;
+  min-height: calc(18px * var(--pz, 1));
 }
 
 .termWrap {
@@ -623,7 +842,7 @@
 
 .panelTab {
   font: inherit;
-  font-size: 13px;
+  font-size: calc(13px * var(--pz, 1));
   padding: 10px 14px;
   border: none;
   background: none;
@@ -644,7 +863,7 @@
 .panelEmpty {
   padding: 24px;
   color: var(--tp-muted);
-  font-size: 14px;
+  font-size: calc(14px * var(--pz, 1));
 }
 
 /* state */
@@ -665,7 +884,7 @@
 .stateMeta {
   display: flex;
   gap: 14px;
-  font-size: 13px;
+  font-size: calc(13px * var(--pz, 1));
   color: var(--tp-muted);
   font-family: var(--tp-mono);
 }
@@ -685,7 +904,7 @@
 
 .addrChip {
   font-family: var(--tp-mono);
-  font-size: 12px;
+  font-size: calc(12px * var(--pz, 1));
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid var(--tp-border);
@@ -701,11 +920,11 @@
 .stateError {
   color: var(--tp-del);
   padding: 0 12px 8px;
-  font-size: 13px;
+  font-size: calc(13px * var(--pz, 1));
 }
 
 .stateEditor {
-  height: 340px;
+  height: calc(340px * var(--pz, 1));
   display: flex;
   border-top: 1px solid var(--tp-border);
 }
@@ -721,18 +940,18 @@
   flex-wrap: wrap;
   gap: 8px 16px;
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: calc(13px * var(--pz, 1));
   align-items: center;
 }
 
 .graphHint {
   color: var(--tp-muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--pz, 1));
 }
 
 .graphScroll {
   overflow: auto;
-  max-height: 480px;
+  max-height: calc(480px * var(--pz, 1));
   padding: 0 4px;
 }
 
@@ -849,7 +1068,7 @@
   flex-wrap: wrap;
   gap: 6px 14px;
   padding: 10px 12px;
-  font-size: 12px;
+  font-size: calc(12px * var(--pz, 1));
   color: var(--tp-muted);
   border-top: 1px solid var(--tp-border);
 }
@@ -867,7 +1086,7 @@
 .help {
   padding: 16px 20px;
   max-width: 900px;
-  font-size: 14px;
+  font-size: calc(14px * var(--pz, 1));
 }
 
 .help li {

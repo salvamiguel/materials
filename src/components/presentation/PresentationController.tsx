@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useLocation } from '@docusaurus/router';
 import { TbChevronLeft, TbChevronRight, TbMinus, TbPlus, TbX } from 'react-icons/tb';
-import { exit, getScale, isOn, MAX_SCALE, MIN_SCALE, restore, setScale, subscribe, toggle } from './presentation';
+import { DEFAULT_SCALE, exit, getScale, isOn, MAX_SCALE, MIN_SCALE, restore, setScale, subscribe, toggle } from './presentation';
 
 const HINT_KEY = 'presentation:hinted';
 
@@ -32,7 +32,7 @@ const headingText = (h?: HTMLElement) => (h?.textContent ?? '').replace(/​|#$/
 
 export default function PresentationController() {
   const active = useSyncExternalStore(subscribe, isOn, () => false);
-  const scale = useSyncExternalStore(subscribe, getScale, () => 1.2);
+  const scale = useSyncExternalStore(subscribe, getScale, () => DEFAULT_SCALE);
   const location = useLocation();
   const [pos, setPos] = useState({ index: 0, total: 0, title: '' });
   const [idle, setIdle] = useState(false);
@@ -145,7 +145,7 @@ export default function PresentationController() {
         '+': () => setScale(getScale() + 0.1),
         '=': () => setScale(getScale() + 0.1),
         '-': () => setScale(getScale() - 0.1),
-        '0': () => setScale(1.2),
+        '0': () => setScale(DEFAULT_SCALE),
       };
       const action = actions[key];
       if (!action) return;
@@ -227,11 +227,11 @@ export default function PresentationController() {
           <TbChevronRight />
         </button>
         <span className="presentation-sep" />
-        <button type="button" onClick={() => setScale(scale - 0.1)} disabled={scale <= MIN_SCALE} title="Texto más pequeño (−)" aria-label="Texto más pequeño">
+        <button type="button" onClick={() => setScale(scale - 0.1)} disabled={scale <= MIN_SCALE} title="Reducir texto, código, demos y playground (−)" aria-label="Reducir el tamaño">
           <TbMinus />
         </button>
         <span className="presentation-scale">{Math.round(scale * 100)} %</span>
-        <button type="button" onClick={() => setScale(scale + 0.1)} disabled={scale >= MAX_SCALE} title="Texto más grande (+)" aria-label="Texto más grande">
+        <button type="button" onClick={() => setScale(scale + 0.1)} disabled={scale >= MAX_SCALE} title="Ampliar texto, código, demos y playground (+)" aria-label="Aumentar el tamaño">
           <TbPlus />
         </button>
         <span className="presentation-sep" />

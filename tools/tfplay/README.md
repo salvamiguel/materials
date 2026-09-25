@@ -30,6 +30,16 @@ tools/tfplay/
   `output`, `state list`, `state show`, `show`, `graph`, `console`, `providers`.
 - Estado `terraform.tfstate` v4 compatible con Terraform (se puede leer con el
   binario real).
+- `local_file` y `local_sensitive_file` escriben de verdad en el espacio de
+  trabajo: tras `apply` el fichero aparece como una pestaña más y `destroy` lo
+  borra. Como el proveedor real, al refrescar trata un fichero editado o borrado
+  a mano como un objeto eliminado fuera de Terraform (drift): el siguiente
+  `plan` lo avisa y `apply` lo vuelve a crear. No escribe fuera del espacio de
+  trabajo ni sobre ficheros de configuración (`*.tf`, `*.tfvars`...).
+- Autocompletado del editor: `schema({source, kind?, type?})` devuelve el índice
+  de un proveedor cargado (tipos de recursos y data sources, esquema del bloque
+  `provider`) o el esquema de un tipo. El análisis del texto lo hace el editor
+  (`src/components/playground/terraform/completion/`).
 
 ## Proveedores
 
