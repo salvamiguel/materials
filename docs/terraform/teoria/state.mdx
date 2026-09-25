@@ -156,8 +156,8 @@ terraform init
 ### 3.1 Configuración del backend
 
 Esta es la configuración del backend remoto según el proveedor cloud. El state se
-almacena en un servicio de almacenamiento de objetos y el locking se gestiona de forma
-nativa o mediante un servicio adicional.
+almacena en un servicio de almacenamiento de objetos, que también se encarga del
+locking: en los tres clouds ya no hace falta ningún servicio adicional.
 
 <CloudTabs>
 <CloudTab provider="aws">
@@ -165,16 +165,19 @@ nativa o mediante un servicio adicional.
 ```hcl
 terraform {
   backend "s3" {
-    bucket         = "mi-empresa-terraform-state"
-    key            = "proyecto/terraform.tfstate"
-    region         = "eu-west-1"
-    dynamodb_table = "terraform-locks"
-    encrypt        = true
+    bucket       = "mi-empresa-terraform-state"
+    key          = "proyecto/terraform.tfstate"
+    region       = "eu-west-1"
+    use_lockfile = true
+    encrypt      = true
   }
 }
 ```
 
-En AWS, el locking se gestiona mediante una tabla DynamoDB.
+Con `use_lockfile = true` el propio S3 gestiona el locking: Terraform crea un fichero
+`terraform.tfstate.tflock` junto al state mientras dura la operación. Está disponible
+desde Terraform 1.10 y es estable desde la 1.11, así que **ya no necesitas una tabla
+DynamoDB**. Lo vemos en detalle en [4.3 Locking nativo en S3](#43-locking-nativo-en-s3-use_lockfile).
 
 </CloudTab>
 <CloudTab provider="gcp">
@@ -205,8 +208,8 @@ terraform {
 }
 ```
 
-Azure usa un mecanismo de **blob lease** para el locking, no necesitas un servicio
-adicional como DynamoDB. El cifrado en reposo viene habilitado por defecto en Azure
+Azure usa un mecanismo de **blob lease** para el locking, no necesitas ningún servicio
+adicional. El cifrado en reposo viene habilitado por defecto en Azure
 Storage.
 
 </CloudTab>
@@ -249,22 +252,14 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" 
     }
   }
 }
-
-resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "terraform-locks"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
-
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
-
-  tags = {
-    Purpose = "Terraform State Locking"
-  }
-}
 ```
+
+:::note ¿Y la tabla DynamoDB?
+Hasta Terraform 1.10 el bootstrap también creaba una tabla DynamoDB para el locking.
+Con `use_lockfile` ya no hace falta: el bootstrap se reduce al bucket. Si heredas un
+proyecto que todavía la usa, mira cómo migrar en
+[4.3 Locking nativo en S3](#43-locking-nativo-en-s3-use_lockfile).
+:::
 
 :::tip Versionado en S3
 Habilita **siempre** el versionado en el bucket S3. Esto te permite recuperar
@@ -359,11 +354,11 @@ Cada proyecto/entorno tiene su propio `key` en el bloque backend:
 ```hcl
 terraform {
   backend "s3" {
-    bucket         = "mi-empresa-terraform-state"
-    key            = "proyecto-a/prod/terraform.tfstate"
-    region         = "eu-west-1"
-    dynamodb_table = "terraform-locks"
-    encrypt        = true
+    bucket       = "mi-empresa-terraform-state"
+    key          = "proyecto-a/prod/terraform.tfstate"
+    region       = "eu-west-1"
+    use_lockfile = true
+    encrypt      = true
   }
 }
 ```
@@ -449,13 +444,116 @@ Sin locking, dos personas ejecutando `terraform apply` al mismo tiempo podrían:
 
 | Backend | Mecanismo de locking |
 |---------|---------------------|
-| **S3 + DynamoDB** | Terraform escribe un registro en la tabla DynamoDB con un UUID de lock. Mientras ese registro exista, ningún otro proceso puede adquirir el lock |
+| **S3** (`use_lockfile = true`) | Crea el objeto `<key>.tflock` junto al state con una escritura condicional: si ya existe, el lock está ocupado. Al terminar, Terraform lo borra |
+| **S3 + DynamoDB** (deprecado) | Escribe un registro con el ID del lock en una tabla DynamoDB. Mientras ese registro exista, ningún otro proceso puede adquirir el lock |
 | **Azure Blob** | Usa el mecanismo nativo de blob lease (un lease exclusivo sobre el blob del state) |
 | **GCS** | Crea un fichero `.tflock` junto al state |
 | **Terraform Cloud** | Gestionado automáticamente por la plataforma |
 | **Local** | Usa file locking del sistema operativo |
 
-### 4.3 Cuando el lock se queda "stuck"
+### 4.3 Locking nativo en S3 (`use_lockfile`)
+
+Durante años, el backend S3 necesitaba **DynamoDB** para el locking: S3 no permitía
+escribir un objeto "solo si no existe", que es justo lo que necesita un lock. En 2024
+AWS añadió las **escrituras condicionales** a S3 (`If-None-Match`), y Terraform lo
+aprovechó:
+
+| Versión | Qué cambió |
+|---------|------------|
+| **Terraform 1.10** | Aparece `use_lockfile` en el backend S3 (experimental) |
+| **Terraform 1.11** | `use_lockfile` pasa a estable y `dynamodb_table` queda **deprecado** |
+
+#### Cómo funciona
+
+1. Antes de `plan`, `apply`, `destroy`... Terraform intenta crear el objeto
+   `proyecto/terraform.tfstate.tflock` en el mismo bucket, con la condición de que
+   **no exista**.
+2. Si otro proceso ya tiene el lock, S3 rechaza la escritura y Terraform muestra el
+   error *Error acquiring the state lock* con quién lo tiene y desde cuándo.
+3. Al terminar la operación, Terraform borra el `.tflock`.
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket       = "mi-empresa-terraform-state"
+    key          = "proyecto/terraform.tfstate"
+    region       = "eu-west-1"
+    use_lockfile = true # lock en S3, sin DynamoDB
+    encrypt      = true
+  }
+}
+```
+
+#### DynamoDB vs `use_lockfile`
+
+| | S3 + DynamoDB | S3 con `use_lockfile` |
+|---|---|---|
+| Recursos extra | Tabla DynamoDB | Ninguno |
+| Dónde vive el lock | Registro en la tabla | Objeto `.tflock` junto al state |
+| Permisos IAM | S3 + DynamoDB | Solo S3 |
+| Versión mínima | Cualquiera | Terraform 1.10 |
+| Estado | Deprecado desde 1.11 | Recomendado |
+
+#### Permisos IAM
+
+Además de leer y escribir el state, la identidad que ejecuta Terraform necesita poder
+leer, crear y borrar el fichero de lock:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::mi-empresa-terraform-state"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject"],
+      "Resource": "arn:aws:s3:::mi-empresa-terraform-state/proyecto/terraform.tfstate"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::mi-empresa-terraform-state/proyecto/terraform.tfstate.tflock"
+    }
+  ]
+}
+```
+
+#### Migrar desde DynamoDB
+
+Puedes activar los dos mecanismos a la vez: Terraform adquiere **ambos** locks, así que
+quien todavía use una versión anterior a la 1.10 sigue protegido durante la transición.
+
+1. Añade `use_lockfile = true` **sin quitar** `dynamodb_table` y ejecuta
+   `terraform init -reconfigure` (el state no se mueve, solo cambia la configuración
+   del backend).
+2. Cuando todo el equipo y los pipelines usen Terraform 1.10 o superior, quita
+   `dynamodb_table` y vuelve a ejecutar `terraform init -reconfigure`.
+3. Borra la tabla DynamoDB (y sus permisos IAM), que ya no se usa.
+
+```hcl
+# Paso 1: transición, los dos locks a la vez
+terraform {
+  backend "s3" {
+    bucket         = "mi-empresa-terraform-state"
+    key            = "proyecto/terraform.tfstate"
+    region         = "eu-west-1"
+    use_lockfile   = true
+    dynamodb_table = "terraform-locks" # quitar en el paso 2
+    encrypt        = true
+  }
+}
+```
+
+:::tip En proyectos nuevos
+Usa directamente `use_lockfile = true`. Con Terraform 1.11 o superior, `dynamodb_table`
+muestra un aviso de deprecación y desaparecerá en una versión futura.
+:::
+
+### 4.4 Cuando el lock se queda "stuck"
 
 Si un proceso de Terraform se interrumpe abruptamente (crash, pérdida de red,
 Ctrl+C agresivo), es posible que el lock no se libere correctamente. En ese caso
@@ -468,7 +566,7 @@ Error: Error locking state: Error acquiring the state lock:
     Path:      proyecto/terraform.tfstate
     Operation: OperationTypeApply
     Who:       usuario@maquina
-    Version:   1.7.0
+    Version:   1.11.0
     Created:   2024-03-15 10:30:00.000000 UTC
 ```
 
@@ -477,6 +575,8 @@ Para liberar el lock manualmente:
 ```bash
 terraform force-unlock a1b2c3d4-5678-90ab-cdef-1234567890ab
 ```
+
+Con `use_lockfile`, `force-unlock` borra el objeto `.tflock` del bucket.
 
 :::warning force-unlock: último recurso
 Solo usa `terraform force-unlock` cuando estés **seguro** de que no hay otra operación
@@ -1474,7 +1574,7 @@ gestiona ni calcular cambios incrementales. Los puntos clave de esta unidad:
 - El **state** es un fichero JSON que mapea tu configuración HCL con los recursos
   reales del proveedor cloud.
 - En equipo, **siempre** usa un **remote backend** con locking, cifrado y versionado.
-- Los backends más comunes son **S3 + DynamoDB** (AWS), **Azure Blob Storage**,
+- Los backends más comunes son **S3** con `use_lockfile` (AWS, ya sin DynamoDB), **Azure Blob Storage**,
   **GCS** y **Terraform Cloud**.
 - El **locking** previene escrituras concurrentes al state. Solo usa `force-unlock`
   como último recurso.
