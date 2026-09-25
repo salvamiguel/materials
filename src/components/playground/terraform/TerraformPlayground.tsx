@@ -8,6 +8,7 @@ import { colorizeOutput } from './highlight';
 import GraphView from './GraphView';
 import StatePanel from './StatePanel';
 import { EXAMPLES, DEFAULT_EXAMPLE } from './examples';
+import { fetchRepoFiles, parseRepoQuery, repoLabel } from './github';
 import { TfplayEngine, type ChangeInfo, type Diag, type GraphInfo, type RunResponse } from './engine';
 import styles from '../shared/playground.module.css';
 
@@ -154,6 +155,40 @@ export default function TerraformPlayground() {
         addEntry('', 'Configuración cargada desde un enlace compartido. Ejecuta "init".');
       },
       () => addEntry('', 'Error: el enlace compartido no es válido.'),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Links from the lessons: ?repo=owner/name[&ref=branch][&path=dir] loads the
+  // Terraform files of that GitHub repository.
+  useEffect(() => {
+    const r = parseRepoQuery(window.location.search);
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('repo')) return;
+    ['repo', 'ref', 'path'].forEach((k) => url.searchParams.delete(k));
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+    if (!r) {
+      addEntry('', 'Error: el parámetro "repo" no es válido (usa ?repo=usuario/repositorio).');
+      return;
+    }
+    const label = repoLabel(r);
+    const pristine = !state.trim() && EXAMPLES.some((e) => JSON.stringify(e.files) === JSON.stringify(files));
+    if (!pristine && !window.confirm(`Abrir ${label} reemplaza tus ficheros y borra el estado actual. ¿Continuar?`)) return;
+    addEntry('', `Descargando los ficheros de github.com/${label}…`);
+    fetchRepoFiles(r).then(
+      (repoFiles) => {
+        const names = Object.keys(repoFiles).sort();
+        setFiles(repoFiles);
+        setActive(names.find((f) => f === 'main.tf') || names.find((f) => f.endsWith('.tf') && !f.includes('/')) || names[0]);
+        setState('');
+        setInstalled([]);
+        setInitialized(false);
+        setChanges([]);
+        setDiags([]);
+        setExampleId(`gh:${label}`);
+        addEntry('', `Cargado github.com/${label}: ${names.join(', ')}.\nEjecuta "init" para empezar.`);
+      },
+      (err) => addEntry('', `Error: ${(err as Error).message}\nPuedes abrir el repositorio en GitHub y copiar los ficheros a mano.`),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -421,7 +456,9 @@ export default function TerraformPlayground() {
           <label className={styles.exampleLabel}>
             Ejemplo
             <select value={exampleId} onChange={(e) => loadExample(e.target.value)} className={styles.select}>
-              {!EXAMPLES.some((e) => e.id === exampleId) && <option value={exampleId}>Personalizado</option>}
+              {!EXAMPLES.some((e) => e.id === exampleId) && (
+                <option value={exampleId}>{exampleId.startsWith('gh:') ? `GitHub: ${exampleId.slice(3)}` : 'Personalizado'}</option>
+              )}
               {EXAMPLES.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.label}
