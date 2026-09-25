@@ -1653,7 +1653,7 @@ La estructura ideal depende del contexto de cada equipo: tamaño del equipo, com
 
 Independientemente de la estructura elegida, un proyecto de Terraform empresarial debería cumplir con estos requisitos:
 
-- **Backend remoto** con cifrado y locking (S3 + DynamoDB, Terraform Cloud, etc.).
+- **Backend remoto** con cifrado y locking (S3 con `use_lockfile`, Terraform Cloud, etc.).
 - **State separado** por entorno y por componente de infraestructura.
 - **Módulos versionados** para garantizar la reproducibilidad.
 - **Pipeline de CI/CD** que ejecute plan en PRs y apply solo tras aprobación.
