@@ -1,16 +1,22 @@
 /* Presentation mode: a tiny external store shared by the navbar button and
  * the controller mounted in Root. While on, <html data-presentation> drives
- * the CSS in presentation.css and --pres-scale sets the text size. */
+ * the CSS in presentation.css and --pres-scale sets the size of the text,
+ * code blocks, demos and playgrounds.
+ *
+ * Playgrounds also keep their own zoom for use outside presentation mode. */
 
 type Listener = () => void;
 
 const SESSION_KEY = 'presentation:on';
 const SCALE_KEY = 'presentation:scale';
+const PLAYGROUND_ZOOM_KEY = 'playground:zoom';
 export const MIN_SCALE = 1;
-export const MAX_SCALE = 1.8;
+export const MAX_SCALE = 2.5;
+export const DEFAULT_SCALE = 1.2;
 
 let on = false;
-let scale = 1.2;
+let scale = DEFAULT_SCALE;
+let playgroundZoom = 1;
 const listeners = new Set<Listener>();
 
 function read(storage: () => Storage, key: string): string | null {
@@ -45,11 +51,19 @@ export function subscribe(l: Listener): () => void {
 
 export const isOn = () => on;
 export const getScale = () => scale;
+export const getPlaygroundZoom = () => playgroundZoom;
 
-/** Restores the mode and text size after a reload (without full screen: that needs a gesture). */
+const clamp = (n: number) => Math.round(Math.min(MAX_SCALE, Math.max(MIN_SCALE, n)) * 10) / 10;
+
+function stored(key: string): number | undefined {
+  const n = Number(read(() => localStorage, key));
+  return n >= MIN_SCALE && n <= MAX_SCALE ? n : undefined;
+}
+
+/** Restores the mode and sizes after a reload (without full screen: that needs a gesture). */
 export function restore() {
-  const s = Number(read(() => localStorage, SCALE_KEY));
-  if (s >= MIN_SCALE && s <= MAX_SCALE) scale = s;
+  scale = stored(SCALE_KEY) ?? scale;
+  playgroundZoom = stored(PLAYGROUND_ZOOM_KEY) ?? playgroundZoom;
   on = read(() => sessionStorage, SESSION_KEY) === '1';
   apply();
 }
@@ -76,7 +90,13 @@ export function toggle() {
 }
 
 export function setScale(next: number) {
-  scale = Math.round(Math.min(MAX_SCALE, Math.max(MIN_SCALE, next)) * 10) / 10;
+  scale = clamp(next);
   write(() => localStorage, SCALE_KEY, String(scale));
+  apply();
+}
+
+export function setPlaygroundZoom(next: number) {
+  playgroundZoom = clamp(next);
+  write(() => localStorage, PLAYGROUND_ZOOM_KEY, String(playgroundZoom));
   apply();
 }

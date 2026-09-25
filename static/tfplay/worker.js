@@ -5,6 +5,7 @@
  *   loadProvider(name)       download + register static/tfplay/providers/<name>.json(.gz)
  *   registerProvider(json)   register a provider definition given as text
  *   requiredProviders(files) list the providers a configuration needs
+ *   schema(request)          provider index or type schema, for autocompletion
  *   run(request)             run a command (see tools/tfplay/engine/engine.go)
  */
 let base = '';
@@ -119,6 +120,9 @@ self.onmessage = async (event) => {
           break;
         case 'requiredProviders':
           result = call('requiredProviders', JSON.stringify(args[0]));
+          break;
+        case 'schema':
+          result = call('schema', JSON.stringify(args[0]));
           break;
         case 'run':
           result = call('run', JSON.stringify(args[0]));

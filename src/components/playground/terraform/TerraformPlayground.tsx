@@ -1,14 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import { SiTerraform } from 'react-icons/si';
+import { IoLink } from 'react-icons/io5';
+import { MdSettingsBackupRestore } from 'react-icons/md';
 import HclEditor from './HclEditor';
 import Terminal, { type TermEntry } from '../shared/Terminal';
+import ZoomControl, { usePlaygroundZoom, zoomStyle } from '../shared/Zoom';
 import { shellSplit } from '../shared/shell';
 import { colorizeOutput } from './highlight';
 import GraphView from './GraphView';
 import StatePanel from './StatePanel';
 import { EXAMPLES, DEFAULT_EXAMPLE } from './examples';
 import { fetchRepoFiles, parseRepoQuery, repoLabel } from './github';
+import { localFiles } from './localFiles';
+import { complete, type Schemas } from './completion/complete';
+import { SchemaCache } from './completion/schemas';
 import { TfplayEngine, type ChangeInfo, type Diag, type GraphInfo, type RunResponse } from './engine';
 import styles from '../shared/playground.module.css';
 
@@ -79,6 +85,8 @@ const SUGGESTIONS = [
 
 type Panel = 'state' | 'graph' | 'help';
 
+const NO_SCHEMAS: Schemas = { indexes: () => [], bundled: () => [], load: () => undefined, block: () => undefined };
+
 /** What the user can do about an engine or provider download error. */
 function loadHint(msg: string, base: string): string {
   if (/WebAssembly|disallowed by embedder/i.test(msg)) {
@@ -121,7 +129,11 @@ export default function TerraformPlayground() {
   const [graphError, setGraphError] = useState<string | undefined>();
   const [panel, setPanel] = useState<Panel>('state');
   const [shareMsg, setShareMsg] = useState('');
+  const zoom = usePlaygroundZoom();
   const seq = useRef(1);
+  // Provider schemas for autocompletion; schemaVersion changes when one arrives.
+  const [schemas, setSchemas] = useState<SchemaCache>();
+  const [schemaVersion, setSchemaVersion] = useState(0);
 
   // Boot the engine in a worker.
   useEffect(() => {
@@ -136,8 +148,18 @@ export default function TerraformPlayground() {
         setStatusMsg(String(err.message || err));
       },
     );
-    return () => en.terminate();
+    const cache = new SchemaCache(en);
+    const unsubscribe = cache.subscribe(() => setSchemaVersion((v) => v + 1));
+    setSchemas(cache);
+    return () => {
+      unsubscribe();
+      en.terminate();
+    };
   }, [base, bootSeq]);
+
+  useEffect(() => schemas?.setFiles(files), [schemas, files]);
+  // Installed providers are already in the worker: list their types right away.
+  useEffect(() => installed.forEach((source) => schemas?.load(source)), [schemas, installed]);
 
   // Shared links: #code=<deflate+base64url of the files>
   useEffect(() => {
@@ -339,8 +361,14 @@ export default function TerraformPlayground() {
         setInitialized(true);
         setInstalled((prev) => Array.from(new Set([...prev, ...(resp.installed || [])])).sort());
       }
-      if (resp.files && Object.keys(resp.files).length) {
-        setFiles((f) => ({ ...f, ...resp.files }));
+      // fmt rewrites files, init writes the lock file and local_file writes
+      // (or, on destroy, deletes) the files it manages.
+      if ((resp.files && Object.keys(resp.files).length) || resp.removed_files?.length) {
+        setFiles((f) => {
+          const next = { ...f, ...resp.files };
+          for (const name of resp.removed_files || []) delete next[name];
+          return next;
+        });
       }
       if (resp.state !== undefined && resp.state !== null) setState(resp.state);
       if (resp.changes && (cmd === 'plan' || cmd === 'apply' || cmd === 'destroy')) {
@@ -412,7 +440,8 @@ export default function TerraformPlayground() {
   };
 
   const resetAll = () => {
-    if (!window.confirm('Se borrarán el estado y los proveedores instalados (los ficheros se mantienen). ¿Continuar?')) return;
+    if (!window.confirm('Se borrarán el estado, los proveedores instalados y los ficheros creados por local_file (tus ficheros .tf se mantienen). ¿Continuar?')) return;
+    const created = localFiles(state);
     setState('');
     setInstalled([]);
     setInitialized(false);
@@ -420,12 +449,21 @@ export default function TerraformPlayground() {
     setFiles((f) => {
       const next = { ...f };
       delete next[LOCK_FILE];
+      for (const name of created.keys()) delete next[name];
       return next;
     });
     addEntry(undefined, 'Estado e inicialización borrados. Ejecuta "init" de nuevo.');
   };
 
   const fileDiags = useMemo(() => diags.filter((d) => d.filename === current), [diags, current]);
+  const completeAt = useCallback(
+    (text: string, offset: number) =>
+      current === undefined ? undefined : complete({ files: { ...files, [current]: text }, filename: current, offset, schemas: schemas ?? NO_SCHEMAS }),
+    [files, current, schemas],
+  );
+  // Files written by local_file: editing one simulates a change made outside Terraform.
+  const created = useMemo(() => localFiles(state), [state]);
+  const createdBy = (name: string) => (files[name] !== undefined ? created.get(name) : undefined);
   const errorCount = diags.filter((d) => d.severity === 'error').length;
 
   const toolbar: { cmd: string; label: string; cls?: string; title: string }[] = [
@@ -438,7 +476,7 @@ export default function TerraformPlayground() {
   ];
 
   return (
-    <div className={styles.playground}>
+    <div className={styles.playground} style={zoomStyle(zoom.zoom)}>
       <div className={styles.topbar}>
         <div className={styles.titleBlock}>
           <h1 className={styles.title}>
@@ -453,6 +491,7 @@ export default function TerraformPlayground() {
           </span>
         </div>
         <div className={styles.topActions}>
+          <ZoomControl {...zoom} />
           <label className={styles.exampleLabel}>
             Ejemplo
             <select value={exampleId} onChange={(e) => loadExample(e.target.value)} className={styles.select}>
@@ -467,10 +506,10 @@ export default function TerraformPlayground() {
             </select>
           </label>
           <button className={styles.btnGhost} onClick={share} title="Copia un enlace con todos los ficheros">
-            {shareMsg || 'Compartir'}
+            <IoLink aria-hidden /> {shareMsg || 'Compartir'}
           </button>
-          <button className={styles.btnGhost} onClick={resetAll} title="Borra estado y proveedores instalados">
-            Reiniciar
+          <button className={styles.btnGhost} onClick={resetAll} title="Borra el estado, los proveedores instalados y los ficheros creados por local_file">
+            <MdSettingsBackupRestore aria-hidden /> Reiniciar
           </button>
         </div>
       </div>
@@ -501,10 +540,14 @@ export default function TerraformPlayground() {
                 key={name}
                 role="tab"
                 aria-selected={name === current}
-                className={`${styles.tab} ${name === current ? styles.tabActive : ''}`}
+                className={`${styles.tab} ${name === current ? styles.tabActive : ''} ${createdBy(name) ? styles.tabCreated : ''}`}
                 onClick={() => setActive(name)}
                 onDoubleClick={() => renameFile(name)}
-                title="Doble clic para renombrar"
+                title={
+                  createdBy(name)
+                    ? `Fichero creado por ${createdBy(name)}. Edítalo o bórralo para simular un cambio hecho fuera de Terraform: el próximo plan lo detectará.`
+                    : 'Doble clic para renombrar'
+                }
               >
                 <span>{name}</span>
                 {diags.some((d) => d.filename === name && d.severity === 'error') && <i className={styles.tabDot} />}
@@ -532,10 +575,12 @@ export default function TerraformPlayground() {
               value={files[current] ?? ''}
               onChange={(v) => setFiles((f) => ({ ...f, [current]: v }))}
               diagnostics={fileDiags}
+              complete={/\.(tf|tfvars)$/.test(current) ? completeAt : undefined}
+              completionVersion={schemaVersion}
             />
           )}
           <div className={styles.editorFooter}>
-            <span>{languageLabel(current || '')}</span>
+            <span>{createdBy(current || '') ? `creado por ${createdBy(current || '')}` : languageLabel(current || '')}</span>
             {errorCount > 0 ? (
               <span className={styles.footErr}>
                 {errorCount} {errorCount === 1 ? 'error' : 'errores'}: {diags.find((d) => d.severity === 'error')?.summary}
@@ -607,7 +652,7 @@ export default function TerraformPlayground() {
               onShow={(addr) => runCommand(`state show '${addr}'`)}
             />
           )}
-          {panel === 'graph' && <GraphView graph={graph} changes={changes} error={graphError} />}
+          {panel === 'graph' && <GraphView graph={graph} changes={changes} error={graphError} zoom={zoom.zoom} />}
           {panel === 'help' && <HowItWorks />}
         </div>
       </section>
@@ -638,6 +683,16 @@ function HowItWorks() {
         <li>
           <b>Estado</b>: se guarda en tu navegador. Puedes editarlo para simular cambios hechos a mano en la consola
           (drift) y ver cómo <code>plan</code> propone deshacerlos.
+        </li>
+        <li>
+          <b>Ficheros locales</b>: <code>local_file</code> crea de verdad su fichero, que aparece como una pestaña más.
+          Edítalo o bórralo y el siguiente <code>plan</code> detectará el cambio hecho fuera de Terraform;{' '}
+          <code>apply</code> lo deja como dice la configuración.
+        </li>
+        <li>
+          <b>Autocompletado</b>: el editor sugiere bloques, tipos de recursos, argumentos (los obligatorios primero),
+          referencias como <code>var.</code> o <code>aws_vpc.main.</code> y funciones mientras escribes;{' '}
+          <kbd>Ctrl</kbd>+<kbd>Espacio</kbd> lo abre a mano y <kbd>Tab</kbd> salta entre los huecos de lo insertado.
         </li>
         <li>
           <b>Proveedor propio</b>: crea un fichero <code>*.provider.json</code> con recursos y atributos (

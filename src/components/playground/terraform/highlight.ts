@@ -214,7 +214,7 @@ export function colorizeOutput(text: string): OutLine[] {
       tokens.push({ text: line, cls: (isErr ? 'err' : 'warn') + ' bold' });
       return { tokens };
     }
-    if (/^(Plan:|Changes to Outputs:|Outputs:|Terraform will perform|Terraform has been successfully initialized!|Initializing )/.test(line)) {
+    if (/^(Plan:|Changes to Outputs:|Outputs:|Terraform will perform|Terraform has been successfully initialized!|Initializing |Note: Objects have changed)/.test(line)) {
       tokens.push({ text: line, cls: /successfully/.test(line) ? 'ok bold' : 'bold' });
       return { tokens };
     }
@@ -222,7 +222,7 @@ export function colorizeOutput(text: string): OutLine[] {
       tokens.push({ text: line, cls: 'ok bold' });
       return { tokens };
     }
-    if (/^\s*# .* (will be|must be|has moved)/.test(line)) {
+    if (/^\s*# .* (will be|must be|has moved|has been deleted)/.test(line)) {
       tokens.push({ text: line, cls: 'bold' });
       return { tokens };
     }

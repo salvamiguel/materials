@@ -94,6 +94,19 @@ html[data-presentation] .pagination-nav {
   margin-bottom: 5rem;
 }
 
+/* Code blocks: custom.css sizes them in rem, which the text scale above
+ * doesn't reach. */
+html[data-presentation] .theme-doc-markdown .prism-code {
+  font-size: calc(0.875rem * var(--pres-scale, 1.2));
+}
+
+/* Demos are sized in px (inline styles), so they are zoomed as a whole.
+ * font-size resets the inherited, already scaled, text size. */
+html[data-presentation] .demo-wrapper {
+  zoom: var(--pres-scale, 1.2);
+  font-size: 1rem;
+}
+
 /* Current section */
 html[data-presentation] [data-pres-current] {
   position: relative;

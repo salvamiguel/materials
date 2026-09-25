@@ -88,6 +88,8 @@ type Response struct {
 	Graph       *GraphInfo        `json:"graph,omitempty"`
 	Required    []ProviderInfo    `json:"required,omitempty"`
 	Installed   []string          `json:"installed,omitempty"`
+	// RemovedFiles lists workspace files the command deleted (local_file).
+	RemovedFiles []string `json:"removed_files,omitempty"`
 }
 
 // Engine keeps the provider schemas loaded so far.
@@ -567,6 +569,20 @@ func (en *Engine) cmdPlan(req Request, apply bool) Response {
 	pl := en.newEvaluator(cfg, req, all, prior)
 	pl.destroy = req.Destroy
 	pl.rootInputs = inputs
+	var drift []*Change
+	for _, inst := range refreshLocalFiles(prior, req.Files) {
+		if schemaForInstance(all, inst) == nil {
+			prior.Instances[inst.Addr()] = inst // reported as usual by the plan
+			continue
+		}
+		// deleteChange logs the refresh, except when destroying.
+		if c := pl.deleteChange(inst); c != nil {
+			if pl.destroy {
+				pl.log = append(pl.log, fmt.Sprintf("%s: Refreshing state... [id=%s]", c.Addr, idOf(c.Before)))
+			}
+			drift = append(drift, c)
+		}
+	}
 	pl.run()
 	diags = append(diags, pl.diags...)
 	if diags.HasErrors() {
@@ -577,6 +593,7 @@ func (en *Engine) cmdPlan(req Request, apply bool) Response {
 	if len(pl.log) == 0 {
 		sb.WriteString("\n")
 	}
+	sb.WriteString(renderDrift(drift))
 	if req.Destroy && len(visibleChanges(pl.changes)) == 0 && len(pl.outputChanges) == 0 {
 		sb.WriteString("No changes. No objects need to be destroyed.\n\nEither you have not created any objects yet or the existing objects were\nalready deleted outside of Terraform.\n")
 	} else {
@@ -640,6 +657,7 @@ func (en *Engine) cmdPlan(req Request, apply bool) Response {
 	}
 	st := ap.next.JSON()
 	resp.State = &st
+	resp.Files, resp.RemovedFiles = localFileWrites(prior, ap.next, req.Files)
 	resp.Output = sb.String()
 	resp.Summary = &Summary{Add: asum.Add, Change: asum.Change, Destroy: asum.Destroy, Read: asum.Read}
 	resp.Changes = changeInfos(ap.changes)

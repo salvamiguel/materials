@@ -45,12 +45,47 @@ export interface RunResponse {
   exit_code: number;
   state?: string;
   files?: Record<string, string>;
+  /** Workspace files the command deleted (local_file on destroy/replace). */
+  removed_files?: string[];
   diagnostics: Diag[];
   summary?: { add: number; change: number; destroy: number; read: number };
   changes?: ChangeInfo[];
   graph?: GraphInfo;
   required?: ProviderInfo[];
   installed?: string[];
+}
+
+/** Schema of a resource, data source, provider or nested block (the playground
+ * provider format, see tools/tfplay/README.md). */
+export interface SchemaBlock {
+  attributes?: Record<string, SchemaAttribute>;
+  blocks?: Record<string, SchemaNestedBlock>;
+  description?: string;
+}
+
+export interface SchemaAttribute {
+  /** cty JSON type ("string", ["list","string"]...) or a type expression ("list(string)"). */
+  type?: unknown;
+  nested?: SchemaNestedBlock;
+  description?: string;
+  required?: boolean;
+  optional?: boolean;
+  computed?: boolean;
+  sensitive?: boolean;
+  force_new?: boolean;
+  default?: unknown;
+}
+
+export interface SchemaNestedBlock extends SchemaBlock {
+  nesting?: 'single' | 'group' | 'list' | 'set' | 'map';
+  min_items?: number;
+  max_items?: number;
+}
+
+export interface ProviderIndex extends ProviderInfo {
+  provider?: SchemaBlock;
+  resources: string[];
+  data_sources: string[];
 }
 
 // Providers shipped as static/tfplay/providers/<name>.json.gz
@@ -113,6 +148,18 @@ export class TfplayEngine {
 
   requiredProviders(files: Record<string, string>): Promise<ProviderInfo[]> {
     return this.call('requiredProviders', files);
+  }
+
+  /** What a loaded provider offers (null if it isn't loaded). */
+  async providerIndex(source: string): Promise<ProviderIndex | null> {
+    await this.ready;
+    return this.call('schema', { source });
+  }
+
+  /** Schema of a resource or data source type (null if unknown or not loaded). */
+  async typeSchema(source: string, kind: 'resource' | 'data', type: string): Promise<SchemaBlock | null> {
+    await this.ready;
+    return this.call('schema', { source, kind, type });
   }
 
   /** Downloads the bundled provider schemas needed by the given sources. */
