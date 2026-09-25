@@ -1,0 +1,17 @@
+diff --git a/lib/contexts/colorMode.js b/lib/contexts/colorMode.js
+index 0615d5837e01fbb24c1882aaf28072f1aabf962f..352af076b35d731fe7fba99dbd1492d3de82f658 100644
+--- a/lib/contexts/colorMode.js
++++ b/lib/contexts/colorMode.js
+@@ -126,7 +126,11 @@ function useContextValue() {
+     // Synchronize theme color/choice mode with browser storage
+     useEffect(() => {
+         return ColorModeStorage.listen((e) => {
+-            setColorMode(coerceToColorModeChoice(e.newValue));
++            // Apply the change without writing it back to storage. Persisting
++            // here makes two open pages echo each other's storage events; Safari
++            // delivers them late (with stale values), so the pages keep
++            // overwriting each other and the theme flips in an endless loop.
++            setColorMode(coerceToColorModeChoice(e.newValue), { persist: false });
+         });
+     }, [setColorMode]);
+     // Synchronize theme color with system color

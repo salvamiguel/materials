@@ -29,6 +29,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "@docusaurus/theme-common@3.10.0": "patches/@docusaurus%2Ftheme-common@3.10.0.patch",
+  },
   "packages": {
     "@algolia/abtesting": ["@algolia/abtesting@1.16.0", "", { "dependencies": { "@algolia/client-common": "5.50.0", "@algolia/requester-browser-xhr": "5.50.0", "@algolia/requester-fetch": "5.50.0", "@algolia/requester-node-http": "5.50.0" } }, "sha512-alHFZ68/i9qLC/muEB07VQ9r7cB8AvCcGX6dVQi2PNHhc/ZQRmmFAv8KK1ay4UiseGSFr7f0nXBKsZ/jRg7e4g=="],
 

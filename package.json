@@ -55,5 +55,8 @@
   },
   "engines": {
     "node": ">=20.0"
+  },
+  "patchedDependencies": {
+    "@docusaurus/theme-common@3.10.0": "patches/@docusaurus%2Ftheme-common@3.10.0.patch"
   }
 }
