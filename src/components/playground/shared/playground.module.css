@@ -119,6 +119,47 @@
   background: var(--tp-del);
 }
 
+.loadError {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--tp-del) 45%, transparent);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tp-del) 8%, var(--tp-surface));
+}
+
+.loadErrorText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 420px;
+}
+
+.loadErrorMsg {
+  font-family: var(--tp-mono);
+  font-size: 12px;
+  color: var(--tp-muted);
+  background: none;
+  border: 0;
+  padding: 0;
+  overflow-wrap: anywhere;
+}
+
+.loadErrorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.loadErrorActions a:hover {
+  text-decoration: none;
+}
+
 .topActions {
   display: flex;
   align-items: center;

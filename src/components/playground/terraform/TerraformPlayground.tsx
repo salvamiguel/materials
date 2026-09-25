@@ -78,6 +78,17 @@ const SUGGESTIONS = [
 
 type Panel = 'state' | 'graph' | 'help';
 
+/** What the user can do about an engine or provider download error. */
+function loadHint(msg: string, base: string): string {
+  if (/WebAssembly|disallowed by embedder/i.test(msg)) {
+    return 'Tu navegador tiene WebAssembly desactivado (por ejemplo, el modo de seguridad mejorada de Edge). Añade este sitio como excepción o prueba con otro navegador.';
+  }
+  if (/No se pudo descargar|Failed to fetch|NetworkError|HTTP \d{3}/i.test(msg)) {
+    return `Parece que tu red (proxy o firewall corporativo) bloquea la descarga de los ficheros del playground. Prueba desde otra red o pide que permitan ${new URL(base, window.location.href).href}.`;
+  }
+  return '';
+}
+
 function languageLabel(name: string) {
   if (name.endsWith('.provider.json')) return 'proveedor';
   if (name.endsWith('.tfvars')) return 'tfvars';
@@ -90,6 +101,8 @@ export default function TerraformPlayground() {
   const engineRef = useRef<TfplayEngine | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [statusMsg, setStatusMsg] = useState('');
+  const [bootSeq, setBootSeq] = useState(0);
+  const awsPlayground = useBaseUrl('/aws-playground');
 
   const [files, setFiles] = useState<Record<string, string>>(() => load('files', DEFAULT_EXAMPLE.files));
   const [active, setActive] = useState<string>(() => load('active', Object.keys(DEFAULT_EXAMPLE.files)[0]));
@@ -111,6 +124,8 @@ export default function TerraformPlayground() {
 
   // Boot the engine in a worker.
   useEffect(() => {
+    setStatus('loading');
+    setStatusMsg('');
     const en = new TfplayEngine(base);
     engineRef.current = en;
     en.ready.then(
@@ -121,7 +136,7 @@ export default function TerraformPlayground() {
       },
     );
     return () => en.terminate();
-  }, [base]);
+  }, [base, bootSeq]);
 
   // Shared links: #code=<deflate+base64url of the files>
   useEffect(() => {
@@ -228,7 +243,11 @@ export default function TerraformPlayground() {
           return;
       }
       if (status !== 'ready' || !en) {
-        addEntry(display, status === 'error' ? `Error: el motor no se pudo cargar.\n\n${statusMsg}` : 'El motor todavía se está cargando…');
+        const hint = loadHint(statusMsg, base);
+        addEntry(
+          display,
+          status === 'error' ? `Error: el motor no se pudo cargar.\n\n${statusMsg}\n${hint ? `\n${hint}\n` : ''}` : 'El motor todavía se está cargando…',
+        );
         return;
       }
       if (cmd === 'state') {
@@ -273,7 +292,9 @@ export default function TerraformPlayground() {
       try {
         resp = await en.run({ command: cmd, args: positional, files, state, installed, vars, destroy });
       } catch (err) {
-        resp = { output: `Error: ${(err as Error).message}\n`, exit_code: 1, diagnostics: [] };
+        const msg = (err as Error).message;
+        const hint = loadHint(msg, base);
+        resp = { output: `Error: ${msg}\n${hint ? `\n${hint}\n` : ''}`, exit_code: 1, diagnostics: [] };
       }
       setBusy(false);
       setEntries((e) => e.map((x) => (x.id === id ? { ...x, output: resp.output, exitCode: resp.exit_code, pending: false } : x)));
@@ -296,7 +317,7 @@ export default function TerraformPlayground() {
       }
       if ((cmd === 'apply' || cmd === 'destroy') && resp.exit_code === 0) setPanel('state');
     },
-    [addEntry, consoleMode, files, installed, state, status, statusMsg],
+    [addEntry, base, consoleMode, files, installed, state, status, statusMsg],
   );
 
   const loadExample = (id: string) => {
@@ -416,6 +437,24 @@ export default function TerraformPlayground() {
           </button>
         </div>
       </div>
+
+      {status === 'error' && (
+        <div className={styles.loadError} role="alert">
+          <div className={styles.loadErrorText}>
+            <strong>No se pudo cargar el motor de Terraform.</strong>
+            {loadHint(statusMsg, base) && <span>{loadHint(statusMsg, base)}</span>}
+            <code className={styles.loadErrorMsg}>{statusMsg}</code>
+          </div>
+          <div className={styles.loadErrorActions}>
+            <button className={styles.btn} onClick={() => setBootSeq((n) => n + 1)}>
+              Reintentar
+            </button>
+            <a className={styles.btnGhost} href={awsPlayground}>
+              Ir al playground de AWS CLI
+            </a>
+          </div>
+        </div>
+      )}
 
       <div className={styles.workspace}>
         <section className={styles.editorPane} aria-label="Ficheros">
