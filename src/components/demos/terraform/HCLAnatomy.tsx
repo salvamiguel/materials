@@ -171,7 +171,7 @@ const CODE_LINES = [
   "  }",
   "",
   "  tags = {",
-  '    Name        = "web-$\\{var.environment}"',
+  '    Name        = "web-${var.environment}"',
   "    Environment = var.environment",
   "  }",
   "}",
@@ -209,7 +209,7 @@ function colorize(text: string) {
     { match: /\b(var|local|module|data)\.[a-zA-Z_.[\]0-9]+/, color: "#e06c75" },
     { match: /\b(aws_[a-z_]+)\.[a-zA-Z_.]+/, color: "#e06c75" },
     { match: /\b\d+\b/, color: "#d19a66" },
-    { match: /\$\\\{[^}]+\}/, color: "#e06c75" },
+    { match: /\$\{[^}]+\}/, color: "#e06c75" },
   ];
 
   let idx = 0;
