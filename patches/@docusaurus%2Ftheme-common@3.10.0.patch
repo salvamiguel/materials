@@ -1,17 +1,31 @@
 diff --git a/lib/contexts/colorMode.js b/lib/contexts/colorMode.js
-index 0615d5837e01fbb24c1882aaf28072f1aabf962f..352af076b35d731fe7fba99dbd1492d3de82f658 100644
+index 0615d5837e01fbb24c1882aaf28072f1aabf962f..c7b4e047dececf5c9adde5589a2f118bb661d4f1 100644
 --- a/lib/contexts/colorMode.js
 +++ b/lib/contexts/colorMode.js
-@@ -126,7 +126,11 @@ function useContextValue() {
+@@ -125,9 +125,24 @@ function useContextValue() {
+     ]);
      // Synchronize theme color/choice mode with browser storage
      useEffect(() => {
-         return ColorModeStorage.listen((e) => {
+-        return ColorModeStorage.listen((e) => {
 -            setColorMode(coerceToColorModeChoice(e.newValue));
-+            // Apply the change without writing it back to storage. Persisting
-+            // here makes two open pages echo each other's storage events; Safari
-+            // delivers them late (with stale values), so the pages keep
-+            // overwriting each other and the theme flips in an endless loop.
-+            setColorMode(coerceToColorModeChoice(e.newValue), { persist: false });
++        // Changes made by other pages are applied without writing them back:
++        // persisting here makes open pages echo each other's storage events and
++        // the theme flips in an endless loop. Safari also delivers these events
++        // late and with stale values, so bursts are coalesced and the value is
++        // read from storage once they stop, instead of replaying every event.
++        let timeout;
++        const unlisten = ColorModeStorage.listen(() => {
++            clearTimeout(timeout);
++            timeout = setTimeout(() => {
++                setColorMode(coerceToColorModeChoice(ColorModeStorage.get()), {
++                    persist: false,
++                });
++            }, 50);
          });
++        return () => {
++            clearTimeout(timeout);
++            unlisten();
++        };
      }, [setColorMode]);
      // Synchronize theme color with system color
+     useEffect(() => {
