@@ -121,6 +121,7 @@ const config: Config = {
             {to: '/aws-playground', label: 'AWS CLI'},
           ],
         },
+        {type: 'custom-presentation', position: 'right'},
         {
           href: 'https://salvamiguel.com',
           label: '← salvamiguel.com',

@@ -44,6 +44,9 @@ jobs:
       - name: Test playground engines (AWS CLI, graph layout)
         run: bun run test:playgrounds
 
+      - name: Typecheck
+        run: bun run typecheck
+
       - name: Build
         run: bun run build
 

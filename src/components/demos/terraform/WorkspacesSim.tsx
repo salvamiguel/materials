@@ -183,7 +183,7 @@ function HclHighlighted({ workspace }: { workspace: string }) {
 
 function findMatches(regex: RegExp, line: string, color: string, existing: HighlightSpan[]): HighlightSpan[] {
   const result: HighlightSpan[] = [];
-  let m: RegExpMatchArray | null;
+  let m: RegExpExecArray | null;
   const global = new RegExp(regex.source, regex.flags.includes("g") ? regex.flags : regex.flags + "g");
   while ((m = global.exec(line)) !== null) {
     const s = m.index;
@@ -204,7 +204,7 @@ function renderHclLine(line: string): React.ReactNode {
 
   // terraform.workspace / local references (override strings if needed)
   const refRegex = /terraform\.workspace|local\.config\[local\.environment\]\.\w+|local\.environment/g;
-  let refMatch: RegExpMatchArray | null;
+  let refMatch: RegExpExecArray | null;
   const refGlobal = new RegExp(refRegex.source, "g");
   while ((refMatch = refGlobal.exec(line)) !== null) {
     const s = refMatch.index;
