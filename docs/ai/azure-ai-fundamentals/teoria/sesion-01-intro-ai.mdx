@@ -1,0 +1,115 @@
+---
+sidebar_position: 1
+title: "Introduccion a la IA"
+description: "Que es la IA, terminologia AI/ML/DL/GenAI, tipos de aprendizaje automatico y RLHF, como base conceptual para AI-901."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# Introduccion a la IA
+
+Esta sesion abre el bloque de **Azure AI Fundamentals (AI-901)**. El foco esta en conceptos, no en codigo: sienta el vocabulario que aparece constantemente en el examen. No hace falta saber matematicas avanzadas, si tener claros estos terminos.
+
+## 1. Objetivos de la sesion
+
+- Entender que entendemos por Inteligencia Artificial.
+- Reconocer casos de uso de IA en el dia a dia (moviles, apps, web).
+- Distinguir IA, Machine Learning, Deep Learning e IA Generativa.
+- Entender que es un modelo de IA y como se entrena.
+- Introducir el aprendizaje supervisado, no supervisado y por refuerzo.
+- Explicar, a alto nivel, que es RLHF (Reinforcement Learning from Human Feedback).
+
+## 2. Recordatorio rapido de la nube para IA
+
+Azure es la plataforma en la nube donde ejecutamos y desplegamos soluciones de IA. La nube aporta computo elastico (CPU, GPU) para entrenamiento e inferencia, almacenamiento duradero para datasets y modelos grandes, y servicios de IA gestionados (Vision, Language, Azure OpenAI, etc.). Reutilizamos conceptos ya vistos en DP-900: regiones, grupos de recursos, suscripciones, seguridad basica y costes (pago por uso, escalado). Idea clave: sin la nube, seria muy dificil ejecutar en la practica los modelos de IA grandes actuales.
+
+## 3. Que es la Inteligencia Artificial
+
+La IA son sistemas que realizan tareas que normalmente requieren inteligencia humana. Capacidades tipicas:
+
+- **Percepcion:** ver (imagenes, video), oir (audio).
+- **Comprension:** interpretar lenguaje, extraer significado.
+- **Razonamiento y planificacion:** elegir acciones, resolver problemas.
+- **Aprendizaje:** mejorar el rendimiento a partir de datos y experiencia.
+
+La IA es un termino amplio que incluye reglas, machine learning, busqueda y otras tecnicas. Un temporizador no es IA; un sistema que se adapta, predice o aprende a partir de datos, si empieza a serlo.
+
+:::tip Hito historico: Deep Blue vs Kasparov
+En 1997, IBM Deep Blue derroto al campeon mundial de ajedrez Garry Kasparov combinando busqueda masiva sobre posibles jugadas, funciones de evaluacion disenadas a mano y hardware especializado. No era "pensamiento humano", sino un ejemplo potente de **IA estrecha (narrow AI)**: sistemas muy buenos en una unica tarea (ajedrez, Go) pero inutiles fuera de ese dominio.
+:::
+
+## 4. De los datos al modelo de IA
+
+Se parte de un dataset de ejemplos: una entrada (imagen, texto, variables numericas) y una salida (una etiqueta/clase o un valor). Se elige un algoritmo (por ejemplo, un arbol de decision o una red neuronal), que ajusta sus parametros para encajar con los datos. El resultado es un **modelo** capaz de hacer predicciones sobre datos nuevos que no ha visto. Si el contexto cambia, puede ser necesario reentrenar el modelo.
+
+Un ejemplo clasico para introducir la clasificacion de imagenes es el meme "¿muffin o chihuahua?": para las personas, algunas imagenes son genuinamente ambiguas; para una IA, se entrena un clasificador de imagenes con miles de imagenes etiquetadas, y el modelo aprende patrones sutiles (textura, forma, ojos, orejas, fondo). Este ejemplo ilustra por que buenos datos y muchos ejemplos son cruciales.
+
+### Calidad del dato, calidad del modelo
+
+"Garbage in, garbage out" (GIGO): un buen modelo de IA necesita datos limpios (pocos errores, valores faltantes o duplicados), representativos (que cubran la variacion del mundo real) y equilibrados (no un 99% de una clase y un 1% de otra). Datos sesgados producen modelos sesgados. En proyectos reales, la ingenieria de datos suele ser la mayor parte del trabajo, mas que el propio algoritmo.
+
+## 5. La IA en nuestro dia a dia
+
+- **Asistentes virtuales** (Siri, Alexa, Google Assistant, Copilot): combinan voz a texto, comprension del lenguaje natural (intencion, entidades), gestion del dialogo y texto a voz. El equivalente en Azure serian Speech service + Language service + Bot Framework.
+- **Recomendaciones** (Netflix, YouTube, Amazon, Spotify): usan historial de visionado/escucha/compras, valoraciones y busquedas para construir perfiles de usuario y de producto, con tecnicas de filtrado colaborativo (usuarios similares a ti) o basado en contenido (items similares a lo que te gusto).
+- **Vision artificial:** la IA puede "ver" imagenes y video: clasificacion de imagenes, deteccion de objetos con cajas delimitadoras, deteccion y verificacion facial, y OCR (leer texto de imagenes y documentos). El servicio equivalente en Azure es Azure AI Vision.
+- **Vehiculos autonomos:** se apoyan en camaras, radar, LiDAR, GPS e IMU para percibir carriles, coches, peatones y senales, predecir el movimiento de otros actores y planificar cuando frenar, acelerar o girar. La seguridad es critica, con test exhaustivo, simulacion y regulacion.
+
+## 6. Terminologia: IA, ML, DL e IA Generativa
+
+- **Inteligencia Artificial (IA):** cualquier tecnica que permite a los ordenadores imitar la inteligencia humana.
+- **Machine Learning (ML):** subconjunto de la IA; los modelos aprenden patrones a partir de datos.
+- **Deep Learning (DL):** subconjunto de ML que usa redes neuronales profundas (muchas capas), muy exitoso en vision, voz y NLP.
+- **IA Generativa (GenAI):** modelos que crean contenido nuevo: texto, imagenes, codigo, audio, video.
+
+Jerarquia visual, de lo general a lo especifico: IA (cualquier comportamiento inteligente de una maquina) contiene a ML (IA basada en datos y aprendizaje), que contiene a DL (ML con redes neuronales profundas); GenAI suele apoyarse en modelos DL disenados para generar contenido. No todo sistema de IA es machine learning, y no todo sistema de ML es deep learning.
+
+:::info Importante para el examen
+No confundas los niveles de la jerarquia: IA ⊃ ML ⊃ DL, y GenAI es, en general, una aplicacion de DL. Un sistema basado solo en reglas fijas es IA pero no ML.
+:::
+
+## 7. Que es un modelo
+
+Un modelo es una funcion matematica que asigna entradas a salidas. Se define por su **estructura** (tipo de modelo: arbol, modelo lineal, red neuronal...) y sus **parametros** (numeros aprendidos a partir de los datos). Ejemplos: texto de un email -> modelo -> "spam / no spam"; imagen -> modelo -> "gato / perro / coche"; caracteristicas -> modelo -> precio estimado.
+
+### Conjuntos de entrenamiento, validacion y test
+
+Para evaluar un modelo de forma justa, los datos se dividen en tres conjuntos: **entrenamiento** (para aprender los parametros), **validacion** (para ajustar hiperparametros y elegir entre modelos) y **test** (para estimar el rendimiento real al final). Nunca se evalua el modelo final unicamente sobre el conjunto de entrenamiento: el objetivo es evitar el sobreajuste (overfitting) y resultados demasiado optimistas.
+
+### Formatos de datos y etiquetas
+
+- **Datos estructurados:** tablas, filas, columnas (SQL, CSV, Excel).
+- **Datos semiestructurados:** JSON, XML, logs con cierta estructura.
+- **Datos no estructurados:** texto libre, imagenes, audio, video, PDFs.
+- **Datos etiquetados:** cada ejemplo tiene una respuesta correcta (clase o valor).
+- **Datos sin etiquetar:** solo hay entradas, sin objetivo; se usan en aprendizaje no supervisado.
+
+## 8. Que es el Machine Learning
+
+ML consiste en ensenar a los ordenadores a aprender de los datos: en lugar de escribir reglas a mano, se proporcionan muchos ejemplos (entradas + salidas) y un algoritmo que encuentra patrones; el modelo resultante puede hacer predicciones sobre datos nuevos. Mas y mejores datos suelen (hasta cierto punto) producir un mejor modelo.
+
+### Los tres enfoques principales de ML
+
+- **Aprendizaje supervisado:** se conocen las salidas correctas (etiquetas) durante el entrenamiento. Ejemplo: clasificar emails como spam o no spam. Dentro de este enfoque, la **clasificacion** predice una categoria (por ejemplo, binaria: spam/no spam; o multiclase: tipo de producto, digito 0-9) y la **regresion** predice un numero (por ejemplo, prevision de ventas o estimacion de precio).
+- **Aprendizaje no supervisado:** no hay etiquetas; el algoritmo encuentra patrones o grupos en los datos. Tareas tipicas: **clustering** (agrupar elementos similares, por ejemplo segmentos de clientes), **reduccion de dimensionalidad** (comprimir muchas variables en pocos factores) y **deteccion de anomalias** (detectar valores atipicos que no encajan en ningun grupo).
+- **Aprendizaje por refuerzo (RL):** un agente interactua con un entorno, recibe recompensas y aprende una estrategia (politica) para maximizar la recompensa a largo plazo. Elementos clave: agente, entorno, estado, acciones y recompensa. Ejemplos: juegos (ajedrez, Go, Atari), robotica (caminar, agarrar objetos) y operaciones (programacion de ascensores, precios dinamicos, optimizacion energetica); suele requerir muchas simulaciones para aprender de forma segura.
+
+:::tip Cuando NO usar Machine Learning
+No todos los problemas necesitan IA o ML. Si existe una formula sencilla o reglas claras (conversion de moneda, calculo de impuestos, gastos de envio), usa programacion clasica. El ML aporta valor cuando las reglas son desconocidas o demasiado complejas, los datos son ruidosos y de alta dimensionalidad, o los patrones cambian con el tiempo. Un buen ingeniero de IA tambien sabe cuando NO usar IA.
+:::
+
+## 9. De ML a Deep Learning e IA Generativa
+
+El **Deep Learning** usa redes neuronales de muchas capas, muy adecuadas para datos en crudo (pixeles, formas de onda de audio, secuencias de palabras); hitos como ImageNet (vision), el reconocimiento de voz o la traduccion automatica son avances de DL. La **IA Generativa** usa modelos grandes (LLMs, modelos de difusion, etc.) capaces de generar texto, imagenes, codigo, audio o video nuevos y coherentes, y requiere datasets enormes y computo a escala de nube.
+
+### RLHF: Reinforcement Learning from Human Feedback
+
+RLHF se usa para ajustar (fine-tune) modelos grandes despues del preentrenamiento. La idea general del pipeline: el modelo genera varias respuestas posibles, personas comparan y etiquetan cuales son mejores, ese feedback se convierte en una senal de recompensa, y se usa RL (por ejemplo, optimizacion de politicas) para ajustar el modelo original hacia esas preferencias. Beneficios: respuestas mas utiles y seguras, y mejor control sobre el tono y el comportamiento. Es una tecnica critica en asistentes como Copilot o agentes conversacionales.
+
+<MSLearnPath
+  tipo="ruta"
+  title="AI concepts for developers and technology professionals"
+  url="https://learn.microsoft.com/en-us/training/paths/ai-concepts/"
+>
+  Ruta oficial de Microsoft Learn (7 modulos, gratis): introduccion a la IA, IA generativa y agentes, NLP, voz, vision, extraccion de informacion y RAG. Es la base conceptual directa para la parte "Identify AI concepts and capabilities" del examen AI-901.
+</MSLearnPath>

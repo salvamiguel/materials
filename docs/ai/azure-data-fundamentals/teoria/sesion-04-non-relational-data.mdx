@@ -1,0 +1,119 @@
+---
+sidebar_position: 4
+title: "Datos No Relacionales"
+description: "NoSQL, el teorema CAP, Azure Cosmos DB y los servicios de almacenamiento no relacional en Azure."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# Datos No Relacionales
+
+## 1. Por que datos no relacionales
+
+El volumen, la variedad y la velocidad de los datos han crecido de forma explosiva. Muchas aplicaciones necesitan flexibilidad (sin esquema fijo), alta escalabilidad con arquitecturas distribuidas, y dar soporte a apps en tiempo real, IoT, movil y personalizacion. Los datos no relacionales se almacenan sin tablas rigidas ni esquema fijo: estructuras comunes son JSON, pares clave-valor, grafos y columnas anchas, habitualmente con escalado horizontal y esquema flexible.
+
+## 2. Tipos de bases de datos NoSQL
+
+| Tipo | Descripcion | Caso de uso tipico | Servicio en Azure |
+|---|---|---|---|
+| Documento | Basado en JSON, estructura flexible | Perfiles de usuario, catalogos | Cosmos DB (API de Mongo) |
+| Clave-valor | Pares simples, busqueda ultrarrapida | Cache, almacen de sesiones | Table Storage, Redis |
+| Column-family | Columnas agrupadas logicamente, analitica escalable | Datos de IoT, logs | Cosmos DB (API de Cassandra) |
+| Grafo | Nodos + aristas = relaciones | Redes sociales, recomendaciones | Cosmos DB (API de Gremlin) |
+
+## 3. Diferencias clave frente a lo relacional
+
+| Caracteristica | Relacional | No relacional |
+|---|---|---|
+| Esquema | Fijo | Flexible |
+| Escalado | Vertical | Horizontal |
+| Consistencia | Fuerte | A menudo eventual |
+| Consulta | SQL | Basada en API / lenguajes de consulta propios |
+| Modelo de datos | Tablas | JSON, clave-valor, grafos |
+
+### Beneficios y contrapartidas
+
+**Beneficios:** esquema flexible, alto rendimiento y escalabilidad, soporte multi-modelo.
+
+**Contrapartidas:** las relaciones complejas son mas dificiles de modelar, hay menos herramientas de consulta estandar y los modelos de consistencia son mas debiles.
+
+**Casos de uso tipicos:** telemetria IoT, analitica en tiempo real, catalogos de producto de e-commerce, sesiones de usuario o personalizacion, redes sociales y motores de recomendacion.
+
+## 4. El teorema CAP
+
+En un sistema distribuido solo se pueden garantizar plenamente dos de estas tres propiedades:
+
+- **C — Consistency (consistencia):** toda lectura devuelve la escritura mas reciente.
+- **A — Availability (disponibilidad):** toda peticion recibe una respuesta, aunque algun nodo haya fallado.
+- **P — Partition tolerance (tolerancia a particiones):** el sistema sigue funcionando aunque la red se divida.
+
+Las bases de datos NoSQL suelen sacrificar la consistencia estricta a cambio de escalabilidad, lo que da lugar a modelos como la **consistencia eventual**.
+
+:::tip Para el examen
+No hace falta dominar la teoria del CAP, solo entender que la consistencia eventual es habitual en sistemas NoSQL distribuidos, y que Azure Cosmos DB permite elegir el nivel de consistencia segun la necesidad.
+:::
+
+## 5. Cuando elegir no relacional
+
+Conviene usar NoSQL cuando los datos no encajan en un esquema rigido, cuando la estructura de los datos cambia con frecuencia, cuando se necesita alta escalabilidad o georreplicacion, o cuando el volumen de datos no estructurados o semiestructurados es masivo.
+
+### On-premises vs nube (NoSQL)
+
+| On-premises | Azure (nube) |
+|---|---|
+| Escalado manual | Autoescalado |
+| Gestion de hardware propia | Totalmente gestionado |
+| Replicacion compleja | Distribucion global incorporada |
+| Complejidad del trade-off CAP | Niveles de consistencia gestionados |
+
+## 6. Azure Cosmos DB
+
+Azure Cosmos DB es un servicio de base de datos multi-modelo, totalmente gestionado y distribuido globalmente. Soporta varias APIs: SQL (Core API), MongoDB, Cassandra, Gremlin (grafo) y Table API, con un SLA de disponibilidad del 99,999%.
+
+### Particiones y unidades de solicitud (RU)
+
+- **Partition Key (clave de particion):** define como se distribuyen los datos entre particiones fisicas. Conviene elegir una clave con alta cardinalidad (muchos valores unicos), por ejemplo `/userId` o `/city`.
+- **Throughput (RU/s):** unidad de rendimiento de Cosmos DB. Una RU (Request Unit) mide el coste de una operacion: una lectura simple cuesta aproximadamente 1 RU, una consulta compleja puede superar las 100 RU. El throughput se asigna por contenedor o por base de datos.
+- **Indexacion:** Cosmos DB indexa automaticamente todo por defecto, sin necesidad de esquema; se puede ajustar manualmente para optimizar el coste excluyendo rutas que no necesitan indexarse.
+
+### Seguridad y distribucion global
+
+- **Autenticacion:** Azure AD, claves o tokens.
+- **Seguridad de red:** endpoints privados / integracion con VNet.
+- **Cifrado:** en reposo (TDE) y en transito (TLS 1.2+).
+- **Control de acceso:** basado en roles (RBAC).
+- **Continuidad:** backups automaticos cada 4 horas (retencion configurable), restauracion a un punto en el tiempo, y georreplicacion con escritura multi-region activa-activa y failover automatico entre regiones.
+
+:::info Importante para el examen
+Azure Cosmos DB es el servicio recomendado para cargas NoSQL globales, multi-region y multi-modelo. Para migrar una app MongoDB existente, la respuesta habitual es la **API de MongoDB de Cosmos DB**.
+:::
+
+## 7. Otros servicios de almacenamiento no relacional
+
+- **Azure Table Storage:** almacen clave-valor para datos semiestructurados, ideal para metadatos, logs y telemetria; barato y escalable, pero con consultas limitadas.
+- **Azure Blob Storage:** almacenamiento de objetos para datos no estructurados (imagenes, video, documentos); escala de forma masiva y se integra con pipelines de analitica.
+- **Azure Data Lake Storage Gen2:** se construye sobre Blob Storage anadiendo un namespace jerarquico pensado para analitica de Big Data.
+
+### Comparativa de ofertas no relacionales
+
+| Servicio | Modelo | Uso tipico | Ventajas | Desventajas |
+|---|---|---|---|---|
+| Cosmos DB | Multi-modelo | Apps globales | Flexible, escalable, 5 APIs | Coste, complejidad |
+| Table Storage | Clave-valor | Datos simples | Bajo coste, sencillo | Funcionalidad limitada |
+| Blob Storage | Objeto | Datos no estructurados | Escala practicamente ilimitada | Sin soporte de consultas |
+
+## 8. Operar Cosmos DB en el dia a dia
+
+Crear una cuenta implica: Azure Portal -> Crear recurso -> Azure Cosmos DB, elegir el modelo de API (Core/SQL, MongoDB, Cassandra, Gremlin, Table), fijar region, grupo de recursos y throughput (RU/s), revisar y crear, y usar el Data Explorer para insertar y consultar documentos JSON.
+
+Para el coste, Cosmos DB ofrece modelo **provisionado** (RU/s fijas, coste predecible), **serverless** (pago por solicitud) y **autoscale** (ajusta las RU/s automaticamente), ademas de capacidad reservada con descuentos a 1 o 3 anos. Buena practica: monitorizar el uso de RU/s para dimensionar correctamente.
+
+Para migrar a Cosmos DB existen tres estrategias: **lift & shift** (mover datos con cambios minimos hacia la API de SQL), **re-platform** (adaptar el esquema a documentos JSON) y **re-arquitectura** (redisenar la app para usar modelos de documento, grafo o clave-valor), apoyandose en Azure Database Migration Service o Data Factory.
+
+<MSLearnPath
+  tipo="ruta"
+  title="Explore non-relational data in Azure"
+  url="https://learn.microsoft.com/en-us/training/paths/azure-data-fundamentals-explore-non-relational-data/"
+>
+  Ruta oficial de Microsoft Learn (2 modulos, gratis): Azure Storage para datos no relacionales y los fundamentos de Azure Cosmos DB.
+</MSLearnPath>

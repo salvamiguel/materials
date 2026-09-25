@@ -1,0 +1,127 @@
+---
+sidebar_position: 2
+title: "Computer Vision y Azure AI Foundry"
+description: "Azure AI Vision, Custom Vision (clasificacion y deteccion de objetos) y una vision general de Azure AI Foundry: modelos, herramientas, agentes y RAG."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# Computer Vision y Azure AI Foundry
+
+Esta es la parte practica de AI-901: pasamos de los conceptos generales de IA y la evaluacion de modelos a servicios concretos de Azure. Primero, como construir modelos de imagen a medida con Azure AI Custom Vision; despues, como Azure AI Foundry ayuda a gestionar soluciones de IA modernas de extremo a extremo. El foco esta en conceptos y flujos de trabajo, no en codigo.
+
+## 1. Objetivos de la sesion
+
+- Entender los casos de uso de Azure Computer Vision.
+- Explicar cuando usar un modelo de vision prediseñado frente a uno personalizado.
+- Describir las capacidades de Azure AI Custom Vision.
+- Entender el flujo basico para entrenar y desplegar un modelo de Custom Vision.
+- Introducir Azure AI Foundry y sus componentes principales.
+- Relacionar estos servicios con los escenarios del examen AI-901.
+
+## 2. Servicios de Azure Computer Vision
+
+- **Image Analysis:** modelo prediseñado para detectar objetos, escenas, etiquetas y generar descripciones.
+- **OCR / Document Intelligence:** lee y extrae texto y estructura de imagenes y documentos.
+- **Funciones relacionadas con rostros y personas:** detectan y analizan personas o rostros, sujeto a politicas de IA responsable y restricciones regionales.
+- **Custom Vision:** permite construir tus propios modelos de clasificacion de imagenes o deteccion de objetos con etiquetas personalizadas.
+
+AI-901 se centra en elegir el servicio correcto para cada escenario.
+
+## 3. Que es Azure AI Custom Vision
+
+Custom Vision es un servicio de reconocimiento de imagenes basado en la nube: creas tus propios clasificadores de imagenes y detectores de objetos para tus propias categorias. Usa transfer learning por debajo, asi que no se parte de cero, y se expone mediante un portal web, APIs REST y SDKs para integrarlo en aplicaciones.
+
+### Cuando usar Custom Vision
+
+Usa el **Image Analysis prediseñado** cuando solo necesitas etiquetas, objetos o descripciones genericas y no te importan etiquetas de dominio muy especificas. Usa **Custom Vision** cuando tu escenario necesita clases personalizadas (logos de marca, defectos especificos, productos propios...), quieres control sobre las etiquetas, los datos de entrenamiento y los umbrales de rendimiento, o quieres desplegar en el edge con modelos compactos en dispositivos o IoT.
+
+### Tipos de proyecto
+
+- **Clasificacion de imagenes:** el modelo asigna una o varias etiquetas a toda la imagen. Ejemplo: clasificar la foto de un producto como "kit local", "kit visitante" o "kit de portero".
+- **Deteccion de objetos:** el modelo localiza objetos con cajas delimitadoras. Ejemplo: detectar y contar todos los cascos en la imagen de una obra.
+
+### Clasificacion multiclase vs multietiqueta
+
+En la **clasificacion multiclase**, cada imagen pertenece a exactamente una clase (por ejemplo, una camiseta es "local", "visitante" o "portero", una sola etiqueta). En la **clasificacion multietiqueta**, cada imagen puede tener varias etiquetas a la vez (por ejemplo, una imagen puede contener "jugador", "balon", "cesped" y "publico" simultaneamente).
+
+### Dominios y modelos compactos
+
+Custom Vision ofrece **dominios**: variantes de modelo pre-optimizadas para tipos de imagen especificos (generico, alimentacion, retail, etc.); se puede cambiar de dominio y reentrenar para ver si mejora la precision. Los **dominios compactos** son modelos mas pequenos, optimizados para exportar a moviles o dispositivos edge, utiles cuando se necesita inferencia offline o en el propio dispositivo.
+
+## 4. El flujo de trabajo de Custom Vision
+
+1. Crear los recursos de Training y Prediction en Azure.
+2. En el portal de Custom Vision, crear un proyecto (elegir clasificacion/deteccion y dominio).
+3. Subir imagenes y etiquetarlas con las etiquetas correctas.
+4. Entrenar el modelo para producir una iteracion.
+5. Evaluar metricas y predicciones de muestra.
+6. Cuando el resultado es satisfactorio, publicar la iteracion en un endpoint de prediccion o exportar el modelo.
+
+### Datos y etiquetado
+
+Se recomienda empezar con al menos decenas de imagenes por etiqueta (unas 50 es una guia habitual), usando imagenes que reflejen la variabilidad real (iluminacion, angulos, fondos, dispositivos) y manteniendo las clases razonablemente equilibradas en numero de imagenes. Para deteccion de objetos, las cajas delimitadoras deben ser precisas y consistentes. Revisar y corregir etiquetas incorrectas es clave: los errores de anotacion perjudican mucho el rendimiento.
+
+### Evaluar el modelo
+
+Tras entrenar, Custom Vision muestra **precision** ("de las imagenes predichas como positivas, cuantas son realmente correctas") y **recall** ("de todos los positivos reales, cuantos detecto el modelo"); para deteccion de objetos se usan metricas como Average Precision (AP/mAP). Se puede inspeccionar el rendimiento por etiqueta para identificar clases que necesitan mas datos, y revisar predicciones de muestra para ver aciertos y fallos reales, no solo numeros.
+
+Para mejorar el modelo de forma iterativa: recopilar mas imagenes para las clases debiles o casos poco frecuentes, anadir casos dificiles (oclusiones, angulos inusuales, mala iluminacion), limpiar etiquetas incorrectas o inconsistentes, probar otro dominio si los resultados son pobres, y reentrenar comparando la nueva iteracion con las anteriores.
+
+### Despliegue y uso
+
+En la nube, se publica una iteracion y se obtiene una URL y una clave de prediccion, que se puede llamar desde web, movil, backend o herramientas no-code. En el edge, se exportan modelos compactos para apps moviles, sistemas embebidos o dispositivos IoT. Ejemplos de integracion: control de calidad en fabricas, camaras inteligentes, apps de inspeccion movil o Power Apps.
+
+:::info Importante para el examen
+Precision responde a "de lo que predije como positivo, cuanto era correcto"; recall responde a "de todo lo que era realmente positivo, cuanto detecte". No los confundas.
+:::
+
+## 5. Azure AI Foundry: vision general
+
+Azure AI Foundry es la plataforma unificada de Microsoft en Azure para construir y gestionar aplicaciones de IA. Sus areas principales son los **modelos fundacionales** (LLMs, vision, embeddings, etc.), las **herramientas de IA** (vision, voz, lenguaje, busqueda, procesamiento de documentos) y los **agentes y flujos de IA** que orquestan modelos y herramientas.
+
+### Por que Azure AI Foundry
+
+- **Experiencia unificada:** un unico lugar para explorar modelos, disenar soluciones y desplegar endpoints.
+- **Plataforma de nivel empresarial:** seguridad, gobernanza y cumplimiento integrados con los controles estandar de Azure.
+- **Productividad y colaboracion:** ayuda a los equipos a prototipar rapido, iterar y llevar soluciones a produccion de forma estructurada.
+
+### Elementos centrales
+
+- **Modelos:** modelos fundacionales de texto, chat, vision y embeddings (Azure OpenAI y otros).
+- **Foundry Tools:** servicios como Vision, Speech, Language, Translator, Document Intelligence y busqueda.
+- **Agentes:** copilotos de IA que pueden invocar herramientas y APIs para completar tareas de varios pasos.
+
+El **catalogo de modelos** de Foundry reune modelos de Azure OpenAI (chat, completions, embeddings) junto con otros modelos de Microsoft y de partners (incluyendo modelos de vision o especializados); se puede filtrar por tarea (chat, QA, resumen, clasificacion, generacion...) y abrir un playground directamente desde la pagina de cada modelo para probarlo. El **playground de prompts** es un entorno interactivo para probar prompts con el modelo elegido, configurando el mensaje de sistema, la temperatura, el maximo de tokens y ajustes de seguridad, util para disenar y validar prompts antes de construir la aplicacion o el agente completo.
+
+### Flujos, orquestacion y RAG
+
+Los **flujos de IA** permiten definir pipelines multi-paso (recuperar -> razonar -> actuar -> responder), combinando LLMs, almacenes de busqueda o vectoriales, APIs externas y llamadas a herramientas, habilitando copilotos capaces de planificar y usar herramientas para tareas complejas de extremo a extremo.
+
+Foundry tambien facilita conectar modelos a datos empresariales (Blob Storage, Data Lake, Fabric y otras fuentes). El patron de **grounding / Retrieval-Augmented Generation (RAG)** recupera documentos o fragmentos relevantes y los pasa al modelo como contexto, lo que produce respuestas mas precisas, actualizadas y especificas de la organizacion, con mas transparencia sobre de donde viene cada respuesta.
+
+### Seguridad, gobernanza y despliegue
+
+El acceso se integra con RBAC de Azure, redes privadas, politicas e identidad; los filtros de seguridad aplican moderacion de contenido sobre entradas y salidas; y la monitorizacion registra uso, latencia, errores y senales de calidad de los endpoints y apps de IA, ayudando a implementar principios de IA responsable en produccion.
+
+Para el despliegue, Foundry ofrece **endpoints gestionados** (APIs de chat, completion o flujos de IA a medida) que se integran con apps web y moviles, servicios backend, Logic Apps, Power Apps o Power Automate, siguiendo los mismos principios de Azure (grupos de recursos, regiones, etiquetas, monitorizacion y gestion de costes) que cualquier otra carga de trabajo.
+
+:::tip AI-901 vs el antiguo AI-900
+El examen AI-900 fue retirado el 30 de junio de 2026. Su sucesor, **AI-901**, mantiene la certificacion "Azure AI Fundamentals" pero cambia el enfoque: ya no basta con describir servicios de IA, un 55-60% del examen evalua implementar soluciones sobre **Microsoft Foundry** (desplegar un modelo, construir un cliente ligero, crear y probar un agente). A diferencia de AI-900, que no exigia saber programar, AI-901 espera sintaxis basica de Python. Esta sesion es la puerta de entrada a esa parte practica; el programa del modulo tiene la comparativa completa AI-900 vs AI-901.
+:::
+
+<MSLearnPath
+  tipo="ruta"
+  title="Get started with AI applications and agents on Azure"
+  url="https://learn.microsoft.com/en-us/training/paths/get-started-ai-apps-agents/"
+>
+  Ruta oficial de Microsoft Learn (7 modulos, gratis): primeros pasos en Microsoft Foundry, IA generativa y agentes, texto, voz, vision, extraccion de informacion y Foundry IQ. Cubre directamente la parte "Implement AI solutions by using Microsoft Foundry" del examen AI-901.
+</MSLearnPath>
+
+<MSLearnPath
+  tipo="modulo"
+  title="Get started with computer vision in Azure"
+  url="https://learn.microsoft.com/en-us/training/modules/get-started-vision-azure/"
+>
+  Modulo especifico sobre capacidades de vision en Foundry: analizar imagenes y generar contenido visual con modelos multimodales, de generacion de imagen y de video.
+</MSLearnPath>

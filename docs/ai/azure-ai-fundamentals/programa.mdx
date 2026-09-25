@@ -1,11 +1,97 @@
 ---
 sidebar_position: 0
 title: "Programa del módulo"
-description: "Visión general del módulo Azure AI Fundamentals (AI-900)."
+description: "Visión general del módulo Azure AI Fundamentals (AI-901): unidades didácticas, dominios del examen y recursos."
 ---
 
-# Programa del módulo Azure AI Fundamentals (AI-900)
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
 
-:::info Próximamente
-El contenido de este módulo se encuentra en desarrollo. Se irá publicando progresivamente.
+# Programa del módulo Azure AI Fundamentals (AI-901)
+
+Este módulo prepara para la certificación **Microsoft Certified: Azure AI Fundamentals**, cuyo examen actual es **AI-901**. La certificación en sí no cambia de nombre ni desaparece: quien ya tenga AI-900 aprobado conserva su credencial sin hacer nada. Lo que cambió es el examen para obtenerla a partir de ahora.
+
+---
+
+## AI-900 vs AI-901: qué cambió
+
+Microsoft anunció la evolución de la certificación el 15/04/2026 (última actualización del anuncio: 02/09/2026). El examen **AI-900** se retiró el **30/06/2026**; desde entonces, el único camino para obtener (o demostrar de nuevo) la certificación es **AI-901**, con disponibilidad general anunciada para junio de 2026 tras un periodo en beta.
+
+| | AI-900 (antiguo) | AI-901 (nuevo) |
+|---|---|---|
+| Público | Principiantes técnicos o no técnicos | Principiantes técnicos que van a construir soluciones de IA |
+| Qué evalúa | Entender conceptos de IA/ML e identificar cuándo usar cada servicio de Azure AI | Entender conceptos de IA **e implementar** soluciones con Microsoft Foundry |
+| Conocimiento de código requerido | Ninguno | Sintaxis básica de Python |
+| Nivel de conocimiento | Introductorio, enfoque clásico (describir servicios) | Aprovisionar recursos de Azure + implementar con Foundry y herramientas modernas de desarrollo de IA |
+| Enfoque | "¿Qué es la IA?" | "¿Cómo construyo una app de IA con Foundry?" |
+
+En la práctica, esto desplaza el peso del examen hacia lo práctico: un 55–60% de AI-901 evalúa **implementar** soluciones en Microsoft Foundry (desplegar un modelo, construir un cliente ligero, crear y probar un agente), frente al enfoque puramente descriptivo de AI-900.
+
+:::info Fuente
+Comparativa, fechas y cifras según el anuncio oficial de Microsoft: [Evolving the Microsoft Certified: Azure AI Fundamentals Certification](https://techcommunity.microsoft.com/blog/skills-hub-blog/evolving-the-microsoft-certified-azure-ai-fundamentals-certification/4494127) (Liberty Munson, Microsoft — publicado 15/04/2026, actualizado 02/09/2026).
 :::
+
+---
+
+## Unidades didácticas
+
+| Unidad | Título | Página |
+|--------|--------|--------|
+| UD 1 | Identify AI concepts and capabilities | [Introducción a la IA](./teoria/sesion-01-intro-ai) |
+| UD 2 | Implement AI solutions by using Microsoft Foundry (visión) | [Computer Vision y Azure AI Foundry](./teoria/sesion-02-computer-vision-ai-foundry) |
+
+:::info En desarrollo
+El resto de unidades del temario (procesamiento del lenguaje natural, servicios de voz, inteligencia conversacional e IA responsable) todavía no tienen sesión propia publicada — se irán añadiendo a medida que se impartan las clases correspondientes. Mientras tanto, las rutas gratuitas de Microsoft Learn de la sección de recursos ya cubren esos temas.
+:::
+
+---
+
+## Dominios del examen AI-901
+
+Pesos vigentes en la study guide oficial de Microsoft (actualizados a 15/04/2026):
+
+| Dominio | Peso en el examen |
+|---------|-------------------|
+| Identify AI concepts and capabilities | 40–45% |
+| Implement AI solutions by using Microsoft Foundry | 55–60% |
+
+---
+
+## Requisitos previos
+
+:::info Antes de empezar
+
+- Conocimiento conceptual de las soluciones de IA en Azure (ideal: haber completado el módulo Azure Data Fundamentals).
+- Nociones de sintaxis de Python: AI-901 incluye ejercicios prácticos ligeros en Microsoft Foundry.
+- Familiaridad básica con recursos de Azure (grupos de recursos, regiones, suscripciones).
+
+:::
+
+---
+
+## Recursos de referencia
+
+Rutas de aprendizaje gratuitas de Microsoft Learn recomendadas para AI-901: primero la de conceptos, después la práctica en Foundry.
+
+<MSLearnPath
+  tipo="ruta"
+  title="AI concepts for developers and technology professionals"
+  url="https://learn.microsoft.com/en-us/training/paths/ai-concepts/"
+>
+  7 módulos · IA generativa y agentes, NLP, voz, visión, extracción de información y RAG. Cubre "Identify AI concepts and capabilities".
+</MSLearnPath>
+
+<MSLearnPath
+  tipo="ruta"
+  title="Get started with AI applications and agents on Azure"
+  url="https://learn.microsoft.com/en-us/training/paths/get-started-ai-apps-agents/"
+>
+  7 módulos · práctica hands-on en Microsoft Foundry: generación de texto/agentes, voz, visión, extracción de información y Foundry IQ. Cubre "Implement AI solutions by using Microsoft Foundry".
+</MSLearnPath>
+
+<MSLearnPath
+  tipo="examen"
+  title="Study guide para el examen AI-901"
+  url="https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/ai-901"
+>
+  Guía oficial con los dominios exactos, formato del examen y acceso a la evaluación de práctica en AI Skills Navigator.
+</MSLearnPath>

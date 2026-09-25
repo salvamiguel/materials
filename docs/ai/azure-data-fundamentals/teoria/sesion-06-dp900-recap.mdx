@@ -1,0 +1,119 @@
+---
+sidebar_position: 6
+title: "Repaso Final DP-900"
+description: "Repaso integrado de todo el temario DP-900: cloud, datos, relacional, no relacional y analitica, con enfoque en pensamiento de examen."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# Repaso Final DP-900
+
+Esta sesion repasa todo el temario de DP-900 de forma rapida pero completa, insistiendo en las ideas que aparecen una y otra vez en el examen: definiciones, cuando usar cada servicio, y el tipo de pregunta basada en escenarios.
+
+## 1. Cloud y Azure: repaso rapido
+
+Un centro de datos on-premises exige inversion inicial en hardware, licencias, racks, alimentacion, refrigeracion y espacio fisico dedicado, y un equipo de operaciones que gestione monitorizacion 24/7, fallos de hardware, planificacion de capacidad y recuperacion ante desastres. Con la nube, el proveedor se encarga de la infraestructura y tu consumes computo, almacenamiento y red como servicios a demanda, lo que permite centrarse en aplicaciones, datos y analitica en lugar de en el mantenimiento diario de infraestructura.
+
+Azure ofrece tres modelos de despliegue: **publico** (infraestructura compartida), **privado** (para una sola organizacion) e **hibrido** (combinacion de recursos on-premises y en la nube). Para DP-900 basta con reconocer estos modelos a alto nivel, no disenar arquitecturas.
+
+Los tres modelos de servicio son **IaaS** (maquinas virtuales, redes y almacenamiento; gestionas el sistema operativo y las aplicaciones), **PaaS** (te centras en bases de datos o codigo de aplicacion, por ejemplo Azure SQL Database o App Service) y **SaaS** (aplicaciones completas como Microsoft 365, donde el proveedor gestiona casi todo). El precio de Azure se basa en tres pilares: computo consumido, datos almacenados y datos transferidos hacia fuera de Azure.
+
+Una **region** de Azure es una ubicacion geografica con uno o mas centros de datos conectados por una red de baja latencia y alto ancho de banda; las **Availability Zones** son ubicaciones fisicas separadas dentro de una region, con alimentacion, refrigeracion y red independientes, para aumentar la tolerancia a fallos. Al elegir una region se consideran cumplimiento normativo, residencia de datos, proximidad a los usuarios, servicios disponibles y precio. El **modelo de responsabilidad compartida** establece que Microsoft protege la infraestructura fisica, mientras el cliente es responsable de proteger los datos, las identidades, las politicas de acceso y la configuracion.
+
+## 2. Tipos y formatos de datos
+
+Los **datos estructurados** siguen un esquema fijo con columnas y tipos predefinidos, y se almacenan habitualmente en tablas relacionales. Los **datos semiestructurados** tienen cierta organizacion pero permiten variacion entre registros; ejemplos habituales son documentos JSON o XML con campos flexibles. Los **datos no estructurados** no tienen esquema predefinido: imagenes, video, audio, PDFs o texto libre, que requieren procesamiento especial.
+
+:::tip Area muy habitual en el examen
+Debes poder asignar cada ejemplo a su tipo: una tabla CSV -> **estructurado**; un log en JSON -> **semiestructurado**; imagenes o video -> **no estructurado**.
+:::
+
+En cuanto a formatos de almacenamiento: los **archivos delimitados** (CSV, TSV) son simples y muy compatibles pero poco eficientes para analitica; **JSON** es jerarquico, legible y muy comun en APIs web; **XML** usa etiquetas anidadas, es mas verboso pero sigue apareciendo en sistemas legados; los **BLOB** son archivos binarios sin estructura relacional (imagenes, video, audio, documentos de oficina); y los formatos columnares optimizados como **Parquet** y **ORC**, o el formato orientado a filas **Avro**, reducen el almacenamiento y aceleran las consultas en cargas analiticas grandes.
+
+## 3. Relacional vs no relacional, OLTP vs OLAP
+
+Las bases de datos **relacionales** almacenan datos en tablas bien definidas con filas y columnas, imponen esquemas y restricciones, y ofrecen consistencia fuerte y transacciones ACID. Las bases de datos **no relacionales (NoSQL)** usan modelos flexibles (clave-valor, documento, columna ancha o grafo), lo que les permite escalar horizontalmente y evolucionar el esquema con mas facilidad. Lo relacional es ideal para aplicaciones de negocio con transacciones fiables y un modelo de datos estable; NoSQL es mejor cuando hay escala masiva, estructuras variables, distribucion global y necesidad de alta disponibilidad.
+
+**OLTP** gestiona muchas transacciones cortas y sencillas (insertar un pedido, actualizar un saldo, registrar un pago), garantizadas por las propiedades **ACID**: Atomicidad (todo o nada), Consistencia (solo datos validos), Aislamiento (las transacciones concurrentes no se interfieren) y Durabilidad (lo confirmado sobrevive a fallos). **OLAP** se centra en analizar datos historicos agregados para dar soporte a informes y decisiones, con consultas de lectura intensiva sobre grandes volumenes. Una arquitectura analitica tipica encadena fuentes de datos, ETL/ELT, un data lake o data warehouse, un modelo OLAP y herramientas de visualizacion como Power BI.
+
+:::info Importante para el examen
+"¿Que propiedad garantiza que una transaccion es todo o nada?" -> **Atomicidad**. Debes distinguir con soltura una descripcion OLTP de una OLAP.
+:::
+
+### Roles de datos en Azure
+
+| Rol | Se encarga de | Ejemplo de pregunta de examen |
+|---|---|---|
+| Database Administrator (DBA) | Aprovisionar bases de datos, alta disponibilidad, backups, tuning | "¿Quien mantiene backups e indices?" -> DBA |
+| Data Engineer | Disenar pipelines, ingerir y transformar datos, orquestar movimiento de datos | "¿Quien construye los pipelines ETL?" -> Data Engineer |
+| Data Analyst | Explorar datos, crear informes y dashboards con SQL/Power BI | — |
+| Data Scientist | Modelos de ML, feature engineering, evaluacion | — |
+
+## 4. Datos relacionales en Azure
+
+Cada fila de una tabla relacional es un registro y cada columna un atributo con un tipo de dato definido; el esquema fija tablas, columnas, tipos y relaciones permitidas, lo que ayuda a mantener calidad e integridad. Las restricciones (`NOT NULL`, `UNIQUE`, `CHECK`) imponen reglas de negocio directamente en la base de datos.
+
+Una **clave primaria** identifica de forma unica cada fila; una **clave foranea** referencia la clave primaria de otra tabla, creando una relacion (uno-a-uno, uno-a-muchos, muchos-a-muchos). La **integridad referencial** impide, por ejemplo, referenciar un cliente que no existe o eliminar datos todavia referenciados.
+
+La **normalizacion** divide los datos en tablas relacionadas para reducir la redundancia: **1NF** exige valores atomicos sin grupos repetidos, **2NF** exige que los atributos no clave dependan de toda la clave primaria, y **3NF** elimina dependencias transitivas entre atributos no clave. En SQL, **DDL** (`CREATE`, `ALTER`, `DROP`) define estructuras, **DML** (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) opera sobre los datos, y **DCL** (`GRANT`, `REVOKE`) controla permisos.
+
+Dentro de la familia relacional de Azure: **Azure SQL Database** (PaaS totalmente gestionado, ideal para apps cloud-native nuevas), **Azure SQL Managed Instance** (alta compatibilidad con SQL Server on-premises, ideal para lift-and-shift) y **SQL Server en maquinas virtuales de Azure** (control total del sistema operativo y la configuracion). **Azure Database for PostgreSQL/MySQL/MariaDB** ofrece los mismos beneficios gestionados para motores open-source, y suele ser la respuesta correcta cuando el escenario menciona explicitamente MySQL o PostgreSQL con intencion de usar un servicio gestionado.
+
+La seguridad relacional en Azure combina reglas de firewall, endpoints privados e integracion con VNet para la conectividad; cifrado en reposo (Transparent Data Encryption) y en transito (TLS); identidad con Azure AD y RBAC; y backups con restauracion a un punto en el tiempo. Azure automatiza muchas tareas operativas, pero el cliente sigue siendo responsable de definir politicas de acceso, asignar permisos y clasificar los datos sensibles.
+
+## 5. Datos no relacionales en Azure
+
+Las aplicaciones modernas suelen tratar con estructuras de datos que cambian rapido, grandes volumenes de contenido semiestructurado y la necesidad de escalar a millones de usuarios. NoSQL relaja algunas restricciones relacionales para ofrecer esquemas flexibles, particionado horizontal y alta disponibilidad por diseno. Casos de uso tipicos: perfiles de usuario, catalogos de producto, telemetria, IoT, motores de recomendacion y redes sociales.
+
+- **Documento** (JSON, campos variables) -> catalogos de producto, perfiles de usuario.
+- **Clave-valor** (busquedas ultrarrapidas) -> cache de sesiones, preferencias de usuario.
+- **Columna ancha** -> series temporales, datasets grandes y dispersos consultados por rango de columna.
+- **Grafo** (nodos y aristas) -> relaciones sociales, recomendaciones.
+
+El **teorema CAP** dice que un almacen de datos distribuido solo puede garantizar plenamente dos de tres propiedades: **Consistencia**, **Disponibilidad** y **Tolerancia a particiones**. Como las particiones de red siempre pueden ocurrir, los sistemas distribuidos suelen sacrificar consistencia estricta por mayor disponibilidad, dando lugar a la consistencia eventual.
+
+**Azure Cosmos DB** es el servicio NoSQL multi-modelo de referencia para DP-900: totalmente gestionado, distribuido globalmente, con baja latencia, alta disponibilidad y escalado elastico, soportando las APIs SQL (Core), MongoDB, Cassandra, Gremlin (grafo) y Table. Su SLA cubre disponibilidad, latencia, throughput y consistencia. Los datos se particionan segun una **clave de particion** con alta cardinalidad y distribucion uniforme (por ejemplo `userId` o `deviceId`) para evitar particiones calientes; el throughput se mide en **RU/s** (Request Units por segundo), configurable por contenedor, base de datos o en modo serverless/autoscale. La indexacion automatica cubre todas las propiedades por defecto, pero puede ajustarse para reducir el consumo de RU. Cosmos DB tambien puede replicar datos entre multiples regiones de Azure, con escritura multi-region y failover automatico.
+
+Para almacenamiento no relacional mas sencillo, **Azure Blob Storage** ofrece almacenamiento de objetos masivamente escalable para datos no estructurados (imagenes, video, backups, logs); **Azure Data Lake Storage Gen2** anade a Blob Storage un namespace jerarquico pensado para analitica de Big Data (y sirve de base a **OneLake** en Microsoft Fabric); **Azure File Storage** expone recursos compartidos de archivos gestionados mediante SMB o NFS; y **Azure Queue Storage** y **Azure Table Storage** cubren, respectivamente, colas de mensajes sencillas y un almacen clave-valor basico para metadatos semiestructurados.
+
+:::info Importante para el examen
+Imagenes/video -> **Blob**. Lago analitico a gran escala -> **Data Lake Gen2**. Metadatos clave-valor simples -> **Table Storage**. Cosmos DB es la respuesta habitual para cargas NoSQL globales y multi-modelo.
+:::
+
+## 6. Analitica en Azure
+
+Una arquitectura de analitica de extremo a extremo empieza con la **ingesta** desde sistemas operacionales, aplicaciones SaaS, dispositivos IoT y fuentes externas. Los datos se almacenan en un repositorio central (data lake, data warehouse o lakehouse) y, sobre el, se construyen modelos analiticos (a menudo modelado dimensional o cubos OLAP) que sustentan consultas rapidas y vistas orientadas a negocio. Finalmente, herramientas como Power BI ofrecen dashboards e informes para explorar metricas, KPIs y tendencias.
+
+**ETL** transforma los datos antes de cargarlos, util cuando el destino espera datos limpios y modelados; **ELT** carga los datos en crudo primero (a menudo en un data lake o warehouse moderno) y aplica las transformaciones despues, usando el computo del propio destino. **Azure Data Factory** y **Synapse Pipelines** orquestan ambos escenarios conectando fuentes, ejecutando transformaciones y cargando datos en lagos y warehouses; **Azure Databricks** anade un entorno basado en Spark para procesamiento a gran escala y flujos de machine learning.
+
+**Azure Synapse Analytics** unifica data warehousing empresarial, analitica de Big Data e integracion de datos en un unico servicio: los **pools SQL dedicados** usan procesamiento masivamente paralelo (MPP) para distribuir consultas analiticas grandes entre muchos nodos de computo, mientras el **SQL sin servidor** permite consultar datos de un data lake con T-SQL estandar sin aprovisionar infraestructura dedicada, pagando solo por los datos procesados.
+
+**Microsoft Fabric** es una plataforma SaaS de extremo a extremo que unifica integracion de datos, ingenieria, data warehousing, ciencia de datos, analitica en tiempo real e inteligencia de negocio, usando **OneLake** como un unico data lake logico para que distintas cargas de trabajo compartan los mismos datos sin duplicarlos. La analitica en tiempo real de Fabric usa event streams y **KQL (Kusto Query Language)** para procesar datos de fuentes como Event Hubs o IoT casi en tiempo real.
+
+El **procesamiento batch** agrupa datos durante un periodo (minutos, horas o dias) y los procesa juntos, ideal para informes diarios, resumenes de fin de mes o grandes cargas retroactivas; el **procesamiento en streaming** trata los datos de forma continua a medida que llegan, habilitando analitica casi en tiempo real para monitorizacion de sensores, clickstreams web o deteccion de fraude. En Azure, el batch se apoya en Data Factory, Databricks Jobs o pipelines de Synapse con ejecucion programada; el streaming se apoya en Event Hubs o IoT Hub para la ingesta, junto con Azure Stream Analytics o Databricks Structured Streaming para procesar los datos en movimiento.
+
+Finalmente, en **Power BI**, Power BI Desktop conecta fuentes, modela datos y crea informes interactivos; Power BI Service es la plataforma en la nube donde se publican informes, se crean dashboards, se gestionan workspaces y se comparte contenido; Power BI Mobile permite consumir dashboards e informes en movil o tablet. Un **report** es una coleccion multipagina de visualizaciones basada en un unico dataset; un **dashboard** es una unica pagina con visualizaciones fijadas (pinned) que pueden proceder de varios informes.
+
+## 7. Traducir escenarios a servicios
+
+El corazon de muchas preguntas del examen es traducir un escenario en tres pasos: **tipo de dato -> tipo de carga (OLTP/OLAP) -> servicio de Azure correcto**.
+
+| Escenario | Servicio recomendado |
+|---|---|
+| Migrar una app OLTP on-premises de SQL Server con cambios minimos | Azure SQL Managed Instance |
+| Guardar documentos JSON para usuarios globales con baja latencia y distribucion automatica | Azure Cosmos DB (API SQL/Core) |
+| Almacenar grandes volumenes de archivos crudos, logs o datos semiestructurados para analitica posterior | Azure Data Lake Storage Gen2 |
+| Orquestar movimiento y transformacion de datos desde SaaS y fuentes on-premises hacia un warehouse central | Azure Data Factory / Synapse Pipelines |
+| Dashboards interactivos y BI de autoservicio sobre modelos de datos curados | Power BI |
+
+:::tip Cierre y siguientes pasos
+DP-900 es un examen de nivel fundamentals: se centra en el entendimiento conceptual, no en configuracion practica profunda. Domina el vocabulario (tipos y formatos de datos, OLTP vs OLAP, relacional vs no relacional, y los nombres y roles de los servicios de datos de Azure), practica preguntas basadas en escenarios, y trata de explicar cada concepto con tus propias palabras. Si puedes mapear escenarios a servicios con confianza y describir el flujo de datos de una solucion analitica de extremo a extremo en Azure, estas en muy buena posicion para aprobar.
+:::
+
+<MSLearnPath
+  tipo="examen"
+  title="Study guide para el examen DP-900"
+  url="https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/dp-900"
+>
+  Guia oficial de Microsoft con los dominios del examen, sus pesos exactos y enlaces a documentacion y evaluaciones de practica gratuitas.
+</MSLearnPath>

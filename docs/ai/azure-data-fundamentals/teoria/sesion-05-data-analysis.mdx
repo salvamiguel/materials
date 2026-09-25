@@ -1,0 +1,122 @@
+---
+sidebar_position: 5
+title: "Analisis de Datos"
+description: "Arquitectura de analitica a gran escala, ETL/ELT, Synapse, Microsoft Fabric, procesamiento batch/streaming y Power BI."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# Analisis de Datos
+
+## 1. Arquitectura de analisis de datos a gran escala
+
+Una arquitectura de analisis de datos a gran escala incluye, en general, cinco elementos:
+
+1. **Ingesta y procesamiento de datos:** carga de datos desde varias fuentes usando ETL o ELT, en modo batch o en tiempo real, con sistemas distribuidos.
+2. **Almacenamiento de datos:** infraestructura optimizada para analisis a gran escala (bases relacionales, data lakes o lakehouses).
+3. **Data warehouse analitico:** infraestructura optimizada para el analisis a gran escala.
+4. **Modelo analitico de datos:** agrupacion previa en cubos para facilitar el reporting y la exploracion (por ejemplo, ventas por region y producto).
+5. **Visualizacion de datos:** dashboards e informes interactivos accesibles tanto para usuarios tecnicos como de negocio.
+
+## 2. ETL vs ELT
+
+Ambos son conjuntos de pasos para extraer datos y cargarlos en un destino (data warehouse, data lake, etc.):
+
+- **ETL (Extract, Transform, Load):** la transformacion ocurre antes de la carga.
+- **ELT (Extract, Load, Transform):** la transformacion ocurre despues de la carga.
+
+### Servicios de Azure para la ingesta
+
+- **Azure Data Factory (orquestacion):** crea pipelines programables de ETL/ELT, soporta mas de 90 conectores (SQL, Salesforce, SAP...) y permite crear flujos visuales o mediante codigo.
+- **Azure Synapse Pipelines (integrado con Synapse):** ideal para proyectos que combinan ingesta, analisis y visualizacion; permite usar pipelines, notebooks, SQL y Spark desde una unica interfaz.
+- **Azure Databricks (transformacion avanzada):** usa Spark para procesamiento distribuido, permitiendo procesar grandes volumenes de datos con logica compleja o machine learning.
+
+## 3. Azure Synapse Analytics
+
+Azure Synapse Analytics permite analizar grandes volumenes de datos combinando consultas SQL, Spark y visualizacion en una plataforma unificada. Usa una arquitectura MPP (Massively Parallel Processing) para lograr un alto rendimiento.
+
+| Modelo | Caracteristicas |
+|---|---|
+| SQL dedicado | Recursos reservados (pago por uso), pensado para cargas predecibles y de alto rendimiento, con escalado manual (pausar/reanudar para ahorrar costes) |
+| SQL sin servidor (serverless) | Escalabilidad elastica que crece a demanda, escalado automatico sin configuracion previa, pensado para exploracion de datos o consultas esporadicas, con integracion con Power BI y Azure ML |
+
+:::info Importante para el examen
+Synapse usa arquitectura **MPP** para las cargas analiticas de gran volumen a traves del modelo SQL dedicado.
+:::
+
+## 4. Microsoft Fabric
+
+Microsoft Fabric es una plataforma unificada de analitica de datos que reune servicios clave como Power BI, Data Factory, Synapse y **OneLake** en un unico entorno. Esta disenada para cubrir todo el ciclo de vida del dato, desde la ingesta hasta la visualizacion, facilita la colaboracion entre equipos de datos con un workspace comun, y es compatible con multiples lenguajes y motores: SQL, Spark, DAX, Power Query.
+
+### Flujos de datos en tiempo real (event streams)
+
+Un **event stream** captura, transforma y carga datos desde multiples fuentes, funcionando como un motor de procesamiento que define fuentes de datos, transformaciones y destinos.
+
+**Fuentes soportadas:** servicios de Azure (Cosmos DB, Data Explorer, Event Hub, IoT Hub, Azure SQL) y servicios externos (Amazon Kinesis Data Stream, MQTT, Kafka, Google Cloud Events).
+
+**Destinos posibles:** Eventhouse (consultas y analisis en tiempo real con KQL), data lakehouse (transformar y almacenar), derived stream (redirige salidas procesadas a otros event streams), endpoint (envia datos a sistemas externos o APIs propias) y Fabric Activator (automatiza acciones segun condiciones del flujo).
+
+Las consultas en tiempo real usan **Kusto Query Language (KQL)**, aunque tambien existe una alternativa en SQL. Fabric incorpora Copilot para escribir consultas KQL o SQL automaticamente a partir de la intencion del usuario.
+
+## 5. Procesamiento batch vs streaming
+
+Existen dos enfoques principales de procesamiento:
+
+| | Batch | Streaming |
+|---|---|---|
+| Cuando se procesa | En bloques, a intervalos (horas/dias) | En tiempo real, en segundos/milisegundos |
+| Ideal para | Analisis historico, informes mensuales | Respuestas inmediatas |
+| Ejemplo | Informe mensual de ventas | Deteccion de fraude con tarjeta |
+
+### Servicios de Azure por tipo de procesamiento
+
+**Para batch:** Azure Data Factory (orquestacion ETL/ELT, ejecucion programada de pipelines), Azure Databricks Jobs (procesamiento distribuido con Spark), Azure Synapse Analytics con SQL dedicado (cargas masivas de datos).
+
+**Para streaming:** Azure Databricks Structured Streaming (procesamiento en tiempo real con Spark), Azure Event Hubs (ingesta de millones de eventos por segundo), Azure Stream Analytics (consultas SQL en tiempo real sobre flujos de datos, integrado con Event Hubs e IoT Hub).
+
+### Casos de uso comunes
+
+| Escenario | Tipo | Servicio de Azure |
+|---|---|---|
+| Informes financieros historicos, entrenamiento de modelos de ML | Batch | Azure Databricks (Spark MLlib), Data Factory (pipelines programados) |
+| Cargas nocturnas a un data warehouse | Batch | Azure Synapse Analytics + Data Factory |
+| Monitorizacion de dispositivos IoT | Streaming | Event Hubs + Databricks (Structured Streaming) |
+| Deteccion de fraude con tarjeta | Streaming | IoT Hub + Stream Analytics |
+
+Una **arquitectura hibrida** combina ambos enfoques: por ejemplo, Synapse procesa el historico de ventas cada noche para calcular tendencias, mientras Event Hubs + Stream Analytics detectan compras fraudulentas en tiempo real, y Power BI muestra dashboards con datos historicos y alertas en vivo.
+
+:::tip Elegir batch o streaming
+Tres factores deciden la eleccion: la **latencia** requerida (¿resultados ahora o se puede esperar?), el **volumen** de datos (batch suele manejar petabytes, streaming maneja datos continuos) y el **coste** (streaming es mas caro por la infraestructura en tiempo real).
+:::
+
+## 6. Microsoft Power BI
+
+Power BI es la solucion de Microsoft para crear informes, desde reportes sencillos hasta modelos de datos complejos, disenada para analistas de datos, profesionales que quieren explorar y comunicar informacion, y organizaciones que buscan mejorar su analisis de datos.
+
+### Componentes clave
+
+- **Power BI Desktop:** aplicacion de Windows para conectar multiples fuentes, transformar y modelar datos y crear informes interactivos. Gratuita.
+- **Power BI Service:** plataforma en la nube para publicar informes, compartirlos, colaborar y gestionar workspaces.
+- **Power BI Mobile:** consumo de informes y dashboards adaptados a moviles y tablets.
+
+### Terminologia clave
+
+| Termino | Definicion |
+|---|---|
+| Workspace | Contenedor donde se agrupan dashboards, informes, libros y datasets |
+| Dataset | Coleccion de datos (puede venir de un archivo como Excel/CSV o de una base de datos como Azure SQL, Synapse) |
+| Report | Conjunto de visualizaciones interactivas, distribuidas en una o varias paginas |
+| Dashboard | Pagina unica con visualizaciones clave, tomadas de uno o varios informes |
+| Paginated report | Informe paginado de alta precision (PDF/Word), creado con Power BI Report Builder |
+
+:::info Importante para el examen
+Un **report** puede tener varias paginas de visualizaciones basadas en un unico dataset; un **dashboard** es una sola pagina con elementos anclados (pinned) que pueden venir de varios informes.
+:::
+
+<MSLearnPath
+  tipo="ruta"
+  title="Explore data analytics in Azure"
+  url="https://learn.microsoft.com/en-us/training/paths/azure-data-fundamentals-explore-data-warehouse-analytics/"
+>
+  Ruta oficial de Microsoft Learn (3 modulos, gratis): fundamentos de analitica a gran escala, analitica en tiempo real y visualizacion de datos con Power BI.
+</MSLearnPath>
