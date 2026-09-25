@@ -2,7 +2,7 @@
  *
  * Messages: {id, method, args} -> {id, result} | {id, error}
  *   boot(baseUrl)            download + start the engine
- *   loadProvider(name)       download + register static/tfplay/providers/<name>.json.gz
+ *   loadProvider(name)       download + register static/tfplay/providers/<name>.json(.gz)
  *   registerProvider(json)   register a provider definition given as text
  *   requiredProviders(files) list the providers a configuration needs
  *   run(request)             run a command (see tools/tfplay/engine/engine.go)
@@ -22,18 +22,56 @@ async function readBytes(res) {
   return buf;
 }
 
+const isWasm = (b) => b.length > 4 && b[0] === 0x00 && b[1] === 0x61 && b[2] === 0x73 && b[3] === 0x6d;
+
+function isJson(b) {
+  for (let i = 0; i < b.length && i < 64; i++) {
+    if (b[i] === 0x20 || b[i] === 0x0a || b[i] === 0x0d || b[i] === 0x09) continue;
+    return b[i] === 0x7b; // {
+  }
+  return false;
+}
+
+/* Downloads <path>.gz and falls back to the plain <path>: some corporate
+ * proxies block gzip archives (403, reset connection or an HTML block page
+ * served with 200) but let ordinary .wasm/.json assets through. */
+async function fetchAsset(path, check, what) {
+  const failures = [];
+  for (const url of [path + '.gz', path]) {
+    const name = url.split('/').pop();
+    try {
+      const res = await fetch(base + url);
+      if (!res.ok) {
+        failures.push(name + ' → HTTP ' + res.status);
+        continue;
+      }
+      const bytes = await readBytes(res);
+      if (check(bytes)) return bytes;
+      failures.push(name + ' → respuesta inesperada (' + (res.headers.get('content-type') || 'sin tipo') + ')');
+    } catch (err) {
+      failures.push(name + ' → ' + String((err && err.message) || err));
+    }
+  }
+  let msg = 'No se pudo descargar ' + what + ': ' + failures.join(' · ');
+  if (failures.every((f) => f.endsWith('HTTP 404'))) msg += '. ¿Has ejecutado "bun run build:wasm"?';
+  throw new Error(msg);
+}
+
 async function boot(baseUrl) {
   base = baseUrl;
-  importScripts(base + 'wasm_exec.js');
+  if (typeof WebAssembly === 'undefined') {
+    throw new Error('Este navegador no permite ejecutar WebAssembly.');
+  }
+  try {
+    importScripts(base + 'wasm_exec.js');
+  } catch (err) {
+    throw new Error('No se pudo descargar wasm_exec.js: ' + String((err && err.message) || err));
+  }
   const go = new self.Go();
   const ready = new Promise((resolve) => {
     self.__tfplayReady = resolve;
   });
-  const res = await fetch(base + 'tfplay.wasm.gz');
-  if (!res.ok) {
-    throw new Error('No se pudo descargar el motor (HTTP ' + res.status + '). ¿Has ejecutado "bun run build:wasm"?');
-  }
-  const bytes = await readBytes(res);
+  const bytes = await fetchAsset('tfplay.wasm', isWasm, 'el motor');
   const { instance } = await WebAssembly.instantiate(bytes, go.importObject);
   go.run(instance);
   await ready;
@@ -50,11 +88,8 @@ function call(method, arg) {
 function loadProvider(name) {
   if (!providers[name]) {
     providers[name] = (async () => {
-      const res = await fetch(base + 'providers/' + name + '.json.gz');
-      if (!res.ok) {
-        throw new Error('No se pudo descargar el proveedor ' + name + ' (HTTP ' + res.status + ')');
-      }
-      const text = new TextDecoder().decode(await readBytes(res));
+      const bytes = await fetchAsset('providers/' + name + '.json', isJson, 'el proveedor ' + name);
+      const text = new TextDecoder().decode(bytes);
       return call('registerProvider', text);
     })();
     providers[name].catch(() => {

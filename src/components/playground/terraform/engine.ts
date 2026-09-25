@@ -68,6 +68,7 @@ export class TfplayEngine {
   private worker: Worker;
   private seq = 0;
   private pending = new Map<number, Pending>();
+  private failure?: Error;
   readonly ready: Promise<void>;
 
   constructor(baseUrl: string) {
@@ -81,12 +82,26 @@ export class TfplayEngine {
       if (error) p.reject(new Error(error));
       else p.resolve(result);
     };
+    // A worker.js that is blocked or fails to parse only fires "error":
+    // fail every pending call instead of loading forever.
+    this.worker.onerror = (e: ErrorEvent) => {
+      e.preventDefault();
+      this.fail(new Error(e.message ? `Error en el motor: ${e.message}` : `No se pudo descargar ${abs}worker.js`));
+    };
+    this.worker.onmessageerror = () => this.fail(new Error('El motor devolvió un mensaje ilegible'));
     this.ready = this.call('boot', abs).then(() => undefined);
+  }
+
+  private fail(err: Error) {
+    this.failure = err;
+    for (const p of this.pending.values()) p.reject(err);
+    this.pending.clear();
   }
 
   private call<T = any>(method: string, ...args: unknown[]): Promise<T> {
     const id = ++this.seq;
     return new Promise<T>((resolve, reject) => {
+      if (this.failure) return reject(this.failure);
       this.pending.set(id, { resolve, reject });
       this.worker.postMessage({ id, method, args });
     });
