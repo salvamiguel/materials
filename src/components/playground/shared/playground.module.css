@@ -746,6 +746,24 @@
   fill: var(--ifm-color-emphasis-500);
 }
 
+.graphEdge,
+.graphDim {
+  transition: opacity 0.15s, stroke 0.15s;
+}
+
+.graphEdgeOn {
+  stroke: var(--ifm-color-primary);
+  stroke-width: 2;
+}
+
+.graphArrowOn {
+  fill: var(--ifm-color-primary);
+}
+
+.graphDim {
+  opacity: 0.18;
+}
+
 .graphNode {
   fill: var(--tp-surface);
   stroke: var(--ifm-color-emphasis-400);

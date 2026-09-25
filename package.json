@@ -15,7 +15,8 @@
     "typecheck": "tsc",
     "build:wasm": "bash tools/tfplay/build-wasm.sh",
     "test:wasm": "cd tools/tfplay && go test ./...",
-    "test:awsplay": "bun test src/components/playground/aws"
+    "test:awsplay": "bun test src/components/playground/aws",
+    "test:playgrounds": "bun test src/components/playground"
   },
   "dependencies": {
     "@docusaurus/core": "^3.10.0",

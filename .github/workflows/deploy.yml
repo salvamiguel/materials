@@ -41,8 +41,8 @@ jobs:
       - name: Build Terraform playground engine (WASM)
         run: bun run build:wasm
 
-      - name: Test AWS CLI playground engine
-        run: bun run test:awsplay
+      - name: Test playground engines (AWS CLI, graph layout)
+        run: bun run test:playgrounds
 
       - name: Build
         run: bun run build
