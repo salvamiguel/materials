@@ -1,0 +1,112 @@
+---
+sidebar_position: 2
+title: "Conceptos de Datos"
+description: "Formatos de datos, cargas de trabajo OLTP/OLAP, roles de datos y catalogo de servicios de datos en Azure."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# Conceptos de Datos
+
+## 1. Que es el dato
+
+El dato es la materia prima de la informacion digital: numeros, descripciones, imagenes, transacciones... Nos ayuda a entender el pasado, actuar en el presente y predecir el futuro. Los datos se clasifican en tres tipos segun su estructura.
+
+**Datos estructurados:** tienen un esquema fijo, todos los registros siguen la misma estructura. Se representan en tablas (modelo tabular), donde las filas son instancias y las columnas son atributos. Se almacenan en bases de datos relacionales, usando claves para referenciar datos entre tablas.
+
+**Datos semiestructurados:** tienen cierta estructura pero permiten variaciones entre registros; una misma entidad puede tener campos distintos (por ejemplo, varios emails). Un formato comun es JSON, flexible y legible tanto para humanos como para sistemas.
+
+**Datos no estructurados:** no siguen un esquema definido: documentos, imagenes, audio, video, archivos binarios. No encajan en esquemas tradicionales y requieren tecnicas especiales de almacenamiento y analisis.
+
+:::tip Identificar el formato correcto
+Ejemplo tipico de examen: clasificar imagenes/videos/PDFs/audio como **no estructurados**; archivos JSON o XML como **semiestructurados**; datos de clientes con esquema fijo como **estructurados**.
+:::
+
+## 2. Almacenamiento de archivos
+
+Las empresas almacenan datos estructurados, semiestructurados y no estructurados para registrar entidades, eventos, transacciones y documentos. Hay dos formas principales de almacenamiento: **almacenamiento de archivos** y **bases de datos**. Cada vez mas organizaciones centralizan el almacenamiento en la nube por ser mas seguro, escalable y economico. El formato de archivo depende del tipo de dato, las aplicaciones que lo usaran, la legibilidad requerida y el rendimiento esperado.
+
+### Formatos comunes de almacenamiento
+
+- **Archivos delimitados:** formato legible y facil de procesar, con separadores como comas (CSV), tabuladores (TSV), espacios o ancho fijo.
+- **JSON:** estructura jerarquica basada en objetos y atributos, compatible con datos estructurados y semiestructurados, muy usado en APIs y almacenamiento en la nube.
+- **XML:** popular en decadas anteriores, usa etiquetas `<...>` para representar datos y atributos; es mas extenso que JSON y por eso menos practico hoy.
+- **BLOB (Binary Large Object):** archivos binarios sin formato legible por humanos; la aplicacion interpreta los bits directamente. Ejemplos: imagenes, videos, audio, documentos (PDF, DOCX). Es el formato preferido para datos no estructurados.
+- **Formatos optimizados:** **Parquet** (columnar, optimizado para datos anidados, muy usado en Big Data), **Avro** (orientado a filas, metadatos en JSON y datos en binario, ideal para compresion y transmision) y **ORC** (orientado a columnas, alta eficiencia de lectura/escritura en Apache Hive, incluye estadisticas por columna).
+
+## 3. Bases de datos relacionales vs no relacionales
+
+Una base de datos relacional (SQL) almacena datos en formato tabular con filas y columnas: las columnas contienen atributos y las filas contienen valores. Usa diversos modelos de acceso y gestion de datos. Las bases de datos no relacionales (NoSQL) estan optimizadas para aplicaciones que requieren grandes volumenes de datos, baja latencia y modelos de datos flexibles.
+
+### Bases de datos en Microsoft Azure
+
+| Categoria | Servicio | Caracteristicas |
+|---|---|---|
+| Relacional (SQL) | Azure SQL Database | 100% gestionado, SLA de 99,99%, elasticidad y backup automatico |
+| Relacional (SQL) | Azure Database for PostgreSQL / MySQL / MariaDB | Motores open-source gestionados, alta disponibilidad incluida |
+| No relacional (NoSQL) | Azure Cosmos DB | Documentos, clave-valor, grafos y tablas, replicacion global |
+
+## 4. OLTP: procesamiento transaccional
+
+**OLTP (Online Transaction Processing)** registra eventos importantes para la empresa (transacciones): unidades de trabajo pequenas como un pago o una transferencia. Se caracteriza por alta frecuencia (millones de operaciones diarias), esta optimizado para operaciones CRUD (Create, Read, Update, Delete) y garantiza la integridad de los datos mediante el modelo ACID. Se usa en aplicaciones criticas: sistemas financieros, ventas, inventario.
+
+### El modelo ACID
+
+| Propiedad | Significado |
+|---|---|
+| **A**tomicity (Atomicidad) | Las transacciones son todo o nada |
+| **C**onsistency (Consistencia) | Solo se guardan datos validos |
+| **I**solation (Aislamiento) | Las transacciones no se afectan entre si |
+| **D**urability (Durabilidad) | Los datos escritos no se pierden |
+
+## 5. OLAP: procesamiento analitico
+
+**OLAP (Online Analytical Processing)** usa sistemas de solo lectura o de lectura intensiva para analizar grandes volumenes de datos historicos, basandose en fotografias de datos pasados o periodicos, para apoyar decisiones basadas en datos. Distintos perfiles consumen OLAP de forma distinta: los cientificos de datos trabajan sobre el data lake, los analistas de datos consultan el almacenamiento relacional, y los usuarios de negocio consumen dashboards e informes.
+
+Un flujo tipico OLAP conecta varias fuentes de datos con un **data warehouse** y un **cubo OLAP**, sobre el que los usuarios lanzan consultas.
+
+### OLTP vs OLAP
+
+| | OLTP | OLAP |
+|---|---|---|
+| Optimizado para | Muchas transacciones pequenas en tiempo real | Consultas complejas sobre grandes volumenes |
+| Naturaleza | Escritura frecuente | Lectura intensiva |
+| Enfoque | Procesos de negocio, operaciones | Analitica, mineria de datos, decisiones |
+
+## 6. Arquitectura tipica de analisis de datos
+
+Un flujo tipico de analitica de datos sigue estos pasos: **ETL** (los datos operacionales se extraen, transforman y cargan), **data lake** (almacena archivos a gran escala para su analisis), **data warehouse** (esquema relacional optimizado para consultas), **modelo OLAP** (agrega y organiza los datos por dimensiones) y **visualizacion** (se generan informes, dashboards y KPIs).
+
+## 7. Roles en el mundo del dato
+
+| Rol | Enfoque diario | Herramientas comunes |
+|---|---|---|
+| Database Administrator (DBA) | Backups, indices, alta disponibilidad | Azure SQL DB, Azure Monitor |
+| Data Engineer | Ingesta, transformacion y orquestacion | Data Factory, Synapse Pipelines, Databricks |
+| Data Analyst | Consultas, visualizacion e insights | Power BI, Synapse SQL |
+| Data Scientist | Modelos de ML, experimentacion | Azure Machine Learning, Databricks |
+
+:::info Importante para el examen
+Preguntas tipicas por rol: "quien construye los pipelines ETL" -> **Data Engineer**; "quien gestiona backups e indices" -> **DBA**.
+:::
+
+## 8. Catalogo de servicios de datos en Azure
+
+- **Azure SQL:** familia de bases de datos relacionales basada en SQL Server (Azure SQL Database, SQL Managed Instance y SQL on VM).
+- **Bases de datos open-source:** servicios gestionados para MySQL, MariaDB y PostgreSQL, ideales para aplicaciones LAMP y escenarios hibridos.
+- **Azure Cosmos DB:** base de datos NoSQL global y escalable, con modelos de documento, clave-valor, columna y grafo.
+- **Azure Storage:** almacenamiento masivo de blobs, archivos, tablas y colas; se usa como data lake por su capacidad jerarquica.
+- **Azure Data Factory:** servicio de orquestacion de datos para ETL y carga de datos, conectando, transformando y moviendo datos entre servicios.
+- **Microsoft Fabric:** plataforma SaaS unificada para analisis integral de datos (ETL, analitica en tiempo real, IA, BI y gobernanza).
+- **Azure Databricks:** plataforma de analitica avanzada basada en Apache Spark, con procesamiento masivo y notebooks para analistas.
+- **Azure Stream Analytics:** procesamiento en tiempo real de flujos de datos (IoT, logs), ideal para alertas e insights inmediatos.
+- **Azure Data Explorer:** servicio especializado en telemetria y analisis de logs, con consultas rapidas sobre grandes volumenes.
+- **Microsoft Purview:** solucion de gobernanza y catalogo de datos, facilita la trazabilidad y confianza en los datos analiticos.
+
+<MSLearnPath
+  tipo="ruta"
+  title="Explore core data concepts"
+  url="https://learn.microsoft.com/en-us/training/paths/azure-data-fundamentals-explore-core-data-concepts/"
+>
+  Ruta oficial de Microsoft Learn (2 modulos, gratis): formatos de datos, cargas de trabajo transaccionales/analiticas, y roles y servicios de datos. Es la base directa de esta sesion para el examen DP-900.
+</MSLearnPath>

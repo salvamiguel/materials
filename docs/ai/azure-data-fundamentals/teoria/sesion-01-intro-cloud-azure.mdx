@@ -1,0 +1,148 @@
+---
+sidebar_position: 1
+title: "Introduccion al Cloud y a Azure"
+description: "Fundamentos de Cloud Computing, modelos de despliegue y servicio, infraestructura global de Azure y modelo de responsabilidad compartida."
+---
+
+import { FaMicrosoft } from "react-icons/fa";
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# Introduccion al Cloud y a Azure <FaMicrosoft style={{ verticalAlign: 'middle' }} />
+
+Esta sesion sienta las bases para las dos certificaciones del curso: **DP-900 (Azure Data Fundamentals)** y **AI-901 (Azure AI Fundamentals)**. Antes de entrar en datos o en IA, hay que entender que es la nube, por que las empresas migran a ella y como esta organizada la infraestructura global de Microsoft Azure.
+
+## 1. Problemas con la IT tradicional
+
+Antes de la nube, las organizaciones dependian de centros de datos fisicos propios, lo que generaba varios problemas estructurales.
+
+El coste de mantenimiento era elevado: alimentacion electrica continua, refrigeracion, mantenimiento preventivo del hardware y espacio fisico dedicado suponen una inversion alta tanto en capital inicial (CapEx) como en gasto operativo recurrente (OpEx).
+
+Modificar la infraestructura era lento: anadir o sustituir componentes implicaba plazos de compra, instalacion y configuracion que ralentizaban la respuesta del negocio.
+
+La escalabilidad estaba limitada por el espacio fisico y los recursos disponibles: si se necesitaba mas capacidad, habia que comprar hardware con semanas o meses de antelacion, con el riesgo de sobredimensionar (pagar por recursos sin usar) o subdimensionar (no llegar a los picos de demanda).
+
+La seguridad y la monitorizacion 24/7 exigian equipos dedicados en turnos, con el coste de personal y la complejidad de gestion que eso implica.
+
+Por ultimo, habia que prepararse para desastres (terremotos, cortes de suministro, incendios), lo que exigia planes de contingencia caros y complejos.
+
+## 2. Que es Cloud Computing
+
+Cloud Computing es la entrega bajo demanda de recursos de computo, almacenamiento, bases de datos, redes y otros servicios de TI a traves de Internet, con un modelo de precios de pago por uso. En lugar de comprar y mantener centros de datos propios, las organizaciones acceden a estos recursos segun los necesitan, a traves de un proveedor como Microsoft Azure.
+
+### Modelos de despliegue
+
+**Public Cloud (nube publica):** los recursos son propiedad de un proveedor y se comparten entre multiples clientes a traves de Internet. Azure, AWS y Google Cloud son ejemplos de nube publica. Ofrece la mayor flexibilidad y el menor coste inicial.
+
+**Private Cloud (nube privada u on-premises):** la infraestructura se usa en exclusiva por una sola organizacion, ya sea en su propio centro de datos o gestionada por un tercero. Da mas control, pero exige una inversion significativa en hardware y mantenimiento.
+
+**Hybrid Cloud (nube hibrida):** combina nube publica y privada, permitiendo compartir datos y aplicaciones entre ambas. Ideal para organizaciones que quieren mantener datos sensibles on-premises mientras aprovechan la escalabilidad de la nube publica para otras cargas de trabajo.
+
+## 3. Seis ventajas del Cloud Computing
+
+Estas seis ventajas explican por que tantas organizaciones migran cargas de trabajo a la nube:
+
+1. **Cambiar gasto de capital por gasto variable:** en lugar de grandes inversiones iniciales, se paga solo por los recursos que realmente se consumen.
+2. **Beneficiarse de economias de escala:** al agregar el uso de cientos de miles de clientes, el proveedor logra precios mas bajos para todos.
+3. **Dejar de adivinar la capacidad necesaria:** se escala hacia arriba o hacia abajo segun la demanda real, sin estimar capacidad con meses de antelacion.
+4. **Aumentar la velocidad y la agilidad:** los recursos estan disponibles en minutos, lo que acelera el desarrollo.
+5. **Dejar de gastar dinero en mantener centros de datos:** los equipos se centran en el negocio, no en la infraestructura fisica.
+6. **Alcance global en minutos:** las aplicaciones se pueden desplegar en multiples regiones del mundo con pocos clics.
+
+:::tip Problemas que resuelve la nube
+La nube resuelve la falta de flexibilidad, los costes altos, la escalabilidad limitada y la lentitud de despliegue. Elasticidad (escalar automaticamente segun demanda) y alta disponibilidad (repartir recursos entre varios centros de datos) son conceptos clave para el examen.
+:::
+
+## 4. Tipos de Cloud Computing
+
+Los servicios en la nube se clasifican en tres modelos segun el nivel de abstraccion que ofrecen:
+
+**Infrastructure as a Service (IaaS):** proporciona los componentes basicos de infraestructura (redes, computo, almacenamiento). Es el modelo con mas flexibilidad y control, el mas parecido a la infraestructura on-premises tradicional. El usuario gestiona el sistema operativo, el middleware y las aplicaciones.
+
+**Platform as a Service (PaaS):** elimina la necesidad de gestionar la infraestructura subyacente. Permite centrarse en el despliegue y gestion de las aplicaciones, sin preocuparse de aprovisionar recursos ni aplicar parches.
+
+**Software as a Service (SaaS):** entrega un producto completo, ejecutado y gestionado por el proveedor. El usuario final solo utiliza la aplicacion.
+
+| Modelo | Gestion del usuario | Gestion del proveedor | Ejemplo en Azure |
+|--------|----------------------|-------------------------|-------------------|
+| IaaS | SO, apps, datos | Hardware, red, virtualizacion | Azure Virtual Machines |
+| PaaS | Apps, datos | SO, hardware, red | Azure App Service, Azure SQL Database |
+| SaaS | Solo uso | Todo | Microsoft 365 |
+
+## 5. Descripcion general de Azure
+
+Microsoft Azure es una de las plataformas de nube publica mas grandes y ampliamente adoptadas del mundo. En 2024, Azure alcanzo 245.122 millones de dolares en ingresos anuales, con un crecimiento del 15,67% en un ano, el mayor crecimiento entre los grandes proveedores durante los ultimos cinco anos, aunque AWS sigue liderando el mercado en cuota total.
+
+### Formas de acceder a los servicios de Azure
+
+- **Azure Portal:** interfaz web grafica para gestionar los servicios de forma visual. Ideal para explorar servicios y tareas puntuales.
+- **Azure CLI / Cloud Shell:** herramienta de linea de comandos para interactuar con los servicios mediante comandos de texto, util para automatizar tareas.
+- **Software Development Kits (SDKs):** bibliotecas para multiples lenguajes (Python, Java, JavaScript, .NET) que permiten integrar servicios de Azure en las aplicaciones.
+- **Azure API Reference:** documentacion de las APIs REST que permiten llamadas directas a los servicios.
+
+## 6. Modelo de precios de Azure
+
+Azure sigue un modelo de pago por uso (pay-as-you-go) basado en tres pilares:
+
+**Compute (computo):** se paga por el tiempo de computo utilizado.
+
+**Storage (almacenamiento):** se paga por la cantidad de datos almacenados en la nube.
+
+**Data Transfer OUT (salida de datos):** se paga por los datos que salen de Azure. La transferencia de entrada (Data Transfer IN) es gratuita.
+
+:::info Importante para el examen
+La transferencia de datos de entrada a Azure es gratuita; solo se cobra la salida. Este concepto aparece con frecuencia en las preguntas de DP-900.
+:::
+
+## 7. Infraestructura global de Azure
+
+### Azure Regions
+
+Una region de Azure es un area geografica que contiene uno o varios centros de datos conectados por una red de baja latencia y alto ancho de banda. Azure cuenta con mas de 70 regiones en todo el mundo, mas que cualquier otro proveedor de nube. Algunas regiones estan emparejadas con otra region de la misma geografia para recuperacion ante desastres y replicacion.
+
+### Availability Zones (AZ)
+
+Son ubicaciones fisicas unicas dentro de una region de Azure, cada una con alimentacion, refrigeracion y red independientes. Estan disenadas para alta disponibilidad y tolerancia a fallos: si una zona falla, las demas siguen operativas.
+
+:::tip Como elegir una region
+Al elegir una region de Azure se consideran cuatro factores:
+1. **Cumplimiento normativo:** los datos no salen de una region sin permiso explicito.
+2. **Proximidad:** la region mas cercana a los usuarios reduce la latencia.
+3. **Servicios disponibles:** no todos los servicios ni funcionalidades estan en todas las regiones.
+4. **Precio:** varia entre regiones y es transparente en la pagina de precios de cada servicio.
+:::
+
+## 8. Shared Responsibility Model
+
+El Shared Responsibility Model define que aspectos de seguridad son responsabilidad de Microsoft y cuales del cliente.
+
+**Responsabilidad de Microsoft:** proteger la infraestructura fisica que ejecuta los servicios (centros de datos, hardware, red fisica, hipervisor).
+
+**Responsabilidad del cliente:** gestionar identidades y accesos, configurar firewalls, cifrar datos, configurar la red y aplicar parches al sistema operativo en las maquinas virtuales.
+
+Azure tiene, ademas, un **AI Shared Responsibility Model** especifico que extiende estos mismos principios a las cargas de trabajo de inteligencia artificial: Microsoft asegura la infraestructura y las plataformas de IA, mientras el cliente es responsable de como configura, entrena y gobierna sus soluciones de IA.
+
+:::info Importante para el examen
+Regla general: si puedes configurarlo desde la consola de Azure, es tu responsabilidad como cliente. Si no puedes verlo ni acceder a ello, es responsabilidad de Microsoft.
+:::
+
+## 9. Acceptable Use Policy
+
+La politica de uso aceptable de Microsoft Online Services prohibe, entre otras cosas:
+
+- Usar los servicios de forma contraria a la ley aplicable.
+- Usar los servicios de forma que dane o afecte el uso de terceros.
+- Falsificar cabeceras de correo o suplantar identidad.
+- Enviar correo masivo no solicitado (spam).
+- Eliminar o alterar avisos legales o regulatorios incorporados en los servicios.
+
+## Comparativa rapida de proveedores
+
+Azure, AWS y Google Cloud son los tres grandes proveedores de nube publica. Para el examen no se pide memorizar cuotas de mercado, pero si reconocer que los tres compiten en el mismo espacio con modelos IaaS/PaaS/SaaS equivalentes bajo nombres distintos.
+
+<MSLearnPath
+  tipo="ruta"
+  title="Azure Fundamentals: Describe Azure architecture and services"
+  url="https://learn.microsoft.com/en-us/training/paths/azure-fundamentals-describe-azure-architecture-services/"
+>
+  Ruta oficial y gratuita de Microsoft Learn que repasa regiones, zonas, modelos de servicio (IaaS/PaaS/SaaS) y el modelo de responsabilidad compartida con mas detalle del que da esta sesion.
+</MSLearnPath>

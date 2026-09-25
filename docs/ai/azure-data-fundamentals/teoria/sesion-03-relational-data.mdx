@@ -1,0 +1,122 @@
+---
+sidebar_position: 3
+title: "Datos Relacionales"
+description: "Modelo relacional, normalizacion, SQL basico y la familia de servicios relacionales de Azure."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# Datos Relacionales
+
+## 1. Que es un dato relacional
+
+Los datos relacionales se estructuran en tablas: filas (registros) y columnas (atributos). Tienen un esquema explicito (tipos de datos, restricciones) que permite una consistencia fuerte y un acceso familiar basado en SQL. Es el modelo tipico de aplicaciones de negocio, cargas OLTP y sistemas financieros.
+
+## 2. Elementos clave del modelo relacional
+
+- **Primary Key (clave primaria):** identificador unico de cada fila.
+- **Foreign Key (clave foranea):** impone una relacion entre tablas (integridad referencial).
+- **Relaciones:** uno-a-uno, uno-a-muchos, muchos-a-muchos.
+- **Objetos de base de datos:** tablas, vistas, indices, procedimientos almacenados, triggers.
+
+Ejemplo clasico: una tabla `Customer` (con `CustomerID` como clave primaria) y una tabla `Order` con una columna `CustomerID` que actua como clave foranea, enlazando cada pedido con su cliente. Este diseno aporta consultas estructuradas, joins e integridad de los datos.
+
+## 3. Normalizacion vs desnormalizacion
+
+**Normalizacion:** proceso de organizar los datos para reducir la redundancia (1NF, 2NF, 3NF). Ventajas: reduce la duplicacion y mejora la integridad al actualizar. Contrapartida: mas joins, lo que puede degradar el rendimiento de algunas consultas.
+
+**Desnormalizacion:** introduce redundancia de forma intencionada (aplanando datos) para optimizar lecturas o vistas. Se usa en cargas de lectura intensiva, reporting y analitica. La eleccion depende del patron de carga de trabajo.
+
+### Las tres primeras formas normales
+
+| Forma normal | Regla |
+|---|---|
+| **1NF** — Valores atomicos | Cada campo contiene un unico valor; sin listas ni columnas repetidas |
+| **2NF** — Dependencia completa de la clave | Cada atributo no clave depende de toda la clave primaria; sin dependencias parciales |
+| **3NF** — Sin dependencias transitivas | Los atributos no clave dependen solo de la clave primaria, no de otros atributos no clave |
+
+:::tip Para el examen
+No hace falta demostrar las formas normales, solo reconocer que la normalizacion produce varias tablas relacionadas con menos duplicacion y mejor calidad de datos.
+:::
+
+## 4. Fundamentos de SQL
+
+SQL se divide en tres categorias:
+
+- **DDL (Data Definition Language):** `CREATE TABLE`, `ALTER TABLE`, `DROP TABLE` — define la estructura de los objetos.
+- **DML (Data Manipulation Language):** `INSERT`, `UPDATE`, `DELETE`, `SELECT` — trabaja con los datos.
+- **DCL (Data Control Language):** `GRANT`, `REVOKE` — controla permisos y seguridad.
+
+:::info Importante para el examen
+`GRANT` y `REVOKE` pertenecen a **DCL**. Los comandos que modifican filas (`INSERT`/`UPDATE`/`DELETE`) son **DML**.
+:::
+
+## 5. Cargas transaccionales vs analiticas
+
+**OLTP (transaccional):** muchas transacciones cortas y concurrentes (altas, actualizaciones, bajas), baja latencia, consistencia fuerte. Ejemplo: un punto de venta retail.
+
+**OLAP (analitico):** consultas menos frecuentes pero mas complejas, para agregaciones y analisis, habitualmente sobre volumenes de datos mayores y con actualizaciones menos frecuentes. Ejemplo: un sistema de reporting de un data warehouse.
+
+## 6. Rendimiento, escalabilidad, disponibilidad y durabilidad
+
+- **Rendimiento:** tiempo de respuesta y throughput.
+- **Escalabilidad:** vertical (maquina mas grande) frente a horizontal (sharding / scale-out).
+- **Disponibilidad:** el sistema permanece operativo, con opciones como replicas de alta disponibilidad.
+- **Durabilidad:** una vez confirmada una transaccion, permanece intacta incluso ante fallos.
+
+En el contexto relacional de Azure, estas cuatro dimensiones se traducen en elegir el nivel de servicio (tier), la redundancia y la georreplicacion adecuados.
+
+## 7. Migrar datos relacionales a la nube
+
+**Motivos para migrar:** optimizacion de costes (pago por uso), escalabilidad a demanda, acceso global, servicios gestionados (menos carga operativa).
+
+**Retos:** compatibilidad con bases de datos legadas, soberania de los datos y cumplimiento normativo, latencia para usuarios locales, disponibilidad de conocimiento tecnico.
+
+**On-premises vs nube:** on-premises gestionas hardware, sistema operativo, software de base de datos, backups y recuperacion ante desastres; en la nube, los servicios gestionados se encargan de parches, backups y alta disponibilidad, y tu te centras en los datos y el esquema. El modelo de coste tambien cambia: CapEx en on-premises frente a OpEx en la nube.
+
+## 8. La familia Azure SQL
+
+- **Azure SQL Database:** base de datos relacional PaaS totalmente gestionada, en modo base de datos unica o pool elastico.
+- **Azure SQL Managed Instance:** compatibilidad casi al 100% con SQL Server, en forma de instancia gestionada.
+- **SQL Server on Azure VM:** modelo IaaS; gestionas el sistema operativo y SQL Server, ideal para migraciones lift-and-shift.
+
+## 9. Ofertas relacionales open-source
+
+**Azure Database for PostgreSQL / MySQL / MariaDB:** modelos de servidor unico o flexible, para desarrolladores que prefieren motores open-source, migrar aplicaciones existentes o buscar una opcion mas economica. Hay que considerar la version soportada, la compatibilidad y el esfuerzo de migracion.
+
+### Comparativa de ofertas relacionales
+
+| Servicio | Caracteristicas clave | Casos de uso | Ventajas | Desventajas |
+|---|---|---|---|---|
+| Azure SQL Database | PaaS totalmente gestionado; backups, escalado y alta disponibilidad automaticos | Apps cloud-native, web y movil, SaaS | Sin gestion de infraestructura, facil de escalar | Algunas funciones legacy de SQL Server no disponibles |
+| Azure SQL Managed Instance | Compatibilidad casi total con SQL Server; soporte de VNet y parcheo automatico | Migraciones lift-and-shift desde SQL Server on-prem | Alta compatibilidad, menos tareas de administracion | Mayor coste, escalado algo menos flexible |
+| SQL Server on Azure VM | Control total del SO y de SQL Server | Cargas complejas que requieren control total; sistemas legados | Conjunto de funciones completo, ideal para configuraciones a medida | Requiere mantenimiento completo (parches, backups) |
+| Azure Database for PostgreSQL / MySQL / MariaDB | Motores open-source gestionados; modelos de servidor flexible; alta disponibilidad incluida | Apps con stack open-source, proyectos multi-cloud | Motores conocidos, flexibilidad open-source | Menos integraciones profundas con Azure |
+
+:::info Importante para el examen
+Migracion lift-and-shift desde SQL Server on-prem con cambios minimos -> **Azure SQL Managed Instance**. App cloud-native nueva -> **Azure SQL Database**. Necesidad de control total -> **SQL Server on Azure VM**.
+:::
+
+## 10. Aprovisionar una base de datos relacional en Azure
+
+1. Iniciar sesion en Azure Portal -> Crear recurso -> elegir "Azure SQL Database" (u otro servicio).
+2. Configurar lo basico: suscripcion, grupo de recursos, nombre de la base de datos, tamano de computo y almacenamiento.
+3. Redes: seleccionar servidor, reglas de firewall, red virtual si es necesario.
+4. Revisar y crear; esperar el despliegue.
+5. Conectar con herramientas (Azure Data Studio, SSMS) o desde codigo.
+
+Los modelos de despliegue disponibles son **base de datos unica** (recurso independiente, simple de gestionar), **instancia gestionada** (varias bases de datos en un entorno gestionado con alta compatibilidad) y **pool elastico** (varias bases de datos comparten recursos para optimizar el coste).
+
+## 11. Seguridad, conectividad y continuidad
+
+- **Conectividad:** endpoint publico con reglas de firewall, o endpoint privado (Azure Private Link) para mayor seguridad; integracion con red virtual (Managed Instance en VNet).
+- **Seguridad:** cifrado en reposo con Transparent Data Encryption (TDE), cifrado en transito con TLS, autenticacion con Azure AD e identidades administradas, auditoria con Azure SQL Auditing.
+- **Continuidad:** backups automaticos con restauracion a un punto en el tiempo (PITR), geo-replicacion con failover groups, y alta disponibilidad integrada sin gestion manual de clustering.
+
+<MSLearnPath
+  tipo="ruta"
+  title="Explore relational data in Azure"
+  url="https://learn.microsoft.com/en-us/training/paths/azure-data-fundamentals-explore-relational-data/"
+>
+  Ruta oficial de Microsoft Learn (2 modulos, gratis): conceptos relacionales fundamentales y los servicios de base de datos relacional disponibles en Azure.
+</MSLearnPath>
