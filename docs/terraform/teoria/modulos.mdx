@@ -136,6 +136,7 @@ import LabActions from '@site/src/components/shared/LabActions';
 
 <LabActions
   repo="https://github.com/salvamiguel/tf-first-module-example"
+  playground={['aws', 'gcp']}
   title="Explora el código del ejemplo"
   codespace={false}
   devcontainer={true}
@@ -143,7 +144,7 @@ import LabActions from '@site/src/components/shared/LabActions';
 />
 
 :::info Estructura del repositorio
-La rama **main** contiene el esqueleto del proyecto con la estructura base del módulo. A partir de ahí, cada cloud provider tiene su propia rama con la implementación específica: `aws`, `gcp` y `azure`.
+La rama **main** contiene el esqueleto del proyecto con la estructura base del módulo. A partir de ahí, cada cloud provider tiene su propia rama con la implementación específica: `aws`, `gcp` y `azure`. Las ramas `aws` y `gcp` puedes abrirlas directamente en el playground de Terraform (Azure no está simulado).
 :::
 
 ### modules/webapp/variables.tf
