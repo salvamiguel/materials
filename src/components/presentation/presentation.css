@@ -1,0 +1,224 @@
+/* Presentation mode: everything is scoped to html[data-presentation]. */
+
+/* Navbar button */
+.presentation-navbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  color: var(--ifm-navbar-link-color);
+  font-size: 1.25rem;
+  transition: background 0.2s;
+}
+
+.presentation-navbar-btn:hover {
+  background: var(--ifm-color-emphasis-200);
+}
+
+.presentation-menu-link {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+}
+
+/* Chrome */
+html[data-presentation] {
+  --ifm-navbar-height: 0px;
+}
+
+html[data-presentation] .theme-layout-navbar,
+html[data-presentation] .theme-doc-sidebar-container,
+html[data-presentation] .theme-doc-toc-desktop,
+html[data-presentation] .theme-doc-toc-mobile,
+html[data-presentation] .theme-doc-breadcrumbs,
+html[data-presentation] .theme-doc-footer,
+html[data-presentation] .theme-layout-footer {
+  display: none !important;
+}
+
+/* Content: centred, wider, bigger.
+ * The doc column keeps Docusaurus' `max-width: 75% !important`: it lives in a
+ * cascade layer, which beats any unlayered !important. So the container is
+ * widened instead and the column is centred inside its row. */
+html[data-presentation] [class*='docMainContainer'] {
+  max-width: 100%;
+  flex-basis: 100%;
+}
+
+html[data-presentation] .main-wrapper .container {
+  max-width: min(1600px, 100%);
+  margin: 0 auto;
+}
+
+html[data-presentation] .main-wrapper .row {
+  justify-content: center;
+}
+
+/* The TOC's column would keep its 25 % even with the TOC hidden. */
+html[data-presentation] .main-wrapper .row > .col:has(> .theme-doc-toc-desktop) {
+  display: none;
+}
+
+html[data-presentation] [class*='docItemCol'] {
+  flex-basis: 100%;
+}
+
+html[data-presentation] .theme-doc-markdown {
+  font-size: calc(1rem * var(--pres-scale, 1.2));
+  padding-top: 2rem;
+}
+
+html[data-presentation] .theme-doc-markdown h1,
+html[data-presentation] .theme-doc-markdown h2,
+html[data-presentation] .theme-doc-markdown h3 {
+  scroll-margin-top: 1.5rem;
+}
+
+html[data-presentation] .theme-doc-markdown h1 {
+  font-size: 2.2em;
+}
+
+html[data-presentation] .theme-doc-markdown h2 {
+  font-size: 1.7em;
+}
+
+html[data-presentation] .theme-doc-markdown h3 {
+  font-size: 1.3em;
+}
+
+html[data-presentation] .pagination-nav {
+  margin-bottom: 5rem;
+}
+
+/* Current section */
+html[data-presentation] [data-pres-current] {
+  position: relative;
+}
+
+html[data-presentation] [data-pres-current]::before {
+  content: '';
+  position: absolute;
+  left: -1rem;
+  top: 0.15em;
+  bottom: 0.15em;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--ifm-color-primary);
+}
+
+/* Controls */
+.presentation-hud {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: calc(var(--ifm-z-index-fixed) + 10);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: calc(100vw - 32px);
+  transition: opacity 0.4s;
+}
+
+.presentation-hud--idle {
+  opacity: 0.25;
+}
+
+.presentation-hud:hover {
+  opacity: 1;
+}
+
+.presentation-bar,
+.presentation-hint {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ifm-background-surface-color) 92%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 13px;
+  color: var(--ifm-font-color-base);
+}
+
+.presentation-hint {
+  padding: 6px 12px;
+  gap: 4px;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.presentation-hint kbd {
+  font-size: 11px;
+  padding: 1px 5px;
+}
+
+.presentation-bar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.presentation-bar button:hover:not(:disabled) {
+  background: var(--ifm-color-emphasis-200);
+  color: var(--ifm-color-primary);
+}
+
+.presentation-bar button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.presentation-pos {
+  display: inline-flex;
+  align-items: baseline;
+  padding: 0 4px;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.presentation-pos b {
+  color: var(--ifm-color-primary);
+}
+
+.presentation-title {
+  max-width: 32vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.presentation-scale {
+  min-width: 3.4em;
+  text-align: center;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.presentation-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--ifm-color-emphasis-300);
+}
+
+@media (max-width: 600px) {
+  .presentation-hint,
+  .presentation-title,
+  .presentation-scale {
+    display: none;
+  }
+}
