@@ -1,0 +1,89 @@
+---
+sidebar_position: 3
+title: "IA Generativa y Agentes con Foundry"
+description: "Que es Microsoft Foundry, prompting, desplegar un modelo, construir un cliente de chat con el SDK, y crear y probar un agente."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# IA Generativa y Agentes con Foundry
+
+Esta es "Microsoft Foundry (I)" del temario: la primera sesion practica de AI-901, donde pasamos de los conceptos a implementar de verdad. Aqui vive el subdominio con mas peso individual del examen: **crear apps y agentes generativos con Foundry**.
+
+## 1. Que es Microsoft Foundry
+
+Microsoft Foundry es la plataforma unificada de Microsoft en Azure para construir y gestionar aplicaciones de IA. Sus areas principales son los **modelos fundacionales** (LLMs, vision, embeddings, etc.), las **Foundry Tools** (vision, voz, lenguaje, busqueda, extraccion de informacion) y los **agentes** que orquestan modelos y herramientas para completar tareas.
+
+### Por que Foundry
+
+- **Experiencia unificada:** un unico lugar para explorar modelos, disenar soluciones y desplegar endpoints.
+- **Plataforma de nivel empresarial:** seguridad, gobernanza y cumplimiento integrados con los controles estandar de Azure (RBAC, redes privadas, politicas, identidad).
+- **Productividad y colaboracion:** ayuda a los equipos a prototipar rapido, iterar y llevar soluciones a produccion de forma estructurada.
+
+### El catalogo de modelos
+
+Foundry reune en un unico catalogo modelos de Azure OpenAI (chat, completions, embeddings) junto con otros modelos de Microsoft y de partners, incluyendo modelos de vision, voz o especializados. Se puede filtrar por tarea (chat, resumen, clasificacion, generacion...) y abrir un playground directamente desde la pagina de cada modelo para probarlo antes de decidir cual usar.
+
+:::info Importante para el examen
+"Identificar un modelo adecuado segun sus capacidades" es literalmente una de las habilidades que evalua AI-901: no se trata de memorizar nombres de modelos, sino de saber que preguntarte (¿necesito texto, vision o ambos? ¿cuanto contexto? ¿que coste y latencia?) para elegir bien en el catalogo.
+:::
+
+## 2. Prompting
+
+Un **prompt** es la instruccion que le das a un modelo generativo. Foundry distingue dos tipos:
+
+- **System prompt (mensaje de sistema):** define el rol, el tono y las reglas que debe seguir el modelo durante toda la conversacion — por ejemplo, "eres un asistente de soporte tecnico, responde solo sobre nuestros productos, en un maximo de 3 frases".
+- **User prompt (mensaje de usuario):** la pregunta o instruccion concreta de cada turno de la conversacion.
+
+Un buen system prompt es especifico, fija limites claros (que puede y que no puede hacer el modelo) y, cuando aplica, indica el formato de salida esperado. En el **playground de prompts** de Foundry se puede iterar sobre ambos mensajes y ajustar parametros como la temperatura (mas alta = respuestas mas creativas/variables; mas baja = mas deterministas) o el maximo de tokens de salida, antes de construir la aplicacion.
+
+## 3. Desplegar un modelo y probarlo
+
+Para usar un modelo del catalogo hace falta **desplegarlo**: se crea un despliegue (deployment) que le asigna capacidad y un nombre, y ese despliegue es lo que se llama desde el playground o desde codigo — no se llama al modelo "en abstracto". Desde el propio portal de Foundry se puede interactuar con el despliegue directamente en el playground para validar que responde como se espera antes de escribir una sola linea de codigo de cliente.
+
+## 4. Construir un cliente de chat ligero con el SDK de Foundry
+
+Una vez validado el prompt en el playground, el siguiente paso es integrarlo en una aplicacion real usando el **SDK de Foundry** (disponible para Python, entre otros lenguajes). A alto nivel, el flujo de un cliente de chat ligero es siempre el mismo:
+
+1. Autenticarse contra el proyecto de Foundry (con una clave o con identidad de Azure).
+2. Indicar el despliegue del modelo que se quiere usar.
+3. Enviar el mensaje de sistema (una vez) y el mensaje del usuario.
+4. Leer la respuesta del modelo y mostrarla (o seguir la conversacion, reenviando el historial en cada turno).
+
+No hace falta memorizar sintaxis exacta de codigo para el examen, pero si entender estos cuatro pasos y por que cada uno es necesario.
+
+## 5. Que es un agente en Foundry
+
+Un **agente** es un modelo generativo al que se le da acceso a herramientas (llamadas a APIs, busqueda, funciones propias) y la capacidad de decidir, por si mismo, que pasos dar para completar una tarea — en lugar de responder una sola vez, planifica, actua y puede repetir el ciclo hasta lograr el objetivo. La diferencia clave con un simple chat es esa capacidad de **actuar**, no solo de responder texto.
+
+### Crear y probar un agente de un solo paso
+
+En el portal de Foundry, crear un agente implica: elegir un modelo base, escribir sus instrucciones (equivalentes a un system prompt, pero orientado a tareas), y opcionalmente darle acceso a herramientas (por ejemplo, una funcion que consulte una base de datos o una API externa). Un **agente de un solo paso (single-agent)** ejecuta esas instrucciones para responder o resolver una tarea concreta, y se puede probar directamente desde el propio portal antes de exponerlo a una aplicacion.
+
+### Construir un cliente ligero para el agente
+
+Igual que con el chat, una vez el agente funciona en el portal se construye un cliente ligero con el SDK que: se autentica, referencia el agente, le envia la tarea del usuario, y recoge tanto la respuesta final como (si la aplicacion lo necesita) los pasos intermedios que el agente ha ejecutado.
+
+## 6. Grounding y RAG, en una frase
+
+Cuando un agente o un chat necesita responder con informacion propia de la organizacion (no solo lo que el modelo aprendio en su entrenamiento), se usa **grounding** mediante **Retrieval-Augmented Generation (RAG)**: se recuperan los documentos o fragmentos mas relevantes de una fuente propia (Blob Storage, Data Lake, Fabric...) y se pasan al modelo como contexto adicional junto al prompt, para que la respuesta este anclada en esos datos y no solo en la memoria del modelo.
+
+:::tip AI-901 vs el antiguo AI-900
+El examen AI-900 fue retirado el 30 de junio de 2026. Su sucesor, AI-901, dedica el subdominio con mas peso individual del examen precisamente a esto: construir apps y agentes generativos con Foundry. A diferencia de AI-900, que no exigia saber programar, AI-901 espera sintaxis basica de Python — el flujo de 4 pasos de la seccion 4 es exactamente lo que hay detras del ejercicio practico del examen. El programa del modulo tiene la comparativa completa AI-900 vs AI-901.
+:::
+
+<MSLearnPath
+  tipo="modulo"
+  title="Introduction to generative AI and agents"
+  url="https://learn.microsoft.com/en-us/training/modules/fundamentals-generative-ai/"
+>
+  Modulo conceptual (ruta "AI concepts"): fundamentos de los LLMs, prompts y agentes de IA.
+</MSLearnPath>
+
+<MSLearnPath
+  tipo="ruta"
+  title="Get started with AI applications and agents on Azure"
+  url="https://learn.microsoft.com/en-us/training/paths/get-started-ai-apps-agents/"
+>
+  7 modulos, gratis: practica hands-on en Microsoft Foundry. El segundo modulo, "Get started with generative AI and agents in Azure", es la continuacion directa de esta sesion.
+</MSLearnPath>

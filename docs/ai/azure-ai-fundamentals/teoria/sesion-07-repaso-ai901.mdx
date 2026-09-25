@@ -1,0 +1,87 @@
+---
+sidebar_position: 7
+title: "Repaso Final AI-901"
+description: "Repaso integrado de todo el temario AI-901: conceptos, IA responsable, y las cuatro areas de implementacion con Microsoft Foundry."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# Repaso Final AI-901
+
+Esta sesion repasa todo el temario de AI-901 y cierra con un simulacro practico (Python/REST/SDK), igual que ya vimos para DP-900. Recuerda la regla de peso del examen: **40-45% conceptos, 55-60% implementacion con Microsoft Foundry** — dedica el repaso en esa misma proporcion.
+
+## 1. Identify AI concepts and capabilities (40-45%)
+
+### Terminologia base
+
+**IA** es cualquier tecnica que permite a un ordenador imitar la inteligencia humana; **ML** es el subconjunto de la IA en el que los modelos aprenden patrones a partir de datos; **DL** es el subconjunto de ML que usa redes neuronales profundas; **IA Generativa** son, en general, modelos DL disenados para crear contenido nuevo (texto, imagenes, codigo, audio, video). Un **modelo** es una funcion matematica (estructura + parametros aprendidos) que mapea entradas a salidas; se entrena, valida y prueba con conjuntos de datos separados para evitar el sobreajuste.
+
+Los tres enfoques de aprendizaje son **supervisado** (hay etiquetas: clasificacion o regresion), **no supervisado** (sin etiquetas: clustering, reduccion de dimensionalidad, deteccion de anomalias) y **por refuerzo** (un agente aprende por prueba y error maximizando una recompensa). **RLHF** ajusta modelos grandes usando preferencias humanas convertidas en una senal de recompensa.
+
+### IA responsable
+
+Los seis principios de Microsoft son **fairness** (equidad, sin sesgos), **reliability & safety** (fiabilidad y seguridad ante casos limite), **privacy & security** (proteccion de datos personales), **inclusiveness** (tener en cuenta la diversidad de personas), **transparency** (poder explicar las decisiones del sistema) y **accountability** (alguien responde por el comportamiento del sistema). Ante un escenario de examen, identifica primero que fallo concreto describe y asocialo al principio correcto.
+
+### Cargas de trabajo de IA
+
+Las cuatro grandes familias son **IA generativa y agentica** (crear contenido y ejecutar tareas de varios pasos), **analisis de texto** (palabras clave, entidades, sentimiento, resumen), **voz** (speech-to-text y text-to-speech) y **vision** (interpretar y generar imagenes), mas **extraccion de informacion** (convertir documentos/imagenes/audio/video no estructurados en datos con campos concretos).
+
+:::info Importante para el examen
+El dominio "Identify" es puramente conceptual: no te pide implementar nada, solo reconocer terminologia, principios y el tipo de carga de trabajo que describe un escenario.
+:::
+
+## 2. Implement AI solutions by using Microsoft Foundry (55-60%)
+
+### Generative AI apps and agents
+
+Un **prompt** tiene un mensaje de **sistema** (rol, tono, reglas — fijo durante la conversacion) y un mensaje de **usuario** (la instruccion de cada turno). Para usar un modelo del catalogo de Foundry hay que **desplegarlo** primero; despues se puede probar en el playground o llamarlo desde un cliente con el **SDK de Foundry**, siguiendo siempre el mismo patron: autenticarse, indicar el despliegue, enviar los mensajes, leer la respuesta. Un **agente** es un modelo con acceso a herramientas y capacidad de planificar y actuar en varios pasos, no solo responder una vez; se crea y prueba en el portal de Foundry y despues se le construye un cliente ligero igual que a un chat. **Grounding/RAG** ancla las respuestas del modelo en datos propios de la organizacion, recuperando primero los fragmentos relevantes y pasandolos como contexto en el prompt.
+
+### Texto y voz
+
+Las tecnicas de analisis de texto (palabras clave, entidades, sentimiento, resumen) se implementan con **Azure Language** en Foundry Tools, o con un modelo generativo de proposito general con el prompt adecuado. La voz se implementa con **Azure Speech** en Foundry Tools (speech-to-text y text-to-speech por separado), o con un **modelo multimodal** que escucha y responde directamente sin pasos intermedios.
+
+### Vision y generacion de imagenes
+
+Ademas de Custom Vision (entrenar un clasificador o detector propio), AI-901 pone el foco en **modelos multimodales** de Foundry que interpretan una imagen dentro del propio prompt (sin entrenamiento previo) y en **modelos generativos de imagen** que crean contenido visual nuevo a partir de una descripcion en texto.
+
+### Extraccion de informacion
+
+**Azure Content Understanding** en Foundry Tools extrae datos estructurados con campos concretos (numero de factura, quien habla, momentos clave...) a partir de documentos, imagenes, audio o video — un paso mas alla del OCR simple.
+
+:::tip Importante para el examen
+El dominio "Implement" es donde esta el 55-60% del examen y donde AI-901 se diferencia de verdad de AI-900: cada uno de los cuatro subdominios (genAI/agentes, texto/voz, vision/imagenes, extraccion de informacion) sigue el mismo patron de integracion con el SDK — autenticarse, referenciar el recurso, enviar la entrada, procesar la respuesta estructurada. Si entiendes ese patron una vez, lo reconoces en los cuatro.
+:::
+
+## 3. Traducir escenarios a la solucion correcta
+
+| Escenario | Area / servicio |
+|---|---|
+| "El modelo penaliza sistematicamente a un grupo de candidatos" | IA responsable — fairness |
+| "Nadie puede explicar por que el sistema tomo esa decision" | IA responsable — transparency |
+| "Clasificar fotos de producto en categorias propias de la empresa" | Custom Vision |
+| "Describir el contenido de una foto sin entrenar nada antes" | Modelo multimodal de vision en Foundry |
+| "Crear una ilustracion nueva a partir de una descripcion en texto" | Modelo generativo de imagen en Foundry |
+| "Resumir reseñas de clientes y medir si son positivas o negativas" | Analisis de texto (Azure Language) |
+| "Transcribir una llamada y responderla hablando" | Azure Speech / modelo multimodal de audio |
+| "Un asistente que reserva una cita consultando un calendario por si mismo" | Agente en Foundry |
+| "Sacar el numero de factura y el importe de un PDF escaneado" | Azure Content Understanding |
+
+## 4. Simulacro practico: Python, REST y SDK
+
+A diferencia de DP-900, el simulacro de AI-901 incluye ejercicios de codigo ligero. No se espera dominar un lenguaje, pero si:
+
+- Leer y entender fragmentos de Python que llaman al SDK de Foundry (autenticacion, despliegue, envio de un mensaje, lectura de la respuesta).
+- Reconocer la forma de una llamada REST equivalente (endpoint, cabeceras de autenticacion, cuerpo JSON con el prompt) y de la respuesta JSON que devuelve.
+- Identificar el orden correcto de los pasos de un flujo de integracion (autenticar -> referenciar recurso -> enviar entrada -> procesar salida), incluso si el codigo esta desordenado o incompleto.
+
+:::tip Cierre y siguientes pasos
+AI-901 combina conceptos (40-45%) con implementacion practica en Microsoft Foundry (55-60%). Repasa primero el vocabulario y los seis principios de IA responsable, y despues practica el patron de integracion (autenticar, referenciar, enviar, procesar) en los cuatro subdominios de Foundry: genAI/agentes, texto/voz, vision/imagenes y extraccion de informacion. Si puedes reconocer ese patron en cualquiera de los cuatro y elegir el servicio correcto ante un escenario, estas en muy buena posicion para aprobar.
+:::
+
+<MSLearnPath
+  tipo="examen"
+  title="Study guide para el examen AI-901"
+  url="https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/ai-901"
+>
+  Guia oficial con los dominios exactos, el formato del examen y acceso a la evaluacion de practica en AI Skills Navigator.
+</MSLearnPath>

@@ -1,0 +1,81 @@
+---
+sidebar_position: 4
+title: "Texto y Voz con Foundry"
+description: "Tecnicas de analisis de texto y Azure Language en Foundry Tools; reconocimiento y sintesis de voz con Azure Speech en Foundry Tools; modelos multimodales."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+
+# Texto y Voz con Foundry
+
+Esta es "Microsoft Foundry (II)" del temario: como implementar dos de las cargas de trabajo que identificamos en la sesion de conceptos — analisis de texto y voz — usando las Foundry Tools y modelos multimodales.
+
+## 1. Analisis de texto
+
+El analisis de texto extrae significado de texto libre. AI-901 pide reconocer estas cuatro tecnicas:
+
+- **Extraccion de palabras clave (keyword extraction):** identifica los terminos o frases mas representativos de un texto, util para etiquetar o indexar documentos automaticamente.
+- **Deteccion de entidades (entity detection / NER):** reconoce y clasifica menciones de personas, lugares, organizaciones, fechas, cantidades u otros tipos definidos dentro del texto. Por ejemplo, en "Maria viajo a Madrid el 3 de marzo", detecta "Maria" (persona), "Madrid" (lugar) y "3 de marzo" (fecha).
+- **Analisis de sentimiento:** clasifica un texto como positivo, negativo o neutro (y a menudo con una puntuacion de confianza), muy usado para analizar reseñas de clientes o menciones en redes sociales.
+- **Resumen (summarization):** condensa un texto largo en unas pocas frases que conservan la informacion mas relevante.
+
+### Azure Language en Foundry Tools
+
+Estas tecnicas se implementan con **Azure Language**, una de las Foundry Tools, expuesta como API. Construir una aplicacion ligera de analisis de texto sigue un patron parecido al del chat de la sesion anterior: autenticarse, enviar el texto a analizar al endpoint correspondiente (entidades, sentimiento, resumen...), y procesar la respuesta estructurada (por ejemplo, una lista de entidades con su tipo y posicion en el texto).
+
+Ademas del servicio especializado de Language, un **modelo generativo de proposito general** desplegado en Foundry puede resolver muchas de estas mismas tareas simplemente con el prompt adecuado (por ejemplo, "resume este texto en 3 frases" o "extrae las entidades de tipo persona y lugar de este texto en formato JSON"). AI-901 espera que sepas que ambos caminos existen: un servicio especializado (mas predecible, con un formato de salida fijo) o un modelo generativo de proposito general (mas flexible, pero cuya salida hay que validar).
+
+:::info Importante para el examen
+No confundas extraccion de palabras clave (terminos sueltos mas relevantes) con deteccion de entidades (menciones clasificadas por tipo: persona, lugar, fecha...) ni con resumen (frases nuevas que condensan el texto).
+:::
+
+## 2. Voz
+
+Los servicios de voz cubren dos direcciones:
+
+- **Speech-to-text (reconocimiento de voz):** convierte audio hablado en texto. Se usa para transcribir llamadas, reuniones, o para que un agente entienda una instruccion hablada.
+- **Text-to-speech (sintesis de voz):** convierte texto en audio hablado, con voces neuronales que suenan naturales, para que una aplicacion responda hablando en lugar de solo con texto en pantalla.
+
+### Azure Speech en Foundry Tools
+
+**Azure Speech**, otra de las Foundry Tools, expone estas capacidades como API: se envia un fragmento de audio y se recibe la transcripcion (speech-to-text), o se envia texto y se recibe el audio generado (text-to-speech), eligiendo la voz y el idioma. El flujo para construir una app ligera es analogo al de texto: autenticarse, llamar al endpoint con el audio o el texto de entrada, y usar la respuesta (texto transcrito, o el propio archivo de audio generado).
+
+### Responder a un prompt hablado con un modelo multimodal
+
+Ademas del servicio de Speech dedicado, algunos modelos desplegados en Foundry son **multimodales de audio**: aceptan directamente una entrada de voz (sin pasar primero por un paso separado de transcripcion) y pueden responder tanto en texto como generando audio. Esto simplifica el flujo cuando la aplicacion ya usa un modelo generativo para todo lo demas: en vez de encadenar speech-to-text -> modelo de texto -> text-to-speech como tres pasos independientes, un unico modelo multimodal puede encargarse de escuchar y responder.
+
+:::tip Para el examen
+Si el escenario describe "escuchar y transcribir" o "leer un texto en voz alta" como una capacidad aislada, piensa en **Azure Speech**. Si describe "una app que escucha una pregunta hablada y responde de forma inteligente", piensa en un **modelo multimodal** desplegado en Foundry.
+:::
+
+<MSLearnPath
+  tipo="modulo"
+  title="Introduction to natural language processing concepts"
+  url="https://learn.microsoft.com/en-us/training/modules/introduction-language/"
+>
+  Modulo conceptual (ruta "AI concepts"): fundamentos de NLP y analisis de texto.
+</MSLearnPath>
+
+<MSLearnPath
+  tipo="modulo"
+  title="Introduction to AI speech concepts"
+  url="https://learn.microsoft.com/en-us/training/modules/introduction-ai-speech/"
+>
+  Modulo conceptual (ruta "AI concepts"): fundamentos de reconocimiento y sintesis de voz.
+</MSLearnPath>
+
+<MSLearnPath
+  tipo="modulo"
+  title="Get started with text analysis in Azure"
+  url="https://learn.microsoft.com/en-us/training/modules/get-started-text-analysis-azure/"
+>
+  Implementacion practica: usar modelos de proposito general y Azure Language en Foundry Tools, construyendo un cliente Python ligero que analiza texto.
+</MSLearnPath>
+
+<MSLearnPath
+  tipo="modulo"
+  title="Get started with speech in Azure"
+  url="https://learn.microsoft.com/en-us/training/modules/get-started-speech-azure/"
+>
+  Implementacion practica: reconocer y sintetizar voz usando Azure Speech en Foundry Tools.
+</MSLearnPath>
