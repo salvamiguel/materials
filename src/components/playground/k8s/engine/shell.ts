@@ -8,13 +8,23 @@ import { curlCommand, wgetCommand } from './net';
 import { unbase64, base64 } from './util';
 import { shellSplit } from '../../shared/shell';
 import type { Stream } from './kubectl/streams';
+import { git, type GitRepo } from './git';
+import { argocdCli } from './argocd/cli';
 
 export interface ShellCtx extends Ctx {
   helm?: (args: string[], ctx: ShellCtx) => Promise<Result>;
+  /** The playground's Git repo (the editor's files are its working tree). */
+  git?: GitRepo;
 }
 
 export interface ShellResult extends Result {
   clear?: boolean;
+  /** New state of the Git repo. */
+  git?: GitRepo;
+  /** The whole working tree was replaced (git checkout/revert/reset --hard). */
+  files?: Record<string, string>;
+  /** Open this URL in the Browser tab. */
+  browse?: string;
 }
 
 export const SHELL_HELP = `Comandos del playground (todo es simulado y ocurre en tu navegador):
@@ -25,6 +35,10 @@ export const SHELL_HELP = `Comandos del playground (todo es simulado y ocurre en
   helm …                 install, upgrade, rollback, uninstall, list, history, template,
                          lint, show values, get values/manifest
   kustomize build DIR    renderiza un kustomization.yaml (como kubectl kustomize)
+  git …                  status, add, commit -m, push, log, diff, show, revert, restore…
+                         (el remoto es simulado: ArgoCD lee lo que empujas)
+  argocd …               login, app list/get/sync/diff/history/rollback/create/delete…
+  open URL               abre la URL en la pestaña Navegador (p. ej. https://localhost:8080)
   curl URL · wget URL    peticiones HTTP: a un port-forward (localhost), a un Ingress
                          (su host), a un NodePort o a un LoadBalancer
   ls [dir] · cat FICHERO los ficheros del editor
@@ -161,6 +175,19 @@ async function simple(line: string, ctx: ShellCtx): Promise<ShellResult> {
     case 'k':
     case 'kubecolor':
       return kubectl(rest, ctx);
+    case 'git': {
+      if (!ctx.git) return { output: 'fatal: not a git repository (or any of the parent directories): .git\n', exitCode: 128 };
+      const r = git(rest, ctx.git, ctx.files, cl.now);
+      return { output: r.output, exitCode: r.exitCode, git: r.repo, ...(r.files ? { files: r.files } : {}) };
+    }
+    case 'argocd':
+      return argocdCli(rest, ctx);
+    case 'open':
+    case 'xdg-open': {
+      const url = rest.find((x) => !x.startsWith('-'));
+      if (!url) return { output: `Usage: ${cmd} URL\n`, exitCode: 1 };
+      return { output: `Abriendo ${url} en la pestaña Navegador…\n`, exitCode: 0, browse: url };
+    }
     case 'helm':
       if (!ctx.helm) return { output: 'helm: no disponible\n', exitCode: 1 };
       return ctx.helm(rest, ctx);
@@ -253,10 +280,47 @@ async function simple(line: string, ctx: ShellCtx): Promise<ShellResult> {
   }
 }
 
+/** $(cmd) substitution (not $(seq …), which for loops expand themselves). */
+async function substitute(l: string, ctx: ShellCtx): Promise<string> {
+  if (!l.includes('$(') || /^for\s/.test(l)) return l;
+  let out = '';
+  let i = 0;
+  while (i < l.length) {
+    if (l[i] === '$' && l[i + 1] === '(' && !l.startsWith('$(seq', i)) {
+      let depth = 1;
+      let j = i + 2;
+      while (j < l.length && depth) {
+        if (l[j] === '(') depth++;
+        else if (l[j] === ')') depth--;
+        j++;
+      }
+      const r = await runLine(l.slice(i + 2, j - 1), ctx);
+      out += r.exitCode === 0 ? r.output.replace(/\n+$/, '') : '';
+      i = j;
+    } else out += l[i++];
+  }
+  return out;
+}
+
+/** Carries what a command changed (files, Git) into the next one of a sequence. */
+function carry(ctx: ShellCtx, acc: ShellResult, r: ShellResult): ShellCtx {
+  if (r.git) acc.git = r.git;
+  if (r.files) {
+    acc.files = r.files;
+    acc.writeFiles = undefined;
+  }
+  if (r.writeFiles) acc.writeFiles = { ...(acc.writeFiles || {}), ...r.writeFiles };
+  if (r.openFile) acc.openFile = r.openFile;
+  if (r.browse) acc.browse = r.browse;
+  if (r.select) acc.select = r.select;
+  return { ...ctx, ...(r.git ? { git: r.git } : {}), files: r.files ? r.files : r.writeFiles ? { ...ctx.files, ...r.writeFiles } : ctx.files };
+}
+
 /** Runs a full command line. */
 export async function runLine(line: string, ctx: ShellCtx): Promise<ShellResult> {
   let l = line.trim();
   if (!l || l.startsWith('#')) return ok('');
+  l = await substitute(l, ctx);
   let background = false;
   if (/\s&$/.test(l)) {
     background = true;
@@ -273,16 +337,17 @@ export async function runLine(line: string, ctx: ShellCtx): Promise<ShellResult>
   // Sequences: a && b ; c
   if (/\s(&&|;)\s/.test(l) && !/^for\s/.test(l)) {
     const parts = l.split(/\s(&&|;)\s/);
-    let out = '';
-    let code = 0;
+    const acc: ShellResult = { output: '', exitCode: 0 };
+    let c = ctx;
     for (let i = 0; i < parts.length; i += 2) {
-      if (i > 0 && parts[i - 1] === '&&' && code !== 0) break;
-      const r = await runLine(parts[i], ctx);
-      out += r.output;
-      code = r.exitCode;
-      if (r.stream || r.shell || r.clear) return { ...r, output: out };
+      if (i > 0 && parts[i - 1] === '&&' && acc.exitCode !== 0) break;
+      const r = await runLine(parts[i], c);
+      acc.output += r.output;
+      acc.exitCode = r.exitCode;
+      c = carry(c, acc, r);
+      if (r.stream || r.shell || r.clear) return { ...acc, stream: r.stream, shell: r.shell, clear: r.clear };
     }
-    return finish({ output: out, exitCode: code }, redirect, ctx);
+    return finish(acc, redirect, c);
   }
   // for VAR in LIST; do BODY; done [| filters]
   const fm = /^for\s+(\w+)\s+in\s+(.+?);\s*do\s+(.+?);?\s*done\s*(\|.*)?$/.exec(l);
@@ -315,7 +380,9 @@ export async function runLine(line: string, ctx: ShellCtx): Promise<ShellResult>
     let out = r.output;
     let code = r.exitCode;
     for (const f of stages.slice(1)) {
-      const x = filter(shellSplit(f), out);
+      // kubectl apply -f - (and friends) read the pipe as stdin.
+      const x = /^(kubectl|k|argocd)\s/.test(f) ? await simple(f, { ...ctx, stdin: out }) : filter(shellSplit(f), out);
+      if (x !== r && 'stream' in x && (x as ShellResult).stream) (x as ShellResult).stream!.stop(ctx.cl);
       out = x.output;
       code = x.exitCode;
     }

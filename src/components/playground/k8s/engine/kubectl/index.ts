@@ -14,6 +14,7 @@ import { ApiError, type Obj, type Source } from '../types';
 import { clone, fromLabelSelector, humanDuration, matches, pad, parseSelector, templateHash, type Selector } from '../util';
 import { flagBool, flagStr, parseArgs, UsageError, type Parsed } from './args';
 import { describe } from './describe';
+import { INSTALL_URL, installArgoCD, ROLLOUTS_URL } from '../argocd/install';
 import { genConfigMap, genCronJob, genDeployment, genHpa, genIngress, genJob, genNamespace, genPod, genSecret, genService } from './generators';
 import { jsonPatch, mergePatch, strategicPatch, unifiedDiff } from './patch';
 import { asList, cpuMillis, customColumns, jsonpath, memMi, objectName, podStatus, printTable, toJson, toYaml } from './printers';
@@ -30,6 +31,8 @@ export interface Ctx {
   files: Record<string, string>;
   /** Renders a kustomization directory (Go/WASM kustomize). */
   kustomize?: (dir: string) => Promise<Doc[]>;
+  /** Output of the previous command of a pipe (kubectl apply -f -). */
+  stdin?: string;
 }
 
 export interface Result {
@@ -191,6 +194,15 @@ Usage:
 `;
 
 export async function kubectl(args: string[], ctx: Ctx): Promise<Result> {
+  // Global flags before the command (`kubectl -n argocd get secret …`) move after it.
+  const lead: string[] = [];
+  while (args.length && args[0].startsWith('-') && !['-h', '--help'].includes(args[0])) {
+    const f = args[0];
+    const takes = ['-n', '--namespace', '--context', '--kubeconfig', '--cluster', '--user'].includes(f);
+    lead.push(...args.slice(0, takes ? 2 : 1));
+    args = args.slice(takes ? 2 : 1);
+  }
+  if (lead.length) args = [args[0], ...lead, ...args.slice(1)].filter((x) => x !== undefined);
   if (!args.length || args[0] === 'help' || args[0] === '--help' || args[0] === '-h') return ok(KUBECTL_HELP);
   const [cmd, ...raw] = args;
   // In `kubectl logs`, -f is --follow and -p is --previous (not --filename/--patch).
@@ -202,6 +214,7 @@ export async function kubectl(args: string[], ctx: Ctx): Promise<Result> {
     return fail((e as Error).message);
   }
   const ns = flagStr(p, 'namespace') || ctx.cl.s.namespace;
+  crdsInstalled = !!ctx.cl.s.argocd?.installed;
   try {
     switch (cmd) {
       case 'version':
@@ -343,8 +356,13 @@ function unknownType(name: string): never {
   throw new UsageError(`error: the server doesn't have a resource type "${name}"`);
 }
 
+// Custom resources (ArgoCD's) only exist once their CRDs are installed.
+let crdsInstalled = false;
+
 function typeOf(name: string): ResourceType {
-  return resolveResource(name) || unknownType(name);
+  const t = resolveResource(name);
+  if (!t || (t.crd && !crdsInstalled)) unknownType(name);
+  return t;
 }
 
 function fieldSelector(expr: string | undefined): (o: Obj) => boolean {
@@ -576,6 +594,11 @@ async function readDocs(p: Parsed, ctx: Ctx): Promise<Doc[]> {
   }
   const docs: Doc[] = [];
   for (const f of files) {
+    if (f === '-') {
+      if (!ctx.stdin?.trim()) throw new UsageError('error: no objects passed to apply');
+      docs.push(...parseManifests(ctx.stdin, 'STDIN'));
+      continue;
+    }
     if (/^https?:\/\//.test(f))
       throw new UsageError(`error: el playground no descarga manifiestos de Internet: copia el contenido en un fichero del editor y usa -f fichero.yaml`);
     for (const path of resolveFiles(ctx.files, f, flagBool(p, 'recursive'))) {
@@ -642,6 +665,28 @@ async function apply(p: Parsed, ctx: Ctx, ns: string): Promise<Result> {
     const la = o?.metadata.annotations?.[LAST_APPLIED];
     if (!la) return fail('error: no last-applied-configuration annotation found on resource');
     return ok(toYaml(JSON.parse(la)));
+  }
+  const urls = (p.multi.filename || []).filter((f) => /^https?:\/\//.test(f));
+  if (urls.length) {
+    let out = '';
+    let code = 0;
+    for (const u of urls) {
+      if (INSTALL_URL.test(u)) {
+        const r = installArgoCD(ctx.cl, ns, u);
+        out += r.output;
+        code ||= r.exitCode;
+      } else if (ROLLOUTS_URL.test(u)) {
+        out += `error: el playground no incluye Argo Rollouts: usa las estrategias nativas (RollingUpdate, Recreate) o blue/green y canary con Services\n`;
+        code = 1;
+      } else {
+        out += `error: el playground no descarga manifiestos de Internet (salvo el install.yaml de ArgoCD): copia el contenido en un fichero del editor y usa -f fichero.yaml\n`;
+        code = 1;
+      }
+    }
+    if (urls.length === (p.multi.filename || []).length) return { output: out, exitCode: code };
+    p = { ...p, multi: { ...p.multi, filename: (p.multi.filename || []).filter((f) => !urls.includes(f)) } };
+    const rest = await apply(p, ctx, ns);
+    return { ...rest, output: out + rest.output, exitCode: code || rest.exitCode };
   }
   const docs = await readDocs(p, ctx);
   const dry = dryRunMode(p);

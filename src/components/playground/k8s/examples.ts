@@ -7,6 +7,8 @@ export interface Example {
   files: Record<string, string>;
   /** First command suggested in the terminal. */
   hint?: string;
+  /** URL of the Git remote the example's repo pretends to be (ArgoCD reads it). */
+  remote?: string;
 }
 
 const HOLA = `# Un Deployment mantiene 3 réplicas de nginx y un Service las
@@ -833,6 +835,301 @@ Pruébalo:
 {{- end }}
 `;
 
+// ── ArgoCD: réplica del repo de clase salvamiguel/gitops-status-demo-config ──
+
+const GS_K8S_BASE_KUSTOMIZATION = `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yaml
+  - service.yaml
+
+images:
+  - name: ghcr.io/salvamiguel/gitops-status-demo-app
+    newTag: v1
+`;
+
+const GS_K8S_BASE_DEPLOYMENT = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitops-status-demo
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: gitops-status-demo
+  template:
+    metadata:
+      labels:
+        app: gitops-status-demo
+    spec:
+      containers:
+        - name: gitops-status-demo
+          image: ghcr.io/salvamiguel/gitops-status-demo-app:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: app-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+`;
+
+const GS_K8S_BASE_SERVICE = `apiVersion: v1
+kind: Service
+metadata:
+  name: gitops-status-demo
+spec:
+  type: ClusterIP
+  selector:
+    app: gitops-status-demo
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+`;
+
+const GS_K8S_OVERLAYS_DEV_KUSTOMIZATION = `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: status-dev
+
+patches:
+  - path: patch-replicas.yaml
+    target:
+      kind: Deployment
+      name: gitops-status-demo
+
+configMapGenerator:
+  - name: app-config
+    literals:
+      - ENV=development
+      - APP_COLOR=green
+`;
+
+const GS_K8S_OVERLAYS_DEV_PATCH_REPLICAS = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitops-status-demo
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: gitops-status-demo
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+`;
+
+const GS_K8S_OVERLAYS_STAGING_KUSTOMIZATION = `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: status-staging
+
+patches:
+  - path: patch-replicas.yaml
+    target:
+      kind: Deployment
+      name: gitops-status-demo
+
+configMapGenerator:
+  - name: app-config
+    literals:
+      - ENV=staging
+      - APP_COLOR=orange
+`;
+
+const GS_K8S_OVERLAYS_STAGING_PATCH_REPLICAS = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitops-status-demo
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: gitops-status-demo
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+`;
+
+const GS_K8S_OVERLAYS_PROD_KUSTOMIZATION = `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: status-prod
+
+patches:
+  - path: patch-replicas.yaml
+    target:
+      kind: Deployment
+      name: gitops-status-demo
+
+configMapGenerator:
+  - name: app-config
+    literals:
+      - ENV=production
+      - APP_COLOR=blue
+`;
+
+const GS_K8S_OVERLAYS_PROD_PATCH_REPLICAS = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitops-status-demo
+spec:
+  replicas: 4
+  template:
+    spec:
+      containers:
+        - name: gitops-status-demo
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+`;
+
+const GS_ARGOCD_APPLICATION_DEV = `apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: status-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/salvamiguel/gitops-status-demo-config
+    targetRevision: HEAD
+    path: k8s/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: status-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+`;
+
+const GS_ARGOCD_APPLICATION_STAGING = `apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: status-staging
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/salvamiguel/gitops-status-demo-config
+    targetRevision: HEAD
+    path: k8s/overlays/staging
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: status-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+`;
+
+const GS_ARGOCD_APPLICATION_PROD = `apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: status-prod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/salvamiguel/gitops-status-demo-config
+    targetRevision: HEAD
+    path: k8s/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: status-prod
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+`;
+
+const GS_README = `# gitops-status-demo-config (réplica offline del repo de clase)
+
+Este playground tiene su propio Git: los ficheros del editor son el working
+tree y \`git push\` publica en el remoto que lee ArgoCD
+(https://github.com/salvamiguel/gitops-status-demo-config, simulado).
+
+## 1. Instala ArgoCD (como en \`make argocd\`)
+
+    kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.13.3/manifests/install.yaml
+    kubectl wait --for=condition=Ready pods --all -n argocd --timeout=300s
+    kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+## 2. Crea las Applications (\`make apps\`)
+
+    kubectl apply -f argocd/
+    kubectl get applications -n argocd -w
+
+## 3. UI de ArgoCD y la app (\`make port-forward\`)
+
+    kubectl port-forward svc/argocd-server -n argocd 8443:443 &
+    kubectl port-forward svc/gitops-status-demo -n status-dev 8080:80 &
+    open https://localhost:8443      # usuario admin + la contraseña del paso 1
+    open http://localhost:8080       # la página de estado (verde en dev)
+
+O con el CLI:
+
+    argocd login localhost:8443 --insecure --username admin --password $(argocd admin initial-password -n argocd | head -1)
+    argocd app list
+
+## 4. GitOps: cambia Git, no el clúster
+
+- Edita \`k8s/base/kustomization.yaml\` → \`newTag: v2\` y publica:
+
+      git commit -am "Sube a v2" && git push
+
+  dev y staging se sincronizan solos (la página pasa a azul); prod es manual:
+  \`argocd app sync status-prod\` o el botón SYNC de la UI.
+- Prueba el selfHeal: \`kubectl scale deploy gitops-status-demo -n status-dev --replicas=5\`
+- Rollback: \`git revert HEAD && git push\` (o History and Rollback en prod).
+`;
+
 export const EXAMPLES: Example[] = [
   {
     id: 'hola',
@@ -943,6 +1240,29 @@ export const EXAMPLES: Example[] = [
       'tienda/templates/NOTES.txt': H_NOTES,
     },
     hint: 'helm install tienda ./tienda',
+  },
+  {
+    id: 'argocd',
+    label: 'ArgoCD: gitops-status-demo',
+    description:
+      'El repo de clase (Kustomize base + overlays dev/staging/prod y las Applications). Instala ArgoCD, sincroniza, cambia Git con commit y push y mira cómo reconcilia.',
+    files: {
+      'README.md': GS_README,
+      'k8s/base/kustomization.yaml': GS_K8S_BASE_KUSTOMIZATION,
+      'k8s/base/deployment.yaml': GS_K8S_BASE_DEPLOYMENT,
+      'k8s/base/service.yaml': GS_K8S_BASE_SERVICE,
+      'k8s/overlays/dev/kustomization.yaml': GS_K8S_OVERLAYS_DEV_KUSTOMIZATION,
+      'k8s/overlays/dev/patch-replicas.yaml': GS_K8S_OVERLAYS_DEV_PATCH_REPLICAS,
+      'k8s/overlays/staging/kustomization.yaml': GS_K8S_OVERLAYS_STAGING_KUSTOMIZATION,
+      'k8s/overlays/staging/patch-replicas.yaml': GS_K8S_OVERLAYS_STAGING_PATCH_REPLICAS,
+      'k8s/overlays/prod/kustomization.yaml': GS_K8S_OVERLAYS_PROD_KUSTOMIZATION,
+      'k8s/overlays/prod/patch-replicas.yaml': GS_K8S_OVERLAYS_PROD_PATCH_REPLICAS,
+      'argocd/application-dev.yaml': GS_ARGOCD_APPLICATION_DEV,
+      'argocd/application-staging.yaml': GS_ARGOCD_APPLICATION_STAGING,
+      'argocd/application-prod.yaml': GS_ARGOCD_APPLICATION_PROD,
+    },
+    remote: 'https://github.com/salvamiguel/gitops-status-demo-config',
+    hint: 'kubectl create namespace argocd',
   },
 ];
 

@@ -10,6 +10,8 @@ export interface ResourceType {
   namespaced: boolean;
   /** Only the controllers create it (Endpoints, Events...). */
   readOnly?: boolean;
+  /** Custom resource: only served once its CRD is installed (ArgoCD). */
+  crd?: 'argocd';
   description: string;
 }
 
@@ -206,6 +208,36 @@ export const RESOURCES: ResourceType[] = [
     readOnly: true,
     description: 'Lo que va pasando en el clúster (programación, descargas, reinicios…).',
   },
+  {
+    kind: 'Application',
+    versions: ['argoproj.io/v1alpha1'],
+    plural: 'applications',
+    singular: 'application',
+    short: ['app', 'apps'],
+    namespaced: true,
+    crd: 'argocd',
+    description: 'Una aplicación de ArgoCD: qué hay que desplegar (un repo Git, una ruta y una revisión) y dónde.',
+  },
+  {
+    kind: 'AppProject',
+    versions: ['argoproj.io/v1alpha1'],
+    plural: 'appprojects',
+    singular: 'appproject',
+    short: ['appproj', 'appprojs'],
+    namespaced: true,
+    crd: 'argocd',
+    description: 'Un proyecto de ArgoCD: qué repos y destinos pueden usar sus Applications.',
+  },
+  {
+    kind: 'ApplicationSet',
+    versions: ['argoproj.io/v1alpha1'],
+    plural: 'applicationsets',
+    singular: 'applicationset',
+    short: ['appset', 'appsets'],
+    namespaced: true,
+    crd: 'argocd',
+    description: 'Genera Applications a partir de una plantilla y unos generadores (list, git…).',
+  },
 ];
 
 const BY_KIND = new Map(RESOURCES.map((r) => [r.kind, r]));
@@ -216,7 +248,7 @@ export function resourceByKind(kind: string): ResourceType | undefined {
 
 /** Resolves what kubectl accepts: "po", "pods", "Pod", "deployment.apps", "deploy". */
 export function resolveResource(name: string): ResourceType | undefined {
-  const n = name.toLowerCase().replace(/\.(apps|batch|networking\.k8s\.io|storage\.k8s\.io|autoscaling|v1)$/, '');
+  const n = name.toLowerCase().replace(/\.(apps|batch|networking\.k8s\.io|storage\.k8s\.io|autoscaling|argoproj\.io|v1)$/, '');
   return RESOURCES.find((r) => r.plural === n || r.singular === n || r.short.includes(n) || r.kind.toLowerCase() === n);
 }
 

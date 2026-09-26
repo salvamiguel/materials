@@ -119,6 +119,45 @@ export interface ClusterState {
   cronSeen?: Record<string, string[]>;
   /** Pod templates of past StatefulSet revisions. */
   revisions?: Record<string, Record<string, Obj>>;
+  /** ArgoCD, once installed (see argocd/). */
+  argocd?: ArgoState;
+}
+
+export interface RenderedDoc {
+  obj: Obj;
+  file: string;
+  line: number;
+}
+
+/** What the repo-server rendered for an Application. */
+export interface ArgoManifests {
+  /** Source + revision it was rendered for. */
+  key: string;
+  revision: string;
+  message?: string;
+  author?: string;
+  docs: RenderedDoc[];
+  error?: string;
+  at: number;
+  sourceType: 'Directory' | 'Kustomize' | 'Helm';
+}
+
+export interface ArgoState {
+  installed: boolean;
+  version: string;
+  /** Where it was installed (argocd). */
+  namespace: string;
+  manifests: Record<string, ArgoManifests>;
+  /** Per Application (ns/name) bookkeeping of the controller. */
+  apps: Record<string, { comparedAt: number; lastAutoSync?: string; driftSince?: number; retries?: number }>;
+  /** Rendered manifests of every history entry (for rollbacks), by app then id. */
+  historyDocs: Record<string, Record<string, RenderedDoc[]>>;
+  /** Parameters found by git generators of ApplicationSets (the repo-server fills them). */
+  appsetParams: Record<string, Record<string, string>[]>;
+  /** argocd CLI session. */
+  session?: { server: string; user: string };
+  /** Push counter of the local remote the repo-server last saw. */
+  seenPush?: number;
 }
 
 export class ApiError extends Error {

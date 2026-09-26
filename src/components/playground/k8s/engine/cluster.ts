@@ -249,6 +249,9 @@ export class Cluster {
       throw new ApiError('NotFound', `no matches for kind "${manifest.kind}" in version "${manifest.apiVersion}"`);
     }
     if (type.readOnly && manifest.kind === 'Node') throw new ApiError('Forbidden', `nodes are managed by the playground`);
+    if (type.crd && !this.s.argocd?.installed) {
+      throw new ApiError('NotFound', `no matches for kind "${manifest.kind}" in version "${manifest.apiVersion}"\nensure CRDs are installed first`);
+    }
     const schemaErrs = checkSchema(manifest.kind, manifest);
     if (schemaErrs.length) {
       const unknown = schemaErrs.filter((e) => e.message.startsWith('unknown field'));
@@ -518,7 +521,7 @@ export class Cluster {
       if (!this.get('ServiceAccount', obj.metadata.namespace, obj.spec.serviceAccountName)) {
         throw new ApiError(
           'Forbidden',
-          `pods "${obj.metadata.name}" is forbidden: error looking up service account ${obj.metadata.namespace}/${obj.spec.serviceAccountName}: serviceaccount "${obj.spec.serviceAccountName}" not found`,
+          `pods "${obj.metadata.name ?? obj.metadata.generateName}" is forbidden: error looking up service account ${obj.metadata.namespace}/${obj.spec.serviceAccountName}: serviceaccount "${obj.spec.serviceAccountName}" not found`,
         );
       }
     }
@@ -597,7 +600,8 @@ export class Cluster {
       });
       return;
     }
-    if (obj.kind === 'PersistentVolumeClaim' && (obj.metadata.finalizers || []).length) {
+    if ((obj.metadata.finalizers || []).length && cascade !== 'orphan') {
+      // A controller (PVC protection, ArgoCD's resources finalizer…) removes it later.
       this.mutate(obj, (p) => {
         p.metadata.deletionTimestamp ??= this.ts();
       });

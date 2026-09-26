@@ -469,6 +469,79 @@ export const TYPES: Record<string, TypeDef> = {
   },
 };
 
+// ── ArgoCD (argoproj.io/v1alpha1) ──
+Object.assign(TYPES, {
+  Application: {
+    doc: 'Una aplicación de ArgoCD: despliega lo que hay en una ruta de un repo Git en un namespace.',
+    fields: {
+      apiVersion: ['string'], kind: ['string'], metadata: meta,
+      spec: ['ApplicationSpec', 'Qué desplegar (source), dónde (destination) y cómo sincronizar (syncPolicy).'],
+      operation: ['object', 'Operación en curso (la crean argocd app sync y la UI).'], status: ['object'],
+    },
+    required: ['spec'],
+  },
+  ApplicationSpec: {
+    fields: {
+      project: ['string', 'AppProject al que pertenece (default).'],
+      source: ['ApplicationSource', 'El repositorio Git y la ruta con los manifiestos.'],
+      sources: ['ApplicationSource[]', 'Varias fuentes (multi-source).'],
+      destination: ['ApplicationDestination', 'El clúster y el namespace donde se despliega.'],
+      syncPolicy: ['SyncPolicy', 'Sincronización automática, prune, selfHeal y opciones.'],
+      ignoreDifferences: ['object[]', 'Campos que no cuentan como diferencia (p. ej. /spec/replicas si hay HPA).'],
+      revisionHistoryLimit: ['int', 'Entradas del historial que se guardan (10).'],
+      info: ['object[]'],
+    },
+    required: ['destination', 'project'],
+  },
+  ApplicationSource: {
+    fields: {
+      repoURL: ['string', 'URL del repositorio Git (o del repo de Helm).'],
+      targetRevision: ['string', 'Rama, tag o commit. HEAD sigue la rama por defecto.'],
+      path: ['string', 'Directorio del repo con los manifiestos, la kustomization o el chart.'],
+      chart: ['string', 'Nombre del chart (si repoURL es un repositorio de Helm).'],
+      directory: ['object', 'Opciones de un directorio de YAML: recurse, include, exclude.'],
+      kustomize: ['object', 'Opciones de Kustomize: images, namePrefix, commonLabels…'],
+      helm: ['object', 'Opciones de Helm: valueFiles, parameters, values, releaseName.'],
+      ref: ['string'], plugin: ['object'],
+    },
+    required: ['repoURL'],
+  },
+  ApplicationDestination: {
+    fields: {
+      server: ['string', 'API del clúster: https://kubernetes.default.svc es el propio clúster.'],
+      name: ['string', 'Nombre del clúster registrado (in-cluster).'],
+      namespace: ['string', 'Namespace de destino.'],
+    },
+  },
+  SyncPolicy: {
+    fields: {
+      automated: ['object', 'Sincroniza sola cuando cambia Git. prune: borra lo que ya no está en Git; selfHeal: deshace cambios manuales.'],
+      syncOptions: ['string[]', 'Opciones como CreateNamespace=true o PruneLast=true.'],
+      retry: ['object', 'Reintentos si falla la sincronización.'],
+      managedNamespaceMetadata: ['object'],
+    },
+  },
+  AppProject: {
+    fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['object'], status: ['object'] },
+  },
+  ApplicationSet: {
+    doc: 'Genera Applications con una plantilla y generadores (list, git, clusters…).',
+    fields: {
+      apiVersion: ['string'], kind: ['string'], metadata: meta,
+      spec: ['ApplicationSetSpec'], status: ['object'],
+    },
+    required: ['spec'],
+  },
+  ApplicationSetSpec: {
+    fields: {
+      generators: ['object[]', 'De dónde salen los parámetros: list, git (directories), clusters…'],
+      template: ['object', 'La Application que se genera; {{parametro}} se sustituye.'],
+      syncPolicy: ['object'], goTemplate: ['bool'], goTemplateOptions: ['string[]'], strategy: ['object'], preservedFields: ['object'],
+    },
+    required: ['generators', 'template'],
+  },
+} as Record<string, TypeDef>);
+
 export interface SchemaError {
   path: string;
   message: string;

@@ -161,6 +161,24 @@ const IMAGES: [RegExp, ImageInfo][] = [
     },
   ],
   [
+    /argoproj\/argocd/,
+    {
+      ports: [8080],
+      mode: 'server',
+      pullMs: 4000,
+      logs: (c) => {
+        const what = argoComponent(c);
+        return [`time="{T}" level=info msg="${what === 'server' ? 'argocd-server' : `argocd-${what}`} v2.13.3+b9b8fc7 serving on port ${argoPort(c)}"`];
+      },
+    },
+  ],
+  [/dexidp\/dex/, { ports: [5556], mode: 'forever', logs: () => ['time="{T}" level=info msg="listening (http) on 0.0.0.0:5556"'], pullMs: 2000 }],
+  [/library\/redis/, { ports: [6379], mode: 'forever', logs: () => ['1:M {T} * Ready to accept connections tcp'], pullMs: 1500 }],
+  [
+    /gitops-status-demo-app/,
+    { ports: [8080], mode: 'server', logs: (c) => [`gitops-status-demo ${demoVersion(c.image)} listening on :8080`], pullMs: 1800 },
+  ],
+  [
     /kube-proxy|kindnet|local-path-provisioner|etcd|kube-apiserver|kube-controller-manager|kube-scheduler/,
     { ports: [], mode: 'forever', logs: () => ['I0926 {T} 1 server.go:484] "Version info" version="v1.33.1"'], pullMs: 800 },
   ],
@@ -350,9 +368,35 @@ export function program(cl: Cluster, pod: Obj, c: Json): Program {
   };
 }
 
+/** Which ArgoCD component a container runs (from its args). */
+export function argoComponent(c: Json): string {
+  const cmd = [...(c.command || []), ...(c.args || [])].join(' ');
+  const m = /argocd-(server|repo-server|application-controller|applicationset-controller|notifications)/.exec(cmd);
+  return m ? m[1] : 'server';
+}
+
+function argoPort(c: Json): number {
+  return { server: 8080, 'repo-server': 8081, 'application-controller': 8082, 'applicationset-controller': 7000, notifications: 9001 }[argoComponent(c)] ?? 8080;
+}
+
+/** gitops-status-demo-app: the version is the image tag ("dev" for latest). */
+export function demoVersion(image: string) {
+  const t = imageTag(image);
+  return t === 'latest' ? 'dev' : t;
+}
+
+function demoColor(version: string) {
+  return version.startsWith('v1') ? '#22c55e' : version.startsWith('v2') ? '#3b82f6' : version.startsWith('v3') ? '#a855f7' : '#6b7280';
+}
+
 function serverPorts(c: Json, info: ImageInfo): number[] {
   const img = c.image || '';
   const args = (c.args || []).join(' ');
+  if (/argoproj\/argocd/.test(img)) return [argoPort(c)];
+  if (/gitops-status-demo-app/.test(img)) {
+    const env = (c.env || []).find((e: Json) => e.name === 'PORT');
+    return [env?.value ? parseInt(env.value, 10) : 8080];
+  }
   if (/http-echo/.test(img)) {
     const m = /-listen[= ]:?(\d+)/.exec(args);
     return [m ? parseInt(m[1], 10) : 5678];
@@ -400,6 +444,8 @@ export function mountedFiles(cl: Cluster, pod: Obj, c: Json): Record<string, str
 export interface HttpResult {
   status: number;
   body: string;
+  /** The ArgoCD web UI (the playground's browser draws it). */
+  argocd?: boolean;
 }
 
 /** What a pod's container answers to GET path on port. */
@@ -466,6 +512,29 @@ export function httpAnswer(cl: Cluster, pod: Obj, port: number, path: string, ho
           ) + '\n',
       };
     }
+    if (/argoproj\/argocd/.test(img)) {
+      if (argoComponent(c) !== 'server') return { status: 404, body: '404 page not found\n' };
+      if (path.startsWith('/healthz')) return { status: 200, body: 'ok\n' };
+      if (path.startsWith('/api/version')) return { status: 200, body: JSON.stringify({ Version: 'v2.13.3+b9b8fc7', BuildDate: '2025-01-03T15:25:45Z', GoVersion: 'go1.23.1', Platform: 'linux/amd64' }) + '\n' };
+      return {
+        status: 200,
+        argocd: true,
+        body: '<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>Argo CD</title><base href="/"><link rel="icon" type="image/png" href="assets/favicon/favicon-32x32.png" sizes="32x32"/></head><body><noscript><p>Your browser does not support JavaScript. Please enable JavaScript to view the site. Alternatively, Argo CD can be used with the <a href="https://argo-cd.readthedocs.io/en/stable/user-guide/commands/argocd/">Argo CD CLI</a>.</p></noscript><div id="app"></div></body><script defer="defer" src="main.67d3d35d60308e91.js"></script></html>\n',
+      };
+    }
+    if (/gitops-status-demo-app/.test(img)) {
+      const version = demoVersion(img);
+      const color = env.APP_COLOR || demoColor(version);
+      const started = Date.parse(pod.status?.startTime || '') || cl.now;
+      const up = Math.max(0, Math.floor((cl.now - started) / 1000));
+      const uptime = up >= 3600 ? `${Math.floor(up / 3600)}h${Math.floor((up % 3600) / 60)}m${up % 60}s` : up >= 60 ? `${Math.floor(up / 60)}m${up % 60}s` : `${up}s`;
+      const envName = env.ENV || 'local';
+      const clean = path.split('?')[0];
+      if (clean === '/health') return { status: 200, body: JSON.stringify({ status: 'ok', version }) + '\n' };
+      if (clean === '/api/status') return { status: 200, body: JSON.stringify({ version, hostname: pod.metadata.name, env: envName, color, uptime }) + '\n' };
+      if (clean !== '/') return { status: 404, body: '404 page not found\n' };
+      return { status: 200, body: statusPage(version, pod.metadata.name, envName, uptime, color) };
+    }
     if (/hello-app|google-samples/.test(img)) {
       return { status: 200, body: `Hello, world!\nVersion: ${imageTag(img).replace(/^v/, '')}.0.0\nHostname: ${pod.metadata.name}\n` };
     }
@@ -480,4 +549,45 @@ export function httpAnswer(cl: Cluster, pod: Obj, port: number, path: string, ho
     return { status: 200, body: `${msg ? msg + '\n' : ''}Hola desde ${pod.metadata.name} (${img}, versión ${version})\n` };
   }
   return { refused: true };
+}
+
+/** gitops-status-demo-app's static/index.html, with what its JavaScript would fill in. */
+function statusPage(version: string, hostname: string, env: string, uptime: string, color: string) {
+  const esc = (x: string) => x.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]!);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Status</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; background-color: ${esc(color)}; color: white; }
+        .container { text-align: center; padding: 2rem; max-width: 600px; width: 100%; }
+        .status-icon { font-size: 4rem; margin-bottom: 1rem; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; font-weight: 700; }
+        .subtitle { font-size: 1.2rem; opacity: 0.9; margin-bottom: 2rem; }
+        .version-badge { display: inline-block; background: rgba(255,255,255,0.25); padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.9rem; margin-bottom: 1rem; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
+        .info-card { background: rgba(255,255,255,0.15); border-radius: 12px; padding: 1.2rem; border: 1px solid rgba(255,255,255,0.2); }
+        .info-card .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.8; margin-bottom: 0.3rem; }
+        .info-card .value { font-size: 1.1rem; font-weight: 600; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status-icon">&#10003;</div>
+        <div class="version-badge" id="version">${esc(version)}</div>
+        <h1>System Operational</h1>
+        <p class="subtitle">All systems are running normally</p>
+        <div class="info-grid">
+            <div class="info-card"><div class="label">Hostname</div><div class="value" id="hostname">${esc(hostname)}</div></div>
+            <div class="info-card"><div class="label">Environment</div><div class="value" id="env">${esc(env)}</div></div>
+            <div class="info-card"><div class="label">Uptime</div><div class="value" id="uptime">${esc(uptime)}</div></div>
+            <div class="info-card"><div class="label">Color</div><div class="value" id="color">${esc(color)}</div></div>
+        </div>
+    </div>
+</body>
+</html>
+`;
 }

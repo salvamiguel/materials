@@ -27,6 +27,8 @@ export interface HttpResponse {
   body: string;
   server: string;
   pod?: Obj;
+  /** Served by argocd-server (the Browser shows the ArgoCD UI). */
+  argocd?: boolean;
 }
 
 /** Resolves a DNS name inside the cluster. */
@@ -149,7 +151,13 @@ function toPod(cl: Cluster, pod: Obj, port: number, path: string, host: string, 
   if ('refused' in a) return { error: `Failed to connect to ${host} port ${port} after 0 ms: Couldn't connect to server`, code: 7 };
   nginxAccessLog(cl, pod, path, a.status, a.body.length, from);
   const img = pod.spec.containers[0]?.image || '';
-  return { status: a.status, body: a.body, pod, server: /nginx/.test(img) ? 'nginx' : /httpd/.test(img) ? 'Apache' : '' };
+  return {
+    status: a.status,
+    body: a.body,
+    pod,
+    server: /nginx/.test(img) ? 'nginx' : /httpd/.test(img) ? 'Apache' : '',
+    ...(a.argocd ? { argocd: true } : {}),
+  };
 }
 
 function toService(cl: Cluster, svc: Obj, port: number, path: string, host: string, from: From): HttpResponse | { error: string; code: number } {
@@ -239,6 +247,7 @@ export function curlCommand(cl: Cluster, args: string[], from: From): { output: 
   let discard = false;
   let write = '';
   let fail = false;
+  let insecure = false;
   const urls: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -251,7 +260,10 @@ export function curlCommand(cl: Cluster, args: string[], from: From): { output: 
       fail = true;
       if (a.includes('s')) silent = true;
       if (a.includes('S')) showErr = true;
-    } else if (a === '-L' || a === '-v' || a === '-k' || a === '--insecure') continue;
+    } else if (a === '-k' || a === '--insecure' || a === '-sk' || a === '-ks') {
+      insecure = true;
+      if (a.includes('s')) silent = true;
+    } else if (a === '-L' || a === '-v') continue;
     else if (a === '-H' || a === '--header') {
       const h = args[++i] || '';
       const hm = /^host:\s*(.+)$/i.exec(h);
@@ -271,6 +283,13 @@ export function curlCommand(cl: Cluster, args: string[], from: From): { output: 
       if (!silent || showErr) out += `curl: (${r.code}) ${r.error}\n`;
       code = r.code;
       if (write) out += write.replace(/%\{http_code\}/g, '000').replace(/\\n/g, '\n');
+      continue;
+    }
+    if (r.argocd && /^https:/.test(url) && !insecure) {
+      // argocd-server uses a self-signed certificate.
+      if (!silent || showErr)
+        out += `curl: (60) SSL certificate problem: self-signed certificate\nMore details here: https://curl.se/docs/sslcerts.html\n\ncurl failed to verify the legitimacy of the server and therefore could not\nestablish a secure connection to it. To learn more about this situation and\nhow to fix it, please visit the web page mentioned above.\n`;
+      code = 60;
       continue;
     }
     if (fail && r.status >= 400) {
