@@ -4,10 +4,9 @@
 
 import type { Cluster } from '../cluster';
 import { podAvailable } from '../controllers/common';
-import { deploymentReplicaSets, maxUnavailable } from '../controllers/deployment';
 import type { LogLine, Obj } from '../types';
 import type { PodShell } from '../podshell';
-import { evalPath, printTable, tableFor } from './printers';
+import { evalPath, printTable } from './printers';
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -34,7 +33,6 @@ export function watchStream(
   list: () => Obj[],
   opts: { wide?: boolean; allNamespaces?: boolean; withKind?: boolean; watchOnly?: boolean },
 ): { initial: string; stream: Stream } {
-  const t = tableFor(cl, kind);
   // Rows printed later keep the columns of the first table (kubectl's printer does the same).
   const widths: number[] = [];
   const align = (text: string) =>
@@ -56,7 +54,6 @@ export function watchStream(
   const starts = [...header.matchAll(/\S+(?: \S+)*/g)].map((m) => m.index!);
   starts.forEach((s, i) => (widths[i] = (starts[i + 1] ?? s) - s));
   for (const o of objs) seen.set(o.metadata.uid, { row: row(o), obj: o });
-  void t;
   return {
     initial,
     stream: {
@@ -136,8 +133,6 @@ export function rolloutStatusOnce(cl: Cluster, o: Obj): { msg: string; done: boo
         msg: `Waiting for deployment "${d.metadata.name}" rollout to finish: ${s.availableReplicas || 0} of ${updated} updated replicas are available...`,
         done: false,
       };
-    void maxUnavailable;
-    void deploymentReplicaSets;
     return { msg: `deployment "${d.metadata.name}" successfully rolled out`, done: true };
   }
   if (o.kind === 'StatefulSet') {

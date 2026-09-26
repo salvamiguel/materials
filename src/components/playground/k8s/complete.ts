@@ -155,11 +155,10 @@ export function completeLine(cl: Cluster, files: Record<string, string>, input: 
   if (TYPE_VERBS.has(verb)) {
     if (args.length === 0) {
       if (cur.includes('/')) {
-        const [t, part] = cur.split('/');
+        const [t] = cur.split('/');
         const type = resolveResource(t);
         if (!type) return undefined;
         const names = cl.list(type.kind, type.namespaced ? ns : undefined).map((o) => `${t}/${o.metadata.name}`);
-        void part;
         return pick(names);
       }
       return pick(TYPES);

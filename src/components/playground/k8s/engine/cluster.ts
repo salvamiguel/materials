@@ -7,7 +7,7 @@ import { checkSchema } from './schema';
 import { qualifiedName, resolveResource, resourceByKind } from './resources';
 import { ApiError, type ClusterState, type KEvent, type Obj, type Source } from './types';
 import { validateObject } from './validate';
-import { base64, clone, deepEqual, nextRandom, randomSuffix, stableJson, uuid } from './util';
+import { base64, clone, deepEqual, nextRandom, randomSuffix, uuid } from './util';
 import { runControllers } from './controllers';
 import { bootstrap } from './bootstrap';
 

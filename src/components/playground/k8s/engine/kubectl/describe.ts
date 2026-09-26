@@ -2,12 +2,11 @@
 
 import type { Cluster } from '../cluster';
 import { LAST_APPLIED } from '../cluster';
-import { condition } from '../controllers/common';
-import { deploymentReplicaSets, maxSurge, maxUnavailable, revisionOf } from '../controllers/deployment';
+import { deploymentReplicaSets } from '../controllers/deployment';
 import { resourceByKind } from '../resources';
 import type { Obj } from '../types';
 import { fromLabelSelector, humanDuration, labelsString, selectorString, unbase64 } from '../util';
-import { age, hpaTargets, jobStatus, podStatus, toYaml } from './printers';
+import { age, hpaTargets, jobStatus, toYaml } from './printers';
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -242,7 +241,6 @@ export function describe(cl: Cluster, o: Obj): string {
       if (o.status?.startTime) w.kv(0, 'Start Time', rfc1123(o.status.startTime));
       w.map(0, 'Labels', o.metadata.labels);
       annotations(w, o);
-      const st = podStatus(cl, o);
       w.kv(
         0,
         'Status',
@@ -251,7 +249,6 @@ export function describe(cl: Cluster, o: Obj): string {
           : o.status?.phase,
       );
       if (o.metadata.deletionTimestamp) w.kv(0, 'Termination Grace Period', `${o.metadata.deletionGracePeriodSeconds}s`);
-      void st;
       w.kv(0, 'IP', o.status?.podIP || '');
       w.raw(0, 'IPs:');
       if (o.status?.podIP) w.kv(1, 'IP', o.status.podIP);
@@ -308,8 +305,6 @@ export function describe(cl: Cluster, o: Obj): string {
       if (o.spec.strategy?.type === 'RollingUpdate') {
         const ru = o.spec.strategy.rollingUpdate || {};
         w.kv(0, 'RollingUpdateStrategy', `${ru.maxUnavailable ?? '25%'} max unavailable, ${ru.maxSurge ?? '25%'} max surge`);
-        void maxSurge;
-        void maxUnavailable;
       }
       podTemplate(w, cl, o.spec.template);
       w.raw(0, 'Conditions:');
@@ -583,10 +578,8 @@ export function describe(cl: Cluster, o: Obj): string {
       w.map(0, 'Labels', o.metadata.labels);
       annotations(w, o);
       const { apiVersion, kind, metadata, ...rest } = o; // eslint-disable-line @typescript-eslint/no-unused-vars
-      void condition;
       w.raw(0, toYaml(rest).trimEnd());
     }
   }
-  if (o.kind === 'Deployment' || o.kind === 'ReplicaSet') void revisionOf;
   return w.toString() + events(cl, o);
 }

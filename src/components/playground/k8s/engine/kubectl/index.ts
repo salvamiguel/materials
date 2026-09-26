@@ -614,7 +614,6 @@ function source(doc: Doc): Source {
 function forDocs(docs: Doc[], p: Parsed, verb: string, fn: (d: Doc) => string): Result {
   let out = '';
   let code = 0;
-  let select: string | undefined;
   for (const d of docs) {
     const v = clientValidate(d);
     if (v) {
@@ -633,7 +632,6 @@ function forDocs(docs: Doc[], p: Parsed, verb: string, fn: (d: Doc) => string): 
     }
   }
   if (!docs.length) return fail('error: no objects passed to ' + verb.replace('ing', '').replace('creat', 'create').replace('apply', 'apply'));
-  void select;
   return { output: out, exitCode: code };
 }
 
@@ -663,8 +661,6 @@ async function apply(p: Parsed, ctx: Ctx, ns: string): Promise<Result> {
     firstUid ??= res.obj.metadata.uid;
     return `${objectName(res.obj)} ${res.action}${suffix}`;
   });
-  // Namespaces first: a namespace and its objects in the same file.
-  if (r.exitCode && docs.some((d) => d.obj.kind === 'Namespace')) void 0;
   return { ...r, select: dry === 'none' ? firstUid : undefined };
 }
 
@@ -1222,7 +1218,7 @@ function setCmd(p: Parsed, ctx: Ctx, ns: string): Result {
     for (const o of objs) {
       const spec = podSpecOf(o);
       for (const a of assignments) {
-        const [cname, image] = a.split('=');
+        const [cname] = a.split('=');
         const cs = [...(spec.containers || []), ...(spec.initContainers || [])].filter((c: Json) => cname === '*' || c.name === cname);
         if (!cs.length) return fail(`error: unable to find container named "${cname}"`);
       }

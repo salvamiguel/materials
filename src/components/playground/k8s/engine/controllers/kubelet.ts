@@ -5,7 +5,7 @@
 import type { Cluster } from '../cluster';
 import { program, type Program } from '../runtime';
 import type { ContainerRt, FaultKind, Obj, PodRt } from '../types';
-import { parseQuantity, stableJson } from '../util';
+import { parseQuantity } from '../util';
 import { condition, isTerminating, setCondition } from './common';
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any

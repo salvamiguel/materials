@@ -3,7 +3,7 @@
 
 import type { Cluster } from '../cluster';
 import type { Obj } from '../types';
-import { fromLabelSelector, matches, parseQuantity, stableJson } from '../util';
+import { fromLabelSelector, matches, parseQuantity } from '../util';
 import { isTerminating, podReady, setCondition } from './common';
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
