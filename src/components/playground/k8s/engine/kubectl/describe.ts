@@ -27,7 +27,9 @@ class Writer {
   }
   /** Multi-line maps (labels, annotations): first entry on the key's line. */
   map(level: number, key: string, m: Record<string, string> | undefined, skip: string[] = []) {
-    const e = Object.entries(m || {}).filter(([k]) => !skip.includes(k)).sort(([a], [b]) => a.localeCompare(b));
+    const e = Object.entries(m || {})
+      .filter(([k]) => !skip.includes(k))
+      .sort(([a], [b]) => a.localeCompare(b));
     if (!e.length) return this.kv(level, key, '<none>');
     e.forEach(([k, v], i) => this.lines.push({ level, key: i === 0 ? key : '', value: `${k}=${v}` }));
   }
@@ -50,7 +52,10 @@ class Writer {
 function events(cl: Cluster, o: Obj): string {
   const evs = cl.eventsFor(o);
   if (!evs.length) return 'Events:  <none>\n';
-  const rows = [['Type', 'Reason', 'Age', 'From', 'Message'], ['----', '------', '----', '----', '-------']];
+  const rows = [
+    ['Type', 'Reason', 'Age', 'From', 'Message'],
+    ['----', '------', '----', '----', '-------'],
+  ];
   for (const e of evs.slice(-25)) {
     const ageStr = e.count > 1 ? `${humanDuration(cl.now - e.last)} (x${e.count} over ${humanDuration(cl.now - e.first)})` : humanDuration(cl.now - e.first);
     rows.push([e.type, e.reason, ageStr, e.source, e.message]);
@@ -65,7 +70,15 @@ function header(w: Writer, cl: Cluster, o: Obj, withNs = true) {
 }
 
 function probeString(p: Json): string {
-  const how = p.httpGet ? `http-get ${p.httpGet.scheme === 'HTTPS' ? 'https' : 'http'}://:${p.httpGet.port}${p.httpGet.path || '/'}` : p.tcpSocket ? `tcp-socket :${p.tcpSocket.port}` : p.exec ? `exec [${(p.exec.command || []).join(' ')}]` : p.grpc ? `grpc <pod>:${p.grpc.port}` : 'unknown';
+  const how = p.httpGet
+    ? `http-get ${p.httpGet.scheme === 'HTTPS' ? 'https' : 'http'}://:${p.httpGet.port}${p.httpGet.path || '/'}`
+    : p.tcpSocket
+      ? `tcp-socket :${p.tcpSocket.port}`
+      : p.exec
+        ? `exec [${(p.exec.command || []).join(' ')}]`
+        : p.grpc
+          ? `grpc <pod>:${p.grpc.port}`
+          : 'unknown';
   return `${how} delay=${p.initialDelaySeconds || 0}s timeout=${p.timeoutSeconds || 1}s period=${p.periodSeconds || 10}s #success=${p.successThreshold || 1} #failure=${p.failureThreshold || 3}`;
 }
 
@@ -134,8 +147,10 @@ function containerBlock(w: Writer, cl: Cluster, pod: Obj | undefined, c: Json, s
     w.raw(l, 'Environment:');
     for (const e of c.env) {
       let v = e.value;
-      if (e.valueFrom?.configMapKeyRef) v = `<set to the key '${e.valueFrom.configMapKeyRef.key}' of config map '${e.valueFrom.configMapKeyRef.name}'>  Optional: ${e.valueFrom.configMapKeyRef.optional ? 'true' : 'false'}`;
-      else if (e.valueFrom?.secretKeyRef) v = `<set to the key '${e.valueFrom.secretKeyRef.key}' in secret '${e.valueFrom.secretKeyRef.name}'>  Optional: ${e.valueFrom.secretKeyRef.optional ? 'true' : 'false'}`;
+      if (e.valueFrom?.configMapKeyRef)
+        v = `<set to the key '${e.valueFrom.configMapKeyRef.key}' of config map '${e.valueFrom.configMapKeyRef.name}'>  Optional: ${e.valueFrom.configMapKeyRef.optional ? 'true' : 'false'}`;
+      else if (e.valueFrom?.secretKeyRef)
+        v = `<set to the key '${e.valueFrom.secretKeyRef.key}' in secret '${e.valueFrom.secretKeyRef.name}'>  Optional: ${e.valueFrom.secretKeyRef.optional ? 'true' : 'false'}`;
       else if (e.valueFrom?.fieldRef) v = ` (v1:${e.valueFrom.fieldRef.fieldPath})`;
       w.kv(l + 1, e.name, v ?? '');
     }
@@ -169,7 +184,7 @@ function volumes(w: Writer, spec: Json, pod?: Obj) {
       w.kv(l + 1, 'ClaimName', v.persistentVolumeClaim.claimName);
       w.kv(l + 1, 'ReadOnly', v.persistentVolumeClaim.readOnly ? 'true' : 'false');
     } else if (v.emptyDir) {
-      w.kv(l + 1, 'Type', 'EmptyDir (a temporary directory that shares a pod\'s lifetime)');
+      w.kv(l + 1, 'Type', "EmptyDir (a temporary directory that shares a pod's lifetime)");
       w.kv(l + 1, 'Medium', v.emptyDir.medium || '');
       w.kv(l + 1, 'SizeLimit', v.emptyDir.sizeLimit || '<unset>');
     } else if (v.hostPath) {
@@ -228,7 +243,13 @@ export function describe(cl: Cluster, o: Obj): string {
       w.map(0, 'Labels', o.metadata.labels);
       annotations(w, o);
       const st = podStatus(cl, o);
-      w.kv(0, 'Status', o.metadata.deletionTimestamp ? `Terminating (lasts ${humanDuration(cl.now - Date.parse(o.metadata.deletionTimestamp) + (o.metadata.deletionGracePeriodSeconds || 0) * 1000)})` : o.status?.phase);
+      w.kv(
+        0,
+        'Status',
+        o.metadata.deletionTimestamp
+          ? `Terminating (lasts ${humanDuration(cl.now - Date.parse(o.metadata.deletionTimestamp) + (o.metadata.deletionGracePeriodSeconds || 0) * 1000)})`
+          : o.status?.phase,
+      );
       if (o.metadata.deletionTimestamp) w.kv(0, 'Termination Grace Period', `${o.metadata.deletionGracePeriodSeconds}s`);
       void st;
       w.kv(0, 'IP', o.status?.podIP || '');
@@ -238,10 +259,26 @@ export function describe(cl: Cluster, o: Obj): string {
       if (ctrl) w.kv(0, 'Controlled By', `${ctrl.kind}/${ctrl.metadata.name}`);
       if (o.spec.initContainers?.length) {
         w.raw(0, 'Init Containers:');
-        for (const c of o.spec.initContainers) containerBlock(w, cl, o, c, (o.status?.initContainerStatuses || []).find((s: Json) => s.name === c.name), 1);
+        for (const c of o.spec.initContainers)
+          containerBlock(
+            w,
+            cl,
+            o,
+            c,
+            (o.status?.initContainerStatuses || []).find((s: Json) => s.name === c.name),
+            1,
+          );
       }
       w.raw(0, 'Containers:');
-      for (const c of o.spec.containers) containerBlock(w, cl, o, c, (o.status?.containerStatuses || []).find((s: Json) => s.name === c.name), 1);
+      for (const c of o.spec.containers)
+        containerBlock(
+          w,
+          cl,
+          o,
+          c,
+          (o.status?.containerStatuses || []).find((s: Json) => s.name === c.name),
+          1,
+        );
       w.raw(0, 'Conditions:');
       const conds: Json[] = o.status?.conditions || [];
       const cw = Math.max(4, ...conds.map((c) => c.type.length)) + 3;
@@ -261,7 +298,11 @@ export function describe(cl: Cluster, o: Obj): string {
       annotations(w, o);
       w.kv(0, 'Selector', selectorString(fromLabelSelector(o.spec.selector)));
       const s = o.status || {};
-      w.kv(0, 'Replicas', `${o.spec.replicas} desired | ${s.updatedReplicas || 0} updated | ${s.replicas || 0} total | ${s.availableReplicas || 0} available | ${s.unavailableReplicas || 0} unavailable`);
+      w.kv(
+        0,
+        'Replicas',
+        `${o.spec.replicas} desired | ${s.updatedReplicas || 0} updated | ${s.replicas || 0} total | ${s.availableReplicas || 0} available | ${s.unavailableReplicas || 0} unavailable`,
+      );
       w.kv(0, 'StrategyType', o.spec.strategy?.type);
       w.kv(0, 'MinReadySeconds', o.spec.minReadySeconds || 0);
       if (o.spec.strategy?.type === 'RollingUpdate') {
@@ -301,7 +342,13 @@ export function describe(cl: Cluster, o: Obj): string {
         w.kv(0, 'Number of Nodes Scheduled with Available Pods', o.status?.numberAvailable || 0);
         w.kv(0, 'Number of Nodes Misscheduled', 0);
       } else {
-        w.kv(0, 'Replicas', o.kind === 'StatefulSet' ? `${o.spec.replicas} desired | ${o.status?.replicas || 0} total` : `${o.status?.replicas || 0} current / ${o.spec.replicas} desired`);
+        w.kv(
+          0,
+          'Replicas',
+          o.kind === 'StatefulSet'
+            ? `${o.spec.replicas} desired | ${o.status?.replicas || 0} total`
+            : `${o.status?.replicas || 0} current / ${o.spec.replicas} desired`,
+        );
       }
       if (o.kind === 'StatefulSet') {
         w.kv(0, 'Update Strategy', o.spec.updateStrategy?.type);
@@ -339,7 +386,11 @@ export function describe(cl: Cluster, o: Obj): string {
       w.kv(0, 'Backoff Limit', o.spec.backoffLimit ?? 6);
       if (o.status?.startTime) w.kv(0, 'Start Time', rfc1123(o.status.startTime));
       if (o.status?.completionTime) w.kv(0, 'Completed At', rfc1123(o.status.completionTime));
-      w.kv(0, 'Pods Statuses', `${o.status?.active || 0} Active (${o.status?.ready || 0} Ready) / ${o.status?.succeeded || 0} Succeeded / ${o.status?.failed || 0} Failed`);
+      w.kv(
+        0,
+        'Pods Statuses',
+        `${o.status?.active || 0} Active (${o.status?.ready || 0} Ready) / ${o.status?.succeeded || 0} Succeeded / ${o.status?.failed || 0} Failed`,
+      );
       podTemplate(w, cl, o.spec.template);
       w.kv(0, 'Status', jobStatus(o));
       break;
@@ -370,13 +421,16 @@ export function describe(cl: Cluster, o: Obj): string {
       w.kv(0, 'IP Families', (o.spec.ipFamilies || ['IPv4']).join(','));
       w.kv(0, 'IP', o.spec.clusterIP);
       w.kv(0, 'IPs', (o.spec.clusterIPs || [o.spec.clusterIP]).join(','));
-      if (o.status?.loadBalancer?.ingress) w.kv(0, 'LoadBalancer Ingress', o.status.loadBalancer.ingress.map((i: Json) => `${i.ip} (${i.ipMode || 'VIP'})`).join(', '));
+      if (o.status?.loadBalancer?.ingress)
+        w.kv(0, 'LoadBalancer Ingress', o.status.loadBalancer.ingress.map((i: Json) => `${i.ip} (${i.ipMode || 'VIP'})`).join(', '));
       const ep = cl.get('Endpoints', o.metadata.namespace, o.metadata.name);
       for (const p of o.spec.ports || []) {
         w.kv(0, 'Port', `${p.name || '<unset>'}  ${p.port}/${p.protocol}`);
         w.kv(0, 'TargetPort', `${p.targetPort}/${p.protocol}`);
         if (p.nodePort) w.kv(0, 'NodePort', `${p.name || '<unset>'}  ${p.nodePort}/${p.protocol}`);
-        const addrs = (ep?.subsets || []).flatMap((s: Json) => (s.addresses || []).map((a: Json) => `${a.ip}:${(s.ports || []).find((x: Json) => x.name === p.name || (s.ports || []).length === 1)?.port}`));
+        const addrs = (ep?.subsets || []).flatMap((s: Json) =>
+          (s.addresses || []).map((a: Json) => `${a.ip}:${(s.ports || []).find((x: Json) => x.name === p.name || (s.ports || []).length === 1)?.port}`),
+        );
         w.kv(0, 'Endpoints', addrs.length ? addrs.join(',') : '');
       }
       w.kv(0, 'Session Affinity', o.spec.sessionAffinity || 'None');
@@ -390,7 +444,13 @@ export function describe(cl: Cluster, o: Obj): string {
       w.lines.pop();
       w.kv(0, 'Address', (o.status?.loadBalancer?.ingress || []).map((x: Json) => x.ip || x.hostname).join(','));
       w.kv(0, 'Ingress Class', o.spec?.ingressClassName || '<none>');
-      w.kv(0, 'Default backend', o.spec?.defaultBackend?.service ? `${o.spec.defaultBackend.service.name}:${o.spec.defaultBackend.service.port?.number ?? o.spec.defaultBackend.service.port?.name}` : '<default>');
+      w.kv(
+        0,
+        'Default backend',
+        o.spec?.defaultBackend?.service
+          ? `${o.spec.defaultBackend.service.name}:${o.spec.defaultBackend.service.port?.number ?? o.spec.defaultBackend.service.port?.name}`
+          : '<default>',
+      );
       w.raw(0, 'Rules:');
       w.raw(1, 'Host        Path  Backends');
       w.raw(1, '----        ----  --------');
@@ -400,18 +460,32 @@ export function describe(cl: Cluster, o: Obj): string {
           const svc = cl.get('Service', o.metadata.namespace, p.backend?.service?.name);
           const ep = svc ? cl.get('Endpoints', o.metadata.namespace, svc.metadata.name) : undefined;
           const ips = (ep?.subsets || []).flatMap((s: Json) => (s.addresses || []).map((a: Json) => `${a.ip}:${s.ports?.[0]?.port}`));
-          w.raw(3, `${p.path || '/'}   ${p.backend?.service?.name}:${p.backend?.service?.port?.number ?? p.backend?.service?.port?.name} (${svc ? ips.join(',') || '<none>' : `<error: services "${p.backend?.service?.name}" not found>`})`);
+          w.raw(
+            3,
+            `${p.path || '/'}   ${p.backend?.service?.name}:${p.backend?.service?.port?.number ?? p.backend?.service?.port?.name} (${svc ? ips.join(',') || '<none>' : `<error: services "${p.backend?.service?.name}" not found>`})`,
+          );
         }
       }
       annotations(w, o);
       break;
     }
     case 'Node': {
-      w.kv(0, 'Roles', Object.keys(o.metadata.labels || {}).filter((k) => k.startsWith('node-role.kubernetes.io/')).map((k) => k.split('/')[1]).join(',') || '<none>');
+      w.kv(
+        0,
+        'Roles',
+        Object.keys(o.metadata.labels || {})
+          .filter((k) => k.startsWith('node-role.kubernetes.io/'))
+          .map((k) => k.split('/')[1])
+          .join(',') || '<none>',
+      );
       w.map(0, 'Labels', o.metadata.labels);
       annotations(w, o);
       w.kv(0, 'CreationTimestamp', rfc1123(o.metadata.creationTimestamp));
-      w.kv(0, 'Taints', (o.spec.taints || []).map((t: Json) => `${t.key}${t.value ? `=${t.value}` : ''}:${t.effect}`).join('\n                    ') || '<none>');
+      w.kv(
+        0,
+        'Taints',
+        (o.spec.taints || []).map((t: Json) => `${t.key}${t.value ? `=${t.value}` : ''}:${t.effect}`).join('\n                    ') || '<none>',
+      );
       w.kv(0, 'Unschedulable', o.spec.unschedulable ? 'true' : 'false');
       w.raw(0, 'Conditions:');
       w.raw(1, 'Type             Status  Reason                       Message');
@@ -430,13 +504,23 @@ export function describe(cl: Cluster, o: Obj): string {
       w.kv(0, 'PodCIDR', o.spec.podCIDR);
       const pods = cl.list('Pod').filter((p) => p.spec.nodeName === o.metadata.name && !['Succeeded', 'Failed'].includes(p.status?.phase));
       w.raw(0, `Non-terminated Pods:          (${pods.length} in total)`);
-      const rows = [['Namespace', 'Name', 'CPU Requests', 'Memory Requests', 'Age'], ['---------', '----', '------------', '---------------', '---']];
+      const rows = [
+        ['Namespace', 'Name', 'CPU Requests', 'Memory Requests', 'Age'],
+        ['---------', '----', '------------', '---------------', '---'],
+      ];
       for (const p of pods) {
         const r = p.spec.containers[0]?.resources?.requests || {};
         rows.push([p.metadata.namespace, p.metadata.name, r.cpu || '0 (0%)', r.memory || '0 (0%)', age(cl, p.metadata.creationTimestamp)]);
       }
       const widths = rows[0].map((_, i) => Math.max(...rows.map((r) => r[i].length)));
-      for (const r of rows) w.raw(1, r.map((c, i) => c.padEnd(widths[i] + 2)).join('').trimEnd());
+      for (const r of rows)
+        w.raw(
+          1,
+          r
+            .map((c, i) => c.padEnd(widths[i] + 2))
+            .join('')
+            .trimEnd(),
+        );
       break;
     }
     case 'ConfigMap':
@@ -460,9 +544,15 @@ export function describe(cl: Cluster, o: Obj): string {
       annotations(w, o);
       w.kv(0, 'Finalizers', `[${(o.metadata.finalizers || []).join(' ')}]`);
       w.kv(0, 'Capacity', o.status?.capacity?.storage || '');
-      w.kv(0, 'Access Modes', (o.status?.accessModes || []).map((m: string) => ({ ReadWriteOnce: 'RWO', ReadOnlyMany: 'ROX', ReadWriteMany: 'RWX' })[m] || m).join(','));
+      w.kv(
+        0,
+        'Access Modes',
+        (o.status?.accessModes || []).map((m: string) => ({ ReadWriteOnce: 'RWO', ReadOnlyMany: 'ROX', ReadWriteMany: 'RWX' })[m] || m).join(','),
+      );
       w.kv(0, 'VolumeMode', o.spec.volumeMode || 'Filesystem');
-      const users = cl.list('Pod', o.metadata.namespace).filter((p) => (p.spec.volumes || []).some((v: Json) => v.persistentVolumeClaim?.claimName === o.metadata.name));
+      const users = cl
+        .list('Pod', o.metadata.namespace)
+        .filter((p) => (p.spec.volumes || []).some((v: Json) => v.persistentVolumeClaim?.claimName === o.metadata.name));
       w.kv(0, 'Used By', users.map((p) => p.metadata.name).join('\n                 ') || '<none>');
       break;
     }

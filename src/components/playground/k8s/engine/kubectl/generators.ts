@@ -6,7 +6,12 @@ import { UsageError } from './args';
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 export function containerNameFromImage(image: string) {
-  return image.split('@')[0].split('/').pop()!.split(':')[0].replace(/[^a-z0-9-]/g, '-');
+  return image
+    .split('@')[0]
+    .split('/')
+    .pop()!
+    .split(':')[0]
+    .replace(/[^a-z0-9-]/g, '-');
 }
 
 export function genDeployment(name: string, image: string, replicas: number, port?: number, command?: string[]): Obj {
@@ -37,7 +42,11 @@ export function genDeployment(name: string, image: string, replicas: number, por
   };
 }
 
-export function genPod(name: string, image: string, opts: { restart?: string; port?: number; labels?: Record<string, string>; env?: string[]; command?: boolean; rest?: string[] }): Obj {
+export function genPod(
+  name: string,
+  image: string,
+  opts: { restart?: string; port?: number; labels?: Record<string, string>; env?: string[]; command?: boolean; rest?: string[] },
+): Obj {
   const c: Json = { image, name, resources: {} };
   if (opts.rest?.length) {
     if (opts.command) c.command = opts.rest;
@@ -54,13 +63,24 @@ export function genPod(name: string, image: string, opts: { restart?: string; po
   };
 }
 
-export function genService(name: string, type: string, ports: { port: number; targetPort: number | string; name?: string }[], selector: Record<string, string>, labels?: Record<string, string>): Obj {
+export function genService(
+  name: string,
+  type: string,
+  ports: { port: number; targetPort: number | string; name?: string }[],
+  selector: Record<string, string>,
+  labels?: Record<string, string>,
+): Obj {
   return {
     apiVersion: 'v1',
     kind: 'Service',
     metadata: { creationTimestamp: null, labels: labels || selector, name },
     spec: {
-      ports: ports.map((p) => ({ ...(ports.length > 1 ? { name: p.name || `port-${p.port}` } : p.name ? { name: p.name } : {}), port: p.port, protocol: 'TCP', targetPort: p.targetPort })),
+      ports: ports.map((p) => ({
+        ...(ports.length > 1 ? { name: p.name || `port-${p.port}` } : p.name ? { name: p.name } : {}),
+        port: p.port,
+        protocol: 'TCP',
+        targetPort: p.targetPort,
+      })),
       selector,
       ...(type !== 'ClusterIP' ? { type } : {}),
     },
@@ -87,7 +107,12 @@ export function genJob(name: string, image: string, command?: string[]): Obj {
     apiVersion: 'batch/v1',
     kind: 'Job',
     metadata: { creationTimestamp: null, name },
-    spec: { template: { metadata: { creationTimestamp: null }, spec: { containers: [{ image, name, ...(command?.length ? { command } : {}), resources: {} }], restartPolicy: 'Never' } } },
+    spec: {
+      template: {
+        metadata: { creationTimestamp: null },
+        spec: { containers: [{ image, name, ...(command?.length ? { command } : {}), resources: {} }], restartPolicy: 'Never' },
+      },
+    },
     status: {},
   };
 }
@@ -98,7 +123,15 @@ export function genCronJob(name: string, image: string, schedule: string, comman
     kind: 'CronJob',
     metadata: { creationTimestamp: null, name },
     spec: {
-      jobTemplate: { metadata: { creationTimestamp: null, name }, spec: { template: { metadata: { creationTimestamp: null }, spec: { containers: [{ image, name, ...(command?.length ? { command } : {}), resources: {} }], restartPolicy: 'OnFailure' } } } },
+      jobTemplate: {
+        metadata: { creationTimestamp: null, name },
+        spec: {
+          template: {
+            metadata: { creationTimestamp: null },
+            spec: { containers: [{ image, name, ...(command?.length ? { command } : {}), resources: {} }], restartPolicy: 'OnFailure' },
+          },
+        },
+      },
       schedule,
     },
     status: {},
@@ -114,7 +147,11 @@ export function genIngress(name: string, rules: string[], cls?: string): Obj {
     const [, host, path = '/', svc, port] = m;
     const exact = !path.endsWith('*');
     const list = byHost.get(host) || [];
-    list.push({ backend: { service: { name: svc, port: /^\d+$/.test(port) ? { number: parseInt(port, 10) } : { name: port } } }, path: path.replace(/\*$/, ''), pathType: exact ? 'Exact' : 'Prefix' });
+    list.push({
+      backend: { service: { name: svc, port: /^\d+$/.test(port) ? { number: parseInt(port, 10) } : { name: port } } },
+      path: path.replace(/\*$/, ''),
+      pathType: exact ? 'Exact' : 'Prefix',
+    });
     byHost.set(host, list);
   }
   return {

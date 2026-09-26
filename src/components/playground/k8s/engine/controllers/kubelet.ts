@@ -98,11 +98,21 @@ function schedule(cl: Cluster, pod: Obj, rt: PodRt) {
   for (const v of pod.spec.volumes || []) {
     if (!v.persistentVolumeClaim) continue;
     const pvc = cl.get('PersistentVolumeClaim', pod.metadata.namespace, v.persistentVolumeClaim.claimName);
-    if (!pvc) return unschedulable(cl, pod, `0/${nodes.length} nodes are available: persistentvolumeclaim "${v.persistentVolumeClaim.claimName}" not found. preemption: 0/${nodes.length} nodes are available: ${nodes.length} Preemption is not helpful for scheduling.`);
-    if (isTerminating(pvc)) return unschedulable(cl, pod, `0/${nodes.length} nodes are available: persistentvolumeclaim "${pvc.metadata.name}" is being deleted.`);
+    if (!pvc)
+      return unschedulable(
+        cl,
+        pod,
+        `0/${nodes.length} nodes are available: persistentvolumeclaim "${v.persistentVolumeClaim.claimName}" not found. preemption: 0/${nodes.length} nodes are available: ${nodes.length} Preemption is not helpful for scheduling.`,
+      );
+    if (isTerminating(pvc))
+      return unschedulable(cl, pod, `0/${nodes.length} nodes are available: persistentvolumeclaim "${pvc.metadata.name}" is being deleted.`);
     const sc = cl.get('StorageClass', undefined, pvc.spec.storageClassName || '');
     if (pvc.status?.phase !== 'Bound' && (!sc || sc.volumeBindingMode !== 'WaitForFirstConsumer')) {
-      return unschedulable(cl, pod, `0/${nodes.length} nodes are available: pod has unbound immediate PersistentVolumeClaims. preemption: 0/${nodes.length} nodes are available: ${nodes.length} Preemption is not helpful for scheduling.`);
+      return unschedulable(
+        cl,
+        pod,
+        `0/${nodes.length} nodes are available: pod has unbound immediate PersistentVolumeClaims. preemption: 0/${nodes.length} nodes are available: ${nodes.length} Preemption is not helpful for scheduling.`,
+      );
     }
   }
 
@@ -110,7 +120,7 @@ function schedule(cl: Cluster, pod: Obj, rt: PodRt) {
   const fits: { node: Obj; score: number }[] = [];
   for (const node of nodes) {
     if (!nodeReady(cl, node)) {
-      add("node(s) had untolerated taint {node.kubernetes.io/unreachable: }");
+      add('node(s) had untolerated taint {node.kubernetes.io/unreachable: }');
       continue;
     }
     if (node.spec.unschedulable && !tolerates(pod, { key: 'node.kubernetes.io/unschedulable', effect: 'NoSchedule' })) {
@@ -128,10 +138,13 @@ function schedule(cl: Cluster, pod: Obj, rt: PodRt) {
       continue;
     }
     const onNode = cl.list('Pod').filter((p) => p.spec.nodeName === node.metadata.name && p.status?.phase !== 'Succeeded' && p.status?.phase !== 'Failed');
-    const used = onNode.reduce((a, p) => {
-      const r = podRequests(p);
-      return { cpu: a.cpu + r.cpu, memory: a.memory + r.memory };
-    }, { cpu: 0, memory: 0 });
+    const used = onNode.reduce(
+      (a, p) => {
+        const r = podRequests(p);
+        return { cpu: a.cpu + r.cpu, memory: a.memory + r.memory };
+      },
+      { cpu: 0, memory: 0 },
+    );
     const cap = { cpu: parseQuantity(node.status.allocatable.cpu), memory: parseQuantity(node.status.allocatable.memory) };
     if (onNode.length >= parseInt(node.status.allocatable.pods, 10)) {
       add('Too many pods');
@@ -154,7 +167,11 @@ function schedule(cl: Cluster, pod: Obj, rt: PodRt) {
     const parts = Object.entries(reasons)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([r, n]) => `${n} ${r}`);
-    return unschedulable(cl, pod, `0/${nodes.length} nodes are available: ${parts.join(', ')}. preemption: 0/${nodes.length} nodes are available: ${nodes.length} Preemption is not helpful for scheduling.`);
+    return unschedulable(
+      cl,
+      pod,
+      `0/${nodes.length} nodes are available: ${parts.join(', ')}. preemption: 0/${nodes.length} nodes are available: ${nodes.length} Preemption is not helpful for scheduling.`,
+    );
   }
   fits.sort((a, b) => b.score - a.score);
   bind(cl, pod, rt, fits[0].node.metadata.name);
@@ -212,8 +229,10 @@ function log(cl: Cluster, c: ContainerRt, lines: string[]) {
 function missingMount(cl: Cluster, pod: Obj): string | undefined {
   const ns = pod.metadata.namespace;
   for (const v of pod.spec.volumes || []) {
-    if (v.configMap && !v.configMap.optional && !cl.get('ConfigMap', ns, v.configMap.name)) return `MountVolume.SetUp failed for volume "${v.name}" : configmap "${v.configMap.name}" not found`;
-    if (v.secret && !v.secret.optional && !cl.get('Secret', ns, v.secret.secretName)) return `MountVolume.SetUp failed for volume "${v.name}" : secret "${v.secret.secretName}" not found`;
+    if (v.configMap && !v.configMap.optional && !cl.get('ConfigMap', ns, v.configMap.name))
+      return `MountVolume.SetUp failed for volume "${v.name}" : configmap "${v.configMap.name}" not found`;
+    if (v.secret && !v.secret.optional && !cl.get('Secret', ns, v.secret.secretName))
+      return `MountVolume.SetUp failed for volume "${v.name}" : secret "${v.secret.secretName}" not found`;
     if (v.persistentVolumeClaim) {
       const pvc = cl.get('PersistentVolumeClaim', ns, v.persistentVolumeClaim.claimName);
       if (!pvc || pvc.status?.phase !== 'Bound') return `WAIT:${v.persistentVolumeClaim.claimName}`;
@@ -254,7 +273,14 @@ function probePort(c: Json, probe: Json): number | undefined {
 }
 
 /** Whether a probe passes against the running program. */
-function probePasses(pod: Obj, c: Json, prog: Program, probe: Json, fault: FaultKind | undefined, kind: 'readiness' | 'liveness'): { ok: boolean; msg: string } {
+function probePasses(
+  pod: Obj,
+  c: Json,
+  prog: Program,
+  probe: Json,
+  fault: FaultKind | undefined,
+  kind: 'readiness' | 'liveness',
+): { ok: boolean; msg: string } {
   if (fault === 'unready' && kind === 'readiness') {
     return { ok: false, msg: probe?.httpGet ? `HTTP probe failed with statuscode: 503` : 'probe failed (marcado como degradado)' };
   }
@@ -265,11 +291,19 @@ function probePasses(pod: Obj, c: Json, prog: Program, probe: Json, fault: Fault
   if (port !== undefined && !prog.ports.includes(port)) {
     return {
       ok: false,
-      msg: probe.httpGet ? `Get "http://${ip}:${port}${probe.httpGet.path || '/'}": dial tcp ${ip}:${port}: connect: connection refused` : `dial tcp ${ip}:${port}: connect: connection refused`,
+      msg: probe.httpGet
+        ? `Get "http://${ip}:${port}${probe.httpGet.path || '/'}": dial tcp ${ip}:${port}: connect: connection refused`
+        : `dial tcp ${ip}:${port}: connect: connection refused`,
     };
   }
-  if (probe.httpGet && prog.mode !== 'server') return { ok: false, msg: `Get "http://${ip}:${port}${probe.httpGet.path}": net/http: HTTP/1.x transport connection broken: malformed HTTP response` };
-  if (probe.httpGet && /nginx/.test(c.image) && !['/', '/index.html', ''].includes(probe.httpGet.path || '/') && !/health|ready|live|status/.test(probe.httpGet.path)) {
+  if (probe.httpGet && prog.mode !== 'server')
+    return { ok: false, msg: `Get "http://${ip}:${port}${probe.httpGet.path}": net/http: HTTP/1.x transport connection broken: malformed HTTP response` };
+  if (
+    probe.httpGet &&
+    /nginx/.test(c.image) &&
+    !['/', '/index.html', ''].includes(probe.httpGet.path || '/') &&
+    !/health|ready|live|status/.test(probe.httpGet.path)
+  ) {
     return { ok: false, msg: `HTTP probe failed with statuscode: 404` };
   }
   return { ok: true, msg: '' };
@@ -327,7 +361,8 @@ function terminate(cl: Cluster, pod: Obj, rt: PodRt) {
   if (!rt.killed) {
     rt.killed = true;
     for (const c of pod.spec.containers || []) {
-      if (rt.containers[c.name]?.state === 'running') cl.emit(pod, 'Normal', 'Killing', `Stopping container ${c.name}`, 'kubelet', `spec.containers{${c.name}}`);
+      if (rt.containers[c.name]?.state === 'running')
+        cl.emit(pod, 'Normal', 'Killing', `Stopping container ${c.name}`, 'kubelet', `spec.containers{${c.name}}`);
     }
   }
   // Processes that handle SIGTERM stop quickly; a shell running `sleep` (PID 1) ignores it and waits for SIGKILL.
@@ -388,7 +423,18 @@ function runPod(cl: Cluster, pod: Obj, rt: PodRt) {
     step(cl, pod, rt, c, st, cache, fault, restartPolicy === 'Always' ? 'OnFailure' : restartPolicy, true);
     const now = rt.containers[c.name];
     if (!(now.state === 'terminated' && now.exitCode === 0)) {
-      setCondition(cl, pod, 'Initialized', 'False', 'ContainersNotInitialized', `containers with incomplete status: [${inits.filter((x) => !(rt.containers[x.name]?.state === 'terminated' && rt.containers[x.name]?.exitCode === 0)).map((x) => x.name).join(' ')}]`, { lastProbeTime: null });
+      setCondition(
+        cl,
+        pod,
+        'Initialized',
+        'False',
+        'ContainersNotInitialized',
+        `containers with incomplete status: [${inits
+          .filter((x) => !(rt.containers[x.name]?.state === 'terminated' && rt.containers[x.name]?.exitCode === 0))
+          .map((x) => x.name)
+          .join(' ')}]`,
+        { lastProbeTime: null },
+      );
       for (const m of mains) {
         const ms = (rt.containers[m.name] ??= crt(cl));
         ms.reason = 'PodInitializing';
@@ -419,13 +465,26 @@ function step(cl: Cluster, pod: Obj, rt: PodRt, c: Json, st: ContainerRt, cache:
     if (st.next !== undefined && now < st.next) {
       if (st.reason === 'CrashLoopBackOff' || st.reason === 'ImagePullBackOff') {
         if (Math.floor((now - st.since) / 5000) !== Math.floor((now - 250 - st.since) / 5000)) {
-          cl.emit(pod, 'Warning', 'BackOff', st.reason === 'CrashLoopBackOff' ? `Back-off restarting failed container ${c.name} in pod ${pod.metadata.name}_${pod.metadata.namespace}(${pod.metadata.uid})` : `Back-off pulling image "${c.image}"`, 'kubelet', field);
+          cl.emit(
+            pod,
+            'Warning',
+            'BackOff',
+            st.reason === 'CrashLoopBackOff'
+              ? `Back-off restarting failed container ${c.name} in pod ${pod.metadata.name}_${pod.metadata.namespace}(${pod.metadata.uid})`
+              : `Back-off pulling image "${c.image}"`,
+            'kubelet',
+            field,
+          );
         }
       }
       return;
     }
     // Pull.
-    const pullErr = prog.pullError || (fault === 'imagepull' ? `failed to pull and unpack image "docker.io/library/${c.image}": failed to resolve reference: unexpected status from HEAD request: 404 Not Found (fallo simulado)` : undefined);
+    const pullErr =
+      prog.pullError ||
+      (fault === 'imagepull'
+        ? `failed to pull and unpack image "docker.io/library/${c.image}": failed to resolve reference: unexpected status from HEAD request: 404 Not Found (fallo simulado)`
+        : undefined);
     const cached = cache.includes(c.image);
     const alwaysPull = c.imagePullPolicy === 'Always';
     if (!st.pulledAt || st.reason === 'ErrImagePull' || st.reason === 'ImagePullBackOff') {
@@ -438,7 +497,14 @@ function step(cl: Cluster, pod: Obj, rt: PodRt, c: Json, st: ContainerRt, cache:
         if (now - st.pulling < 1500) return;
         st.pulling = undefined;
         const attempts = (st.pullFails = (st.pullFails || 0) + 1);
-        cl.emit(pod, 'Warning', 'Failed', `Failed to pull image "${c.image}": ${pullErr === 'InvalidImageName' ? 'invalid reference format' : pullErr}`, 'kubelet', field);
+        cl.emit(
+          pod,
+          'Warning',
+          'Failed',
+          `Failed to pull image "${c.image}": ${pullErr === 'InvalidImageName' ? 'invalid reference format' : pullErr}`,
+          'kubelet',
+          field,
+        );
         cl.emit(pod, 'Warning', 'Failed', pullErr === 'InvalidImageName' ? 'Error: InvalidImageName' : 'Error: ErrImagePull', 'kubelet', field);
         const reason = pullErr === 'InvalidImageName' ? 'InvalidImageName' : attempts > 1 ? 'ImagePullBackOff' : 'ErrImagePull';
         st.reason = reason;
@@ -465,7 +531,14 @@ function step(cl: Cluster, pod: Obj, rt: PodRt, c: Json, st: ContainerRt, cache:
         if (now - st.pulling < took) return;
         st.pulling = undefined;
         const secs = (took / 1000).toFixed(3);
-        cl.emit(pod, 'Normal', 'Pulled', `Successfully pulled image "${c.image}" in ${secs}s (${secs}s including waiting). Image size: ${40 + Math.floor(cl.random() * 60)}${Math.floor(cl.random() * 900 + 100)}${Math.floor(cl.random() * 900 + 100)} bytes.`, 'kubelet', field);
+        cl.emit(
+          pod,
+          'Normal',
+          'Pulled',
+          `Successfully pulled image "${c.image}" in ${secs}s (${secs}s including waiting). Image size: ${40 + Math.floor(cl.random() * 60)}${Math.floor(cl.random() * 900 + 100)}${Math.floor(cl.random() * 900 + 100)} bytes.`,
+          'kubelet',
+          field,
+        );
         if (!cache.includes(c.image)) cache.push(c.image);
         st.pulledAt = now;
       }
@@ -498,7 +571,11 @@ function step(cl: Cluster, pod: Obj, rt: PodRt, c: Json, st: ContainerRt, cache:
     st.ready = false;
     st.pulledAt = undefined;
     log(cl, st, prog.startLogs);
-    if (fault === 'crash') log(cl, st, ['panic: runtime error: invalid memory address or nil pointer dereference (fallo simulado)', '[signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0x6a4b2c]']);
+    if (fault === 'crash')
+      log(cl, st, [
+        'panic: runtime error: invalid memory address or nil pointer dereference (fallo simulado)',
+        '[signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0x6a4b2c]',
+      ]);
     return;
   }
 
@@ -506,7 +583,11 @@ function step(cl: Cluster, pod: Obj, rt: PodRt, c: Json, st: ContainerRt, cache:
     const up = now - st.since;
     // Loop output.
     if (prog.loop && up >= (st.loopAt ?? 0) * prog.loop.periodMs) {
-      log(cl, st, prog.loop.lines.map((l) => (l === '{DATE}' ? new Date(now).toUTCString().replace('GMT', 'UTC') : l)));
+      log(
+        cl,
+        st,
+        prog.loop.lines.map((l) => (l === '{DATE}' ? new Date(now).toUTCString().replace('GMT', 'UTC') : l)),
+      );
       st.loopAt = (st.loopAt ?? 0) + 1;
     }
     // Exits.
@@ -541,7 +622,11 @@ function step(cl: Cluster, pod: Obj, rt: PodRt, c: Json, st: ContainerRt, cache:
           if (!st.ready) st.readyAt = now;
           st.ready = true;
         } else if (!r.ok && up >= delay) {
-          if (st.ready || up - delay < 250 || Math.floor((up - delay) / ((rp?.periodSeconds || 10) * 1000)) !== Math.floor((up - delay - 250) / ((rp?.periodSeconds || 10) * 1000))) {
+          if (
+            st.ready ||
+            up - delay < 250 ||
+            Math.floor((up - delay) / ((rp?.periodSeconds || 10) * 1000)) !== Math.floor((up - delay - 250) / ((rp?.periodSeconds || 10) * 1000))
+          ) {
             cl.emit(pod, 'Warning', 'Unhealthy', `Readiness probe failed: ${r.msg}`, 'kubelet', field);
           }
           st.ready = false;
@@ -603,10 +688,26 @@ function writeStatus(cl: Cluster, pod: Obj, rt: PodRt) {
         cs.containerID = `containerd://${pod.metadata.uid.replace(/-/g, '')}${c.name.length}`;
         cs.imageID = `docker.io/library/${c.image}@sha256:${pod.metadata.uid.replace(/-/g, '').slice(0, 16)}`;
       } else {
-        cs.state = { terminated: { exitCode: st.exitCode, reason: st.reason, startedAt: cl.ts(st.last?.startedAt ?? st.since), finishedAt: cl.ts(st.since), containerID: `containerd://${pod.metadata.uid.replace(/-/g, '')}` } };
+        cs.state = {
+          terminated: {
+            exitCode: st.exitCode,
+            reason: st.reason,
+            startedAt: cl.ts(st.last?.startedAt ?? st.since),
+            finishedAt: cl.ts(st.since),
+            containerID: `containerd://${pod.metadata.uid.replace(/-/g, '')}`,
+          },
+        };
       }
       if (st?.last && !(st.state === 'terminated')) {
-        cs.lastState = { terminated: { exitCode: st.last.exitCode, reason: st.last.reason, startedAt: cl.ts(st.last.startedAt), finishedAt: cl.ts(st.last.finishedAt), containerID: `containerd://${pod.metadata.uid.replace(/-/g, '')}` } };
+        cs.lastState = {
+          terminated: {
+            exitCode: st.last.exitCode,
+            reason: st.last.reason,
+            startedAt: cl.ts(st.last.startedAt),
+            finishedAt: cl.ts(st.last.finishedAt),
+            containerID: `containerd://${pod.metadata.uid.replace(/-/g, '')}`,
+          },
+        };
       } else cs.lastState = {};
       return cs;
     });

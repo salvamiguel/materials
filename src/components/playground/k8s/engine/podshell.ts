@@ -35,10 +35,13 @@ function files(cl: Cluster, sh: PodShell): Record<string, string> {
     '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt': '-----BEGIN CERTIFICATE-----\n(simulado)\n-----END CERTIFICATE-----\n',
   };
   if (/nginx/.test(c.image)) {
-    f['/usr/share/nginx/html/index.html'] = '<!DOCTYPE html>\n<html>\n<head>\n<title>Welcome to nginx!</title>\n</head>\n<body>\n<h1>Welcome to nginx!</h1>\n</body>\n</html>\n';
+    f['/usr/share/nginx/html/index.html'] =
+      '<!DOCTYPE html>\n<html>\n<head>\n<title>Welcome to nginx!</title>\n</head>\n<body>\n<h1>Welcome to nginx!</h1>\n</body>\n</html>\n';
     f['/usr/share/nginx/html/50x.html'] = '<!DOCTYPE html>\n<html>\n<head>\n<title>Error</title>\n</head>\n</html>\n';
-    f['/etc/nginx/nginx.conf'] = 'user  nginx;\nworker_processes  auto;\n\nevents {\n    worker_connections  1024;\n}\n\nhttp {\n    include       /etc/nginx/mime.types;\n    include /etc/nginx/conf.d/*.conf;\n}\n';
-    f['/etc/nginx/conf.d/default.conf'] = 'server {\n    listen       80;\n    server_name  localhost;\n\n    location / {\n        root   /usr/share/nginx/html;\n        index  index.html index.htm;\n    }\n}\n';
+    f['/etc/nginx/nginx.conf'] =
+      'user  nginx;\nworker_processes  auto;\n\nevents {\n    worker_connections  1024;\n}\n\nhttp {\n    include       /etc/nginx/mime.types;\n    include /etc/nginx/conf.d/*.conf;\n}\n';
+    f['/etc/nginx/conf.d/default.conf'] =
+      'server {\n    listen       80;\n    server_name  localhost;\n\n    location / {\n        root   /usr/share/nginx/html;\n        index  index.html index.htm;\n    }\n}\n';
   }
   Object.assign(f, mountedFiles(cl, pod, c));
   for (const m of c.volumeMounts || []) {
@@ -91,7 +94,11 @@ export function podExec(cl: Cluster, sh: PodShell, line: string): { output: stri
     case 'bash':
     case '/bin/sh':
     case '/bin/bash': {
-      if (cmd.includes('bash') && /busybox|alpine/.test(sh.container.image)) return { output: `OCI runtime exec failed: exec failed: unable to start container process: exec: "${cmd}": executable file not found in $PATH: unknown\n`, exitCode: 126 };
+      if (cmd.includes('bash') && /busybox|alpine/.test(sh.container.image))
+        return {
+          output: `OCI runtime exec failed: exec failed: unable to start container process: exec: "${cmd}": executable file not found in $PATH: unknown\n`,
+          exitCode: 126,
+        };
       const i = rest.indexOf('-c');
       if (i >= 0) return podExec(cl, sh, rest.slice(i + 1).join(' '));
       return { output: '', exitCode: 0 };
@@ -99,7 +106,13 @@ export function podExec(cl: Cluster, sh: PodShell, line: string): { output: stri
     case 'env':
     case 'printenv':
       if (rest[0]) return env[rest[0]] !== undefined ? { output: env[rest[0]] + '\n', exitCode: 0 } : { output: '', exitCode: 1 };
-      return { output: Object.entries(env).map(([k, v]) => `${k}=${v}`).join('\n') + '\n', exitCode: 0 };
+      return {
+        output:
+          Object.entries(env)
+            .map(([k, v]) => `${k}=${v}`)
+            .join('\n') + '\n',
+        exitCode: 0,
+      };
     case 'echo':
       return { output: rest.join(' ') + '\n', exitCode: 0 };
     case 'hostname':
@@ -118,7 +131,10 @@ export function podExec(cl: Cluster, sh: PodShell, line: string): { output: stri
     case 'uname':
       return { output: rest.includes('-a') ? `Linux ${sh.pod.metadata.name} 6.8.0-45-generic #45-Ubuntu SMP x86_64 GNU/Linux\n` : 'Linux\n', exitCode: 0 };
     case 'ps':
-      return { output: `PID   USER     TIME  COMMAND\n    1 root      0:00 ${[...(sh.container.command || []), ...(sh.container.args || [])].join(' ') || imageInfo(sh.container.image)?.mode === 'server' ? 'nginx: master process nginx -g daemon off;' : 'sh'}\n   42 root      0:00 ps\n`, exitCode: 0 };
+      return {
+        output: `PID   USER     TIME  COMMAND\n    1 root      0:00 ${[...(sh.container.command || []), ...(sh.container.args || [])].join(' ') || imageInfo(sh.container.image)?.mode === 'server' ? 'nginx: master process nginx -g daemon off;' : 'sh'}\n   42 root      0:00 ps\n`,
+        exitCode: 0,
+      };
     case 'cat': {
       let out = '';
       let code = 0;
@@ -173,7 +189,12 @@ export function podExec(cl: Cluster, sh: PodShell, line: string): { output: stri
       return { output: `${cmd} (simulado): conexión correcta a la base de datos local.\n`, exitCode: 0 };
     case 'nginx':
       if (!/nginx/.test(sh.container.image)) return notFound(cmd);
-      return { output: rest.includes('-t') ? 'nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\n' : 'nginx version: nginx/1.27.2\n', exitCode: 0 };
+      return {
+        output: rest.includes('-t')
+          ? 'nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\n'
+          : 'nginx version: nginx/1.27.2\n',
+        exitCode: 0,
+      };
     case 'touch':
     case 'mkdir':
     case 'rm':

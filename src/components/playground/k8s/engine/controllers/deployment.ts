@@ -49,7 +49,9 @@ export function deploymentReplicaSets(cl: Cluster, d: Obj): { newRS?: Obj; old: 
   const newRS = all
     .filter((rs) => (rs.metadata.labels?.[HASH] ? rs.metadata.labels[HASH] === hash : sameTemplate(rs.spec.template, d.spec.template)))
     .sort((a, b) => revisionOf(b) - revisionOf(a))[0];
-  const old = all.filter((rs) => rs !== newRS).sort((a, b) => Date.parse(a.metadata.creationTimestamp) - Date.parse(b.metadata.creationTimestamp) || revisionOf(a) - revisionOf(b));
+  const old = all
+    .filter((rs) => rs !== newRS)
+    .sort((a, b) => Date.parse(a.metadata.creationTimestamp) - Date.parse(b.metadata.creationTimestamp) || revisionOf(a) - revisionOf(b));
   return { newRS, old, all };
 }
 
@@ -58,9 +60,19 @@ function scale(cl: Cluster, d: Obj, rs: Obj, to: number) {
   if (from === to) return;
   cl.mutate(rs, (r) => {
     r.spec.replicas = to;
-    r.metadata.annotations = { ...(r.metadata.annotations || {}), 'deployment.kubernetes.io/desired-replicas': String(d.spec.replicas), 'deployment.kubernetes.io/max-replicas': String((d.spec.replicas ?? 1) + maxSurge(d)) };
+    r.metadata.annotations = {
+      ...(r.metadata.annotations || {}),
+      'deployment.kubernetes.io/desired-replicas': String(d.spec.replicas),
+      'deployment.kubernetes.io/max-replicas': String((d.spec.replicas ?? 1) + maxSurge(d)),
+    };
   });
-  cl.emit(d, 'Normal', 'ScalingReplicaSet', `Scaled ${to > from ? 'up' : 'down'} replica set ${rs.metadata.name} from ${from} to ${to}`, 'deployment-controller');
+  cl.emit(
+    d,
+    'Normal',
+    'ScalingReplicaSet',
+    `Scaled ${to > from ? 'up' : 'down'} replica set ${rs.metadata.name} from ${from} to ${to}`,
+    'deployment-controller',
+  );
 }
 
 export function deploymentController(cl: Cluster) {
@@ -119,7 +131,8 @@ function sync(cl: Cluster, d: Obj) {
     });
     all = [...all, newRS];
     created = true;
-    if (newRS.spec.replicas > 0) cl.emit(d, 'Normal', 'ScalingReplicaSet', `Scaled up replica set ${name} from 0 to ${newRS.spec.replicas}`, 'deployment-controller');
+    if (newRS.spec.replicas > 0)
+      cl.emit(d, 'Normal', 'ScalingReplicaSet', `Scaled up replica set ${name} from 0 to ${newRS.spec.replicas}`, 'deployment-controller');
     setCondition(cl, d, 'Progressing', 'True', 'NewReplicaSetCreated', `Created new replica set "${name}"`, { lastUpdateTime: cl.ts() });
     cl.s.progress[d.metadata.uid] = { at: cl.now, key: '' };
   } else if (revisionOf(newRS) < maxRev) {
@@ -204,7 +217,14 @@ function finish(cl: Cluster, d: Obj, newRS: Obj | undefined, all: Obj[], before:
   const updated = newRS?.status?.replicas || 0;
   const ready = sum((rs) => rs.status?.readyReplicas || 0);
   const available = sum((rs) => rs.status?.availableReplicas || 0);
-  const upd: Json = { ...status, observedGeneration: d.metadata.generation, replicas, updatedReplicas: updated, readyReplicas: ready, availableReplicas: available };
+  const upd: Json = {
+    ...status,
+    observedGeneration: d.metadata.generation,
+    replicas,
+    updatedReplicas: updated,
+    readyReplicas: ready,
+    availableReplicas: available,
+  };
   if (replicas - available > 0) upd.unavailableReplicas = replicas - available;
   else delete upd.unavailableReplicas;
   for (const k of ['replicas', 'updatedReplicas', 'readyReplicas', 'availableReplicas'] as const) if (!upd[k]) delete upd[k];
@@ -214,7 +234,8 @@ function finish(cl: Cluster, d: Obj, newRS: Obj | undefined, all: Obj[], before:
   }
 
   const minAvail = desired - maxUnavailable(d);
-  if (available >= minAvail) setCondition(cl, d, 'Available', 'True', 'MinimumReplicasAvailable', 'Deployment has minimum availability.', { lastUpdateTime: cl.ts() });
+  if (available >= minAvail)
+    setCondition(cl, d, 'Available', 'True', 'MinimumReplicasAvailable', 'Deployment has minimum availability.', { lastUpdateTime: cl.ts() });
   else setCondition(cl, d, 'Available', 'False', 'MinimumReplicasUnavailable', 'Deployment does not have minimum availability.', { lastUpdateTime: cl.ts() });
 
   const rsName = newRS?.metadata.name || '';

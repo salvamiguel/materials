@@ -65,7 +65,14 @@ export function hpaController(cl: Cluster) {
     const target = cl.get(ref.kind, h.metadata.namespace, ref.name);
     h.status ??= {};
     if (!target || !['Deployment', 'StatefulSet', 'ReplicaSet'].includes(ref.kind)) {
-      setCondition(cl, h, 'AbleToScale', 'False', 'FailedGetScale', `the HPA controller was unable to get the target's current scale: ${(ref.kind || '').toLowerCase()}s.apps "${ref.name}" not found`);
+      setCondition(
+        cl,
+        h,
+        'AbleToScale',
+        'False',
+        'FailedGetScale',
+        `the HPA controller was unable to get the target's current scale: ${(ref.kind || '').toLowerCase()}s.apps "${ref.name}" not found`,
+      );
       cl.emit(h, 'Warning', 'FailedGetScale', `${(ref.kind || '').toLowerCase()}s.apps "${ref.name}" not found`, 'horizontal-pod-autoscaler');
       if (JSON.stringify(h) !== before) h.metadata.resourceVersion = String(++cl.s.rv);
       continue;
@@ -80,7 +87,9 @@ export function hpaController(cl: Cluster) {
     } else {
       const noReq = pods.find((p) => Number.isNaN(cpuRequest(p)) || cpuRequest(p) === 0);
       if (noReq || !pods.length) {
-        const msg = noReq ? `failed to get cpu utilization: missing request for cpu in container ${noReq.spec.containers[0].name} of Pod ${noReq.metadata.name}` : 'failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API';
+        const msg = noReq
+          ? `failed to get cpu utilization: missing request for cpu in container ${noReq.spec.containers[0].name} of Pod ${noReq.metadata.name}`
+          : 'failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API';
         setCondition(cl, h, 'ScalingActive', 'False', 'FailedGetResourceMetric', `the HPA was unable to compute the replica count: ${msg}`);
         cl.emit(h, 'Warning', 'FailedGetResourceMetric', msg, 'horizontal-pod-autoscaler');
         h.status.currentMetrics = [{ type: 'Resource', resource: { name: 'cpu', current: {} } }];
@@ -89,8 +98,20 @@ export function hpaController(cl: Cluster) {
         const used = ready.reduce((n, p) => n + podCpu(cl, p), 0);
         const req = ready.reduce((n, p) => n + cpuRequest(p), 0);
         const pct = req ? Math.round((used / req) * 100) : 0;
-        h.status.currentMetrics = [{ type: 'Resource', resource: { name: 'cpu', current: { averageUtilization: pct, averageValue: `${Math.round((used / Math.max(1, ready.length)) * 1000)}m` } } }];
-        setCondition(cl, h, 'ScalingActive', 'True', 'ValidMetricFound', 'the HPA was able to successfully calculate a replica count from cpu resource utilization (percentage of request)');
+        h.status.currentMetrics = [
+          {
+            type: 'Resource',
+            resource: { name: 'cpu', current: { averageUtilization: pct, averageValue: `${Math.round((used / Math.max(1, ready.length)) * 1000)}m` } },
+          },
+        ];
+        setCondition(
+          cl,
+          h,
+          'ScalingActive',
+          'True',
+          'ValidMetricFound',
+          'the HPA was able to successfully calculate a replica count from cpu resource utilization (percentage of request)',
+        );
         const ratio = pct / util;
         desired = Math.abs(ratio - 1) <= 0.1 ? current : Math.ceil(ready.length * ratio);
         if (desired === 0 && current > 0) desired = 1;
@@ -107,7 +128,16 @@ export function hpaController(cl: Cluster) {
       desired = min;
       limited = true;
     }
-    setCondition(cl, h, 'ScalingLimited', limited ? 'True' : 'False', limited ? (desired === max ? 'TooManyReplicas' : 'TooFewReplicas') : 'DesiredWithinRange', limited ? `the desired replica count is ${desired === max ? 'more than the maximum' : 'less than the minimum'} replica count` : 'the desired count is within the acceptable range');
+    setCondition(
+      cl,
+      h,
+      'ScalingLimited',
+      limited ? 'True' : 'False',
+      limited ? (desired === max ? 'TooManyReplicas' : 'TooFewReplicas') : 'DesiredWithinRange',
+      limited
+        ? `the desired replica count is ${desired === max ? 'more than the maximum' : 'less than the minimum'} replica count`
+        : 'the desired count is within the acceptable range',
+    );
     // Scale-down stabilization: use the highest recommendation of the window.
     st.recommendations = [...st.recommendations.filter((r) => cl.now - r.t < SCALE_DOWN_WINDOW), { t: cl.now, r: desired }];
     if (desired < current) desired = Math.min(current, Math.max(...st.recommendations.map((r) => r.r)));
@@ -115,7 +145,13 @@ export function hpaController(cl: Cluster) {
       const metric = h.status.currentMetrics?.[0]?.resource?.current?.averageUtilization;
       cl.mutate(target, (t) => (t.spec.replicas = desired));
       h.status.lastScaleTime = cl.ts();
-      cl.emit(h, 'Normal', 'SuccessfulRescale', `New size: ${desired}; reason: ${desired > current ? `cpu resource utilization (percentage of request) above target` : 'All metrics below target'}${metric !== undefined ? '' : ''}`, 'horizontal-pod-autoscaler');
+      cl.emit(
+        h,
+        'Normal',
+        'SuccessfulRescale',
+        `New size: ${desired}; reason: ${desired > current ? `cpu resource utilization (percentage of request) above target` : 'All metrics below target'}${metric !== undefined ? '' : ''}`,
+        'horizontal-pod-autoscaler',
+      );
     }
     h.status.currentReplicas = current;
     h.status.desiredReplicas = desired;

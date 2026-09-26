@@ -32,13 +32,17 @@ export interface HttpResponse {
 /** Resolves a DNS name inside the cluster. */
 export function resolveName(cl: Cluster, name: string, ns: string): { ips: string[]; fqdn: string; svc?: Obj; pods?: Obj[] } | undefined {
   const n = name.replace(/\.$/, '').toLowerCase();
-  const parts = n.replace(/\.cluster\.local$/, '').replace(/\.svc$/, '').split('.');
+  const parts = n
+    .replace(/\.cluster\.local$/, '')
+    .replace(/\.svc$/, '')
+    .split('.');
   // pod-0.headless[.ns]
   if (parts.length >= 2) {
     const svc = cl.get('Service', parts[2] || ns, parts[1]);
     if (svc && svc.spec.clusterIP === 'None') {
       const pod = cl.list('Pod', svc.metadata.namespace).find((p) => p.spec.hostname === parts[0] && p.spec.subdomain === svc.metadata.name);
-      if (pod?.status?.podIP) return { ips: [pod.status.podIP], fqdn: `${parts[0]}.${svc.metadata.name}.${svc.metadata.namespace}.svc.cluster.local`, pods: [pod] };
+      if (pod?.status?.podIP)
+        return { ips: [pod.status.podIP], fqdn: `${parts[0]}.${svc.metadata.name}.${svc.metadata.namespace}.svc.cluster.local`, pods: [pod] };
     }
   }
   if (parts.length <= 2) {
@@ -178,10 +182,19 @@ function toIngress(cl: Cluster, hostHeader: string, path: string, from: From): H
     const def = cl.list('Ingress').find((i) => i.spec?.defaultBackend?.service);
     if (def) best = { ing: def, p: { backend: def.spec.defaultBackend }, len: 0 };
   }
-  if (!best) return { status: 404, body: '<html>\n<head><title>404 Not Found</title></head>\n<body>\n<center><h1>404 Not Found</h1></center>\n<hr><center>nginx</center>\n</body>\n</html>\n', server: 'nginx' };
+  if (!best)
+    return {
+      status: 404,
+      body: '<html>\n<head><title>404 Not Found</title></head>\n<body>\n<center><h1>404 Not Found</h1></center>\n<hr><center>nginx</center>\n</body>\n</html>\n',
+      server: 'nginx',
+    };
   const b = best.p.backend.service;
   const svc = cl.get('Service', best.ing.metadata.namespace, b.name);
-  const unavailable = { status: 503, body: '<html>\n<head><title>503 Service Temporarily Unavailable</title></head>\n<body>\n<center><h1>503 Service Temporarily Unavailable</h1></center>\n<hr><center>nginx</center>\n</body>\n</html>\n', server: 'nginx' };
+  const unavailable = {
+    status: 503,
+    body: '<html>\n<head><title>503 Service Temporarily Unavailable</title></head>\n<body>\n<center><h1>503 Service Temporarily Unavailable</h1></center>\n<hr><center>nginx</center>\n</body>\n</html>\n',
+    server: 'nginx',
+  };
   if (!svc) return unavailable;
   const port = b.port?.number ?? (svc.spec.ports || []).find((p: Json) => p.name === b.port?.name)?.port;
   const r = toService(cl, svc, port, rewrite(best.ing, best.p, path), host, from);
@@ -249,7 +262,7 @@ export function curlCommand(cl: Cluster, args: string[], from: From): { output: 
     else if (a.startsWith('-')) continue;
     else urls.push(a);
   }
-  if (!urls.length) return { output: 'curl: try \'curl --help\' or \'curl --manual\' for more information\n', exitCode: 2 };
+  if (!urls.length) return { output: "curl: try 'curl --help' or 'curl --manual' for more information\n", exitCode: 2 };
   let out = '';
   let code = 0;
   for (const url of urls) {
@@ -271,7 +284,11 @@ export function curlCommand(cl: Cluster, args: string[], from: From): { output: 
       if (include) out += headers;
       if (!discard) out += r.body;
     }
-    if (write) out += write.replace(/%\{http_code\}/g, String(r.status)).replace(/%\{remote_ip\}/g, r.pod?.status?.podIP || '').replace(/\\n/g, '\n');
+    if (write)
+      out += write
+        .replace(/%\{http_code\}/g, String(r.status))
+        .replace(/%\{remote_ip\}/g, r.pod?.status?.podIP || '')
+        .replace(/\\n/g, '\n');
   }
   return { output: out, exitCode: code };
 }
@@ -283,11 +300,23 @@ export function wgetCommand(cl: Cluster, args: string[], from: From): { output: 
   const r = httpGet(cl, url, from);
   if ('error' in r) {
     const host = /^(?:https?:\/\/)?([^/:]+)/.exec(url)?.[1] || url;
-    const msg = r.code === 6 ? `wget: bad address '${host}'` : r.code === 28 ? `wget: download timed out` : `wget: can't connect to remote host (${host}): Connection refused`;
+    const msg =
+      r.code === 6
+        ? `wget: bad address '${host}'`
+        : r.code === 28
+          ? `wget: download timed out`
+          : `wget: can't connect to remote host (${host}): Connection refused`;
     return { output: `${quiet ? '' : `Connecting to ${host}\n`}${msg}\n`, exitCode: 1 };
   }
-  if (r.status >= 400) return { output: `${quiet ? '' : `Connecting to ${url}\n`}wget: server returned error: HTTP/1.1 ${r.status} ${REASONS[r.status] || ''}\n`, exitCode: 1 };
-  return { output: (quiet ? '' : `Connecting to ${url}\nwriting to stdout\n`) + r.body + (quiet ? '' : `-                    100% |********************************|   ${r.body.length}  0:00:00 ETA\nwritten to stdout\n`), exitCode: 0 };
+  if (r.status >= 400)
+    return { output: `${quiet ? '' : `Connecting to ${url}\n`}wget: server returned error: HTTP/1.1 ${r.status} ${REASONS[r.status] || ''}\n`, exitCode: 1 };
+  return {
+    output:
+      (quiet ? '' : `Connecting to ${url}\nwriting to stdout\n`) +
+      r.body +
+      (quiet ? '' : `-                    100% |********************************|   ${r.body.length}  0:00:00 ETA\nwritten to stdout\n`),
+    exitCode: 0,
+  };
 }
 
 export function nslookup(cl: Cluster, name: string, from: From): { output: string; exitCode: number } {

@@ -33,15 +33,17 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: tools/tfplay/go.mod
-          cache-dependency-path: tools/tfplay/go.sum
+          cache-dependency-path: |
+            tools/tfplay/go.sum
+            tools/k8splay/go.sum
 
-      - name: Test Terraform playground engine
+      - name: Test playground engines (Terraform, helm/kustomize)
         run: bun run test:wasm
 
-      - name: Build Terraform playground engine (WASM)
+      - name: Build playground engines (WASM)
         run: bun run build:wasm
 
-      - name: Test playground engines (AWS CLI, graph layout)
+      - name: Test playground engines (AWS CLI, Kubernetes, graph layout)
         run: bun run test:playgrounds
 
       - name: Typecheck

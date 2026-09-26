@@ -40,7 +40,13 @@ function ensureClaims(cl: Cluster, sts: Obj, ord: number) {
     };
     cl.admit(pvc);
     cl.put(pvc);
-    cl.emit(sts, 'Normal', 'SuccessfulCreate', `create Claim ${name} Pod ${sts.metadata.name}-${ord} in StatefulSet ${sts.metadata.name} success`, 'statefulset-controller');
+    cl.emit(
+      sts,
+      'Normal',
+      'SuccessfulCreate',
+      `create Claim ${name} Pod ${sts.metadata.name}-${ord} in StatefulSet ${sts.metadata.name} success`,
+      'statefulset-controller',
+    );
   }
 }
 
@@ -65,7 +71,7 @@ export function statefulSetController(cl: Cluster) {
     const currentRev: string = sts.status?.currentRevision || updateRev;
     const replicas: number = sts.spec.replicas ?? 1;
     const ordered = sts.spec.podManagementPolicy !== 'Parallel';
-    const partition: number = sts.spec.updateStrategy?.type === 'RollingUpdate' ? sts.spec.updateStrategy.rollingUpdate?.partition ?? 0 : 0;
+    const partition: number = sts.spec.updateStrategy?.type === 'RollingUpdate' ? (sts.spec.updateStrategy.rollingUpdate?.partition ?? 0) : 0;
     const onDelete = sts.spec.updateStrategy?.type === 'OnDelete';
     const pods = cl.children(sts, 'Pod');
     const byOrd = new Map<number, Obj>();

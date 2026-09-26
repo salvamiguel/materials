@@ -10,7 +10,7 @@ import {
   VscSymbolStructure,
   VscSymbolVariable,
 } from 'react-icons/vsc';
-import { highlight } from './highlight';
+import { highlight, type Token } from './highlight';
 import type { Diag } from './engine';
 import type { CompletionItem, CompletionResult, ItemKind } from './completion/complete';
 import { expandSnippet, type Stop } from './completion/snippet';
@@ -26,6 +26,10 @@ interface Props {
   complete?: (value: string, offset: number) => CompletionResult | undefined;
   /** Changes when completion data arrives (a provider schema): an open list is refreshed. */
   completionVersion?: number;
+  /** Syntax highlighter (HCL/JSON by default). */
+  highlighter?: (src: string, filename: string) => Token[];
+  /** Scrolls to these lines and marks them; bump seq to repeat. */
+  reveal?: { line: number; lines: number; seq: number };
 }
 
 const KIND_ICON: Record<ItemKind, React.ComponentType> = {
@@ -79,7 +83,7 @@ function lineCol(text: string, offset: number) {
 // A plain <textarea> on top of a highlighted <pre>: light, accessible and
 // with native undo/redo, which is all a playground needs. Terraform files
 // get a completion list like an IDE's (Ctrl+Space opens it by hand).
-export default function HclEditor({ filename, value, onChange, diagnostics, readOnly, complete, completionVersion }: Props) {
+export default function HclEditor({ filename, value, onChange, diagnostics, readOnly, complete, completionVersion, highlighter = highlight, reveal }: Props) {
   const preRef = useRef<HTMLPreElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -93,7 +97,24 @@ export default function HclEditor({ filename, value, onChange, diagnostics, read
   const [popup, setPopup] = useState<Popup | null>(null);
   const [, setScrolled] = useState(0);
   const listId = useId();
-  const tokens = useMemo(() => highlight(value, filename), [value, filename]);
+  const tokens = useMemo(() => highlighter(value, filename), [value, filename, highlighter]);
+  const bandRef = useRef<HTMLDivElement>(null);
+  const [band, setBand] = useState<{ line: number; lines: number } | null>(null);
+
+  // Scroll to the revealed lines (the manifest of the object selected in a diagram).
+  useEffect(() => {
+    const ta = taRef.current;
+    if (!reveal || !ta) return;
+    const cs = getComputedStyle(ta);
+    const lh = parseFloat(cs.lineHeight) || 20;
+    ta.scrollTop = Math.max(0, (reveal.line - 1) * lh - ta.clientHeight / 4);
+    const offset = value.split('\n').slice(0, reveal.line - 1).reduce((n, l) => n + l.length + 1, 0);
+    ta.setSelectionRange(offset, offset);
+    setBand({ line: reveal.line, lines: reveal.lines });
+    ta.dispatchEvent(new Event('scroll'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reveal?.seq]);
+  useEffect(() => setBand(null), [filename]);
   const lineCount = value.split('\n').length;
 
   const marks = useMemo(() => {
@@ -205,6 +226,7 @@ export default function HclEditor({ filename, value, onChange, diagnostics, read
     (e: React.UIEvent<HTMLTextAreaElement>) => {
       const t = e.currentTarget;
       if (preRef.current) preRef.current.style.transform = `translate(${-t.scrollLeft}px, ${-t.scrollTop}px)`;
+      if (bandRef.current) bandRef.current.style.transform = `translateY(${-t.scrollTop}px)`;
       if (gutterRef.current) gutterRef.current.style.transform = `translateY(${-t.scrollTop}px)`;
       if (popup) setScrolled((n) => n + 1);
     },
@@ -343,6 +365,18 @@ export default function HclEditor({ filename, value, onChange, diagnostics, read
         </div>
       </div>
       <div className={styles.codeArea}>
+        {band && (
+          <div
+            ref={bandRef}
+            className={styles.revealBand}
+            style={{
+              top: `calc(10px + ${band.line - 1} * 20px * var(--pz, 1))`,
+              height: `calc(${band.lines} * 20px * var(--pz, 1))`,
+              transform: `translateY(${-(taRef.current?.scrollTop || 0)}px)`,
+            }}
+            aria-hidden="true"
+          />
+        )}
         <pre ref={preRef} className={styles.codeHighlight} aria-hidden="true">
           {tokens.map((t, i) =>
             t.cls ? (

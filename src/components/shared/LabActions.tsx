@@ -1,6 +1,6 @@
 import React from 'react';
 import useBaseUrl from '@docusaurus/useBaseUrl';
-import { SiTerraform } from 'react-icons/si';
+import { SiKubernetes, SiTerraform } from 'react-icons/si';
 import { VscGithub, VscVscode, VscRemote, VscRepoForked } from 'react-icons/vsc';
 
 import styles from './LabActions.module.css';
@@ -15,6 +15,10 @@ interface LabActionsProps {
   title?: string;
   /** Opens the repo in the Terraform playground: true (default branch) or one button per branch. */
   playground?: boolean | string[];
+  /** Opens the repo's YAML (manifests, kustomizations, Helm charts) in the Kubernetes playground: true or one button per branch. */
+  k8s?: boolean | string[];
+  /** Subdirectory of the repo to open in the Kubernetes playground. */
+  k8sPath?: string;
 }
 
 function repoToPath(repo: string): string {
@@ -22,12 +26,17 @@ function repoToPath(repo: string): string {
   return match ? match[1] : repo;
 }
 
-export default function LabActions({ repo, codespace = false, fork = false, vscode = true, vscodeDev = true, title, playground = false }: LabActionsProps) {
+export default function LabActions({ repo, codespace = false, fork = false, vscode = true, vscodeDev = true, title, playground = false, k8s = false, k8sPath }: LabActionsProps) {
   const repoPath = repoToPath(repo);
   const playgroundUrl = useBaseUrl('/terraform-playground');
   const playgroundLinks = (playground === true ? [''] : playground || []).map((ref) => ({
     ref,
     href: `${playgroundUrl}?repo=${repoPath}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}`,
+  }));
+  const k8sUrl = useBaseUrl('/k8s-playground');
+  const k8sLinks = (k8s === true ? [''] : k8s || []).map((ref) => ({
+    ref,
+    href: `${k8sUrl}?repo=${repoPath}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}${k8sPath ? `&path=${encodeURIComponent(k8sPath)}` : ''}`,
   }));
   const vscodeUrl = `vscode://vscode.git/clone?url=${encodeURIComponent(repo)}`;
   const vscodeDevUrl = `https://vscode.dev/github/${repoPath}`;
@@ -59,6 +68,18 @@ export default function LabActions({ repo, codespace = false, fork = false, vsco
           </a>
         ))}
 
+        {k8sLinks.map(({ ref, href }) => (
+          <a
+            key={`k8s-${ref}`}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            title={`Carga los manifiestos${ref ? ` de la rama ${ref}` : ''} en el playground de Kubernetes`}
+          >
+            <SiKubernetes /> {ref ? `Kubernetes (${ref})` : 'Abrir en el playground de Kubernetes'}
+          </a>
+        ))}
 
         {vscode && (
           <a

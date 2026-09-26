@@ -15,7 +15,9 @@ export function validateObject(obj: Json): string[] {
   }
   for (const [k, v] of Object.entries(obj.metadata?.labels || {})) {
     if (typeof v === 'string' && (v.length > 63 || !/^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$/.test(v))) {
-      errs.push(`metadata.labels: Invalid value: ${JSON.stringify(v)}: a valid label must be an empty string or consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character`);
+      errs.push(
+        `metadata.labels: Invalid value: ${JSON.stringify(v)}: a valid label must be an empty string or consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character`,
+      );
     }
     if (!/^([a-z0-9.-]+\/)?[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$/.test(k)) {
       errs.push(`metadata.labels: Invalid value: ${JSON.stringify(k)}: name part must consist of alphanumeric characters, '-', '_' or '.'`);
@@ -34,11 +36,13 @@ export function validateObject(obj: Json): string[] {
       if (obj.kind === 'Deployment' && s?.strategy?.type === 'RollingUpdate') {
         const ru = s.strategy.rollingUpdate || {};
         if ((ru.maxSurge === 0 || ru.maxSurge === '0%') && (ru.maxUnavailable === 0 || ru.maxUnavailable === '0%')) {
-          errs.push('spec.strategy.rollingUpdate.maxUnavailable: Invalid value: intstr.IntOrString{Type:0, IntVal:0, StrVal:""}: may not be 0 when `maxSurge` is 0');
+          errs.push(
+            'spec.strategy.rollingUpdate.maxUnavailable: Invalid value: intstr.IntOrString{Type:0, IntVal:0, StrVal:""}: may not be 0 when `maxSurge` is 0',
+          );
         }
       }
       if (obj.kind === 'Deployment' && s?.strategy?.type === 'Recreate' && s.strategy.rollingUpdate) {
-        errs.push('spec.strategy.rollingUpdate: Forbidden: may not be specified when strategy `type` is \'Recreate\'');
+        errs.push("spec.strategy.rollingUpdate: Forbidden: may not be specified when strategy `type` is 'Recreate'");
       }
       if (obj.kind === 'Deployment' && s?.strategy?.type && !['RollingUpdate', 'Recreate'].includes(s.strategy.type)) {
         errs.push(`spec.strategy.type: Unsupported value: ${JSON.stringify(s.strategy.type)}: supported values: "Recreate", "RollingUpdate"`);
@@ -77,15 +81,19 @@ export function validateObject(obj: Json): string[] {
       if (type !== 'ExternalName' && !(s?.ports || []).length) errs.push('spec.ports: Required value');
       const names = new Set<string>();
       (s?.ports || []).forEach((p: Json, i: number) => {
-        if (!Number.isInteger(p?.port) || p.port < 1 || p.port > 65535) errs.push(`spec.ports[${i}].port: Invalid value: ${p?.port}: must be between 1 and 65535, inclusive`);
-        if ((s.ports.length > 1) && !p?.name) errs.push(`spec.ports[${i}].name: Required value`);
+        if (!Number.isInteger(p?.port) || p.port < 1 || p.port > 65535)
+          errs.push(`spec.ports[${i}].port: Invalid value: ${p?.port}: must be between 1 and 65535, inclusive`);
+        if (s.ports.length > 1 && !p?.name) errs.push(`spec.ports[${i}].name: Required value`);
         if (p?.name) {
           if (names.has(p.name)) errs.push(`spec.ports[${i}].name: Duplicate value: ${JSON.stringify(p.name)}`);
           names.add(p.name);
         }
         if (p?.nodePort !== undefined) {
           if (type === 'ClusterIP') errs.push(`spec.ports[${i}].nodePort: Forbidden: may not be used when \`type\` is 'ClusterIP'`);
-          else if (p.nodePort < 30000 || p.nodePort > 32767) errs.push(`spec.ports[${i}].nodePort: Invalid value: ${p.nodePort}: provided port is not in the valid range. The range of valid ports is 30000-32767`);
+          else if (p.nodePort < 30000 || p.nodePort > 32767)
+            errs.push(
+              `spec.ports[${i}].nodePort: Invalid value: ${p.nodePort}: provided port is not in the valid range. The range of valid ports is 30000-32767`,
+            );
         }
       });
       if (type === 'ExternalName' && !s?.externalName) errs.push('spec.externalName: Required value');
@@ -96,7 +104,8 @@ export function validateObject(obj: Json): string[] {
         (r?.http?.paths || []).forEach((p: Json, j: number) => {
           const at = `spec.rules[${i}].http.paths[${j}]`;
           if (!p?.pathType) errs.push(`${at}.pathType: Required value: pathType must be specified`);
-          else if (!['Prefix', 'Exact', 'ImplementationSpecific'].includes(p.pathType)) errs.push(`${at}.pathType: Unsupported value: ${JSON.stringify(p.pathType)}: supported values: "Exact", "ImplementationSpecific", "Prefix"`);
+          else if (!['Prefix', 'Exact', 'ImplementationSpecific'].includes(p.pathType))
+            errs.push(`${at}.pathType: Unsupported value: ${JSON.stringify(p.pathType)}: supported values: "Exact", "ImplementationSpecific", "Prefix"`);
           if (!p?.backend?.service?.name) errs.push(`${at}.backend: Invalid value: "": resource or service backend is required`);
           else if (!p.backend.service.port || (p.backend.service.port.number === undefined && !p.backend.service.port.name)) {
             errs.push(`${at}.backend.service.port: Invalid value: "": port name or number is required`);
@@ -108,7 +117,8 @@ export function validateObject(obj: Json): string[] {
     case 'ConfigMap':
     case 'Secret':
       for (const k of Object.keys({ ...(obj.data || {}), ...(obj.stringData || {}) })) {
-        if (!/^[-._a-zA-Z0-9]+$/.test(k)) errs.push(`data[${k}]: Invalid value: ${JSON.stringify(k)}: a valid config key must consist of alphanumeric characters, '-', '_' or '.'`);
+        if (!/^[-._a-zA-Z0-9]+$/.test(k))
+          errs.push(`data[${k}]: Invalid value: ${JSON.stringify(k)}: a valid config key must consist of alphanumeric characters, '-', '_' or '.'`);
       }
       if (obj.kind === 'Secret') {
         for (const [k, v] of Object.entries(obj.data || {})) {
@@ -121,7 +131,10 @@ export function validateObject(obj: Json): string[] {
     case 'PersistentVolumeClaim':
       if (!(s?.accessModes || []).length) errs.push('spec.accessModes: Required value: at least 1 access mode is required');
       if (!s?.resources?.requests?.storage) errs.push('spec.resources[storage]: Required value');
-      else if (Number.isNaN(parseQuantity(s.resources.requests.storage))) errs.push(`spec.resources.requests[storage]: Invalid value: ${JSON.stringify(s.resources.requests.storage)}: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'`);
+      else if (Number.isNaN(parseQuantity(s.resources.requests.storage)))
+        errs.push(
+          `spec.resources.requests[storage]: Invalid value: ${JSON.stringify(s.resources.requests.storage)}: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'`,
+        );
       break;
     case 'PersistentVolume':
       if (!s?.capacity?.storage) errs.push('spec.capacity: Required value');
@@ -130,7 +143,8 @@ export function validateObject(obj: Json): string[] {
     case 'HorizontalPodAutoscaler':
       if (!s?.scaleTargetRef?.kind || !s?.scaleTargetRef?.name) errs.push('spec.scaleTargetRef: Required value');
       if (!Number.isInteger(s?.maxReplicas) || s.maxReplicas < 1) errs.push('spec.maxReplicas: Invalid value: must be greater than or equal to 1');
-      if (Number.isInteger(s?.minReplicas) && s.minReplicas > s.maxReplicas) errs.push(`spec.maxReplicas: Invalid value: ${s.maxReplicas}: must be greater than or equal to \`minReplicas\``);
+      if (Number.isInteger(s?.minReplicas) && s.minReplicas > s.maxReplicas)
+        errs.push(`spec.maxReplicas: Invalid value: ${s.maxReplicas}: must be greater than or equal to \`minReplicas\``);
       break;
   }
   return errs;
@@ -145,7 +159,9 @@ function workload(obj: Json, errs: string[]) {
   if (!s.selector) {
     errs.push('spec.selector: Required value');
   } else if (!Object.keys(s.selector.matchLabels || {}).length && !(s.selector.matchExpressions || []).length) {
-    errs.push('spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string(nil), MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: empty selector is invalid for deployment');
+    errs.push(
+      'spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string(nil), MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: empty selector is invalid for deployment',
+    );
   }
   if (!s.template) {
     errs.push('spec.template: Required value');
@@ -208,7 +224,9 @@ function podSpec(spec: Json, at: string, errs: string[]) {
         const req = parseQuantity(c.resources?.requests?.[r]);
         const lim = parseQuantity(c.resources?.limits?.[r]);
         if (!Number.isNaN(req) && !Number.isNaN(lim) && req > lim) {
-          errs.push(`${p}.resources.requests: Invalid value: ${JSON.stringify(c.resources.requests[r])}: must be less than or equal to ${r} limit of ${c.resources.limits[r]}`);
+          errs.push(
+            `${p}.resources.requests: Invalid value: ${JSON.stringify(c.resources.requests[r])}: must be less than or equal to ${r} limit of ${c.resources.limits[r]}`,
+          );
         }
       }
     },
@@ -229,8 +247,13 @@ export function validCron(expr: string): boolean {
 }
 
 const MACROS: Record<string, string> = {
-  '@yearly': '0 0 1 1 *', '@annually': '0 0 1 1 *', '@monthly': '0 0 1 * *', '@weekly': '0 0 * * 0',
-  '@daily': '0 0 * * *', '@midnight': '0 0 * * *', '@hourly': '0 * * * *',
+  '@yearly': '0 0 1 1 *',
+  '@annually': '0 0 1 1 *',
+  '@monthly': '0 0 1 * *',
+  '@weekly': '0 0 * * 0',
+  '@daily': '0 0 * * *',
+  '@midnight': '0 0 * * *',
+  '@hourly': '0 * * * *',
 };
 
 export type Cron = Set<number>[];
@@ -239,7 +262,13 @@ export function parseCron(expr: string): Cron {
   const e = MACROS[expr.trim()] || expr.trim();
   const parts = e.split(/\s+/);
   if (parts.length !== 5) throw new Error('expected 5 fields');
-  const ranges: [number, number][] = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 6]];
+  const ranges: [number, number][] = [
+    [0, 59],
+    [0, 23],
+    [1, 31],
+    [1, 12],
+    [0, 6],
+  ];
   return parts.map((p, i) => {
     const [lo, hi] = ranges[i];
     const set = new Set<number>();

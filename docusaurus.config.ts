@@ -119,6 +119,7 @@ const config: Config = {
           items: [
             {to: '/terraform-playground', label: 'Terraform'},
             {to: '/aws-playground', label: 'AWS CLI'},
+            {to: '/k8s-playground', label: 'Kubernetes'},
           ],
         },
         {type: 'custom-presentation', position: 'right'},
