@@ -60,7 +60,20 @@ export function removeCondition(o: Obj, type: string) {
 }
 
 /** Creates a pod from a template owned by `owner`. */
-export function createPod(cl: Cluster, owner: Obj, template: Obj, opts: { name?: string; generateName?: string; labels?: Record<string, string>; hostname?: string; subdomain?: string; nodeName?: string; annotations?: Record<string, string> } = {}): Obj | undefined {
+export function createPod(
+  cl: Cluster,
+  owner: Obj,
+  template: Obj,
+  opts: {
+    name?: string;
+    generateName?: string;
+    labels?: Record<string, string>;
+    hostname?: string;
+    subdomain?: string;
+    nodeName?: string;
+    annotations?: Record<string, string>;
+  } = {},
+): Obj | undefined {
   const t = clone(template || {});
   const pod: Obj = {
     apiVersion: 'v1',
@@ -85,28 +98,42 @@ export function createPod(cl: Cluster, owner: Obj, template: Obj, opts: { name?:
     return undefined;
   }
   cl.put(pod);
-  cl.emit(owner, 'Normal', owner.kind === 'StatefulSet' ? 'SuccessfulCreate' : 'SuccessfulCreate', owner.kind === 'StatefulSet' ? `create Pod ${pod.metadata.name} in StatefulSet ${owner.metadata.name} successful` : `Created pod: ${pod.metadata.name}`, controllerName(owner.kind));
+  cl.emit(
+    owner,
+    'Normal',
+    owner.kind === 'StatefulSet' ? 'SuccessfulCreate' : 'SuccessfulCreate',
+    owner.kind === 'StatefulSet' ? `create Pod ${pod.metadata.name} in StatefulSet ${owner.metadata.name} successful` : `Created pod: ${pod.metadata.name}`,
+    controllerName(owner.kind),
+  );
   return pod;
 }
 
 export function deletePod(cl: Cluster, owner: Obj, pod: Obj) {
   if (isTerminating(pod)) return;
   cl.deleteObject(pod);
-  cl.emit(owner, 'Normal', 'SuccessfulDelete', owner.kind === 'StatefulSet' ? `delete Pod ${pod.metadata.name} in StatefulSet ${owner.metadata.name} successful` : `Deleted pod: ${pod.metadata.name}`, controllerName(owner.kind));
+  cl.emit(
+    owner,
+    'Normal',
+    'SuccessfulDelete',
+    owner.kind === 'StatefulSet' ? `delete Pod ${pod.metadata.name} in StatefulSet ${owner.metadata.name} successful` : `Deleted pod: ${pod.metadata.name}`,
+    controllerName(owner.kind),
+  );
 }
 
 export function controllerName(kind: string) {
   return (
-    {
-      ReplicaSet: 'replicaset-controller',
-      Deployment: 'deployment-controller',
-      StatefulSet: 'statefulset-controller',
-      DaemonSet: 'daemonset-controller',
-      Job: 'job-controller',
-      CronJob: 'cronjob-controller',
-      HorizontalPodAutoscaler: 'horizontal-pod-autoscaler',
-    } as Record<string, string>
-  )[kind] || 'controller-manager';
+    (
+      {
+        ReplicaSet: 'replicaset-controller',
+        Deployment: 'deployment-controller',
+        StatefulSet: 'statefulset-controller',
+        DaemonSet: 'daemonset-controller',
+        Job: 'job-controller',
+        CronJob: 'cronjob-controller',
+        HorizontalPodAutoscaler: 'horizontal-pod-autoscaler',
+      } as Record<string, string>
+    )[kind] || 'controller-manager'
+  );
 }
 
 /** Ranks pods for scale-down like the ReplicaSet controller: worst first. */

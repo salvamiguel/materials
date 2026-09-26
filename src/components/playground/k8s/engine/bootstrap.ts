@@ -48,8 +48,17 @@ function node(cl: Cluster, n: (typeof NODES)[number], i: number): Obj {
         status: type === 'Ready' ? 'True' : 'False',
         lastHeartbeatTime: cl.ts(),
         lastTransitionTime: cl.ts(),
-        reason: type === 'Ready' ? 'KubeletReady' : `KubeletHasNo${type === 'PIDPressure' ? 'PID' : type.replace('Pressure', '')}Pressure`.replace('HasNoMemoryPressure', 'HasSufficientMemory').replace('HasNoDiskPressure', 'HasNoDiskPressure').replace('HasNoPIDPressure', 'HasSufficientPID'),
-        message: type === 'Ready' ? 'kubelet is posting ready status' : `kubelet has ${type === 'MemoryPressure' ? 'sufficient memory available' : type === 'DiskPressure' ? 'no disk pressure' : 'sufficient PID available'}`,
+        reason:
+          type === 'Ready'
+            ? 'KubeletReady'
+            : `KubeletHasNo${type === 'PIDPressure' ? 'PID' : type.replace('Pressure', '')}Pressure`
+                .replace('HasNoMemoryPressure', 'HasSufficientMemory')
+                .replace('HasNoDiskPressure', 'HasNoDiskPressure')
+                .replace('HasNoPIDPressure', 'HasSufficientPID'),
+        message:
+          type === 'Ready'
+            ? 'kubelet is posting ready status'
+            : `kubelet has ${type === 'MemoryPressure' ? 'sufficient memory available' : type === 'DiskPressure' ? 'no disk pressure' : 'sufficient PID available'}`,
       })),
       addresses: [
         { type: 'InternalIP', address: n.ip },
@@ -81,7 +90,10 @@ function deployment(ns: string, name: string, image: string, replicas: number, l
       selector: { matchLabels: labels },
       template: {
         metadata: { labels },
-        spec: { containers: [{ name: name.replace(/-controller$/, '').replace('local-path-provisioner', 'local-path-provisioner'), image, ...extra.container }], ...extra.pod },
+        spec: {
+          containers: [{ name: name.replace(/-controller$/, '').replace('local-path-provisioner', 'local-path-provisioner'), image, ...extra.container }],
+          ...extra.pod,
+        },
       },
       strategy: { type: 'RollingUpdate', rollingUpdate: { maxSurge: '25%', maxUnavailable: extra.maxUnavailable ?? 1 } },
       revisionHistoryLimit: 10,
@@ -101,7 +113,12 @@ export function bootstrap(cl: Cluster) {
     cl.admit(o);
     cl.put(o);
   }
-  cl.put({ apiVersion: 'v1', kind: 'ConfigMap', metadata: { name: 'kube-root-ca.crt', namespace: 'default' }, data: { 'ca.crt': '-----BEGIN CERTIFICATE-----\nMIIDBTCCAe2gAwIBAgIIX2... (simulado)\n-----END CERTIFICATE-----\n' } });
+  cl.put({
+    apiVersion: 'v1',
+    kind: 'ConfigMap',
+    metadata: { name: 'kube-root-ca.crt', namespace: 'default' },
+    data: { 'ca.crt': '-----BEGIN CERTIFICATE-----\nMIIDBTCCAe2gAwIBAgIIX2... (simulado)\n-----END CERTIFICATE-----\n' },
+  });
   cl.put({
     apiVersion: 'storage.k8s.io/v1',
     kind: 'StorageClass',
@@ -116,39 +133,118 @@ export function bootstrap(cl: Cluster) {
     metadata: { name: 'nginx', annotations: { 'ingressclass.kubernetes.io/is-default-class': 'true' }, labels: { 'app.kubernetes.io/name': 'ingress-nginx' } },
     spec: { controller: 'k8s.io/ingress-nginx' },
   });
-  const svc = (ns: string, name: string, ip: string, ports: Obj[], selector: Record<string, string> | undefined, type = 'ClusterIP', labels?: Record<string, string>) => {
-    const o: Obj = { apiVersion: 'v1', kind: 'Service', metadata: { name, namespace: ns, ...(labels ? { labels } : {}) }, spec: { type, clusterIP: ip, ports, ...(selector ? { selector } : {}), sessionAffinity: 'None', internalTrafficPolicy: 'Cluster', ipFamilies: ['IPv4'], ipFamilyPolicy: 'SingleStack' } };
+  const svc = (
+    ns: string,
+    name: string,
+    ip: string,
+    ports: Obj[],
+    selector: Record<string, string> | undefined,
+    type = 'ClusterIP',
+    labels?: Record<string, string>,
+  ) => {
+    const o: Obj = {
+      apiVersion: 'v1',
+      kind: 'Service',
+      metadata: { name, namespace: ns, ...(labels ? { labels } : {}) },
+      spec: {
+        type,
+        clusterIP: ip,
+        ports,
+        ...(selector ? { selector } : {}),
+        sessionAffinity: 'None',
+        internalTrafficPolicy: 'Cluster',
+        ipFamilies: ['IPv4'],
+        ipFamilyPolicy: 'SingleStack',
+      },
+    };
     cl.admit(o);
     cl.put(o);
   };
-  svc('default', 'kubernetes', '10.96.0.1', [{ name: 'https', port: 443, protocol: 'TCP', targetPort: 6443 }], undefined, 'ClusterIP', { component: 'apiserver', provider: 'kubernetes' });
-  svc('kube-system', 'kube-dns', '10.96.0.10', [
-    { name: 'dns', port: 53, protocol: 'UDP', targetPort: 53 },
-    { name: 'dns-tcp', port: 53, protocol: 'TCP', targetPort: 53 },
-    { name: 'metrics', port: 9153, protocol: 'TCP', targetPort: 9153 },
-  ], { 'k8s-app': 'kube-dns' }, 'ClusterIP', { 'k8s-app': 'kube-dns', 'kubernetes.io/name': 'CoreDNS' });
+  svc('default', 'kubernetes', '10.96.0.1', [{ name: 'https', port: 443, protocol: 'TCP', targetPort: 6443 }], undefined, 'ClusterIP', {
+    component: 'apiserver',
+    provider: 'kubernetes',
+  });
+  svc(
+    'kube-system',
+    'kube-dns',
+    '10.96.0.10',
+    [
+      { name: 'dns', port: 53, protocol: 'UDP', targetPort: 53 },
+      { name: 'dns-tcp', port: 53, protocol: 'TCP', targetPort: 53 },
+      { name: 'metrics', port: 9153, protocol: 'TCP', targetPort: 9153 },
+    ],
+    { 'k8s-app': 'kube-dns' },
+    'ClusterIP',
+    { 'k8s-app': 'kube-dns', 'kubernetes.io/name': 'CoreDNS' },
+  );
   svc('kube-system', 'metrics-server', '10.96.83.21', [{ name: 'https', port: 443, protocol: 'TCP', targetPort: 10250 }], { 'k8s-app': 'metrics-server' });
-  svc('ingress-nginx', 'ingress-nginx-controller', '10.96.140.12', [
-    { name: 'http', port: 80, protocol: 'TCP', targetPort: 80, nodePort: 31080, appProtocol: 'http' },
-    { name: 'https', port: 443, protocol: 'TCP', targetPort: 443, nodePort: 31443, appProtocol: 'https' },
-  ], { 'app.kubernetes.io/name': 'ingress-nginx', 'app.kubernetes.io/component': 'controller' }, 'LoadBalancer');
+  svc(
+    'ingress-nginx',
+    'ingress-nginx-controller',
+    '10.96.140.12',
+    [
+      { name: 'http', port: 80, protocol: 'TCP', targetPort: 80, nodePort: 31080, appProtocol: 'http' },
+      { name: 'https', port: 443, protocol: 'TCP', targetPort: 443, nodePort: 31443, appProtocol: 'https' },
+    ],
+    { 'app.kubernetes.io/name': 'ingress-nginx', 'app.kubernetes.io/component': 'controller' },
+    'LoadBalancer',
+  );
 
   const sys = [
-    deployment('kube-system', 'coredns', 'registry.k8s.io/coredns/coredns:v1.12.0', 2, { 'k8s-app': 'kube-dns' }, {
-      container: { args: ['-conf', '/etc/coredns/Corefile'], ports: [{ containerPort: 53, name: 'dns', protocol: 'UDP' }], resources: { requests: { cpu: '100m', memory: '70Mi' }, limits: { memory: '170Mi' } } },
-      pod: { tolerations: [CP_TOLERATION], nodeSelector: { 'kubernetes.io/os': 'linux' }, priorityClassName: 'system-cluster-critical' },
-    }),
-    deployment('kube-system', 'metrics-server', 'registry.k8s.io/metrics-server/metrics-server:v0.7.2', 1, { 'k8s-app': 'metrics-server' }, {
-      container: { args: ['--kubelet-insecure-tls'], resources: { requests: { cpu: '100m', memory: '200Mi' } } },
-      maxUnavailable: 0,
-    }),
-    deployment('local-path-storage', 'local-path-provisioner', 'docker.io/kindest/local-path-provisioner:v20250214-acbabc1a', 1, { app: 'local-path-provisioner' }, {
-      pod: { tolerations: [CP_TOLERATION], nodeSelector: { 'kubernetes.io/os': 'linux' } },
-    }),
-    deployment('ingress-nginx', 'ingress-nginx-controller', 'registry.k8s.io/ingress-nginx/controller:v1.11.2', 1, { 'app.kubernetes.io/name': 'ingress-nginx', 'app.kubernetes.io/component': 'controller' }, {
-      container: { args: ['/nginx-ingress-controller', '--election-id=ingress-nginx-leader', '--controller-class=k8s.io/ingress-nginx'], ports: [{ containerPort: 80, name: 'http' }, { containerPort: 443, name: 'https' }], resources: { requests: { cpu: '100m', memory: '90Mi' } } },
-      pod: { nodeSelector: { 'ingress-ready': 'true', 'kubernetes.io/os': 'linux' }, tolerations: [CP_TOLERATION] },
-    }),
+    deployment(
+      'kube-system',
+      'coredns',
+      'registry.k8s.io/coredns/coredns:v1.12.0',
+      2,
+      { 'k8s-app': 'kube-dns' },
+      {
+        container: {
+          args: ['-conf', '/etc/coredns/Corefile'],
+          ports: [{ containerPort: 53, name: 'dns', protocol: 'UDP' }],
+          resources: { requests: { cpu: '100m', memory: '70Mi' }, limits: { memory: '170Mi' } },
+        },
+        pod: { tolerations: [CP_TOLERATION], nodeSelector: { 'kubernetes.io/os': 'linux' }, priorityClassName: 'system-cluster-critical' },
+      },
+    ),
+    deployment(
+      'kube-system',
+      'metrics-server',
+      'registry.k8s.io/metrics-server/metrics-server:v0.7.2',
+      1,
+      { 'k8s-app': 'metrics-server' },
+      {
+        container: { args: ['--kubelet-insecure-tls'], resources: { requests: { cpu: '100m', memory: '200Mi' } } },
+        maxUnavailable: 0,
+      },
+    ),
+    deployment(
+      'local-path-storage',
+      'local-path-provisioner',
+      'docker.io/kindest/local-path-provisioner:v20250214-acbabc1a',
+      1,
+      { app: 'local-path-provisioner' },
+      {
+        pod: { tolerations: [CP_TOLERATION], nodeSelector: { 'kubernetes.io/os': 'linux' } },
+      },
+    ),
+    deployment(
+      'ingress-nginx',
+      'ingress-nginx-controller',
+      'registry.k8s.io/ingress-nginx/controller:v1.11.2',
+      1,
+      { 'app.kubernetes.io/name': 'ingress-nginx', 'app.kubernetes.io/component': 'controller' },
+      {
+        container: {
+          args: ['/nginx-ingress-controller', '--election-id=ingress-nginx-leader', '--controller-class=k8s.io/ingress-nginx'],
+          ports: [
+            { containerPort: 80, name: 'http' },
+            { containerPort: 443, name: 'https' },
+          ],
+          resources: { requests: { cpu: '100m', memory: '90Mi' } },
+        },
+        pod: { nodeSelector: { 'ingress-ready': 'true', 'kubernetes.io/os': 'linux' }, tolerations: [CP_TOLERATION] },
+      },
+    ),
   ];
   const ds = (name: string, image: string, labels: Record<string, string>) => ({
     apiVersion: 'apps/v1',
@@ -156,13 +252,20 @@ export function bootstrap(cl: Cluster) {
     metadata: { name, namespace: 'kube-system', labels },
     spec: {
       selector: { matchLabels: labels },
-      template: { metadata: { labels }, spec: { containers: [{ name, image }], tolerations: [{ operator: 'Exists' }], hostNetwork: true, priorityClassName: 'system-node-critical' } },
+      template: {
+        metadata: { labels },
+        spec: { containers: [{ name, image }], tolerations: [{ operator: 'Exists' }], hostNetwork: true, priorityClassName: 'system-node-critical' },
+      },
       updateStrategy: { type: 'RollingUpdate', rollingUpdate: { maxUnavailable: 1, maxSurge: 0 } },
       revisionHistoryLimit: 10,
     },
     status: {},
   });
-  for (const o of [...sys, ds('kube-proxy', `registry.k8s.io/kube-proxy:${K8S_VERSION}`, { 'k8s-app': 'kube-proxy' }), ds('kindnet', 'docker.io/kindest/kindnetd:v20250214-acbabc1a', { app: 'kindnet', 'k8s-app': 'kindnet', tier: 'node' })]) {
+  for (const o of [
+    ...sys,
+    ds('kube-proxy', `registry.k8s.io/kube-proxy:${K8S_VERSION}`, { 'k8s-app': 'kube-proxy' }),
+    ds('kindnet', 'docker.io/kindest/kindnetd:v20250214-acbabc1a', { app: 'kindnet', 'k8s-app': 'kindnet', tier: 'node' }),
+  ]) {
     applyDefaults(o);
     cl.put(o);
   }

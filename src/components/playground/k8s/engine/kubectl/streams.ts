@@ -28,7 +28,12 @@ export interface Stream {
 }
 
 /** kubectl get -w: prints a row every time one changes. */
-export function watchStream(cl: Cluster, kind: string, list: () => Obj[], opts: { wide?: boolean; allNamespaces?: boolean; withKind?: boolean; watchOnly?: boolean }): { initial: string; stream: Stream } {
+export function watchStream(
+  cl: Cluster,
+  kind: string,
+  list: () => Obj[],
+  opts: { wide?: boolean; allNamespaces?: boolean; withKind?: boolean; watchOnly?: boolean },
+): { initial: string; stream: Stream } {
   const t = tableFor(cl, kind);
   // Rows printed later keep the columns of the first table (kubectl's printer does the same).
   const widths: number[] = [];
@@ -115,12 +120,22 @@ export function rolloutStatusOnce(cl: Cluster, o: Obj): { msg: string; done: boo
     const s = d.status || {};
     if (d.metadata.generation > (s.observedGeneration || 0)) return { msg: 'Waiting for deployment spec update to be observed...', done: false };
     const prog = (s.conditions || []).find((c: Json) => c.type === 'Progressing');
-    if (prog?.reason === 'ProgressDeadlineExceeded') return { msg: '', done: true, error: `error: deployment "${d.metadata.name}" exceeded its progress deadline` };
+    if (prog?.reason === 'ProgressDeadlineExceeded')
+      return { msg: '', done: true, error: `error: deployment "${d.metadata.name}" exceeded its progress deadline` };
     const want = d.spec.replicas ?? 1;
     const updated = s.updatedReplicas || 0;
-    if (updated < want) return { msg: `Waiting for deployment "${d.metadata.name}" rollout to finish: ${updated} out of ${want} new replicas have been updated...`, done: false };
-    if ((s.replicas || 0) > updated) return { msg: `Waiting for deployment "${d.metadata.name}" rollout to finish: ${(s.replicas || 0) - updated} old replicas are pending termination...`, done: false };
-    if ((s.availableReplicas || 0) < updated) return { msg: `Waiting for deployment "${d.metadata.name}" rollout to finish: ${s.availableReplicas || 0} of ${updated} updated replicas are available...`, done: false };
+    if (updated < want)
+      return { msg: `Waiting for deployment "${d.metadata.name}" rollout to finish: ${updated} out of ${want} new replicas have been updated...`, done: false };
+    if ((s.replicas || 0) > updated)
+      return {
+        msg: `Waiting for deployment "${d.metadata.name}" rollout to finish: ${(s.replicas || 0) - updated} old replicas are pending termination...`,
+        done: false,
+      };
+    if ((s.availableReplicas || 0) < updated)
+      return {
+        msg: `Waiting for deployment "${d.metadata.name}" rollout to finish: ${s.availableReplicas || 0} of ${updated} updated replicas are available...`,
+        done: false,
+      };
     void maxUnavailable;
     void deploymentReplicaSets;
     return { msg: `deployment "${d.metadata.name}" successfully rolled out`, done: true };
@@ -132,16 +147,29 @@ export function rolloutStatusOnce(cl: Cluster, o: Obj): { msg: string; done: boo
     if ((s.readyReplicas || 0) < want) return { msg: `Waiting for ${want - (s.readyReplicas || 0)} pods to be ready...`, done: false };
     const partition = o.spec.updateStrategy?.rollingUpdate?.partition || 0;
     if (partition > 0) {
-      if ((s.updatedReplicas || 0) < want - partition) return { msg: `Waiting for partitioned roll out to finish: ${s.updatedReplicas || 0} out of ${want - partition} new pods have been updated...`, done: false };
+      if ((s.updatedReplicas || 0) < want - partition)
+        return {
+          msg: `Waiting for partitioned roll out to finish: ${s.updatedReplicas || 0} out of ${want - partition} new pods have been updated...`,
+          done: false,
+        };
       return { msg: `partitioned roll out complete: ${s.updatedReplicas || 0} new pods have been updated...`, done: true };
     }
-    if (s.updateRevision !== s.currentRevision) return { msg: `waiting for statefulset rolling update to complete ${s.updatedReplicas || 0} pods at revision ${s.updateRevision}...`, done: false };
+    if (s.updateRevision !== s.currentRevision)
+      return { msg: `waiting for statefulset rolling update to complete ${s.updatedReplicas || 0} pods at revision ${s.updateRevision}...`, done: false };
     return { msg: `statefulset rolling update complete ${s.currentReplicas || want} pods at revision ${s.currentRevision}...`, done: true };
   }
   if (o.kind === 'DaemonSet') {
     const s = o.status || {};
-    if ((s.updatedNumberScheduled || 0) < (s.desiredNumberScheduled || 0)) return { msg: `Waiting for daemon set "${o.metadata.name}" rollout to finish: ${s.updatedNumberScheduled || 0} out of ${s.desiredNumberScheduled} new pods have been updated...`, done: false };
-    if ((s.numberAvailable || 0) < (s.desiredNumberScheduled || 0)) return { msg: `Waiting for daemon set "${o.metadata.name}" rollout to finish: ${s.numberAvailable || 0} of ${s.desiredNumberScheduled} updated pods are available...`, done: false };
+    if ((s.updatedNumberScheduled || 0) < (s.desiredNumberScheduled || 0))
+      return {
+        msg: `Waiting for daemon set "${o.metadata.name}" rollout to finish: ${s.updatedNumberScheduled || 0} out of ${s.desiredNumberScheduled} new pods have been updated...`,
+        done: false,
+      };
+    if ((s.numberAvailable || 0) < (s.desiredNumberScheduled || 0))
+      return {
+        msg: `Waiting for daemon set "${o.metadata.name}" rollout to finish: ${s.numberAvailable || 0} of ${s.desiredNumberScheduled} updated pods are available...`,
+        done: false,
+      };
     return { msg: `daemon set "${o.metadata.name}" successfully rolled out`, done: true };
   }
   return { msg: '', done: true, error: `error: no status viewer has been implemented for ${o.kind}` };
@@ -167,7 +195,8 @@ export function rolloutStream(cl: Cluster, o: Obj, timeoutMs?: number): { first:
           last = x.msg;
         }
         if (x.done) return { text, done: true, exitCode: 0 };
-        if (timeoutMs !== undefined && c.now - start >= timeoutMs) return { text: text + 'error: timed out waiting for the condition\n', done: true, exitCode: 1 };
+        if (timeoutMs !== undefined && c.now - start >= timeoutMs)
+          return { text: text + 'error: timed out waiting for the condition\n', done: true, exitCode: 1 };
         return { text };
       },
       stop: () => '^C\n',
@@ -176,7 +205,13 @@ export function rolloutStream(cl: Cluster, o: Obj, timeoutMs?: number): { first:
 }
 
 /** kubectl wait --for=condition=X / --for=delete / --for=jsonpath=… */
-export function waitStream(cl: Cluster, targets: Obj[], forExpr: string, timeoutMs: number, name: (o: Obj) => string): { first: string; stream?: Stream; exitCode: number } {
+export function waitStream(
+  cl: Cluster,
+  targets: Obj[],
+  forExpr: string,
+  timeoutMs: number,
+  name: (o: Obj) => string,
+): { first: string; stream?: Stream; exitCode: number } {
   const start = cl.now;
   const done = new Set<string>();
   const check = (c: Cluster): string => {

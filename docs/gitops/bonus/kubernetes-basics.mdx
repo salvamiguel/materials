@@ -3,6 +3,7 @@ sidebar_position: 2
 title: "Conceptos Básicos de Kubernetes"
 ---
 import { SiKubernetes } from "react-icons/si";
+import K8sPlaygroundLink from '@site/src/components/shared/K8sPlaygroundLink';
 
 # Conceptos Básicos de Kubernetes
 
@@ -160,6 +161,8 @@ spec:
 
 Cuando cambias la imagen (`v1.2.0` → `v1.3.0`), el Deployment crea nuevos Pods con la nueva imagen mientras mantiene los antiguos funcionando, luego los va eliminando. Eso es un **rolling update**.
 
+<K8sPlaygroundLink example="hola">Aplica este Deployment en el playground y borra un pod para ver cómo vuelve</K8sPlaygroundLink>
+
 ### Service
 
 Los Pods tienen IPs efímeras que cambian cuando se reinician. El **Service** proporciona una IP estable y un DNS name para acceder a un conjunto de Pods, seleccionándolos por labels.
@@ -218,6 +221,8 @@ data:
 :::
 
 ---
+
+<K8sPlaygroundLink example="config">ConfigMap y Secret en el playground de Kubernetes</K8sPlaygroundLink>
 
 ## 4. Namespaces
 
@@ -313,6 +318,8 @@ kubectl get events -n mi-namespace --sort-by=.lastTimestamp
 ```
 
 ---
+
+<K8sPlaygroundLink>Practica estos comandos en el playground de Kubernetes (sin instalar nada)</K8sPlaygroundLink>
 
 ## 6. Labels y Selectors
 

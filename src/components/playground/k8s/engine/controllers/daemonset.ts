@@ -17,7 +17,12 @@ function tolerates(tpl: Obj, taint: Json) {
 export function eligibleNodes(cl: Cluster, ds: Obj): Obj[] {
   const tpl = ds.spec.template;
   return cl.list('Node').filter((n) => {
-    if ((n.spec.taints || []).some((t: Json) => (t.effect === 'NoSchedule' || t.effect === 'NoExecute') && !t.key.startsWith('node.kubernetes.io/') && !tolerates(tpl, t))) return false;
+    if (
+      (n.spec.taints || []).some(
+        (t: Json) => (t.effect === 'NoSchedule' || t.effect === 'NoExecute') && !t.key.startsWith('node.kubernetes.io/') && !tolerates(tpl, t),
+      )
+    )
+      return false;
     return Object.entries(tpl.spec?.nodeSelector || {}).every(([k, v]) => n.metadata.labels?.[k] === v);
   });
 }
@@ -33,7 +38,11 @@ export function daemonSetController(cl: Cluster) {
     for (const n of nodes) {
       const mine = pods.filter((p) => p.spec.nodeName === n.metadata.name && !isTerminating(p) && p.status?.phase !== 'Failed');
       if (!mine.length && !pods.some((p) => p.spec.nodeName === n.metadata.name && isTerminating(p) && !cl.s.downNodes[n.metadata.uid])) {
-        createPod(cl, ds, ds.spec.template, { generateName: `${ds.metadata.name}-`, nodeName: n.metadata.name, labels: { [REV_LABEL]: hash, 'pod-template-generation': String(ds.metadata.generation || 1) } });
+        createPod(cl, ds, ds.spec.template, {
+          generateName: `${ds.metadata.name}-`,
+          nodeName: n.metadata.name,
+          labels: { [REV_LABEL]: hash, 'pod-template-generation': String(ds.metadata.generation || 1) },
+        });
       }
     }
     for (const p of pods) if (!names.has(p.spec.nodeName) && !isTerminating(p)) deletePod(cl, ds, p);

@@ -19,7 +19,19 @@ export function namespaceController(cl: Cluster) {
     if (!isTerminating(ns)) {
       if (!cl.get('ServiceAccount', name, 'default')) cl.put({ apiVersion: 'v1', kind: 'ServiceAccount', metadata: { name: 'default', namespace: name } });
       if (!cl.get('ConfigMap', name, 'kube-root-ca.crt')) {
-        cl.put({ apiVersion: 'v1', kind: 'ConfigMap', metadata: { name: 'kube-root-ca.crt', namespace: name, annotations: { 'kubernetes.io/description': 'Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters.' } }, data: { 'ca.crt': '-----BEGIN CERTIFICATE-----\n(simulado)\n-----END CERTIFICATE-----\n' } });
+        cl.put({
+          apiVersion: 'v1',
+          kind: 'ConfigMap',
+          metadata: {
+            name: 'kube-root-ca.crt',
+            namespace: name,
+            annotations: {
+              'kubernetes.io/description':
+                'Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters.',
+            },
+          },
+          data: { 'ca.crt': '-----BEGIN CERTIFICATE-----\n(simulado)\n-----END CERTIFICATE-----\n' },
+        });
       }
       continue;
     }
@@ -67,12 +79,21 @@ export function garbageCollector(cl: Cluster) {
 // ── storage ──────────────────────────────────────────────────────────
 
 function usedBy(cl: Cluster, pvc: Obj): Obj[] {
-  return cl.list('Pod', pvc.metadata.namespace).filter((p) => (p.spec.volumes || []).some((v: Json) => v.persistentVolumeClaim?.claimName === pvc.metadata.name));
+  return cl
+    .list('Pod', pvc.metadata.namespace)
+    .filter((p) => (p.spec.volumes || []).some((v: Json) => v.persistentVolumeClaim?.claimName === pvc.metadata.name));
 }
 
 function bindClaim(cl: Cluster, pvc: Obj, pv: Obj) {
   cl.mutate(pv, (v) => {
-    v.spec.claimRef = { apiVersion: 'v1', kind: 'PersistentVolumeClaim', name: pvc.metadata.name, namespace: pvc.metadata.namespace, uid: pvc.metadata.uid, resourceVersion: pvc.metadata.resourceVersion };
+    v.spec.claimRef = {
+      apiVersion: 'v1',
+      kind: 'PersistentVolumeClaim',
+      name: pvc.metadata.name,
+      namespace: pvc.metadata.namespace,
+      uid: pvc.metadata.uid,
+      resourceVersion: pvc.metadata.resourceVersion,
+    };
     v.status = { phase: 'Bound', lastPhaseTransitionTime: cl.ts() };
   });
   cl.mutate(pvc, (c) => {
@@ -105,15 +126,17 @@ export function storageController(cl: Cluster) {
     const modes: string[] = pvc.spec.accessModes || [];
     const scName: string = pvc.spec.storageClassName ?? '';
     // Pre-created volumes first.
-    const pv = cl.list('PersistentVolume').find(
-      (v) =>
-        v.status?.phase === 'Available' &&
-        !v.spec.claimRef &&
-        (pvc.spec.volumeName ? v.metadata.name === pvc.spec.volumeName : true) &&
-        (v.spec.storageClassName ?? '') === scName &&
-        parseQuantity(v.spec.capacity?.storage) >= want &&
-        modes.every((m) => (v.spec.accessModes || []).includes(m)),
-    );
+    const pv = cl
+      .list('PersistentVolume')
+      .find(
+        (v) =>
+          v.status?.phase === 'Available' &&
+          !v.spec.claimRef &&
+          (pvc.spec.volumeName ? v.metadata.name === pvc.spec.volumeName : true) &&
+          (v.spec.storageClassName ?? '') === scName &&
+          parseQuantity(v.spec.capacity?.storage) >= want &&
+          modes.every((m) => (v.spec.accessModes || []).includes(m)),
+      );
     if (pv) {
       bindClaim(cl, pvc, pv);
       continue;
@@ -131,9 +154,29 @@ export function storageController(cl: Cluster) {
     }
     const age = cl.now - Date.parse(pvc.metadata.creationTimestamp);
     if (!pvc.metadata.annotations?.['volume.kubernetes.io/storage-provisioner']) {
-      cl.mutate(pvc, (c) => (c.metadata.annotations = { ...(c.metadata.annotations || {}), 'volume.beta.kubernetes.io/storage-provisioner': sc.provisioner, 'volume.kubernetes.io/storage-provisioner': sc.provisioner }));
-      cl.emit(pvc, 'Normal', 'ExternalProvisioning', `Waiting for a volume to be created either by the external provisioner '${sc.provisioner}' or manually by the system administrator. If volume creation is delayed, please verify that the provisioner is running and correctly registered.`, 'persistentvolume-controller');
-      cl.emit(pvc, 'Normal', 'Provisioning', `External provisioner is provisioning volume for claim "${pvc.metadata.namespace}/${pvc.metadata.name}"`, `${sc.provisioner}_local-path-provisioner`);
+      cl.mutate(
+        pvc,
+        (c) =>
+          (c.metadata.annotations = {
+            ...(c.metadata.annotations || {}),
+            'volume.beta.kubernetes.io/storage-provisioner': sc.provisioner,
+            'volume.kubernetes.io/storage-provisioner': sc.provisioner,
+          }),
+      );
+      cl.emit(
+        pvc,
+        'Normal',
+        'ExternalProvisioning',
+        `Waiting for a volume to be created either by the external provisioner '${sc.provisioner}' or manually by the system administrator. If volume creation is delayed, please verify that the provisioner is running and correctly registered.`,
+        'persistentvolume-controller',
+      );
+      cl.emit(
+        pvc,
+        'Normal',
+        'Provisioning',
+        `External provisioner is provisioning volume for claim "${pvc.metadata.namespace}/${pvc.metadata.name}"`,
+        `${sc.provisioner}_local-path-provisioner`,
+      );
       continue;
     }
     if (age < 1500) continue;
@@ -141,12 +184,18 @@ export function storageController(cl: Cluster) {
     const vol = cl.put({
       apiVersion: 'v1',
       kind: 'PersistentVolume',
-      metadata: { name, annotations: { 'local.path.provisioner/selected-node': node || 'playground-worker', 'pv.kubernetes.io/provisioned-by': sc.provisioner }, finalizers: ['kubernetes.io/pv-protection'] },
+      metadata: {
+        name,
+        annotations: { 'local.path.provisioner/selected-node': node || 'playground-worker', 'pv.kubernetes.io/provisioned-by': sc.provisioner },
+        finalizers: ['kubernetes.io/pv-protection'],
+      },
       spec: {
         accessModes: modes,
         capacity: { storage: pvc.spec.resources.requests.storage },
         hostPath: { path: `/var/local-path-provisioner/${name}_${pvc.metadata.namespace}_${pvc.metadata.name}`, type: 'DirectoryOrCreate' },
-        nodeAffinity: { required: { nodeSelectorTerms: [{ matchExpressions: [{ key: 'kubernetes.io/hostname', operator: 'In', values: [node || 'playground-worker'] }] }] } },
+        nodeAffinity: {
+          required: { nodeSelectorTerms: [{ matchExpressions: [{ key: 'kubernetes.io/hostname', operator: 'In', values: [node || 'playground-worker'] }] }] },
+        },
         persistentVolumeReclaimPolicy: sc.reclaimPolicy || 'Delete',
         storageClassName: scName,
         volumeMode: pvc.spec.volumeMode || 'Filesystem',
@@ -184,7 +233,9 @@ export function targetPortFor(pod: Obj, tp: Json): number | undefined {
 export function serviceEndpoints(cl: Cluster, svc: Obj): { ready: Obj[]; notReady: Obj[] } {
   const sel = fromMap(svc.spec.selector);
   if (!sel.length) return { ready: [], notReady: [] };
-  const pods = cl.list('Pod', svc.metadata.namespace).filter((p) => matches(sel, p.metadata.labels) && p.status?.podIP && p.status?.phase !== 'Succeeded' && p.status?.phase !== 'Failed');
+  const pods = cl
+    .list('Pod', svc.metadata.namespace)
+    .filter((p) => matches(sel, p.metadata.labels) && p.status?.podIP && p.status?.phase !== 'Succeeded' && p.status?.phase !== 'Failed');
   const ready = pods.filter((p) => podReady(p) || (svc.spec.publishNotReadyAddresses && !isTerminating(p)));
   return { ready, notReady: pods.filter((p) => !ready.includes(p)) };
 }
@@ -195,19 +246,31 @@ export function networkController(cl: Cluster) {
   for (const svc of services) {
     if (!svc.spec.selector || svc.spec.type === 'ExternalName') continue;
     const { ready, notReady } = serviceEndpoints(cl, svc);
-    const addr = (p: Obj) => ({ ip: p.status.podIP, nodeName: p.spec.nodeName, targetRef: { kind: 'Pod', name: p.metadata.name, namespace: p.metadata.namespace, uid: p.metadata.uid }, ...(p.spec.hostname && p.spec.subdomain ? { hostname: p.spec.hostname } : {}) });
+    const addr = (p: Obj) => ({
+      ip: p.status.podIP,
+      nodeName: p.spec.nodeName,
+      targetRef: { kind: 'Pod', name: p.metadata.name, namespace: p.metadata.namespace, uid: p.metadata.uid },
+      ...(p.spec.hostname && p.spec.subdomain ? { hostname: p.spec.hostname } : {}),
+    });
     const ports = (svc.spec.ports || []).map((sp: Json) => ({
       ...(sp.name ? { name: sp.name } : {}),
       port: targetPortFor(ready[0] || notReady[0] || { spec: {} }, sp.targetPort) ?? sp.targetPort,
       protocol: sp.protocol || 'TCP',
       ...(sp.appProtocol ? { appProtocol: sp.appProtocol } : {}),
     }));
-    const subsets = ready.length || notReady.length ? [{ ...(ready.length ? { addresses: ready.map(addr) } : {}), ...(notReady.length ? { notReadyAddresses: notReady.map(addr) } : {}), ports }] : undefined;
+    const subsets =
+      ready.length || notReady.length
+        ? [{ ...(ready.length ? { addresses: ready.map(addr) } : {}), ...(notReady.length ? { notReadyAddresses: notReady.map(addr) } : {}), ports }]
+        : undefined;
     const ep = cl.get('Endpoints', svc.metadata.namespace, svc.metadata.name);
     const body: Obj = {
       apiVersion: 'v1',
       kind: 'Endpoints',
-      metadata: { name: svc.metadata.name, namespace: svc.metadata.namespace, labels: { ...(svc.metadata.labels || {}), 'endpoints.kubernetes.io/managed-by': 'endpoint-controller' } },
+      metadata: {
+        name: svc.metadata.name,
+        namespace: svc.metadata.namespace,
+        labels: { ...(svc.metadata.labels || {}), 'endpoints.kubernetes.io/managed-by': 'endpoint-controller' },
+      },
       ...(subsets ? { subsets } : {}),
     };
     if (!ep) cl.put(body);
@@ -235,7 +298,9 @@ export function networkController(cl: Cluster) {
     }
   }
   for (const ing of cl.list('Ingress')) {
-    const cls = ing.spec?.ingressClassName ?? cl.list('IngressClass').find((c) => c.metadata.annotations?.['ingressclass.kubernetes.io/is-default-class'] === 'true')?.metadata.name;
+    const cls =
+      ing.spec?.ingressClassName ??
+      cl.list('IngressClass').find((c) => c.metadata.annotations?.['ingressclass.kubernetes.io/is-default-class'] === 'true')?.metadata.name;
     const ok = cls && cl.get('IngressClass', undefined, cls);
     if (ok && !ing.status?.loadBalancer?.ingress && cl.now - Date.parse(ing.metadata.creationTimestamp) >= 2000) {
       cl.mutate(ing, (i) => (i.status = { loadBalancer: { ingress: [{ ip: INGRESS_IP }] } }));
@@ -262,7 +327,11 @@ export function nodeController(cl: Cluster) {
         }
       }
       if (!(node.spec.taints || []).some((t: Json) => t.key === UNREACHABLE)) {
-        node.spec.taints = [...(node.spec.taints || []), { key: UNREACHABLE, effect: 'NoSchedule', timeAdded: cl.ts() }, { key: UNREACHABLE, effect: 'NoExecute', timeAdded: cl.ts() }];
+        node.spec.taints = [
+          ...(node.spec.taints || []),
+          { key: UNREACHABLE, effect: 'NoSchedule', timeAdded: cl.ts() },
+          { key: UNREACHABLE, effect: 'NoExecute', timeAdded: cl.ts() },
+        ];
         cl.emit(node, 'Normal', 'NodeNotReady', `Node ${node.metadata.name} status is now: NodeNotReady`, 'node-controller');
       }
       for (const p of cl.list('Pod').filter((x) => x.spec.nodeName === node.metadata.name)) {
@@ -273,7 +342,11 @@ export function nodeController(cl: Cluster) {
           });
           cl.emit(p, 'Warning', 'NodeNotReady', 'Node is not ready', 'node-controller');
         }
-        if (!isTerminating(p) && cl.now - down >= EVICTION_MS && !(p.metadata.ownerReferences || []).some((r: Json) => r.kind === 'DaemonSet' || r.kind === 'Node')) {
+        if (
+          !isTerminating(p) &&
+          cl.now - down >= EVICTION_MS &&
+          !(p.metadata.ownerReferences || []).some((r: Json) => r.kind === 'DaemonSet' || r.kind === 'Node')
+        ) {
           cl.deleteObject(p);
           cl.emit(p, 'Normal', 'TaintManagerEviction', `Marking for deletion Pod ${p.metadata.namespace}/${p.metadata.name}`, 'taint-eviction-controller');
         }

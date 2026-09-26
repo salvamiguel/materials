@@ -55,7 +55,11 @@ export function strategicPatch(target: Json, patch: Json, key?: string): Json {
 /** RFC 6902 JSON patch (add, remove, replace, copy, move, test). */
 export function jsonPatch(doc: Json, ops: Json[]): Json {
   const out = clone(doc);
-  const parse = (p: string) => p.split('/').slice(1).map((s) => s.replace(/~1/g, '/').replace(/~0/g, '~'));
+  const parse = (p: string) =>
+    p
+      .split('/')
+      .slice(1)
+      .map((s) => s.replace(/~1/g, '/').replace(/~0/g, '~'));
   const walk = (path: string[]) => {
     let cur = out;
     for (const seg of path.slice(0, -1)) {

@@ -80,7 +80,12 @@ async function fetchText(urls: string[], fetchFn: Fetch): Promise<string> {
 }
 
 /** Downloads the Terraform files of the repository, keyed by path relative to `path`. */
-export async function fetchRepoFiles(r: RepoRef, fetchFn: Fetch = (u) => fetch(u)): Promise<Record<string, string>> {
+export async function fetchRepoFiles(
+  r: RepoRef,
+  fetchFn: Fetch = (u) => fetch(u),
+  accept: (path: string) => boolean = isPlaygroundFile,
+  what = 'ficheros .tf',
+): Promise<Record<string, string>> {
   let all: string[];
   const errors: string[] = [];
   try {
@@ -98,8 +103,8 @@ export async function fetchRepoFiles(r: RepoRef, fetchFn: Fetch = (u) => fetch(u
     }
   }
   const prefix = r.path ? `${r.path}/` : '';
-  const paths = all.filter((p) => p.startsWith(prefix) && isPlaygroundFile(p.slice(prefix.length))).sort();
-  if (paths.length === 0) throw new Error(`${repoLabel(r)} no contiene ficheros .tf.`);
+  const paths = all.filter((p) => p.startsWith(prefix) && accept(p.slice(prefix.length))).sort();
+  if (paths.length === 0) throw new Error(`${repoLabel(r)} no contiene ${what}.`);
   if (paths.length > MAX_FILES) throw new Error(`${repoLabel(r)} tiene demasiados ficheros (${paths.length}; máximo ${MAX_FILES}).`);
 
   const cdnRef = r.ref === 'HEAD' ? '' : `@${r.ref}`;

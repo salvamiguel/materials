@@ -511,6 +511,16 @@
   color: transparent;
 }
 
+/* the lines of a document picked elsewhere (k8s diagram) */
+.revealBand {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+  border-left: 3px solid var(--ifm-color-primary);
+  pointer-events: none;
+}
+
 /* ── autocompletion ── */
 .measure {
   position: absolute;

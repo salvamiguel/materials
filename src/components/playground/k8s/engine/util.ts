@@ -69,8 +69,20 @@ export const isObject = (v: unknown): v is Record<string, Json> => v !== null &&
 // ── quantities ───────────────────────────────────────────────────────
 
 const SUFFIX: Record<string, number> = {
-  '': 1, m: 1e-3, k: 1e3, M: 1e6, G: 1e9, T: 1e12, P: 1e15, E: 1e18,
-  Ki: 1024, Mi: 1024 ** 2, Gi: 1024 ** 3, Ti: 1024 ** 4, Pi: 1024 ** 5, Ei: 1024 ** 6,
+  '': 1,
+  m: 1e-3,
+  k: 1e3,
+  M: 1e6,
+  G: 1e9,
+  T: 1e12,
+  P: 1e15,
+  E: 1e18,
+  Ki: 1024,
+  Mi: 1024 ** 2,
+  Gi: 1024 ** 3,
+  Ti: 1024 ** 4,
+  Pi: 1024 ** 5,
+  Ei: 1024 ** 6,
 };
 
 /** Parses a Kubernetes quantity ("250m", "1.5", "128Mi"). NaN if invalid. */
@@ -153,7 +165,14 @@ export function parseSelector(s: string): Selector {
     const p = raw.trim();
     let m: RegExpExecArray | null;
     if ((m = /^([\w./-]+)\s+(in|notin)\s+\(([^)]*)\)$/.exec(p))) {
-      out.push({ key: m[1], op: m[2] as 'in', values: m[3].split(',').map((v) => v.trim()).filter(Boolean) });
+      out.push({
+        key: m[1],
+        op: m[2] as 'in',
+        values: m[3]
+          .split(',')
+          .map((v) => v.trim())
+          .filter(Boolean),
+      });
     } else if ((m = /^([\w./-]+)\s*(==|=|!=)\s*([\w./-]*)$/.exec(p))) {
       out.push({ key: m[1], op: m[2] === '!=' ? '!=' : '=', values: [m[3]] });
     } else if ((m = /^!\s*([\w./-]+)$/.exec(p))) {
@@ -274,7 +293,16 @@ export function pad(rows: string[][]): string {
   if (!rows.length) return '';
   const widths: number[] = [];
   for (const r of rows) r.forEach((c, i) => (widths[i] = Math.max(widths[i] || 0, c.length)));
-  return rows.map((r) => r.map((c, i) => (i === r.length - 1 ? c : c.padEnd(widths[i] + 3))).join('').trimEnd()).join('\n') + '\n';
+  return (
+    rows
+      .map((r) =>
+        r
+          .map((c, i) => (i === r.length - 1 ? c : c.padEnd(widths[i] + 3)))
+          .join('')
+          .trimEnd(),
+      )
+      .join('\n') + '\n'
+  );
 }
 
 export function base64(s: string): string {

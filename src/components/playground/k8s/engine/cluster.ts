@@ -152,7 +152,22 @@ export class Cluster {
     md.uid ??= uuid(this.s);
     md.creationTimestamp ??= this.ts();
     md.resourceVersion = String(++this.s.rv);
-    if (['Deployment', 'ReplicaSet', 'StatefulSet', 'DaemonSet', 'Job', 'CronJob', 'HorizontalPodAutoscaler', 'Ingress', 'PersistentVolumeClaim', 'Pod', 'Service', 'Namespace'].includes(obj.kind)) {
+    if (
+      [
+        'Deployment',
+        'ReplicaSet',
+        'StatefulSet',
+        'DaemonSet',
+        'Job',
+        'CronJob',
+        'HorizontalPodAutoscaler',
+        'Ingress',
+        'PersistentVolumeClaim',
+        'Pod',
+        'Service',
+        'Namespace',
+      ].includes(obj.kind)
+    ) {
       if (obj.kind !== 'Pod' && obj.kind !== 'Service' && obj.kind !== 'Namespace' && obj.kind !== 'PersistentVolumeClaim') md.generation ??= 1;
     }
     this.s.objects[this.key(obj.kind, md.namespace, md.name)] = obj;
@@ -251,12 +266,16 @@ export class Cluster {
     }
     applyDefaults(obj);
     const errs = validateObject(obj);
-    if (errs.length) throw new ApiError('Invalid', `The ${obj.kind} "${obj.metadata.name ?? ''}" is invalid: ${errs.length > 1 ? `\n* ${errs.join('\n* ')}` : errs[0]}`);
+    if (errs.length)
+      throw new ApiError('Invalid', `The ${obj.kind} "${obj.metadata.name ?? ''}" is invalid: ${errs.length > 1 ? `\n* ${errs.join('\n* ')}` : errs[0]}`);
     if (ns !== undefined) {
       const nsObj = this.get('Namespace', undefined, ns);
       if (!nsObj) throw new ApiError('NotFound', `namespaces "${ns}" not found`);
       if (nsObj.metadata.deletionTimestamp && !this.get(obj.kind, ns, obj.metadata.name)) {
-        throw new ApiError('Forbidden', `${type.plural} "${obj.metadata.name}" is forbidden: unable to create new content in namespace ${ns} because it is being terminated`);
+        throw new ApiError(
+          'Forbidden',
+          `${type.plural} "${obj.metadata.name}" is forbidden: unable to create new content in namespace ${ns} because it is being terminated`,
+        );
       }
     }
     return obj;
@@ -267,7 +286,10 @@ export class Cluster {
     const ns = this.namespaceOf(manifest, defaultNs);
     const obj = this.prepare(manifest, ns);
     if (this.get(obj.kind, ns, obj.metadata.name)) {
-      throw new ApiError('AlreadyExists', `${resourceByKind(obj.kind)!.plural}${qualifiedName(obj.kind).includes('.') ? '.' + qualifiedName(obj.kind).split('.').slice(1).join('.') : ''} "${obj.metadata.name}" already exists`);
+      throw new ApiError(
+        'AlreadyExists',
+        `${resourceByKind(obj.kind)!.plural}${qualifiedName(obj.kind).includes('.') ? '.' + qualifiedName(obj.kind).split('.').slice(1).join('.') : ''} "${obj.metadata.name}" already exists`,
+      );
     }
     this.admit(obj);
     this.put(obj);
@@ -389,7 +411,9 @@ export class Cluster {
         if (live.kind === 'StatefulSet') {
           for (const f of ['serviceName', 'volumeClaimTemplates', 'podManagementPolicy']) {
             if (!deepEqual(live.spec[f], next.spec[f])) {
-              fail(`spec: Forbidden: updates to statefulset spec for fields other than 'replicas', 'ordinals', 'template', 'updateStrategy', 'revisionHistoryLimit', 'persistentVolumeClaimRetentionPolicy' and 'minReadySeconds' are forbidden`);
+              fail(
+                `spec: Forbidden: updates to statefulset spec for fields other than 'replicas', 'ordinals', 'template', 'updateStrategy', 'revisionHistoryLimit', 'persistentVolumeClaimRetentionPolicy' and 'minReadySeconds' are forbidden`,
+              );
             }
           }
         }
@@ -410,7 +434,9 @@ export class Cluster {
         delete a.tolerations;
         delete b.tolerations;
         if (!deepEqual(a, b)) {
-          fail('spec: Forbidden: pod updates may not change fields other than `spec.containers[*].image`,`spec.initContainers[*].image`,`spec.activeDeadlineSeconds`,`spec.tolerations` (only additions to existing tolerations),`spec.terminationGracePeriodSeconds` (allow it to be set to 1 if it was previously negative)');
+          fail(
+            'spec: Forbidden: pod updates may not change fields other than `spec.containers[*].image`,`spec.initContainers[*].image`,`spec.activeDeadlineSeconds`,`spec.tolerations` (only additions to existing tolerations),`spec.terminationGracePeriodSeconds` (allow it to be set to 1 if it was previously negative)',
+          );
         }
         break;
       }
@@ -424,12 +450,14 @@ export class Cluster {
         const b = clone(next.spec);
         delete a.resources;
         delete b.resources;
-        if (!deepEqual(a, b)) fail('spec: Forbidden: spec is immutable after creation except resources.requests and volumeAttributesClassName for bound claims');
+        if (!deepEqual(a, b))
+          fail('spec: Forbidden: spec is immutable after creation except resources.requests and volumeAttributesClassName for bound claims');
         break;
       }
       case 'ConfigMap':
       case 'Secret':
-        if (live.immutable && (!deepEqual(live.data, next.data) || !deepEqual(live.binaryData, next.binaryData))) fail('data: Forbidden: field is immutable when `immutable` is set');
+        if (live.immutable && (!deepEqual(live.data, next.data) || !deepEqual(live.binaryData, next.binaryData)))
+          fail('data: Forbidden: field is immutable when `immutable` is set');
         break;
     }
   }
@@ -441,7 +469,10 @@ export class Cluster {
       if (s.type !== 'ExternalName') {
         if (!s.clusterIP) s.clusterIP = this.allocServiceIp();
         if (s.clusterIP !== 'None' && this.list('Service').some((o) => o.spec?.clusterIP === s.clusterIP)) {
-          throw new ApiError('Invalid', `The Service "${obj.metadata.name}" is invalid: spec.clusterIPs: Invalid value: []string{"${s.clusterIP}"}: failed to allocate IP ${s.clusterIP}: provided IP is already allocated`);
+          throw new ApiError(
+            'Invalid',
+            `The Service "${obj.metadata.name}" is invalid: spec.clusterIPs: Invalid value: []string{"${s.clusterIP}"}: failed to allocate IP ${s.clusterIP}: provided IP is already allocated`,
+          );
         }
         s.clusterIPs = [s.clusterIP];
       }
@@ -449,7 +480,10 @@ export class Cluster {
         for (const p of s.ports || []) {
           if (p.nodePort) {
             if (this.nodePortUsed(p.nodePort)) {
-              throw new ApiError('Invalid', `The Service "${obj.metadata.name}" is invalid: spec.ports[0].nodePort: Invalid value: ${p.nodePort}: provided port is already allocated`);
+              throw new ApiError(
+                'Invalid',
+                `The Service "${obj.metadata.name}" is invalid: spec.ports[0].nodePort: Invalid value: ${p.nodePort}: provided port is already allocated`,
+              );
             }
           } else p.nodePort = this.allocNodePort();
         }
@@ -482,7 +516,10 @@ export class Cluster {
         { key: 'node.kubernetes.io/unreachable', operator: 'Exists', effect: 'NoExecute', tolerationSeconds: 300 },
       ];
       if (!this.get('ServiceAccount', obj.metadata.namespace, obj.spec.serviceAccountName)) {
-        throw new ApiError('Forbidden', `pods "${obj.metadata.name}" is forbidden: error looking up service account ${obj.metadata.namespace}/${obj.spec.serviceAccountName}: serviceaccount "${obj.spec.serviceAccountName}" not found`);
+        throw new ApiError(
+          'Forbidden',
+          `pods "${obj.metadata.name}" is forbidden: error looking up service account ${obj.metadata.namespace}/${obj.spec.serviceAccountName}: serviceaccount "${obj.spec.serviceAccountName}" not found`,
+        );
       }
     }
     if (['Deployment', 'StatefulSet', 'DaemonSet', 'ReplicaSet'].includes(obj.kind)) obj.status = {};
@@ -516,7 +553,11 @@ export class Cluster {
   delete(kind: string, ns: string | undefined, name: string, opts: DeleteOptions = {}): Obj {
     const obj = this.get(kind, ns, name);
     const type = resourceByKind(kind)!;
-    if (!obj) throw new ApiError('NotFound', `${type.plural}${qualifiedName(kind).includes('.') ? '.' + qualifiedName(kind).split('.').slice(1).join('.') : ''} "${name}" not found`);
+    if (!obj)
+      throw new ApiError(
+        'NotFound',
+        `${type.plural}${qualifiedName(kind).includes('.') ? '.' + qualifiedName(kind).split('.').slice(1).join('.') : ''} "${name}" not found`,
+      );
     if (kind === 'Namespace' && ['default', 'kube-system', 'kube-public', 'kube-node-lease'].includes(name)) {
       throw new ApiError('Forbidden', `namespaces "${name}" is forbidden: this namespace may not be deleted`);
     }

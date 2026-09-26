@@ -100,7 +100,9 @@ function accessModes(m: string[] | undefined) {
 }
 
 function nodeRoles(n: Obj) {
-  const roles = Object.keys(n.metadata.labels || {}).filter((k) => k.startsWith('node-role.kubernetes.io/')).map((k) => k.split('/')[1]);
+  const roles = Object.keys(n.metadata.labels || {})
+    .filter((k) => k.startsWith('node-role.kubernetes.io/'))
+    .map((k) => k.split('/')[1]);
   return roles.length ? roles.join(',') : '<none>';
 }
 
@@ -113,7 +115,10 @@ export function nodeStatus(cl: Cluster, n: Obj) {
 
 export function hpaTargets(h: Obj): string {
   const cur = h.status?.currentMetrics?.[0]?.resource?.current?.averageUtilization;
-  const target = h.apiVersion === 'autoscaling/v1' ? h.spec.targetCPUUtilizationPercentage : (h.spec.metrics || []).find((m: Json) => m.resource?.name === 'cpu')?.resource?.target?.averageUtilization;
+  const target =
+    h.apiVersion === 'autoscaling/v1'
+      ? h.spec.targetCPUUtilizationPercentage
+      : (h.spec.metrics || []).find((m: Json) => m.resource?.name === 'cpu')?.resource?.target?.averageUtilization;
   return `cpu: ${cur === undefined ? '<unknown>' : `${cur}%`}/${target ?? '?'}%`;
 }
 
@@ -145,19 +150,34 @@ export function tableFor(cl: Cluster, kind: string): Table {
       return {
         headers: ['NAME', 'READY', 'STATUS', 'RESTARTS', 'AGE'],
         rows: (p) => [p.metadata.name, podReadyCount(p), podStatus(cl, p), podRestarts(cl, p), a(p)],
-        wide: { headers: ['IP', 'NODE', 'NOMINATED NODE', 'READINESS GATES'], rows: (p) => [p.status?.podIP || '<none>', p.spec.nodeName || '<none>', '<none>', '<none>'] },
+        wide: {
+          headers: ['IP', 'NODE', 'NOMINATED NODE', 'READINESS GATES'],
+          rows: (p) => [p.status?.podIP || '<none>', p.spec.nodeName || '<none>', '<none>', '<none>'],
+        },
       };
     case 'Deployment':
       return {
         headers: ['NAME', 'READY', 'UP-TO-DATE', 'AVAILABLE', 'AGE'],
-        rows: (d) => [d.metadata.name, `${d.status?.readyReplicas || 0}/${d.spec.replicas ?? 1}`, String(d.status?.updatedReplicas || 0), String(d.status?.availableReplicas || 0), a(d)],
-        wide: { headers: ['CONTAINERS', 'IMAGES', 'SELECTOR'], rows: (d) => [containers(d.spec.template), images(d.spec.template), selectorString(fromLabelSelector(d.spec.selector))] },
+        rows: (d) => [
+          d.metadata.name,
+          `${d.status?.readyReplicas || 0}/${d.spec.replicas ?? 1}`,
+          String(d.status?.updatedReplicas || 0),
+          String(d.status?.availableReplicas || 0),
+          a(d),
+        ],
+        wide: {
+          headers: ['CONTAINERS', 'IMAGES', 'SELECTOR'],
+          rows: (d) => [containers(d.spec.template), images(d.spec.template), selectorString(fromLabelSelector(d.spec.selector))],
+        },
       };
     case 'ReplicaSet':
       return {
         headers: ['NAME', 'DESIRED', 'CURRENT', 'READY', 'AGE'],
         rows: (r) => [r.metadata.name, String(r.spec.replicas ?? 1), String(r.status?.replicas || 0), String(r.status?.readyReplicas || 0), a(r)],
-        wide: { headers: ['CONTAINERS', 'IMAGES', 'SELECTOR'], rows: (r) => [containers(r.spec.template), images(r.spec.template), selectorString(fromLabelSelector(r.spec.selector))] },
+        wide: {
+          headers: ['CONTAINERS', 'IMAGES', 'SELECTOR'],
+          rows: (r) => [containers(r.spec.template), images(r.spec.template), selectorString(fromLabelSelector(r.spec.selector))],
+        },
       };
     case 'StatefulSet':
       return {
@@ -168,20 +188,46 @@ export function tableFor(cl: Cluster, kind: string): Table {
     case 'DaemonSet':
       return {
         headers: ['NAME', 'DESIRED', 'CURRENT', 'READY', 'UP-TO-DATE', 'AVAILABLE', 'NODE SELECTOR', 'AGE'],
-        rows: (d) => [d.metadata.name, String(d.status?.desiredNumberScheduled ?? eligibleNodes(cl, d).length), String(d.status?.currentNumberScheduled || 0), String(d.status?.numberReady || 0), String(d.status?.updatedNumberScheduled || 0), String(d.status?.numberAvailable || 0), labelsString(d.spec.template.spec.nodeSelector).replace('<none>', '<none>'), a(d)],
-        wide: { headers: ['CONTAINERS', 'IMAGES', 'SELECTOR'], rows: (d) => [containers(d.spec.template), images(d.spec.template), selectorString(fromLabelSelector(d.spec.selector))] },
+        rows: (d) => [
+          d.metadata.name,
+          String(d.status?.desiredNumberScheduled ?? eligibleNodes(cl, d).length),
+          String(d.status?.currentNumberScheduled || 0),
+          String(d.status?.numberReady || 0),
+          String(d.status?.updatedNumberScheduled || 0),
+          String(d.status?.numberAvailable || 0),
+          labelsString(d.spec.template.spec.nodeSelector).replace('<none>', '<none>'),
+          a(d),
+        ],
+        wide: {
+          headers: ['CONTAINERS', 'IMAGES', 'SELECTOR'],
+          rows: (d) => [containers(d.spec.template), images(d.spec.template), selectorString(fromLabelSelector(d.spec.selector))],
+        },
       };
     case 'Job':
       return {
         headers: ['NAME', 'STATUS', 'COMPLETIONS', 'DURATION', 'AGE'],
         rows: (j) => [j.metadata.name, jobStatus(j), `${j.status?.succeeded || 0}/${j.spec.completions ?? 1}`, jobDuration(cl, j), a(j)],
-        wide: { headers: ['CONTAINERS', 'IMAGES', 'SELECTOR'], rows: (j) => [containers(j.spec.template), images(j.spec.template), selectorString(fromLabelSelector(j.spec.selector))] },
+        wide: {
+          headers: ['CONTAINERS', 'IMAGES', 'SELECTOR'],
+          rows: (j) => [containers(j.spec.template), images(j.spec.template), selectorString(fromLabelSelector(j.spec.selector))],
+        },
       };
     case 'CronJob':
       return {
         headers: ['NAME', 'SCHEDULE', 'TIMEZONE', 'SUSPEND', 'ACTIVE', 'LAST SCHEDULE', 'AGE'],
-        rows: (c) => [c.metadata.name, c.spec.schedule, c.spec.timeZone || '<none>', c.spec.suspend ? 'True' : 'False', String((c.status?.active || []).length), c.status?.lastScheduleTime ? age(cl, c.status.lastScheduleTime) : '<none>', a(c)],
-        wide: { headers: ['CONTAINERS', 'IMAGES', 'SELECTOR'], rows: (c) => [containers(c.spec.jobTemplate?.spec?.template), images(c.spec.jobTemplate?.spec?.template), '<none>'] },
+        rows: (c) => [
+          c.metadata.name,
+          c.spec.schedule,
+          c.spec.timeZone || '<none>',
+          c.spec.suspend ? 'True' : 'False',
+          String((c.status?.active || []).length),
+          c.status?.lastScheduleTime ? age(cl, c.status.lastScheduleTime) : '<none>',
+          a(c),
+        ],
+        wide: {
+          headers: ['CONTAINERS', 'IMAGES', 'SELECTOR'],
+          rows: (c) => [containers(c.spec.jobTemplate?.spec?.template), images(c.spec.jobTemplate?.spec?.template), '<none>'],
+        },
       };
     case 'Service':
       return {
@@ -206,7 +252,10 @@ export function tableFor(cl: Cluster, kind: string): Table {
     case 'IngressClass':
       return { headers: ['NAME', 'CONTROLLER', 'PARAMETERS', 'AGE'], rows: (i) => [i.metadata.name, i.spec?.controller || '', '<none>', a(i)] };
     case 'ConfigMap':
-      return { headers: ['NAME', 'DATA', 'AGE'], rows: (c) => [c.metadata.name, String(Object.keys(c.data || {}).length + Object.keys(c.binaryData || {}).length), a(c)] };
+      return {
+        headers: ['NAME', 'DATA', 'AGE'],
+        rows: (c) => [c.metadata.name, String(Object.keys(c.data || {}).length + Object.keys(c.binaryData || {}).length), a(c)],
+      };
     case 'Secret':
       return { headers: ['NAME', 'TYPE', 'DATA', 'AGE'], rows: (s) => [s.metadata.name, s.type || 'Opaque', String(Object.keys(s.data || {}).length), a(s)] };
     case 'Namespace':
@@ -217,31 +266,72 @@ export function tableFor(cl: Cluster, kind: string): Table {
         rows: (n) => [n.metadata.name, nodeStatus(cl, n), nodeRoles(n), a(n), n.status.nodeInfo.kubeletVersion],
         wide: {
           headers: ['INTERNAL-IP', 'EXTERNAL-IP', 'OS-IMAGE', 'KERNEL-VERSION', 'CONTAINER-RUNTIME'],
-          rows: (n) => [n.status.addresses[0].address, '<none>', n.status.nodeInfo.osImage, n.status.nodeInfo.kernelVersion, n.status.nodeInfo.containerRuntimeVersion],
+          rows: (n) => [
+            n.status.addresses[0].address,
+            '<none>',
+            n.status.nodeInfo.osImage,
+            n.status.nodeInfo.kernelVersion,
+            n.status.nodeInfo.containerRuntimeVersion,
+          ],
         },
       };
     case 'PersistentVolumeClaim':
       return {
         headers: ['NAME', 'STATUS', 'VOLUME', 'CAPACITY', 'ACCESS MODES', 'STORAGECLASS', 'VOLUMEATTRIBUTESCLASS', 'AGE'],
-        rows: (p) => [p.metadata.name, p.metadata.deletionTimestamp ? 'Terminating' : p.status?.phase || 'Pending', p.spec.volumeName || '', p.status?.capacity?.storage || '', accessModes(p.status?.accessModes), p.spec.storageClassName ?? '', '<unset>', a(p)],
+        rows: (p) => [
+          p.metadata.name,
+          p.metadata.deletionTimestamp ? 'Terminating' : p.status?.phase || 'Pending',
+          p.spec.volumeName || '',
+          p.status?.capacity?.storage || '',
+          accessModes(p.status?.accessModes),
+          p.spec.storageClassName ?? '',
+          '<unset>',
+          a(p),
+        ],
         wide: { headers: ['VOLUMEMODE'], rows: (p) => [p.spec.volumeMode || 'Filesystem'] },
       };
     case 'PersistentVolume':
       return {
         headers: ['NAME', 'CAPACITY', 'ACCESS MODES', 'RECLAIM POLICY', 'STATUS', 'CLAIM', 'STORAGECLASS', 'VOLUMEATTRIBUTESCLASS', 'REASON', 'AGE'],
-        rows: (p) => [p.metadata.name, p.spec.capacity?.storage || '', accessModes(p.spec.accessModes), p.spec.persistentVolumeReclaimPolicy, p.status?.phase || 'Available', p.spec.claimRef ? `${p.spec.claimRef.namespace}/${p.spec.claimRef.name}` : '', p.spec.storageClassName || '', '<unset>', '', a(p)],
+        rows: (p) => [
+          p.metadata.name,
+          p.spec.capacity?.storage || '',
+          accessModes(p.spec.accessModes),
+          p.spec.persistentVolumeReclaimPolicy,
+          p.status?.phase || 'Available',
+          p.spec.claimRef ? `${p.spec.claimRef.namespace}/${p.spec.claimRef.name}` : '',
+          p.spec.storageClassName || '',
+          '<unset>',
+          '',
+          a(p),
+        ],
       };
     case 'StorageClass':
       return {
         headers: ['NAME', 'PROVISIONER', 'RECLAIMPOLICY', 'VOLUMEBINDINGMODE', 'ALLOWVOLUMEEXPANSION', 'AGE'],
-        rows: (s) => [s.metadata.name + (s.metadata.annotations?.['storageclass.kubernetes.io/is-default-class'] === 'true' ? ' (default)' : ''), s.provisioner, s.reclaimPolicy || 'Delete', s.volumeBindingMode || 'Immediate', s.allowVolumeExpansion ? 'true' : 'false', a(s)],
+        rows: (s) => [
+          s.metadata.name + (s.metadata.annotations?.['storageclass.kubernetes.io/is-default-class'] === 'true' ? ' (default)' : ''),
+          s.provisioner,
+          s.reclaimPolicy || 'Delete',
+          s.volumeBindingMode || 'Immediate',
+          s.allowVolumeExpansion ? 'true' : 'false',
+          a(s),
+        ],
       };
     case 'ServiceAccount':
       return { headers: ['NAME', 'SECRETS', 'AGE'], rows: (s) => [s.metadata.name, String((s.secrets || []).length), a(s)] };
     case 'HorizontalPodAutoscaler':
       return {
         headers: ['NAME', 'REFERENCE', 'TARGETS', 'MINPODS', 'MAXPODS', 'REPLICAS', 'AGE'],
-        rows: (h) => [h.metadata.name, `${h.spec.scaleTargetRef?.kind}/${h.spec.scaleTargetRef?.name}`, hpaTargets(h), String(h.spec.minReplicas ?? 1), String(h.spec.maxReplicas), String(h.status?.currentReplicas ?? 0), a(h)],
+        rows: (h) => [
+          h.metadata.name,
+          `${h.spec.scaleTargetRef?.kind}/${h.spec.scaleTargetRef?.name}`,
+          hpaTargets(h),
+          String(h.spec.minReplicas ?? 1),
+          String(h.spec.maxReplicas),
+          String(h.status?.currentReplicas ?? 0),
+          a(h),
+        ],
       };
     default:
       return { headers: ['NAME', 'AGE'], rows: (o) => [o.metadata.name, a(o)] };
@@ -387,7 +477,9 @@ export function jsonpath(root: Json, template: string): string {
       } else if (/^'(.*)'$/.test(t.expr!)) {
         out += t.expr!.slice(1, -1);
       } else {
-        out += evalPath(ctx, t.expr!.startsWith('.') || t.expr!.startsWith('[') ? t.expr! : `.${t.expr!}`).map(scalar).join(' ');
+        out += evalPath(ctx, t.expr!.startsWith('.') || t.expr!.startsWith('[') ? t.expr! : `.${t.expr!}`)
+          .map(scalar)
+          .join(' ');
       }
     }
     return out;
@@ -402,7 +494,15 @@ export function customColumns(objs: Obj[], spec: string, noHeaders = false): str
     return { header: c.slice(0, i), path: c.slice(i + 1) };
   });
   const rows = noHeaders ? [] : [cols.map((c) => c.header)];
-  for (const o of objs) rows.push(cols.map((c) => evalPath(o, c.path.startsWith('.') || c.path.startsWith('{') ? c.path.replace(/^\{|\}$/g, '') : `.${c.path}`).map(scalar).join(',') || '<none>'));
+  for (const o of objs)
+    rows.push(
+      cols.map(
+        (c) =>
+          evalPath(o, c.path.startsWith('.') || c.path.startsWith('{') ? c.path.replace(/^\{|\}$/g, '') : `.${c.path}`)
+            .map(scalar)
+            .join(',') || '<none>',
+      ),
+    );
   return pad(rows);
 }
 

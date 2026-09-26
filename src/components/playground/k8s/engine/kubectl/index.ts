@@ -60,13 +60,77 @@ function notFound(type: ResourceType, name: string) {
 }
 
 const VALUE_FLAGS = [
-  'namespace', 'filename', 'selector', 'output', 'container', 'tail', 'since', 'kustomize', 'replicas', 'image', 'port', 'target-port',
-  'type', 'name', 'grace-period', 'cascade', 'to-revision', 'revision', 'field-selector', 'sort-by', 'label-columns', 'timeout', 'for',
-  'from-literal', 'from-file', 'from-env-file', 'dry-run', 'patch', 'restart', 'labels', 'env', 'min', 'max', 'cpu-percent', 'cpu', 'schedule',
-  'rule', 'class', 'tcp', 'protocol', 'context', 'cluster', 'user', 'current-replicas', 'overrides', 'external-name', 'field-manager',
-  'request-timeout', 'max-log-requests', 'pod-running-timeout', 'address', 'show-managed-fields', 'subresource', 'api-group', 'template',
+  'namespace',
+  'filename',
+  'selector',
+  'output',
+  'container',
+  'tail',
+  'since',
+  'kustomize',
+  'replicas',
+  'image',
+  'port',
+  'target-port',
+  'type',
+  'name',
+  'grace-period',
+  'cascade',
+  'to-revision',
+  'revision',
+  'field-selector',
+  'sort-by',
+  'label-columns',
+  'timeout',
+  'for',
+  'from-literal',
+  'from-file',
+  'from-env-file',
+  'dry-run',
+  'patch',
+  'restart',
+  'labels',
+  'env',
+  'min',
+  'max',
+  'cpu-percent',
+  'cpu',
+  'schedule',
+  'rule',
+  'class',
+  'tcp',
+  'protocol',
+  'context',
+  'cluster',
+  'user',
+  'current-replicas',
+  'overrides',
+  'external-name',
+  'field-manager',
+  'request-timeout',
+  'max-log-requests',
+  'pod-running-timeout',
+  'address',
+  'show-managed-fields',
+  'subresource',
+  'api-group',
+  'template',
 ];
-const ALIASES: Record<string, string> = { n: 'namespace', f: 'filename', l: 'selector', o: 'output', c: 'container', k: 'kustomize', p: 'patch', A: 'all-namespaces', w: 'watch', R: 'recursive', L: 'label-columns', i: 'stdin', t: 'tty' };
+const ALIASES: Record<string, string> = {
+  n: 'namespace',
+  f: 'filename',
+  l: 'selector',
+  o: 'output',
+  c: 'container',
+  k: 'kustomize',
+  p: 'patch',
+  A: 'all-namespaces',
+  w: 'watch',
+  R: 'recursive',
+  L: 'label-columns',
+  i: 'stdin',
+  t: 'tty',
+};
 
 const ALL = ['Pod', 'Service', 'DaemonSet', 'Deployment', 'ReplicaSet', 'StatefulSet', 'HorizontalPodAutoscaler', 'Job', 'CronJob'];
 
@@ -143,7 +207,9 @@ export async function kubectl(args: string[], ctx: Ctx): Promise<Result> {
       case 'version':
         return ok(`Client Version: ${K8S_VERSION}\nKustomize Version: v5.6.0${flagBool(p, 'client') ? '' : `\nServer Version: ${K8S_VERSION}`}\n`);
       case 'cluster-info':
-        return ok(`Kubernetes control plane is running at https://127.0.0.1:6443\nCoreDNS is running at https://127.0.0.1:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy\n\nTo further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.\n`);
+        return ok(
+          `Kubernetes control plane is running at https://127.0.0.1:6443\nCoreDNS is running at https://127.0.0.1:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy\n\nTo further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.\n`,
+        );
       case 'api-resources':
         return apiResources(p);
       case 'explain':
@@ -224,7 +290,28 @@ export async function kubectl(args: string[], ctx: Ctx): Promise<Result> {
 }
 
 function suggestCommand(cmd: string) {
-  const all = ['get', 'describe', 'apply', 'create', 'delete', 'logs', 'exec', 'rollout', 'scale', 'expose', 'run', 'edit', 'label', 'annotate', 'patch', 'top', 'explain', 'diff', 'wait', 'events'];
+  const all = [
+    'get',
+    'describe',
+    'apply',
+    'create',
+    'delete',
+    'logs',
+    'exec',
+    'rollout',
+    'scale',
+    'expose',
+    'run',
+    'edit',
+    'label',
+    'annotate',
+    'patch',
+    'top',
+    'explain',
+    'diff',
+    'wait',
+    'events',
+  ];
   let best = all[0];
   let bestD = Infinity;
   for (const c of all) {
@@ -240,7 +327,8 @@ function suggestCommand(cmd: string) {
 function lev(a: string, b: string) {
   const dp = Array.from({ length: a.length + 1 }, (_, i) => [i, ...new Array(b.length).fill(0)]);
   for (let j = 1; j <= b.length; j++) dp[0][j] = j;
-  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++) dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
   return dp[a.length][b.length];
 }
 
@@ -278,7 +366,9 @@ function fieldSelector(expr: string | undefined): (o: Obj) => boolean {
 function targets(p: Parsed, cl: Cluster, ns: string | undefined, requireName = false): { groups: Group[]; named: boolean; errors: string[] } {
   const pos = p.pos;
   if (!pos.length) {
-    throw new UsageError(`You must specify the type of resource to get. Use "kubectl api-resources" for a complete list of supported resources.\n\nerror: Required resource not specified.\nUse "kubectl explain <resource>" for a detailed description of that resource (e.g. kubectl explain pods).\nSee 'kubectl get -h' for help and examples`);
+    throw new UsageError(
+      `You must specify the type of resource to get. Use "kubectl api-resources" for a complete list of supported resources.\n\nerror: Required resource not specified.\nUse "kubectl explain <resource>" for a detailed description of that resource (e.g. kubectl explain pods).\nSee 'kubectl get -h' for help and examples`,
+    );
   }
   const selStr = flagStr(p, 'selector');
   let sel: Selector | undefined;
@@ -297,7 +387,8 @@ function targets(p: Parsed, cl: Cluster, ns: string | undefined, requireName = f
     if (g) g.objs.push(...objs.filter((o) => !g.objs.includes(o)));
     else groups.push({ type, objs });
   };
-  const listOf = (type: ResourceType) => cl.list(type.kind, type.namespaced ? ns : undefined).filter((o) => (!sel || matches(sel, o.metadata.labels)) && fsel(o));
+  const listOf = (type: ResourceType) =>
+    cl.list(type.kind, type.namespaced ? ns : undefined).filter((o) => (!sel || matches(sel, o.metadata.labels)) && fsel(o));
   if (pos.some((x) => x.includes('/'))) {
     for (const x of pos) {
       const [t, name] = x.split('/');
@@ -370,8 +461,12 @@ function get(p: Parsed, ctx: Ctx, ns: string): Result {
       return fail(`error: error parsing jsonpath ${tpl}, ${(e as Error).message}`);
     }
   }
-  if (out.startsWith('custom-columns=')) return { output: customColumns(objs, out.slice(15), flagBool(p, 'no-headers')) + errText, exitCode: errors.length ? 1 : 0 };
-  if (out && out !== 'wide') return fail(`error: unable to match a printer suitable for the output format "${out}", allowed formats are: custom-columns,custom-columns-file,go-template,go-template-file,json,jsonpath,jsonpath-as-json,jsonpath-file,name,template,templatefile,wide,yaml`);
+  if (out.startsWith('custom-columns='))
+    return { output: customColumns(objs, out.slice(15), flagBool(p, 'no-headers')) + errText, exitCode: errors.length ? 1 : 0 };
+  if (out && out !== 'wide')
+    return fail(
+      `error: unable to match a printer suitable for the output format "${out}", allowed formats are: custom-columns,custom-columns-file,go-template,go-template-file,json,jsonpath,jsonpath-as-json,jsonpath-file,name,template,templatefile,wide,yaml`,
+    );
   const opts = {
     wide: out === 'wide',
     allNamespaces: all,
@@ -383,7 +478,12 @@ function get(p: Parsed, ctx: Ctx, ns: string): Result {
   if (watch) {
     if (groups.length !== 1) return fail('error: you may only specify a single resource type');
     const g = groups[0];
-    const w = watchStream(cl, g.type.kind, () => (named ? g.objs.map((o) => cl.get(o.kind, o.metadata.namespace, o.metadata.name)).filter(Boolean) : targets(p, cl, scopeNs).groups[0]?.objs || []), { ...opts, watchOnly: flagBool(p, 'watch-only') });
+    const w = watchStream(
+      cl,
+      g.type.kind,
+      () => (named ? g.objs.map((o) => cl.get(o.kind, o.metadata.namespace, o.metadata.name)).filter(Boolean) : targets(p, cl, scopeNs).groups[0]?.objs || []),
+      { ...opts, watchOnly: flagBool(p, 'watch-only') },
+    );
     return { output: errText + w.initial, exitCode: 0, stream: w.stream };
   }
   let text = '';
@@ -441,7 +541,10 @@ function describeCmd(p: Parsed, ctx: Ctx, ns: string): Result {
   if (p.pos.length === 1 && !p.pos[0].includes('/')) {
     // describe pods web → prefix match like kubectl
     const type = typeOf(p.pos[0]);
-    const objs = cl.list(type.kind, type.namespaced && !all ? ns : undefined).filter((o) => { const s = flagStr(p, 'selector'); return !s || matches(parseSelector(s), o.metadata.labels); });
+    const objs = cl.list(type.kind, type.namespaced && !all ? ns : undefined).filter((o) => {
+      const s = flagStr(p, 'selector');
+      return !s || matches(parseSelector(s), o.metadata.labels);
+    });
     if (!objs.length) return ok(`No resources found${all ? '' : nsLabel(ns)}.\n`);
     return ok(objs.map((o) => describe(cl, o)).join('\n\n'));
   }
@@ -454,7 +557,11 @@ function describeCmd(p: Parsed, ctx: Ctx, ns: string): Result {
   }
   const { groups, errors } = targets(p, cl, ns);
   const objs = groups.flatMap((g) => g.objs);
-  return { output: objs.map((o) => describe(cl, o)).join('\n\n') + (errors.length ? errors.join('\n') + '\n' : ''), exitCode: errors.length ? 1 : 0, select: objs[0]?.metadata.uid };
+  return {
+    output: objs.map((o) => describe(cl, o)).join('\n\n') + (errors.length ? errors.join('\n') + '\n' : ''),
+    exitCode: errors.length ? 1 : 0,
+    select: objs[0]?.metadata.uid,
+  };
 }
 
 // ── apply / create / replace / delete ────────────────────────────────
@@ -469,10 +576,12 @@ async function readDocs(p: Parsed, ctx: Ctx): Promise<Doc[]> {
   }
   const docs: Doc[] = [];
   for (const f of files) {
-    if (/^https?:\/\//.test(f)) throw new UsageError(`error: el playground no descarga manifiestos de Internet: copia el contenido en un fichero del editor y usa -f fichero.yaml`);
+    if (/^https?:\/\//.test(f))
+      throw new UsageError(`error: el playground no descarga manifiestos de Internet: copia el contenido en un fichero del editor y usa -f fichero.yaml`);
     for (const path of resolveFiles(ctx.files, f, flagBool(p, 'recursive'))) {
       const text = ctx.files[path];
-      if (/\{\{/.test(text) && /(^|\/)templates\//.test(path)) throw new ManifestError(`error: error parsing ${path}: es una plantilla de Helm: usa "helm install" o "helm template"`);
+      if (/\{\{/.test(text) && /(^|\/)templates\//.test(path))
+        throw new ManifestError(`error: error parsing ${path}: es una plantilla de Helm: usa "helm install" o "helm template"`);
       docs.push(...parseManifests(text, path));
     }
   }
@@ -483,7 +592,9 @@ function checkNs(doc: Doc, p: Parsed) {
   const flagNs = flagStr(p, 'namespace');
   const objNs = doc.obj.metadata?.namespace;
   if (flagNs && objNs && flagNs !== objNs && resourceByKind(doc.obj.kind)?.namespaced) {
-    throw new UsageError(`error: the namespace from the provided object "${objNs}" does not match the namespace "${flagNs}". You must pass '--namespace=${objNs}' to perform this operation.`);
+    throw new UsageError(
+      `error: the namespace from the provided object "${objNs}" does not match the namespace "${flagNs}". You must pass '--namespace=${objNs}' to perform this operation.`,
+    );
   }
 }
 
@@ -546,7 +657,8 @@ async function apply(p: Parsed, ctx: Ctx, ns: string): Promise<Result> {
   const cl = dry === 'server' ? Cluster.fromJSON(ctx.cl.toJSON()) : ctx.cl;
   let firstUid: string | undefined;
   const r = forDocs(docs, p, 'applying', (d) => {
-    if (dry === 'client') return `${objectName(d.obj)} ${ctx.cl.get(d.obj.kind, d.obj.metadata?.namespace || ns, d.obj.metadata?.name) ? 'configured' : 'created'}${suffix}`;
+    if (dry === 'client')
+      return `${objectName(d.obj)} ${ctx.cl.get(d.obj.kind, d.obj.metadata?.namespace || ns, d.obj.metadata?.name) ? 'configured' : 'created'}${suffix}`;
     const res = cl.apply(d.obj, ns, source(d));
     firstUid ??= res.obj.metadata.uid;
     return `${objectName(res.obj)} ${res.action}${suffix}`;
@@ -591,7 +703,9 @@ function create(p: Parsed, ctx: Ctx, ns: string): Result {
       need();
       const image = flagStr(p, 'image');
       if (!image) throw new UsageError('error: required flag(s) "image" not set');
-      return finish(genDeployment(name, image, parseInt(flagStr(p, 'replicas') || '1', 10), flagStr(p, 'port') ? parseInt(flagStr(p, 'port')!, 10) : undefined, p.rest));
+      return finish(
+        genDeployment(name, image, parseInt(flagStr(p, 'replicas') || '1', 10), flagStr(p, 'port') ? parseInt(flagStr(p, 'port')!, 10) : undefined, p.rest),
+      );
     }
     case 'namespace':
     case 'ns':
@@ -612,10 +726,16 @@ function create(p: Parsed, ctx: Ctx, ns: string): Result {
       const type = { clusterip: 'ClusterIP', nodeport: 'NodePort', loadbalancer: 'LoadBalancer', externalname: 'ExternalName' }[name as 'clusterip'];
       const sname = more[0];
       if (!type || !sname) throw new UsageError('Usage: kubectl create service clusterip|nodeport|loadbalancer NAME --tcp=port:targetPort');
-      const ports = (p.multi.tcp || []).flatMap((t) => t.split(',')).map((t) => {
-        const [port, target] = t.split(':');
-        return { port: parseInt(port, 10), targetPort: /^\d+$/.test(target || port) ? parseInt(target || port, 10) : target, name: `${port}-${target || port}` };
-      });
+      const ports = (p.multi.tcp || [])
+        .flatMap((t) => t.split(','))
+        .map((t) => {
+          const [port, target] = t.split(':');
+          return {
+            port: parseInt(port, 10),
+            targetPort: /^\d+$/.test(target || port) ? parseInt(target || port, 10) : target,
+            name: `${port}-${target || port}`,
+          };
+        });
       const svc = genService(sname, type, ports, { app: sname });
       svc.spec.ports.forEach((pp: Json, i: number) => (pp.name = ports[i].name));
       return finish(svc);
@@ -627,7 +747,12 @@ function create(p: Parsed, ctx: Ctx, ns: string): Result {
         const [, cjName] = from.split('/');
         const cj = cl.get('CronJob', ns, cjName);
         if (!cj) throw new ApiError('NotFound', `cronjobs.batch "${cjName}" not found`);
-        const job: Obj = { apiVersion: 'batch/v1', kind: 'Job', metadata: { name, annotations: { 'cronjob.kubernetes.io/instantiate': 'manual' }, ownerReferences: [ownerRef(cj)] }, spec: clone(cj.spec.jobTemplate.spec) };
+        const job: Obj = {
+          apiVersion: 'batch/v1',
+          kind: 'Job',
+          metadata: { name, annotations: { 'cronjob.kubernetes.io/instantiate': 'manual' }, ownerReferences: [ownerRef(cj)] },
+          spec: clone(cj.spec.jobTemplate.spec),
+        };
         return finish(job);
       }
       const image = flagStr(p, 'image');
@@ -679,7 +804,8 @@ function fromSources(p: Parsed, ctx: Ctx): Record<string, string> {
 
 function parseAllFiles(p: Parsed, ctx: Ctx): Doc[] {
   const docs: Doc[] = [];
-  for (const f of p.multi.filename || []) for (const path of resolveFiles(ctx.files, f, flagBool(p, 'recursive'))) docs.push(...parseManifests(ctx.files[path], path));
+  for (const f of p.multi.filename || [])
+    for (const path of resolveFiles(ctx.files, f, flagBool(p, 'recursive'))) docs.push(...parseManifests(ctx.files[path], path));
   return docs;
 }
 
@@ -701,13 +827,17 @@ function replace(p: Parsed, ctx: Ctx, ns: string): Result {
 async function deleteCmd(p: Parsed, ctx: Ctx, ns: string): Promise<Result> {
   const cl = ctx.cl;
   const cascade = (flagStr(p, 'cascade') || 'background') as DeleteOptions['cascade'];
-  if (!['background', 'orphan', 'foreground', 'true', 'false'].includes(cascade as string)) throw new UsageError(`error: invalid cascade value (${cascade}). Must be "background", "foreground", or "orphan".`);
+  if (!['background', 'orphan', 'foreground', 'true', 'false'].includes(cascade as string))
+    throw new UsageError(`error: invalid cascade value (${cascade}). Must be "background", "foreground", or "orphan".`);
   const opts: DeleteOptions = {
     cascade: (cascade as string) === 'false' ? 'orphan' : (cascade as string) === 'true' ? 'background' : cascade,
     gracePeriod: flagStr(p, 'grace-period') !== undefined ? parseInt(flagStr(p, 'grace-period')!, 10) : flagBool(p, 'now') ? 1 : undefined,
     force: flagBool(p, 'force'),
   };
-  const warn = opts.force && opts.gracePeriod === 0 ? 'Warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.\n' : '';
+  const warn =
+    opts.force && opts.gracePeriod === 0
+      ? 'Warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.\n'
+      : '';
   const del = (o: Obj) => {
     cl.deleteObject(o, opts);
     const q = qualifiedName(o.kind);
@@ -729,7 +859,10 @@ async function deleteCmd(p: Parsed, ctx: Ctx, ns: string): Promise<Result> {
     }
     return { output: out, exitCode: code };
   }
-  if (!p.pos.length) throw new UsageError(`error: You must provide one or more resources by argument or filename.\nExample resource specifications include:\n   '-f rsrc.yaml'\n   '--filename=rsrc.json'\n   '<resource> <name>'\n   '<resource>'`);
+  if (!p.pos.length)
+    throw new UsageError(
+      `error: You must provide one or more resources by argument or filename.\nExample resource specifications include:\n   '-f rsrc.yaml'\n   '--filename=rsrc.json'\n   '<resource> <name>'\n   '<resource>'`,
+    );
   const all = flagBool(p, 'all');
   if (!p.pos[0].includes('/') && p.pos.length === 1 && !all && flagStr(p, 'selector') === undefined) {
     throw new UsageError(`error: resource(s) were provided, but no name was specified`);
@@ -810,7 +943,10 @@ function podFor(cl: Cluster, ref: string, ns: string): Obj {
 
 export function podsOf(cl: Cluster, o: Obj): Obj[] {
   if (o.kind === 'Pod') return [o];
-  if (o.kind === 'Service') return cl.list('Pod', o.metadata.namespace).filter((p) => o.spec.selector && matches(fromLabelSelector({ matchLabels: o.spec.selector }), p.metadata.labels));
+  if (o.kind === 'Service')
+    return cl
+      .list('Pod', o.metadata.namespace)
+      .filter((p) => o.spec.selector && matches(fromLabelSelector({ matchLabels: o.spec.selector }), p.metadata.labels));
   if (o.kind === 'Deployment') {
     const { newRS, old } = deploymentReplicaSets(cl, o);
     return [newRS, ...old].filter(Boolean).flatMap((rs) => cl.children(rs!, 'Pod'));
@@ -829,7 +965,10 @@ function pickContainer(pod: Obj, name: string | undefined): { c: Json; note: str
   }
   const def = pod.metadata.annotations?.['kubectl.kubernetes.io/default-container'];
   const c = cs.find((x) => x.name === def) || cs[0];
-  return { c, note: cs.length > 1 ? `Defaulted container "${c.name}" out of: ${[...cs, ...inits].map((x) => x.name).join(', ')}${inits.length ? ` (init)` : ''}\n` : '' };
+  return {
+    c,
+    note: cs.length > 1 ? `Defaulted container "${c.name}" out of: ${[...cs, ...inits].map((x) => x.name).join(', ')}${inits.length ? ` (init)` : ''}\n` : '',
+  };
 }
 
 function logs(p: Parsed, ctx: Ctx, ns: string): Result {
@@ -843,7 +982,10 @@ function logs(p: Parsed, ctx: Ctx, ns: string): Result {
   let pods: Obj[];
   if (sel) pods = cl.list('Pod', ns).filter((x) => matches(parseSelector(sel), x.metadata.labels));
   else {
-    if (!p.pos[0]) throw new UsageError('error: expected \'logs [-f] [-p] (POD | TYPE/NAME) [-c CONTAINER]\'.\nPOD or TYPE/NAME is a required argument for the logs command\nSee \'kubectl logs -h\' for help and examples');
+    if (!p.pos[0])
+      throw new UsageError(
+        "error: expected 'logs [-f] [-p] (POD | TYPE/NAME) [-c CONTAINER]'.\nPOD or TYPE/NAME is a required argument for the logs command\nSee 'kubectl logs -h' for help and examples",
+      );
     pods = [podFor(cl, p.pos[0], ns)];
     if (p.pos[1] && !flagStr(p, 'container')) p.flags.container = p.pos[1];
   }
@@ -857,7 +999,8 @@ function logs(p: Parsed, ctx: Ctx, ns: string): Result {
     const rt = cl.s.pods[pod.metadata.uid]?.containers[c.name];
     const status = [...(pod.status?.containerStatuses || []), ...(pod.status?.initContainerStatuses || [])].find((s: Json) => s.name === c.name);
     if (previous) {
-      if (!rt?.prevLogs.length && !(rt && rt.restarts > 0)) return fail(`Error from server (BadRequest): previous terminated container "${c.name}" in pod "${pod.metadata.name}" not found`);
+      if (!rt?.prevLogs.length && !(rt && rt.restarts > 0))
+        return fail(`Error from server (BadRequest): previous terminated container "${c.name}" in pod "${pod.metadata.name}" not found`);
     } else if (!rt || (rt.state === 'waiting' && !rt.restarts && !rt.logs.length)) {
       const reason = status?.state?.waiting?.reason || 'ContainerCreating';
       const why = /ImagePull|ErrImage|InvalidImage/.test(reason) ? 'trying and failing to pull image' : reason;
@@ -879,14 +1022,17 @@ function exec(p: Parsed, ctx: Ctx, ns: string): Result {
   const { c, note } = pickContainer(pod, flagStr(p, 'container'));
   const cmd = p.rest.length ? p.rest : p.pos.slice(1);
   if (!cmd.length) throw new UsageError('error: you must specify at least one command for the container');
-  if (pod.status?.phase === 'Succeeded' || pod.status?.phase === 'Failed') return fail(`error: cannot exec into a container in a completed pod; current phase is ${pod.status.phase}`);
+  if (pod.status?.phase === 'Succeeded' || pod.status?.phase === 'Failed')
+    return fail(`error: cannot exec into a container in a completed pod; current phase is ${pod.status.phase}`);
   const rt = cl.s.pods[pod.metadata.uid]?.containers[c.name];
   if (!rt || rt.state !== 'running') return fail(`error: unable to upgrade connection: container not found ("${c.name}")`);
   const sh: PodShell = { pod, container: c, cwd: /nginx/.test(c.image) ? '/' : '/' };
   const interactive = (flagBool(p, 'stdin') || flagBool(p, 'i')) && (flagBool(p, 'tty') || flagBool(p, 't'));
   if (interactive && cmd.length === 1 && /^(\/bin\/)?(sh|bash|ash)$/.test(cmd[0])) {
     if (cmd[0].includes('bash') && /busybox|alpine/.test(c.image)) {
-      return fail(`${note}error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "4b1c": OCI runtime exec failed: exec failed: unable to start container process: exec: "bash": executable file not found in $PATH: unknown`);
+      return fail(
+        `${note}error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "4b1c": OCI runtime exec failed: exec failed: unable to start container process: exec: "bash": executable file not found in $PATH: unknown`,
+      );
     }
     return ok(note, { shell: sh });
   }
@@ -901,13 +1047,26 @@ function run(p: Parsed, ctx: Ctx, ns: string): Result {
   if (!name) throw new UsageError('error: NAME is required for run');
   const image = flagStr(p, 'image');
   if (!image) throw new UsageError('error: required flag(s) "image" not set');
-  const labels = flagStr(p, 'labels') ? Object.fromEntries(flagStr(p, 'labels')!.split(',').map((kv) => kv.split('='))) : undefined;
-  const attach = (flagBool(p, 'stdin') || flagBool(p, 'i')) && (flagBool(p, 'tty') || flagBool(p, 't')) || flagBool(p, 'attach');
+  const labels = flagStr(p, 'labels')
+    ? Object.fromEntries(
+        flagStr(p, 'labels')!
+          .split(',')
+          .map((kv) => kv.split('=')),
+      )
+    : undefined;
+  const attach = ((flagBool(p, 'stdin') || flagBool(p, 'i')) && (flagBool(p, 'tty') || flagBool(p, 't'))) || flagBool(p, 'attach');
   const rm = flagBool(p, 'rm');
   if (rm && !attach) throw new UsageError('error: --rm should only be used for attached containers');
   const restart = flagStr(p, 'restart') || 'Always';
   const cmd = p.rest.length ? p.rest : p.pos.slice(1);
-  const pod = genPod(name, image, { restart, port: flagStr(p, 'port') ? parseInt(flagStr(p, 'port')!, 10) : undefined, labels, env: p.multi.env, command: flagBool(p, 'command'), rest: cmd });
+  const pod = genPod(name, image, {
+    restart,
+    port: flagStr(p, 'port') ? parseInt(flagStr(p, 'port')!, 10) : undefined,
+    labels,
+    env: p.multi.env,
+    command: flagBool(p, 'command'),
+    rest: cmd,
+  });
   const dry = dryRunMode(p);
   const out = flagStr(p, 'output');
   if (dry !== 'none' || out === 'yaml' || out === 'json') {
@@ -927,14 +1086,18 @@ function run(p: Parsed, ctx: Ctx, ns: string): Result {
       if (!cur) return { text: '', done: true, exitCode: 1 };
       const st = cur.status?.containerStatuses?.[0]?.state;
       if (st?.waiting && /ImagePull|ErrImage|InvalidImage/.test(st.waiting.reason || '')) {
-        return { text: `error: timed out waiting for the condition\n(la imagen "${image}" no se puede descargar: ${st.waiting.reason})\n`, done: true, exitCode: 1 };
+        return {
+          text: `error: timed out waiting for the condition\n(la imagen "${image}" no se puede descargar: ${st.waiting.reason})\n`,
+          done: true,
+          exitCode: 1,
+        };
       }
       if (c.now - started > 60_000) return { text: 'error: timed out waiting for the condition\n', done: true, exitCode: 1 };
       const running = st?.running;
       if (!running) return { text: '' };
       const sh: PodShell = { pod: cur, container: cur.spec.containers[0], cwd: '/' };
       if (isShell) {
-        const text = said ? '' : 'If you don\'t see a command prompt, try pressing enter.\n';
+        const text = said ? '' : "If you don't see a command prompt, try pressing enter.\n";
         said = true;
         return { text, done: true, exitCode: 0, shell: { ...sh, rm } };
       }
@@ -974,7 +1137,8 @@ function expose(p: Parsed, ctx: Ctx, ns: string): Result {
   if (o.kind === 'Pod') selector = o.metadata.labels;
   else if (o.kind === 'Service') selector = o.spec.selector;
   else selector = o.spec?.selector?.matchLabels;
-  if (!selector || !Object.keys(selector).length) return fail(`error: couldn't retrieve selectors via --selector flag or introspection: the ${o.kind} has no selector`);
+  if (!selector || !Object.keys(selector).length)
+    return fail(`error: couldn't retrieve selectors via --selector flag or introspection: the ${o.kind} has no selector`);
   let port = flagStr(p, 'port');
   if (!port) {
     const cp = o.kind === 'Service' ? o.spec.ports?.[0]?.port : (o.kind === 'Pod' ? o.spec : o.spec.template?.spec)?.containers?.[0]?.ports?.[0]?.containerPort;
@@ -982,7 +1146,13 @@ function expose(p: Parsed, ctx: Ctx, ns: string): Result {
     port = String(cp);
   }
   const target = flagStr(p, 'target-port') || port;
-  const svc = genService(flagStr(p, 'name') || o.metadata.name, flagStr(p, 'type') || 'ClusterIP', [{ port: parseInt(port, 10), targetPort: /^\d+$/.test(target) ? parseInt(target, 10) : target }], selector, o.metadata.labels);
+  const svc = genService(
+    flagStr(p, 'name') || o.metadata.name,
+    flagStr(p, 'type') || 'ClusterIP',
+    [{ port: parseInt(port, 10), targetPort: /^\d+$/.test(target) ? parseInt(target, 10) : target }],
+    selector,
+    o.metadata.labels,
+  );
   const dry = dryRunMode(p);
   const out = flagStr(p, 'output');
   if (out === 'yaml') return ok(toYaml(svc));
@@ -997,7 +1167,9 @@ function scale(p: Parsed, ctx: Ctx, ns: string): Result {
   const n = parseInt(r, 10);
   if (Number.isNaN(n) || n < 0) throw new UsageError('error: The --replicas=COUNT flag is required, and COUNT must be greater than or equal to 0');
   const objs = p.multi.filename?.length
-    ? parseAllFiles(p, ctx).map((d) => ctx.cl.get(d.obj.kind, d.obj.metadata?.namespace || ns, d.obj.metadata?.name)).filter(Boolean)
+    ? parseAllFiles(p, ctx)
+        .map((d) => ctx.cl.get(d.obj.kind, d.obj.metadata?.namespace || ns, d.obj.metadata?.name))
+        .filter(Boolean)
     : targets(p, ctx.cl, ns, true).groups.flatMap((g) => g.objs);
   if (!objs.length) return fail('error: no objects passed to scale');
   let out = '';
@@ -1006,7 +1178,9 @@ function scale(p: Parsed, ctx: Ctx, ns: string): Result {
       out += `error: cannot scale ${qualifiedName(o.kind)}/${o.metadata.name}: no scale subresource\n`;
       continue;
     }
-    const hpa = ctx.cl.list('HorizontalPodAutoscaler', o.metadata.namespace).find((h) => h.spec.scaleTargetRef?.name === o.metadata.name && h.spec.scaleTargetRef?.kind === o.kind);
+    const hpa = ctx.cl
+      .list('HorizontalPodAutoscaler', o.metadata.namespace)
+      .find((h) => h.spec.scaleTargetRef?.name === o.metadata.name && h.spec.scaleTargetRef?.kind === o.kind);
     ctx.cl.mutate(o, (x) => {
       if (x.spec.replicas !== n) x.metadata.generation = (x.metadata.generation || 1) + 1;
       x.spec.replicas = n;
@@ -1038,10 +1212,12 @@ function podSpecOf(o: Obj): Json {
 function setCmd(p: Parsed, ctx: Ctx, ns: string): Result {
   const [what, ...rest] = p.pos;
   const cl = ctx.cl;
-  const q: Parsed = { ...p, pos: rest.filter((x) => !x.includes('=') || x.includes('/')) };
-  const assignments = rest.filter((x) => x.includes('=') && !x.includes('/') || /^[\w.-]+-$/.test(x));
+  // KEY=VALUE (the key never has a slash; the value can: ghcr.io/org/img:tag) and KEY- (unset).
+  const isAssign = (x: string) => /^[^=/]+=/.test(x) || /^[\w.-]+-$/.test(x);
+  const q: Parsed = { ...p, pos: rest.filter((x) => !isAssign(x)) };
+  const assignments = rest.filter(isAssign);
   if (what === 'image') {
-    const objs = targets({ ...q, pos: q.pos.filter((x) => !/^[\w.-]+-$/.test(x)) }, cl, ns, true).groups.flatMap((g) => g.objs);
+    const objs = targets(q, cl, ns, true).groups.flatMap((g) => g.objs);
     let out = '';
     for (const o of objs) {
       const spec = podSpecOf(o);
@@ -1068,7 +1244,7 @@ function setCmd(p: Parsed, ctx: Ctx, ns: string): Result {
     return ok(out, { select: objs[0]?.metadata.uid });
   }
   if (what === 'env') {
-    const objs = targets({ ...q, pos: q.pos.filter((x) => !/^[\w.-]+-$/.test(x)) }, cl, ns, true).groups.flatMap((g) => g.objs);
+    const objs = targets(q, cl, ns, true).groups.flatMap((g) => g.objs);
     let out = '';
     for (const o of objs) {
       const next = clone(o);
@@ -1100,7 +1276,10 @@ function setCmd(p: Parsed, ctx: Ctx, ns: string): Result {
       const next = clone(o);
       for (const c of podSpecOf(next).containers) {
         c.resources = { ...(c.resources || {}) };
-        for (const [flag, key] of [['requests', 'requests'], ['limits', 'limits']] as const) {
+        for (const [flag, key] of [
+          ['requests', 'requests'],
+          ['limits', 'limits'],
+        ] as const) {
           const v = flagStr(p, flag);
           if (v) c.resources[key] = { ...(c.resources[key] || {}), ...Object.fromEntries(v.split(',').map((kv) => kv.split('='))) };
         }
@@ -1120,11 +1299,15 @@ function rollout(p: Parsed, ctx: Ctx, ns: string): Result {
   const [sub, ...rest] = p.pos;
   const q: Parsed = { ...p, pos: rest };
   const subs = ['history', 'pause', 'restart', 'resume', 'status', 'undo'];
-  if (!sub || !subs.includes(sub)) return fail(`Manage the rollout of one or many resources.\n\nAvailable Commands:\n  history       View rollout history\n  pause         Mark the provided resource as paused\n  restart       Restart a resource\n  resume        Resume a paused resource\n  status        Show the status of the rollout\n  undo          Undo a previous rollout\n\nUsage:\n  kubectl rollout SUBCOMMAND [options]`);
+  if (!sub || !subs.includes(sub))
+    return fail(
+      `Manage the rollout of one or many resources.\n\nAvailable Commands:\n  history       View rollout history\n  pause         Mark the provided resource as paused\n  restart       Restart a resource\n  resume        Resume a paused resource\n  status        Show the status of the rollout\n  undo          Undo a previous rollout\n\nUsage:\n  kubectl rollout SUBCOMMAND [options]`,
+    );
   const objs = targets(q, cl, ns, true).groups.flatMap((g) => g.objs);
   const o = objs[0];
   if (!o) return fail(targets(q, cl, ns).errors[0] || 'error: resource not found');
-  if (!['Deployment', 'StatefulSet', 'DaemonSet'].includes(o.kind)) return fail(`error: ${sub === 'status' ? 'no status viewer' : 'no rollbacker'} has been implemented for ${qualifiedName(o.kind)}`);
+  if (!['Deployment', 'StatefulSet', 'DaemonSet'].includes(o.kind))
+    return fail(`error: ${sub === 'status' ? 'no status viewer' : 'no rollbacker'} has been implemented for ${qualifiedName(o.kind)}`);
   const name = objectName(o);
   switch (sub) {
     case 'status': {
@@ -1145,7 +1328,10 @@ function rollout(p: Parsed, ctx: Ctx, ns: string): Result {
           if (!rs) return fail(`error: unable to find the specified revision`);
           return ok(`${name} with revision #${rev}\n${templateText(rs.spec.template)}`);
         }
-        const rows = [['REVISION', 'CHANGE-CAUSE'], ...rss.map((r) => [String(revisionOf(r)), r.metadata.annotations?.['kubernetes.io/change-cause'] || '<none>'])];
+        const rows = [
+          ['REVISION', 'CHANGE-CAUSE'],
+          ...rss.map((r) => [String(revisionOf(r)), r.metadata.annotations?.['kubernetes.io/change-cause'] || '<none>']),
+        ];
         return ok(`${name} \n${pad(rows)}\n`);
       }
       const revs = Object.keys(cl.s.revisions?.[o.metadata.uid] || {});
@@ -1171,7 +1357,10 @@ function rollout(p: Parsed, ctx: Ctx, ns: string): Result {
       if (o.spec.paused) return fail(`error: deployments.apps "${o.metadata.name}" can't restart paused deployment (run rollout resume first)`);
       const next = clone(o);
       next.spec.template.metadata ??= {};
-      next.spec.template.metadata.annotations = { ...(next.spec.template.metadata.annotations || {}), 'kubectl.kubernetes.io/restartedAt': new Date(cl.now).toISOString().replace(/\.\d+Z$/, 'Z') };
+      next.spec.template.metadata.annotations = {
+        ...(next.spec.template.metadata.annotations || {}),
+        'kubectl.kubernetes.io/restartedAt': new Date(cl.now).toISOString().replace(/\.\d+Z$/, 'Z'),
+      };
       cl.commitUpdate(o, next);
       return ok(`${name} restarted\n`, { select: o.metadata.uid });
     }
@@ -1188,7 +1377,8 @@ function rollout(p: Parsed, ctx: Ctx, ns: string): Result {
           target = rss[1];
           if (!target) return fail(`error: no rollout history found for deployment "${o.metadata.name}"`);
         }
-        if (target.metadata.labels?.[HASH] === templateHash(o.spec.template)) return ok(`${name} skipped rollback (current template already matches revision ${revisionOf(target)})\n`);
+        if (target.metadata.labels?.[HASH] === templateHash(o.spec.template))
+          return ok(`${name} skipped rollback (current template already matches revision ${revisionOf(target)})\n`);
         const next = clone(o);
         next.spec.template = stripHash(target.spec.template);
         const cc = target.metadata.annotations?.['kubernetes.io/change-cause'];
@@ -1242,7 +1432,7 @@ function parseDurationFlag(s: string): number {
 
 function labelCmd(cmd: 'label' | 'annotate', p: Parsed, ctx: Ctx, ns: string): Result {
   const cl = ctx.cl;
-  const changes = p.pos.filter((x) => (x.includes('=') || /[^/]-$/.test(x)) && !x.includes('/') || /^[\w./-]+=/.test(x) && x.split('=')[0].includes('/'));
+  const changes = p.pos.filter((x) => ((x.includes('=') || /[^/]-$/.test(x)) && !x.includes('/')) || (/^[\w./-]+=/.test(x) && x.split('=')[0].includes('/')));
   const res = p.pos.filter((x) => !changes.includes(x));
   const objs = targets({ ...p, pos: res }, cl, ns, flagStr(p, 'selector') === undefined && !flagBool(p, 'all')).groups.flatMap((g) => g.objs);
   if (!changes.length) return fail(`error: at least one ${cmd === 'label' ? 'label' : 'annotation'} update is required`);
@@ -1301,7 +1491,10 @@ function patch(p: Parsed, ctx: Ctx, ns: string): Result {
   merged.metadata.annotations = next.metadata.annotations;
   merged.metadata.labels = next.metadata.labels;
   cl.checkImmutable(o, merged);
-  if (JSON.stringify({ ...merged, status: undefined, metadata: { ...merged.metadata, resourceVersion: '' } }) === JSON.stringify({ ...JSON.parse(before), status: undefined, metadata: { ...JSON.parse(before).metadata, resourceVersion: '' } })) {
+  if (
+    JSON.stringify({ ...merged, status: undefined, metadata: { ...merged.metadata, resourceVersion: '' } }) ===
+    JSON.stringify({ ...JSON.parse(before), status: undefined, metadata: { ...JSON.parse(before).metadata, resourceVersion: '' } })
+  ) {
     return ok(`${objectName(o)} patched (no change)\n`);
   }
   cl.commitUpdate(o, merged);
@@ -1338,7 +1531,9 @@ function top(p: Parsed, ctx: Ctx, ns: string): Result {
     for (const x of pods) rows.push([...(all ? [x.metadata.namespace] : []), x.metadata.name, `${cpuMillis(cl, x)}m`, memMi(podMemory(x))]);
     return ok(pad(rows));
   }
-  return fail('Display resource (CPU/memory) usage.\n\nAvailable Commands:\n  node          Display resource (CPU/memory) usage of nodes\n  pod           Display resource (CPU/memory) usage of pods');
+  return fail(
+    'Display resource (CPU/memory) usage.\n\nAvailable Commands:\n  node          Display resource (CPU/memory) usage of nodes\n  pod           Display resource (CPU/memory) usage of pods',
+  );
 }
 
 function nodeCmd(cmd: 'cordon' | 'uncordon' | 'drain', p: Parsed, ctx: Ctx): Result {
@@ -1352,7 +1547,10 @@ function nodeCmd(cmd: 'cordon' | 'uncordon' | 'drain', p: Parsed, ctx: Ctx): Res
     cl.mutate(node, (n) => {
       if (v) {
         n.spec.unschedulable = true;
-        n.spec.taints = [...(n.spec.taints || []).filter((t: Json) => t.key !== 'node.kubernetes.io/unschedulable'), { key: 'node.kubernetes.io/unschedulable', effect: 'NoSchedule', timeAdded: cl.ts() }];
+        n.spec.taints = [
+          ...(n.spec.taints || []).filter((t: Json) => t.key !== 'node.kubernetes.io/unschedulable'),
+          { key: 'node.kubernetes.io/unschedulable', effect: 'NoSchedule', timeAdded: cl.ts() },
+        ];
       } else {
         delete n.spec.unschedulable;
         n.spec.taints = (n.spec.taints || []).filter((t: Json) => t.key !== 'node.kubernetes.io/unschedulable');
@@ -1369,11 +1567,23 @@ function nodeCmd(cmd: 'cordon' | 'uncordon' | 'drain', p: Parsed, ctx: Ctx): Res
   const unmanaged = pods.filter((x) => !x.metadata.ownerReferences?.length);
   const emptyDir = pods.filter((x) => (x.spec.volumes || []).some((v: Json) => v.emptyDir));
   const errs: string[] = [];
-  if (ds.length && !flagBool(p, 'ignore-daemonsets')) errs.push(`cannot delete DaemonSet-managed Pods (use --ignore-daemonsets to ignore): ${ds.map((x) => `${x.metadata.namespace}/${x.metadata.name}`).join(', ')}`);
-  if (unmanaged.length && !flagBool(p, 'force')) errs.push(`cannot delete Pods that declare no controller (use --force to override): ${unmanaged.map((x) => `${x.metadata.namespace}/${x.metadata.name}`).join(', ')}`);
-  if (emptyDir.length && !flagBool(p, 'delete-emptydir-data') && !flagBool(p, 'delete-local-data')) errs.push(`cannot delete Pods with local storage (use --delete-emptydir-data to override): ${emptyDir.map((x) => `${x.metadata.namespace}/${x.metadata.name}`).join(', ')}`);
+  if (ds.length && !flagBool(p, 'ignore-daemonsets'))
+    errs.push(
+      `cannot delete DaemonSet-managed Pods (use --ignore-daemonsets to ignore): ${ds.map((x) => `${x.metadata.namespace}/${x.metadata.name}`).join(', ')}`,
+    );
+  if (unmanaged.length && !flagBool(p, 'force'))
+    errs.push(
+      `cannot delete Pods that declare no controller (use --force to override): ${unmanaged.map((x) => `${x.metadata.namespace}/${x.metadata.name}`).join(', ')}`,
+    );
+  if (emptyDir.length && !flagBool(p, 'delete-emptydir-data') && !flagBool(p, 'delete-local-data'))
+    errs.push(
+      `cannot delete Pods with local storage (use --delete-emptydir-data to override): ${emptyDir.map((x) => `${x.metadata.namespace}/${x.metadata.name}`).join(', ')}`,
+    );
   let out = setUnsched(true);
-  if (errs.length) return fail(`${out}error: unable to drain node "${name}" due to error: [${errs.join(', ')}], continuing command...\nThere are pending nodes to be drained:\n ${name}\n${errs.map((e) => `error: ${e}`).join('\n')}`);
+  if (errs.length)
+    return fail(
+      `${out}error: unable to drain node "${name}" due to error: [${errs.join(', ')}], continuing command...\nThere are pending nodes to be drained:\n ${name}\n${errs.map((e) => `error: ${e}`).join('\n')}`,
+    );
   const evict = pods.filter((x) => !ds.includes(x) && !mirror.includes(x));
   if (ds.length) out += `Warning: ignoring DaemonSet-managed Pods: ${ds.map((x) => `${x.metadata.namespace}/${x.metadata.name}`).join(', ')}\n`;
   for (const x of evict) out += `evicting pod ${x.metadata.namespace}/${x.metadata.name}\n`;
@@ -1406,17 +1616,27 @@ function portForward(p: Parsed, ctx: Ctx, ns: string): Result {
     kind = 'Pod';
     name = pod.metadata.name;
   }
-  if (kind === 'Pod' && target.status?.phase !== 'Running') return fail(`error: unable to forward port because pod is not running. Current status=${target.status?.phase}`);
+  if (kind === 'Pod' && target.status?.phase !== 'Running')
+    return fail(`error: unable to forward port because pod is not running. Current status=${target.status?.phase}`);
   const entries = ports.map((x) => {
     const [l, r] = x.split(':');
     return { local: parseInt(l || r, 10), port: parseInt(r || l, 10) };
   });
   for (const e of entries) {
-    if (cl.s.portForwards.some((f) => f.local === e.local)) return fail(`Unable to listen on port ${e.local}: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:${e.local}: bind: address already in use]\nerror: unable to listen on any of the requested ports: [{${e.local} ${e.port}}]`);
-    if (kind === 'Service' && !(target.spec.ports || []).some((sp: Json) => sp.port === e.port)) return fail(`error: Service ${name} does not have a service port ${e.port}`);
+    if (cl.s.portForwards.some((f) => f.local === e.local))
+      return fail(
+        `Unable to listen on port ${e.local}: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:${e.local}: bind: address already in use]\nerror: unable to listen on any of the requested ports: [{${e.local} ${e.port}}]`,
+      );
+    if (kind === 'Service' && !(target.spec.ports || []).some((sp: Json) => sp.port === e.port))
+      return fail(`error: Service ${name} does not have a service port ${e.port}`);
   }
   for (const e of entries) cl.s.portForwards.push({ local: e.local, kind, namespace: ns, name, port: e.port });
-  const text = entries.map((e) => `Forwarding from 127.0.0.1:${e.local} -> ${kind === 'Service' ? targetPortOf(cl, target, e.port) : e.port}\nForwarding from [::1]:${e.local} -> ${kind === 'Service' ? targetPortOf(cl, target, e.port) : e.port}\n`).join('');
+  const text = entries
+    .map(
+      (e) =>
+        `Forwarding from 127.0.0.1:${e.local} -> ${kind === 'Service' ? targetPortOf(cl, target, e.port) : e.port}\nForwarding from [::1]:${e.local} -> ${kind === 'Service' ? targetPortOf(cl, target, e.port) : e.port}\n`,
+    )
+    .join('');
   return { output: text, exitCode: 0, stream: portForwardStream(cl, entries, { kind, namespace: ns, name }) };
 }
 
@@ -1444,7 +1664,12 @@ function config(p: Parsed, ctx: Ctx): Result {
     case 'current-context':
       return ok('kind-playground\n');
     case 'get-contexts':
-      return ok(pad([['CURRENT', 'NAME', 'CLUSTER', 'AUTHINFO', 'NAMESPACE'], ['*', 'kind-playground', 'kind-playground', 'kind-playground', ctx.cl.s.namespace === 'default' ? '' : ctx.cl.s.namespace]]));
+      return ok(
+        pad([
+          ['CURRENT', 'NAME', 'CLUSTER', 'AUTHINFO', 'NAMESPACE'],
+          ['*', 'kind-playground', 'kind-playground', 'kind-playground', ctx.cl.s.namespace === 'default' ? '' : ctx.cl.s.namespace],
+        ]),
+      );
     case 'use-context':
       if (rest[0] !== 'kind-playground') return fail(`error: no context exists with the name: "${rest[0]}"`);
       return ok('Switched to context "kind-playground".\n');
@@ -1455,16 +1680,25 @@ function config(p: Parsed, ctx: Ctx): Result {
       return ok(`Context "kind-playground" modified.\n${ctx.cl.get('Namespace', undefined, n) ? '' : `(ojo: el namespace "${n}" todavía no existe)\n`}`);
     }
     case 'view':
-      return ok(`apiVersion: v1\nclusters:\n- cluster:\n    certificate-authority-data: DATA+OMITTED\n    server: https://127.0.0.1:6443\n  name: kind-playground\ncontexts:\n- context:\n    cluster: kind-playground\n${ctx.cl.s.namespace !== 'default' ? `    namespace: ${ctx.cl.s.namespace}\n` : ''}    user: kind-playground\n  name: kind-playground\ncurrent-context: kind-playground\nkind: Config\npreferences: {}\nusers:\n- name: kind-playground\n  user:\n    client-certificate-data: DATA+OMITTED\n    client-key-data: DATA+OMITTED\n`);
+      return ok(
+        `apiVersion: v1\nclusters:\n- cluster:\n    certificate-authority-data: DATA+OMITTED\n    server: https://127.0.0.1:6443\n  name: kind-playground\ncontexts:\n- context:\n    cluster: kind-playground\n${ctx.cl.s.namespace !== 'default' ? `    namespace: ${ctx.cl.s.namespace}\n` : ''}    user: kind-playground\n  name: kind-playground\ncurrent-context: kind-playground\nkind: Config\npreferences: {}\nusers:\n- name: kind-playground\n  user:\n    client-certificate-data: DATA+OMITTED\n    client-key-data: DATA+OMITTED\n`,
+      );
     default:
-      return fail('Modify kubeconfig files using subcommands like "kubectl config set current-context my-context".\n\nAvailable Commands:\n  current-context   Display the current-context\n  get-contexts      Describe one or many contexts\n  set-context       Set a context entry in kubeconfig\n  use-context       Set the current-context in a kubeconfig file\n  view              Display merged kubeconfig settings');
+      return fail(
+        'Modify kubeconfig files using subcommands like "kubectl config set current-context my-context".\n\nAvailable Commands:\n  current-context   Display the current-context\n  get-contexts      Describe one or many contexts\n  set-context       Set a context entry in kubeconfig\n  use-context       Set the current-context in a kubeconfig file\n  view              Display merged kubeconfig settings',
+      );
   }
 }
 
 function apiResources(p: Parsed): Result {
   const nsFilter = flagStr(p, 'namespaced');
   const rows = [['NAME', 'SHORTNAMES', 'APIVERSION', 'NAMESPACED', 'KIND']];
-  for (const r of [...RESOURCES].sort((a, b) => (a.versions[0].includes('/') ? 1 : 0) - (b.versions[0].includes('/') ? 1 : 0) || a.versions[0].localeCompare(b.versions[0]) || a.plural.localeCompare(b.plural))) {
+  for (const r of [...RESOURCES].sort(
+    (a, b) =>
+      (a.versions[0].includes('/') ? 1 : 0) - (b.versions[0].includes('/') ? 1 : 0) ||
+      a.versions[0].localeCompare(b.versions[0]) ||
+      a.plural.localeCompare(b.plural),
+  )) {
     if (nsFilter !== undefined && String(r.namespaced) !== nsFilter) continue;
     rows.push([r.plural, r.short.join(','), r.versions[0], String(r.namespaced), r.kind]);
   }
@@ -1481,14 +1715,35 @@ function explain(p: Parsed): Result {
   const at = typeAt(type.kind, path);
   if (!at) return fail(`error: field "${path[path.length - 1]}" does not exist`);
   const def = at.def;
-  const kindType = (ft: string) => (ft === 'int' ? 'integer' : ft === 'bool' ? 'boolean' : ft === 'map' ? 'map[string]string' : ft === 'intstr' ? 'IntOrString' : ft.endsWith('[]') ? `[]${ft.slice(0, -2)}` : ft);
+  const kindType = (ft: string) =>
+    ft === 'int'
+      ? 'integer'
+      : ft === 'bool'
+        ? 'boolean'
+        : ft === 'map'
+          ? 'map[string]string'
+          : ft === 'intstr'
+            ? 'IntOrString'
+            : ft.endsWith('[]')
+              ? `[]${ft.slice(0, -2)}`
+              : ft;
   let out = `${group ? `GROUP:      ${group}\n` : ''}KIND:       ${type.kind}\nVERSION:    ${gv.split('/').pop()}\n\n`;
   if (path.length) out += `FIELD: ${path[path.length - 1]} <${kindType(at.type)}>\n\n`;
-  out += `DESCRIPTION:\n    ${(path.length ? at.field?.[1] : TYPES[type.kind]?.doc || type.description) || '<empty>'}\n    ${def?.doc && path.length ? def.doc : ''}\n`.replace(/\n {4}\n$/, '\n');
+  out +=
+    `DESCRIPTION:\n    ${(path.length ? at.field?.[1] : TYPES[type.kind]?.doc || type.description) || '<empty>'}\n    ${def?.doc && path.length ? def.doc : ''}\n`.replace(
+      /\n {4}\n$/,
+      '\n',
+    );
   if (def) {
     out += '\nFIELDS:\n';
     for (const [name, f] of Object.entries(def.fields)) {
-      if (['uid', 'resourceVersion', 'generation', 'creationTimestamp', 'deletionTimestamp', 'deletionGracePeriodSeconds', 'managedFields', 'selfLink'].includes(name) && !flagBool(p, 'recursive')) continue;
+      if (
+        ['uid', 'resourceVersion', 'generation', 'creationTimestamp', 'deletionTimestamp', 'deletionGracePeriodSeconds', 'managedFields', 'selfLink'].includes(
+          name,
+        ) &&
+        !flagBool(p, 'recursive')
+      )
+        continue;
       out += `  ${name}\t<${kindType(f[0])}>${def.required?.includes(name) ? ' -required-' : ''}\n    ${f[1] || ''}\n\n`;
     }
   }

@@ -26,9 +26,16 @@ export const TYPES: Record<string, TypeDef> = {
       namespace: ['string', 'Namespace del objeto. Si no se indica, el del contexto (default).'],
       labels: ['map', 'Etiquetas clave-valor para seleccionar y agrupar objetos.'],
       annotations: ['map', 'Metadatos libres que no sirven para seleccionar.'],
-      uid: ['string'], resourceVersion: ['string'], generation: ['int'], creationTimestamp: ['any'],
-      deletionTimestamp: ['any'], deletionGracePeriodSeconds: ['int'], ownerReferences: ['OwnerReference[]'],
-      finalizers: ['string[]'], managedFields: ['object[]'], selfLink: ['string'],
+      uid: ['string'],
+      resourceVersion: ['string'],
+      generation: ['int'],
+      creationTimestamp: ['any'],
+      deletionTimestamp: ['any'],
+      deletionGracePeriodSeconds: ['int'],
+      ownerReferences: ['OwnerReference[]'],
+      finalizers: ['string[]'],
+      managedFields: ['object[]'],
+      selfLink: ['string'],
     },
   },
   OwnerReference: {
@@ -44,7 +51,11 @@ export const TYPES: Record<string, TypeDef> = {
   LabelSelectorRequirement: { fields: { key: ['string'], operator: ['string'], values: ['string[]'] }, required: ['key', 'operator'] },
 
   // ── pods ──
-  Pod: { doc: 'La unidad mínima de ejecución: uno o varios contenedores.', fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['PodSpec', 'Especificación del pod.'], status: ['object'] }, required: ['spec'] },
+  Pod: {
+    doc: 'La unidad mínima de ejecución: uno o varios contenedores.',
+    fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['PodSpec', 'Especificación del pod.'], status: ['object'] },
+    required: ['spec'],
+  },
   PodTemplateSpec: { doc: 'Plantilla de los pods que crea el controlador.', fields: { metadata: meta, spec: ['PodSpec', 'Especificación de los pods.'] } },
   PodSpec: {
     doc: 'Qué contenedores ejecuta el pod y cómo.',
@@ -58,15 +69,33 @@ export const TYPES: Record<string, TypeDef> = {
       serviceAccountName: ['string', 'ServiceAccount con la que corre el pod.'],
       serviceAccount: ['string'],
       terminationGracePeriodSeconds: ['int', 'Segundos que se esperan a que el proceso termine al borrar el pod.'],
-      hostname: ['string'], subdomain: ['string'],
+      hostname: ['string'],
+      subdomain: ['string'],
       affinity: ['object', 'Reglas de afinidad y anti-afinidad.'],
       tolerations: ['Toleration[]', 'Permite programar el pod en nodos con taints.'],
-      securityContext: ['object'], imagePullSecrets: ['object[]'], dnsPolicy: ['string'], dnsConfig: ['object'],
-      hostNetwork: ['bool'], priorityClassName: ['string'], schedulerName: ['string'], automountServiceAccountToken: ['bool'],
-      topologySpreadConstraints: ['object[]'], enableServiceLinks: ['bool'], shareProcessNamespace: ['bool'],
-      activeDeadlineSeconds: ['int'], hostAliases: ['object[]'], runtimeClassName: ['string'], priority: ['int'],
-      preemptionPolicy: ['string'], overhead: ['object'], readinessGates: ['object[]'], os: ['object'],
-      hostPID: ['bool'], hostIPC: ['bool'], setHostnameAsFQDN: ['bool'], ephemeralContainers: ['object[]'],
+      securityContext: ['object'],
+      imagePullSecrets: ['object[]'],
+      dnsPolicy: ['string'],
+      dnsConfig: ['object'],
+      hostNetwork: ['bool'],
+      priorityClassName: ['string'],
+      schedulerName: ['string'],
+      automountServiceAccountToken: ['bool'],
+      topologySpreadConstraints: ['object[]'],
+      enableServiceLinks: ['bool'],
+      shareProcessNamespace: ['bool'],
+      activeDeadlineSeconds: ['int'],
+      hostAliases: ['object[]'],
+      runtimeClassName: ['string'],
+      priority: ['int'],
+      preemptionPolicy: ['string'],
+      overhead: ['object'],
+      readinessGates: ['object[]'],
+      os: ['object'],
+      hostPID: ['bool'],
+      hostIPC: ['bool'],
+      setHostnameAsFQDN: ['bool'],
+      ephemeralContainers: ['object[]'],
     },
     required: ['containers'],
   },
@@ -88,17 +117,35 @@ export const TYPES: Record<string, TypeDef> = {
       livenessProbe: ['Probe', 'Si falla, el kubelet reinicia el contenedor.'],
       readinessProbe: ['Probe', 'Mientras falla, el pod no recibe tráfico de los Services.'],
       startupProbe: ['Probe', 'Retrasa las otras sondas hasta que la aplicación arranca.'],
-      lifecycle: ['object'], securityContext: ['object'], stdin: ['bool'], tty: ['bool'], stdinOnce: ['bool'],
-      terminationMessagePath: ['string'], terminationMessagePolicy: ['string'], restartPolicy: ['string'], volumeDevices: ['object[]'], resizePolicy: ['object[]'],
+      lifecycle: ['object'],
+      securityContext: ['object'],
+      stdin: ['bool'],
+      tty: ['bool'],
+      stdinOnce: ['bool'],
+      terminationMessagePath: ['string'],
+      terminationMessagePolicy: ['string'],
+      restartPolicy: ['string'],
+      volumeDevices: ['object[]'],
+      resizePolicy: ['object[]'],
     },
     required: ['name', 'image'],
   },
   ContainerPort: {
-    fields: { name: ['string'], containerPort: ['int', 'Número de puerto.'], protocol: ['string', 'TCP (por defecto), UDP o SCTP.'], hostPort: ['int'], hostIP: ['string'] },
+    fields: {
+      name: ['string'],
+      containerPort: ['int', 'Número de puerto.'],
+      protocol: ['string', 'TCP (por defecto), UDP o SCTP.'],
+      hostPort: ['int'],
+      hostIP: ['string'],
+    },
     required: ['containerPort'],
   },
   EnvVar: {
-    fields: { name: ['string', 'Nombre de la variable.'], value: ['string', 'Valor (siempre texto: pon los números entre comillas).'], valueFrom: ['EnvVarSource', 'Toma el valor de un ConfigMap, Secret o campo del pod.'] },
+    fields: {
+      name: ['string', 'Nombre de la variable.'],
+      value: ['string', 'Valor (siempre texto: pon los números entre comillas).'],
+      valueFrom: ['EnvVarSource', 'Toma el valor de un ConfigMap, Secret o campo del pod.'],
+    },
     required: ['name'],
   },
   EnvVarSource: {
@@ -108,32 +155,62 @@ export const TYPES: Record<string, TypeDef> = {
   EnvFromSource: { fields: { prefix: ['string'], configMapRef: ['LocalRef'], secretRef: ['LocalRef'] } },
   LocalRef: { fields: { name: ['string'], optional: ['bool'] } },
   ResourceRequirements: {
-    fields: { requests: ['object', 'Lo que el scheduler reserva: cpu (p. ej. 100m) y memory (p. ej. 128Mi).'], limits: ['object', 'El máximo que puede usar el contenedor.'], claims: ['object[]'] },
+    fields: {
+      requests: ['object', 'Lo que el scheduler reserva: cpu (p. ej. 100m) y memory (p. ej. 128Mi).'],
+      limits: ['object', 'El máximo que puede usar el contenedor.'],
+      claims: ['object[]'],
+    },
   },
   VolumeMount: {
-    fields: { name: ['string', 'Nombre del volumen del pod.'], mountPath: ['string', 'Ruta dentro del contenedor.'], subPath: ['string'], readOnly: ['bool'], mountPropagation: ['string'], subPathExpr: ['string'], recursiveReadOnly: ['string'] },
+    fields: {
+      name: ['string', 'Nombre del volumen del pod.'],
+      mountPath: ['string', 'Ruta dentro del contenedor.'],
+      subPath: ['string'],
+      readOnly: ['bool'],
+      mountPropagation: ['string'],
+      subPathExpr: ['string'],
+      recursiveReadOnly: ['string'],
+    },
     required: ['name', 'mountPath'],
   },
   Volume: {
     fields: {
-      name: ['string'], configMap: ['object', 'Monta un ConfigMap como ficheros.'], secret: ['object', 'Monta un Secret como ficheros.'],
-      emptyDir: ['object', 'Directorio vacío que vive lo que vive el pod.'], persistentVolumeClaim: ['object', 'Monta un PVC.'],
-      hostPath: ['object'], projected: ['object'], downwardAPI: ['object'], nfs: ['object'], csi: ['object'], ephemeral: ['object'],
+      name: ['string'],
+      configMap: ['object', 'Monta un ConfigMap como ficheros.'],
+      secret: ['object', 'Monta un Secret como ficheros.'],
+      emptyDir: ['object', 'Directorio vacío que vive lo que vive el pod.'],
+      persistentVolumeClaim: ['object', 'Monta un PVC.'],
+      hostPath: ['object'],
+      projected: ['object'],
+      downwardAPI: ['object'],
+      nfs: ['object'],
+      csi: ['object'],
+      ephemeral: ['object'],
     },
     required: ['name'],
   },
   Probe: {
     doc: 'Una sonda de salud.',
     fields: {
-      httpGet: ['object', 'Petición HTTP (path, port).'], tcpSocket: ['object'], exec: ['object'], grpc: ['object'],
-      initialDelaySeconds: ['int', 'Espera antes de la primera comprobación.'], periodSeconds: ['int', 'Cada cuánto se comprueba (10 s).'],
-      timeoutSeconds: ['int'], successThreshold: ['int'], failureThreshold: ['int', 'Fallos seguidos para darla por fallida (3).'],
+      httpGet: ['object', 'Petición HTTP (path, port).'],
+      tcpSocket: ['object'],
+      exec: ['object'],
+      grpc: ['object'],
+      initialDelaySeconds: ['int', 'Espera antes de la primera comprobación.'],
+      periodSeconds: ['int', 'Cada cuánto se comprueba (10 s).'],
+      timeoutSeconds: ['int'],
+      successThreshold: ['int'],
+      failureThreshold: ['int', 'Fallos seguidos para darla por fallida (3).'],
       terminationGracePeriodSeconds: ['int'],
     },
   },
 
   // ── workloads ──
-  Deployment: { doc: 'Mantiene réplicas de un pod y gestiona sus actualizaciones.', fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['DeploymentSpec'], status: ['object'] }, required: ['spec'] },
+  Deployment: {
+    doc: 'Mantiene réplicas de un pod y gestiona sus actualizaciones.',
+    fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['DeploymentSpec'], status: ['object'] },
+    required: ['spec'],
+  },
   DeploymentSpec: {
     fields: {
       replicas: ['int', 'Número de pods deseado (1 por defecto).'],
@@ -157,69 +234,141 @@ export const TYPES: Record<string, TypeDef> = {
     },
   },
   ReplicaSet: { fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['ReplicaSetSpec'], status: ['object'] }, required: ['spec'] },
-  ReplicaSetSpec: { fields: { replicas: ['int'], selector: ['LabelSelector'], template: ['PodTemplateSpec'], minReadySeconds: ['int'] }, required: ['selector'] },
-  StatefulSet: { doc: 'Pods con identidad y almacenamiento estables.', fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['StatefulSetSpec'], status: ['object'] }, required: ['spec'] },
+  ReplicaSetSpec: {
+    fields: { replicas: ['int'], selector: ['LabelSelector'], template: ['PodTemplateSpec'], minReadySeconds: ['int'] },
+    required: ['selector'],
+  },
+  StatefulSet: {
+    doc: 'Pods con identidad y almacenamiento estables.',
+    fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['StatefulSetSpec'], status: ['object'] },
+    required: ['spec'],
+  },
   StatefulSetSpec: {
     fields: {
-      replicas: ['int'], selector: ['LabelSelector'], template: ['PodTemplateSpec'],
+      replicas: ['int'],
+      selector: ['LabelSelector'],
+      template: ['PodTemplateSpec'],
       serviceName: ['string', 'Service headless que da DNS a cada pod (pod-0.servicio).'],
       volumeClaimTemplates: ['PersistentVolumeClaim[]', 'Un PVC por pod, que sobrevive al pod.'],
       podManagementPolicy: ['string', 'OrderedReady (de uno en uno, por defecto) o Parallel.'],
-      updateStrategy: ['StatefulSetUpdateStrategy'], revisionHistoryLimit: ['int'], minReadySeconds: ['int'],
-      persistentVolumeClaimRetentionPolicy: ['object'], ordinals: ['object'],
+      updateStrategy: ['StatefulSetUpdateStrategy'],
+      revisionHistoryLimit: ['int'],
+      minReadySeconds: ['int'],
+      persistentVolumeClaimRetentionPolicy: ['object'],
+      ordinals: ['object'],
     },
     required: ['selector', 'template'],
   },
-  StatefulSetUpdateStrategy: { fields: { type: ['string', 'RollingUpdate (por defecto) u OnDelete.'], rollingUpdate: ['object', 'partition: solo se actualizan los pods con ordinal ≥ partition.'] } },
-  DaemonSet: { doc: 'Un pod en cada nodo.', fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['DaemonSetSpec'], status: ['object'] }, required: ['spec'] },
-  DaemonSetSpec: { fields: { selector: ['LabelSelector'], template: ['PodTemplateSpec'], updateStrategy: ['object'], minReadySeconds: ['int'], revisionHistoryLimit: ['int'] }, required: ['selector', 'template'] },
-  Job: { doc: 'Ejecuta pods hasta completar una tarea.', fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['JobSpec'], status: ['object'] }, required: ['spec'] },
+  StatefulSetUpdateStrategy: {
+    fields: {
+      type: ['string', 'RollingUpdate (por defecto) u OnDelete.'],
+      rollingUpdate: ['object', 'partition: solo se actualizan los pods con ordinal ≥ partition.'],
+    },
+  },
+  DaemonSet: {
+    doc: 'Un pod en cada nodo.',
+    fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['DaemonSetSpec'], status: ['object'] },
+    required: ['spec'],
+  },
+  DaemonSetSpec: {
+    fields: { selector: ['LabelSelector'], template: ['PodTemplateSpec'], updateStrategy: ['object'], minReadySeconds: ['int'], revisionHistoryLimit: ['int'] },
+    required: ['selector', 'template'],
+  },
+  Job: {
+    doc: 'Ejecuta pods hasta completar una tarea.',
+    fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['JobSpec'], status: ['object'] },
+    required: ['spec'],
+  },
   JobSpec: {
     fields: {
-      template: ['PodTemplateSpec'], completions: ['int', 'Ejecuciones con éxito necesarias (1).'], parallelism: ['int', 'Pods a la vez (1).'],
-      backoffLimit: ['int', 'Reintentos antes de marcar el Job como fallido (6).'], activeDeadlineSeconds: ['int'],
-      ttlSecondsAfterFinished: ['int', 'Borra el Job este tiempo después de terminar.'], selector: ['LabelSelector'], manualSelector: ['bool'],
-      completionMode: ['string'], suspend: ['bool'], podFailurePolicy: ['object'], backoffLimitPerIndex: ['int'], maxFailedIndexes: ['int'], podReplacementPolicy: ['string'],
+      template: ['PodTemplateSpec'],
+      completions: ['int', 'Ejecuciones con éxito necesarias (1).'],
+      parallelism: ['int', 'Pods a la vez (1).'],
+      backoffLimit: ['int', 'Reintentos antes de marcar el Job como fallido (6).'],
+      activeDeadlineSeconds: ['int'],
+      ttlSecondsAfterFinished: ['int', 'Borra el Job este tiempo después de terminar.'],
+      selector: ['LabelSelector'],
+      manualSelector: ['bool'],
+      completionMode: ['string'],
+      suspend: ['bool'],
+      podFailurePolicy: ['object'],
+      backoffLimitPerIndex: ['int'],
+      maxFailedIndexes: ['int'],
+      podReplacementPolicy: ['string'],
     },
     required: ['template'],
   },
   JobTemplateSpec: { fields: { metadata: meta, spec: ['JobSpec'] } },
-  CronJob: { doc: 'Crea Jobs según un horario cron.', fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['CronJobSpec'], status: ['object'] }, required: ['spec'] },
+  CronJob: {
+    doc: 'Crea Jobs según un horario cron.',
+    fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['CronJobSpec'], status: ['object'] },
+    required: ['spec'],
+  },
   CronJobSpec: {
     fields: {
-      schedule: ['string', 'Expresión cron de 5 campos, p. ej. "*/1 * * * *".'], jobTemplate: ['JobTemplateSpec'],
-      suspend: ['bool'], concurrencyPolicy: ['string', 'Allow, Forbid o Replace.'], startingDeadlineSeconds: ['int'],
-      successfulJobsHistoryLimit: ['int', 'Jobs terminados que se guardan (3).'], failedJobsHistoryLimit: ['int', 'Jobs fallidos que se guardan (1).'], timeZone: ['string'],
+      schedule: ['string', 'Expresión cron de 5 campos, p. ej. "*/1 * * * *".'],
+      jobTemplate: ['JobTemplateSpec'],
+      suspend: ['bool'],
+      concurrencyPolicy: ['string', 'Allow, Forbid o Replace.'],
+      startingDeadlineSeconds: ['int'],
+      successfulJobsHistoryLimit: ['int', 'Jobs terminados que se guardan (3).'],
+      failedJobsHistoryLimit: ['int', 'Jobs fallidos que se guardan (1).'],
+      timeZone: ['string'],
     },
     required: ['schedule', 'jobTemplate'],
   },
 
   // ── networking ──
-  Service: { doc: 'Un nombre y una IP estables delante de un grupo de pods.', fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['ServiceSpec'], status: ['object'] } },
+  Service: {
+    doc: 'Un nombre y una IP estables delante de un grupo de pods.',
+    fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['ServiceSpec'], status: ['object'] },
+  },
   ServiceSpec: {
     fields: {
       selector: ['map', 'Los pods con estas etiquetas reciben el tráfico.'],
       ports: ['ServicePort[]', 'Puertos del Service.'],
       type: ['string', 'ClusterIP (por defecto), NodePort, LoadBalancer o ExternalName.'],
       clusterIP: ['string', 'IP interna; "None" crea un Service headless.'],
-      clusterIPs: ['string[]'], externalName: ['string'], externalIPs: ['string[]'], sessionAffinity: ['string'],
-      loadBalancerIP: ['string'], loadBalancerSourceRanges: ['string[]'], externalTrafficPolicy: ['string'], internalTrafficPolicy: ['string'],
-      publishNotReadyAddresses: ['bool'], ipFamilies: ['string[]'], ipFamilyPolicy: ['string'], loadBalancerClass: ['string'], allocateLoadBalancerNodePorts: ['bool'],
-      healthCheckNodePort: ['int'], sessionAffinityConfig: ['object'], trafficDistribution: ['string'],
+      clusterIPs: ['string[]'],
+      externalName: ['string'],
+      externalIPs: ['string[]'],
+      sessionAffinity: ['string'],
+      loadBalancerIP: ['string'],
+      loadBalancerSourceRanges: ['string[]'],
+      externalTrafficPolicy: ['string'],
+      internalTrafficPolicy: ['string'],
+      publishNotReadyAddresses: ['bool'],
+      ipFamilies: ['string[]'],
+      ipFamilyPolicy: ['string'],
+      loadBalancerClass: ['string'],
+      allocateLoadBalancerNodePorts: ['bool'],
+      healthCheckNodePort: ['int'],
+      sessionAffinityConfig: ['object'],
+      trafficDistribution: ['string'],
     },
   },
   ServicePort: {
     fields: {
-      name: ['string'], port: ['int', 'Puerto del Service.'], targetPort: ['intstr', 'Puerto (o nombre de puerto) del contenedor.'],
-      protocol: ['string'], nodePort: ['int', 'Puerto en cada nodo (30000-32767) para NodePort y LoadBalancer.'], appProtocol: ['string'],
+      name: ['string'],
+      port: ['int', 'Puerto del Service.'],
+      targetPort: ['intstr', 'Puerto (o nombre de puerto) del contenedor.'],
+      protocol: ['string'],
+      nodePort: ['int', 'Puerto en cada nodo (30000-32767) para NodePort y LoadBalancer.'],
+      appProtocol: ['string'],
     },
     required: ['port'],
   },
-  Ingress: { doc: 'Enrutado HTTP de hosts y rutas a Services.', fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['IngressSpec'], status: ['object'] } },
+  Ingress: {
+    doc: 'Enrutado HTTP de hosts y rutas a Services.',
+    fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['IngressSpec'], status: ['object'] },
+  },
   IngressSpec: { fields: { ingressClassName: ['string'], rules: ['IngressRule[]'], tls: ['object[]'], defaultBackend: ['IngressBackend'] } },
   IngressRule: { fields: { host: ['string', 'Host HTTP, p. ej. app.local.'], http: ['HTTPIngressRuleValue'] } },
   HTTPIngressRuleValue: { fields: { paths: ['HTTPIngressPath[]'] }, required: ['paths'] },
-  HTTPIngressPath: { fields: { path: ['string'], pathType: ['string', 'Prefix, Exact o ImplementationSpecific.'], backend: ['IngressBackend'] }, required: ['pathType', 'backend'] },
+  HTTPIngressPath: {
+    fields: { path: ['string'], pathType: ['string', 'Prefix, Exact o ImplementationSpecific.'], backend: ['IngressBackend'] },
+    required: ['pathType', 'backend'],
+  },
   IngressBackend: { fields: { service: ['IngressServiceBackend'], resource: ['object'] } },
   IngressServiceBackend: { fields: { name: ['string'], port: ['object', 'number o name del puerto del Service.'] }, required: ['name'] },
   IngressClass: { fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['object'] } },
@@ -231,16 +380,42 @@ export const TYPES: Record<string, TypeDef> = {
   },
   Secret: {
     doc: 'Datos sensibles. data va en base64; stringData en claro (se convierte al guardar).',
-    fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, data: ['map', 'Valores en base64.'], stringData: ['map', 'Valores en claro.'], type: ['string', 'Opaque (por defecto), kubernetes.io/tls…'], immutable: ['bool'] },
+    fields: {
+      apiVersion: ['string'],
+      kind: ['string'],
+      metadata: meta,
+      data: ['map', 'Valores en base64.'],
+      stringData: ['map', 'Valores en claro.'],
+      type: ['string', 'Opaque (por defecto), kubernetes.io/tls…'],
+      immutable: ['bool'],
+    },
   },
   Namespace: { fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['object'], status: ['object'] } },
-  ServiceAccount: { fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, secrets: ['object[]'], imagePullSecrets: ['object[]'], automountServiceAccountToken: ['bool'] } },
-  PersistentVolumeClaim: { doc: 'Petición de almacenamiento.', fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['PersistentVolumeClaimSpec'], status: ['object'] } },
+  ServiceAccount: {
+    fields: {
+      apiVersion: ['string'],
+      kind: ['string'],
+      metadata: meta,
+      secrets: ['object[]'],
+      imagePullSecrets: ['object[]'],
+      automountServiceAccountToken: ['bool'],
+    },
+  },
+  PersistentVolumeClaim: {
+    doc: 'Petición de almacenamiento.',
+    fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, spec: ['PersistentVolumeClaimSpec'], status: ['object'] },
+  },
   PersistentVolumeClaimSpec: {
     fields: {
-      accessModes: ['string[]', 'ReadWriteOnce, ReadOnlyMany, ReadWriteMany…'], resources: ['ResourceRequirements', 'requests.storage: tamaño pedido, p. ej. 1Gi.'],
-      storageClassName: ['string', 'StorageClass (si no se indica, la de por defecto).'], volumeName: ['string'], selector: ['LabelSelector'],
-      volumeMode: ['string'], dataSource: ['object'], dataSourceRef: ['object'], volumeAttributesClassName: ['string'],
+      accessModes: ['string[]', 'ReadWriteOnce, ReadOnlyMany, ReadWriteMany…'],
+      resources: ['ResourceRequirements', 'requests.storage: tamaño pedido, p. ej. 1Gi.'],
+      storageClassName: ['string', 'StorageClass (si no se indica, la de por defecto).'],
+      volumeName: ['string'],
+      selector: ['LabelSelector'],
+      volumeMode: ['string'],
+      dataSource: ['object'],
+      dataSourceRef: ['object'],
+      volumeAttributesClassName: ['string'],
     },
   },
   PersistentVolume: {
@@ -248,12 +423,33 @@ export const TYPES: Record<string, TypeDef> = {
   },
   PersistentVolumeSpec: {
     fields: {
-      capacity: ['object'], accessModes: ['string[]'], persistentVolumeReclaimPolicy: ['string'], storageClassName: ['string'],
-      claimRef: ['object'], hostPath: ['object'], local: ['object'], nfs: ['object'], csi: ['object'], nodeAffinity: ['object'], volumeMode: ['string'], mountOptions: ['string[]'],
+      capacity: ['object'],
+      accessModes: ['string[]'],
+      persistentVolumeReclaimPolicy: ['string'],
+      storageClassName: ['string'],
+      claimRef: ['object'],
+      hostPath: ['object'],
+      local: ['object'],
+      nfs: ['object'],
+      csi: ['object'],
+      nodeAffinity: ['object'],
+      volumeMode: ['string'],
+      mountOptions: ['string[]'],
     },
   },
   StorageClass: {
-    fields: { apiVersion: ['string'], kind: ['string'], metadata: meta, provisioner: ['string'], parameters: ['map'], reclaimPolicy: ['string'], volumeBindingMode: ['string'], allowVolumeExpansion: ['bool'], mountOptions: ['string[]'], allowedTopologies: ['object[]'] },
+    fields: {
+      apiVersion: ['string'],
+      kind: ['string'],
+      metadata: meta,
+      provisioner: ['string'],
+      parameters: ['map'],
+      reclaimPolicy: ['string'],
+      volumeBindingMode: ['string'],
+      allowVolumeExpansion: ['bool'],
+      mountOptions: ['string[]'],
+      allowedTopologies: ['object[]'],
+    },
     required: ['provisioner'],
   },
   HorizontalPodAutoscaler: {
@@ -263,9 +459,11 @@ export const TYPES: Record<string, TypeDef> = {
   HorizontalPodAutoscalerSpec: {
     fields: {
       scaleTargetRef: ['object', 'El Deployment o StatefulSet que escala (apiVersion, kind, name).'],
-      minReplicas: ['int'], maxReplicas: ['int'],
+      minReplicas: ['int'],
+      maxReplicas: ['int'],
       metrics: ['object[]', 'Métricas: type Resource, resource.name cpu, target.averageUtilization.'],
-      targetCPUUtilizationPercentage: ['int', '(autoscaling/v1) % de CPU objetivo.'], behavior: ['object'],
+      targetCPUUtilizationPercentage: ['int', '(autoscaling/v1) % de CPU objetivo.'],
+      behavior: ['object'],
     },
     required: ['maxReplicas', 'scaleTargetRef'],
   },
@@ -294,7 +492,10 @@ function walk(type: string, v: Json, path: string, errs: SchemaError[], parentTy
   if (v === null || v === undefined) return;
   if (type.endsWith('[]')) {
     if (!Array.isArray(v)) {
-      errs.push({ path, message: `cannot unmarshal ${jsonKind(v)} into Go struct field ${parentType}.${path} of type []${goTypeName(type.slice(0, -2)) === 'string' ? 'string' : 'v1.' + type.slice(0, -2)}` });
+      errs.push({
+        path,
+        message: `cannot unmarshal ${jsonKind(v)} into Go struct field ${parentType}.${path} of type []${goTypeName(type.slice(0, -2)) === 'string' ? 'string' : 'v1.' + type.slice(0, -2)}`,
+      });
       return;
     }
     v.forEach((item) => walk(type.slice(0, -2), item, path, errs, parentType));
@@ -302,7 +503,8 @@ function walk(type: string, v: Json, path: string, errs: SchemaError[], parentTy
   }
   const scalar = SCALAR_GO[type];
   if (scalar) {
-    const ok = type === 'string' ? typeof v === 'string' : type === 'bool' ? typeof v === 'boolean' : typeof v === 'number' && (type !== 'int' || Number.isInteger(v));
+    const ok =
+      type === 'string' ? typeof v === 'string' : type === 'bool' ? typeof v === 'boolean' : typeof v === 'number' && (type !== 'int' || Number.isInteger(v));
     if (!ok) errs.push({ path, message: `cannot unmarshal ${jsonKind(v)} into Go struct field ${parentType}.${path} of type ${scalar}` });
     return;
   }
@@ -312,12 +514,14 @@ function walk(type: string, v: Json, path: string, errs: SchemaError[], parentTy
       return;
     }
     for (const [k, val] of Object.entries(v)) {
-      if (typeof val !== 'string') errs.push({ path: `${path}.${k}`, message: `cannot unmarshal ${jsonKind(val)} into Go struct field ${parentType}.${path} of type string` });
+      if (typeof val !== 'string')
+        errs.push({ path: `${path}.${k}`, message: `cannot unmarshal ${jsonKind(val)} into Go struct field ${parentType}.${path} of type string` });
     }
     return;
   }
   if (type === 'intstr') {
-    if (typeof v !== 'string' && typeof v !== 'number') errs.push({ path, message: `cannot unmarshal ${jsonKind(v)} into Go value of type intstr.IntOrString` });
+    if (typeof v !== 'string' && typeof v !== 'number')
+      errs.push({ path, message: `cannot unmarshal ${jsonKind(v)} into Go value of type intstr.IntOrString` });
     return;
   }
   if (type === 'quantity' || type === 'any' || type === 'object' || type === 'object[]') return;

@@ -42,7 +42,8 @@ export function parseManifests(text: string, file: string): Doc[] {
 
 function yamlMessage(m: string): string {
   const first = m.split('\n')[0].replace(/ at line \d+, column \d+:?$/, '');
-  if (/Implicit map keys need to be followed by map values|Nested mappings are not allowed/.test(first)) return 'mapping values are not allowed in this context';
+  if (/Implicit map keys need to be followed by map values|Nested mappings are not allowed/.test(first))
+    return 'mapping values are not allowed in this context';
   if (/All mapping items must start at the same column|Implicit keys need to be on a single line/.test(first)) return 'did not find expected key';
   if (/Tabs are not allowed/.test(first)) return 'found character that cannot start any token';
   if (/Map keys must be unique/.test(first)) return first;
@@ -54,7 +55,8 @@ export function clientValidate(doc: Doc): string | undefined {
   const missing: string[] = [];
   if (!doc.obj.apiVersion) missing.push('apiVersion not set');
   if (!doc.obj.kind) missing.push('kind not set');
-  if (missing.length) return `error: error validating "${doc.file}": error validating data: [${missing.join(', ')}]; if you choose to ignore these errors, turn validation off with --validate=false`;
+  if (missing.length)
+    return `error: error validating "${doc.file}": error validating data: [${missing.join(', ')}]; if you choose to ignore these errors, turn validation off with --validate=false`;
   return undefined;
 }
 

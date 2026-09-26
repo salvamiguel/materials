@@ -7,6 +7,7 @@ import HclEditor from './HclEditor';
 import Terminal, { type TermEntry } from '../shared/Terminal';
 import ZoomControl, { usePlaygroundZoom, zoomStyle } from '../shared/Zoom';
 import { shellSplit } from '../shared/shell';
+import { decodeShare, encodeShare } from '../shared/share';
 import { colorizeOutput } from './highlight';
 import GraphView from './GraphView';
 import StatePanel from './StatePanel';
@@ -36,22 +37,6 @@ function save(key: string, value: unknown) {
   } catch {
     // private mode / quota: the playground still works, it just forgets
   }
-}
-
-async function encodeShare(files: Record<string, string>): Promise<string> {
-  const stream = new Blob([JSON.stringify(files)]).stream().pipeThrough(new CompressionStream('deflate-raw'));
-  const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
-  let bin = '';
-  bytes.forEach((b) => (bin += String.fromCharCode(b)));
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-async function decodeShare(code: string): Promise<Record<string, string>> {
-  const b64 = code.replace(/-/g, '+').replace(/_/g, '/');
-  const bin = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
-  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
-  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-  return JSON.parse(await new Response(stream).text());
 }
 
 const HELP = `Comandos disponibles (el prefijo "terraform" es opcional):

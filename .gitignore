@@ -25,3 +25,7 @@ yarn-error.log*
 /static/tfplay/wasm_exec.js
 /tools/tfplay/schemagen
 /tools/tfplay/tfplay
+
+# Kubernetes playground engine (built by `bun run build:wasm`)
+/static/k8splay/k8splay.wasm*
+/static/k8splay/wasm_exec.js

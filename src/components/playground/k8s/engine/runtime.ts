@@ -47,36 +47,133 @@ const NGINX_LOGS = [
 
 const IMAGES: [RegExp, ImageInfo][] = [
   [/^(docker\.io\/)?(library\/)?nginx(:|$)|nginxinc\/nginx-unprivileged/, { ports: [80], mode: 'server', logs: () => NGINX_LOGS, pullMs: 2500 }],
-  [/^(docker\.io\/)?(library\/)?httpd(:|$)/, { ports: [80], mode: 'server', logs: () => ['AH00558: httpd: Could not reliably determine the server\'s fully qualified domain name', '[mpm_event:notice] AH00489: Apache/2.4.62 (Unix) configured -- resuming normal operations'], pullMs: 2200 }],
+  [
+    /^(docker\.io\/)?(library\/)?httpd(:|$)/,
+    {
+      ports: [80],
+      mode: 'server',
+      logs: () => [
+        "AH00558: httpd: Could not reliably determine the server's fully qualified domain name",
+        '[mpm_event:notice] AH00489: Apache/2.4.62 (Unix) configured -- resuming normal operations',
+      ],
+      pullMs: 2200,
+    },
+  ],
   [/traefik\/whoami/, { ports: [80], mode: 'server', logs: () => ['{T} Starting up on port 80'], pullMs: 1200 }],
   [/hashicorp\/http-echo/, { ports: [5678], mode: 'server', logs: () => ['{T} [INFO] server is listening on :5678'], pullMs: 1200 }],
   [/podinfo/, { ports: [9898], mode: 'server', logs: () => ['{"level":"info","msg":"Starting podinfo","port":"9898"}'], pullMs: 2000 }],
   [/google-samples\/hello-app|gcr\.io\/google-samples/, { ports: [8080], mode: 'server', logs: () => ['{T} Server listening on port 8080'], pullMs: 1800 }],
   [/echoserver|echo-server|http-https-echo/, { ports: [8080], mode: 'server', logs: () => ['Listening on port 8080.'], pullMs: 1800 }],
-  [/^(docker\.io\/)?(library\/)?redis(:|$)|bitnami\/redis/, { ports: [6379], mode: 'forever', logs: () => ['1:C {T} # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo', '1:M {T} * Ready to accept connections tcp'], pullMs: 2200 }],
-  [/^(docker\.io\/)?(library\/)?postgres(:|$)|bitnami\/postgresql/, {
-    ports: [5432], mode: 'forever', pullMs: 3500,
-    logs: () => ['PostgreSQL init process complete; ready for start up.', '{T} UTC [1] LOG:  database system is ready to accept connections'],
-    requires: { any: ['POSTGRES_PASSWORD', 'POSTGRES_HOST_AUTH_METHOD'], log: ['Error: Database is uninitialized and superuser password is not specified.', '       You must specify POSTGRES_PASSWORD to a non-empty value for the', '       superuser. For example, "-e POSTGRES_PASSWORD=password" on "docker run".'] },
-  }],
-  [/^(docker\.io\/)?(library\/)?(mysql|mariadb)(:|$)/, {
-    ports: [3306], mode: 'forever', pullMs: 4000,
-    logs: () => ['{T} 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: \'8.4.2\'  socket: \'/var/run/mysqld/mysqld.sock\'  port: 3306'],
-    requires: { any: ['MYSQL_ROOT_PASSWORD', 'MYSQL_ALLOW_EMPTY_PASSWORD', 'MYSQL_RANDOM_ROOT_PASSWORD', 'MARIADB_ROOT_PASSWORD'], log: ['{T} [ERROR] [Entrypoint]: Database is uninitialized and password option is not specified', '    You need to specify one of the following as an environment variable:', '    - MYSQL_ROOT_PASSWORD', '    - MYSQL_ALLOW_EMPTY_PASSWORD', '    - MYSQL_RANDOM_ROOT_PASSWORD'] },
-  }],
-  [/^(docker\.io\/)?(library\/)?mongo(:|$)/, { ports: [27017], mode: 'forever', logs: () => ['{"t":{"$date":"{T}"},"s":"I","c":"NETWORK","msg":"Waiting for connections","attr":{"port":27017}}'], pullMs: 3500 }],
+  [
+    /^(docker\.io\/)?(library\/)?redis(:|$)|bitnami\/redis/,
+    {
+      ports: [6379],
+      mode: 'forever',
+      logs: () => ['1:C {T} # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo', '1:M {T} * Ready to accept connections tcp'],
+      pullMs: 2200,
+    },
+  ],
+  [
+    /^(docker\.io\/)?(library\/)?postgres(:|$)|bitnami\/postgresql/,
+    {
+      ports: [5432],
+      mode: 'forever',
+      pullMs: 3500,
+      logs: () => ['PostgreSQL init process complete; ready for start up.', '{T} UTC [1] LOG:  database system is ready to accept connections'],
+      requires: {
+        any: ['POSTGRES_PASSWORD', 'POSTGRES_HOST_AUTH_METHOD'],
+        log: [
+          'Error: Database is uninitialized and superuser password is not specified.',
+          '       You must specify POSTGRES_PASSWORD to a non-empty value for the',
+          '       superuser. For example, "-e POSTGRES_PASSWORD=password" on "docker run".',
+        ],
+      },
+    },
+  ],
+  [
+    /^(docker\.io\/)?(library\/)?(mysql|mariadb)(:|$)/,
+    {
+      ports: [3306],
+      mode: 'forever',
+      pullMs: 4000,
+      logs: () => [
+        "{T} 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.4.2'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306",
+      ],
+      requires: {
+        any: ['MYSQL_ROOT_PASSWORD', 'MYSQL_ALLOW_EMPTY_PASSWORD', 'MYSQL_RANDOM_ROOT_PASSWORD', 'MARIADB_ROOT_PASSWORD'],
+        log: [
+          '{T} [ERROR] [Entrypoint]: Database is uninitialized and password option is not specified',
+          '    You need to specify one of the following as an environment variable:',
+          '    - MYSQL_ROOT_PASSWORD',
+          '    - MYSQL_ALLOW_EMPTY_PASSWORD',
+          '    - MYSQL_RANDOM_ROOT_PASSWORD',
+        ],
+      },
+    },
+  ],
+  [
+    /^(docker\.io\/)?(library\/)?mongo(:|$)/,
+    {
+      ports: [27017],
+      mode: 'forever',
+      logs: () => ['{"t":{"$date":"{T}"},"s":"I","c":"NETWORK","msg":"Waiting for connections","attr":{"port":27017}}'],
+      pullMs: 3500,
+    },
+  ],
   [/^(docker\.io\/)?(library\/)?(rabbitmq|memcached)(:|$)/, { ports: [5672, 11211], mode: 'forever', logs: () => ['Server startup complete'], pullMs: 2500 }],
-  [/coredns/, { ports: [53, 9153], mode: 'forever', logs: () => ['.:53', '[INFO] plugin/reload: Running configuration SHA512 = 591cf328cccc12bc490481273e738df59329c62c0b729d94e8b61db9961c2fa5', 'CoreDNS-1.11.3', 'linux/amd64, go1.21.11, a6338e9'], pullMs: 1500 }],
-  [/ingress-nginx\/controller/, { ports: [80, 443], mode: 'server', logs: () => ['-------------------------------------------------------------------------------', 'NGINX Ingress controller', '  Release:       v1.11.2', '-------------------------------------------------------------------------------', 'I0926 {T} 7 main.go:205] "Creating API client" host="https://10.96.0.1:443"', 'I0926 {T} 7 controller.go:213] "Backend successfully reloaded"'], pullMs: 3000 }],
-  [/metrics-server/, { ports: [10250], mode: 'forever', logs: () => ['I0926 {T} 1 serving.go:374] Generated self-signed cert', 'I0926 {T} 1 secure_serving.go:213] Serving securely on [::]:10250'], pullMs: 1500 }],
-  [/kube-proxy|kindnet|local-path-provisioner|etcd|kube-apiserver|kube-controller-manager|kube-scheduler/, { ports: [], mode: 'forever', logs: () => ['I0926 {T} 1 server.go:484] "Version info" version="v1.33.1"'], pullMs: 800 }],
-  [/^(docker\.io\/)?(library\/)?(busybox|alpine|ubuntu|debian|centos|fedora|curlimages\/curl|bash)(:|$)|nicolaka\/netshoot/, { ports: [], mode: 'exit', logs: () => [], pullMs: 900 }],
+  [
+    /coredns/,
+    {
+      ports: [53, 9153],
+      mode: 'forever',
+      logs: () => [
+        '.:53',
+        '[INFO] plugin/reload: Running configuration SHA512 = 591cf328cccc12bc490481273e738df59329c62c0b729d94e8b61db9961c2fa5',
+        'CoreDNS-1.11.3',
+        'linux/amd64, go1.21.11, a6338e9',
+      ],
+      pullMs: 1500,
+    },
+  ],
+  [
+    /ingress-nginx\/controller/,
+    {
+      ports: [80, 443],
+      mode: 'server',
+      logs: () => [
+        '-------------------------------------------------------------------------------',
+        'NGINX Ingress controller',
+        '  Release:       v1.11.2',
+        '-------------------------------------------------------------------------------',
+        'I0926 {T} 7 main.go:205] "Creating API client" host="https://10.96.0.1:443"',
+        'I0926 {T} 7 controller.go:213] "Backend successfully reloaded"',
+      ],
+      pullMs: 3000,
+    },
+  ],
+  [
+    /metrics-server/,
+    {
+      ports: [10250],
+      mode: 'forever',
+      logs: () => ['I0926 {T} 1 serving.go:374] Generated self-signed cert', 'I0926 {T} 1 secure_serving.go:213] Serving securely on [::]:10250'],
+      pullMs: 1500,
+    },
+  ],
+  [
+    /kube-proxy|kindnet|local-path-provisioner|etcd|kube-apiserver|kube-controller-manager|kube-scheduler/,
+    { ports: [], mode: 'forever', logs: () => ['I0926 {T} 1 server.go:484] "Version info" version="v1.33.1"'], pullMs: 800 },
+  ],
+  [
+    /^(docker\.io\/)?(library\/)?(busybox|alpine|ubuntu|debian|centos|fedora|curlimages\/curl|bash)(:|$)|nicolaka\/netshoot/,
+    { ports: [], mode: 'exit', logs: () => [], pullMs: 900 },
+  ],
   [/^(docker\.io\/)?(library\/)?(python|node|golang|ruby|openjdk|eclipse-temurin)(:|$)/, { ports: [], mode: 'exit', logs: () => [], pullMs: 3500 }],
   [/^(docker\.io\/)?(library\/)?perl(:|$)/, { ports: [], mode: 'exit', logs: () => [], pullMs: 3000 }],
 ];
 
 // Tags and names that don't exist, to practise ImagePullBackOff.
-const BAD_TAG = /(^|[-_.])(does-?not-?exist|nonexistent|notfound|not-found|typo|missing|bad|broken-pull|999\.\d+)([-_.]|$)/i;
+const BAD_TAG = /(^|[-_.])(does-?not-?exist|nonexistent|notfound|not-found|typo|missing|bad|broken-pull|no-?existe|inexistente|falsa|mala|999\.\d+)([-_.]|$)/i;
 const TYPOS = /^(ngnix|nignx|ngix|nginxx|busybxo|bussybox|redis-server|postgress|mongodb)(:|$)/i;
 
 export function imageInfo(image: string): ImageInfo | undefined {
@@ -113,7 +210,8 @@ export function commandLine(c: Json): string {
   return parts.join(' ');
 }
 
-const PI = '3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593344612847564823378678316527120190914564856692346034861045432664821339360726024914127372458700660631558817488152092096282925409171536436789259036001133053054882046652138414695194151160943305727036575959195309218611738193261179310511854807446237996274956735188575272489122793818301194912';
+const PI =
+  '3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593344612847564823378678316527120190914564856692346034861045432664821339360726024914127372458700660631558817488152092096282925409171536436789259036001133053054882046652138414695194151160943305727036575959195309218611738193261179310511854807446237996274956735188575272489122793818301194912';
 
 /** Very small interpreter for the scripts people put in manifests. */
 function interpret(script: string, env: Record<string, string>, now: number): Pick<Program, 'mode' | 'runMs' | 'exitCode' | 'startLogs' | 'loop' | 'exitLogs'> {
@@ -121,7 +219,11 @@ function interpret(script: string, env: Record<string, string>, now: number): Pi
   const out: string[] = [];
   let runMs = 800;
   const loopM = /while\s+(true|:|\[\s*1\s*\]);?\s*do\s+([\s\S]*?);?\s*done/.exec(script);
-  const stmts = (s: string) => s.split(/;|&&|\n/).map((x) => x.trim()).filter(Boolean);
+  const stmts = (s: string) =>
+    s
+      .split(/;|&&|\n/)
+      .map((x) => x.trim())
+      .filter(Boolean);
   const echo = (st: string): string | undefined => {
     const m = /^(?:echo|printf)\s+(?:-[en]\s+)?(.*)$/.exec(st);
     if (!m) return undefined;
@@ -140,7 +242,13 @@ function interpret(script: string, env: Record<string, string>, now: number): Pi
     } else if (/^exit\s+(\d+)/.test(st)) {
       return { mode: 'exit', runMs, exitCode: parseInt(/^exit\s+(\d+)/.exec(st)![1], 10), startLogs: [], exitLogs: out };
     } else if (/^(false|cat \/nonexistent)/.test(st)) {
-      return { mode: 'exit', runMs, exitCode: 1, startLogs: [], exitLogs: [...out, st.startsWith('cat') ? `cat: can't open '/nonexistent': No such file or directory` : ''].filter(Boolean) };
+      return {
+        mode: 'exit',
+        runMs,
+        exitCode: 1,
+        startLogs: [],
+        exitLogs: [...out, st.startsWith('cat') ? `cat: can't open '/nonexistent': No such file or directory` : ''].filter(Boolean),
+      };
     }
   }
   if (loopM) {
@@ -153,7 +261,14 @@ function interpret(script: string, env: Record<string, string>, now: number): Pi
       const s = /^sleep\s+([\d.]+)/.exec(st);
       if (s) period = parseFloat(s[1]) * 1000;
     }
-    return { mode: 'forever', runMs: 0, exitCode: 0, startLogs: out, loop: lines.length ? { periodMs: Math.max(500, period), lines } : undefined, exitLogs: [] };
+    return {
+      mode: 'forever',
+      runMs: 0,
+      exitCode: 0,
+      startLogs: out,
+      loop: lines.length ? { periodMs: Math.max(500, period), lines } : undefined,
+      exitLogs: [],
+    };
   }
   return { mode: 'exit', runMs, exitCode: 0, startLogs: [], exitLogs: out };
 }
@@ -182,12 +297,17 @@ export function containerEnv(cl: Cluster, pod: Obj, c: Json): Record<string, str
     } else if (e.valueFrom?.fieldRef) {
       const f = e.valueFrom.fieldRef.fieldPath;
       env[e.name] =
-        f === 'metadata.name' ? pod.metadata.name
-        : f === 'metadata.namespace' ? ns
-        : f === 'status.podIP' ? pod.status?.podIP || ''
-        : f === 'spec.nodeName' ? pod.spec?.nodeName || ''
-        : f.startsWith('metadata.labels[') ? pod.metadata.labels?.[f.slice(17, -2)] ?? ''
-        : '';
+        f === 'metadata.name'
+          ? pod.metadata.name
+          : f === 'metadata.namespace'
+            ? ns
+            : f === 'status.podIP'
+              ? pod.status?.podIP || ''
+              : f === 'spec.nodeName'
+                ? pod.spec?.nodeName || ''
+                : f.startsWith('metadata.labels[')
+                  ? (pod.metadata.labels?.[f.slice(17, -2)] ?? '')
+                  : '';
     }
   }
   return env;
@@ -202,7 +322,8 @@ export function program(cl: Cluster, pod: Obj, c: Json): Program {
     pullMs: info?.pullMs ?? 2500,
     pullError: pullError(c.image || ''),
   };
-  const stamp = (lines: string[]) => lines.map((l) => l.replace(/\{T\}/g, new Date(cl.now).toISOString().replace('T', ' ').slice(0, 19)).replace(/\{V\}/g, nginxVersion(c.image)));
+  const stamp = (lines: string[]) =>
+    lines.map((l) => l.replace(/\{T\}/g, new Date(cl.now).toISOString().replace('T', ' ').slice(0, 19)).replace(/\{V\}/g, nginxVersion(c.image)));
 
   if (hasCmd || info?.mode === 'exit') {
     const r = interpret(script, env, cl.now);
@@ -218,7 +339,15 @@ export function program(cl: Cluster, pod: Obj, c: Json): Program {
   if (info) return { ...base, mode: info.mode, ports: serverPorts(c, info), runMs: 0, exitCode: 0, startLogs: stamp(info.logs(c)), exitLogs: [] };
   // Unknown image: a web app listening where it says it listens.
   const declared = (c.ports || []).map((p: Json) => p.containerPort).filter(Boolean);
-  return { ...base, mode: 'server', ports: declared.length ? declared : [8080], runMs: 0, exitCode: 0, startLogs: [`Listening on :${declared[0] || 8080}`], exitLogs: [] };
+  return {
+    ...base,
+    mode: 'server',
+    ports: declared.length ? declared : [8080],
+    runMs: 0,
+    exitCode: 0,
+    startLogs: [`Listening on :${declared[0] || 8080}`],
+    exitLogs: [],
+  };
 }
 
 function serverPorts(c: Json, info: ImageInfo): number[] {
@@ -295,12 +424,15 @@ export function httpAnswer(cl: Cluster, pod: Obj, port: number, path: string, ho
             : `<!DOCTYPE html>\n<html>\n<head>\n<title>Welcome to nginx!</title>\n</head>\n<body>\n<h1>Welcome to nginx!</h1>\n<p>If you see this page, the nginx web server is successfully installed and\nworking. Further configuration is required.</p>\n<p><em>Thank you for using nginx.</em></p>\n</body>\n</html>\n`,
         };
       }
-      return { status: 404, body: `<html>\n<head><title>404 Not Found</title></head>\n<body>\n<center><h1>404 Not Found</h1></center>\n<hr><center>nginx/${nginxVersion(img)}</center>\n</body>\n</html>\n` };
+      return {
+        status: 404,
+        body: `<html>\n<head><title>404 Not Found</title></head>\n<body>\n<center><h1>404 Not Found</h1></center>\n<hr><center>nginx/${nginxVersion(img)}</center>\n</body>\n</html>\n`,
+      };
     }
     if (/http-echo/.test(img)) {
       const all: string[] = [...(c.command || []), ...(c.args || [])].map(String);
       const i = all.findIndex((a) => /^--?text(=|$)/.test(a));
-      const text = i < 0 ? 'hello-world' : all[i].includes('=') ? all[i].slice(all[i].indexOf('=') + 1) : all[i + 1] ?? '';
+      const text = i < 0 ? 'hello-world' : all[i].includes('=') ? all[i].slice(all[i].indexOf('=') + 1) : (all[i + 1] ?? '');
       return { status: 200, body: text.replace(/\$\((\w+)\)/g, (_, v) => env[v] ?? '') + '\n' };
     }
     if (/whoami/.test(img)) {
@@ -312,13 +444,36 @@ export function httpAnswer(cl: Cluster, pod: Obj, port: number, path: string, ho
     if (/podinfo/.test(img)) {
       const color = env.PODINFO_UI_COLOR || '#34577c';
       const msg = env.PODINFO_UI_MESSAGE || `greetings from podinfo v${imageTag(img).replace(/^v/, '')}`;
-      return { status: 200, body: JSON.stringify({ hostname: pod.metadata.name, version: imageTag(img).replace(/^v/, ''), revision: '', color, logo: 'https://raw.githubusercontent.com/stefanprodan/podinfo/gh-pages/cuddle_clap.gif', message: msg, goos: 'linux', goarch: 'amd64', runtime: 'go1.23.2', num_goroutine: '8', num_cpu: '4' }, null, 2) + '\n' };
+      return {
+        status: 200,
+        body:
+          JSON.stringify(
+            {
+              hostname: pod.metadata.name,
+              version: imageTag(img).replace(/^v/, ''),
+              revision: '',
+              color,
+              logo: 'https://raw.githubusercontent.com/stefanprodan/podinfo/gh-pages/cuddle_clap.gif',
+              message: msg,
+              goos: 'linux',
+              goarch: 'amd64',
+              runtime: 'go1.23.2',
+              num_goroutine: '8',
+              num_cpu: '4',
+            },
+            null,
+            2,
+          ) + '\n',
+      };
     }
     if (/hello-app|google-samples/.test(img)) {
       return { status: 200, body: `Hello, world!\nVersion: ${imageTag(img).replace(/^v/, '')}.0.0\nHostname: ${pod.metadata.name}\n` };
     }
     if (/echoserver|echo-server/.test(img)) {
-      return { status: 200, body: `Hostname: ${pod.metadata.name}\n\nRequest Information:\n\tmethod=GET\n\treal path=${path}\n\trequest_uri=http://${host}:8080${path}\n` };
+      return {
+        status: 200,
+        body: `Hostname: ${pod.metadata.name}\n\nRequest Information:\n\tmethod=GET\n\treal path=${path}\n\trequest_uri=http://${host}:8080${path}\n`,
+      };
     }
     const msg = env.MESSAGE || env.GREETING || env.APP_MESSAGE;
     const version = env.VERSION || env.APP_VERSION || imageTag(img);

@@ -44,7 +44,10 @@ const ok = (output: string): ShellResult => ({ output, exitCode: 0 });
 /** Text filters for pipes. */
 function filter(cmd: string[], input: string): { output: string; exitCode: number } {
   const [name, ...a] = cmd;
-  const lines = input.replace(/\n$/, '').split('\n').filter((_, i, arr) => !(arr.length === 1 && arr[0] === ''));
+  const lines = input
+    .replace(/\n$/, '')
+    .split('\n')
+    .filter((_, i, arr) => !(arr.length === 1 && arr[0] === ''));
   const out = (ls: string[]) => ({ output: ls.length ? ls.join('\n') + '\n' : '', exitCode: 0 });
   switch (name) {
     case 'grep': {
@@ -69,7 +72,9 @@ function filter(cmd: string[], input: string): { output: string; exitCode: numbe
     case 'wc':
       return { output: `${a.includes('-l') ? lines.length : input.length}\n`, exitCode: 0 };
     case 'sort':
-      return out(a.includes('-r') ? [...lines].sort().reverse() : a.includes('-n') ? [...lines].sort((x, y) => parseFloat(x) - parseFloat(y)) : [...lines].sort());
+      return out(
+        a.includes('-r') ? [...lines].sort().reverse() : a.includes('-n') ? [...lines].sort((x, y) => parseFloat(x) - parseFloat(y)) : [...lines].sort(),
+      );
     case 'uniq': {
       const res: [string, number][] = [];
       for (const l of lines) {
@@ -169,14 +174,18 @@ async function simple(line: string, ctx: ShellCtx): Promise<ShellResult> {
     case 'nslookup':
     case 'dig':
     case 'host':
-      return { output: `;; connection timed out; no servers could be reached\n\n(Estás fuera del clúster: el DNS interno (${rest[0] || 'servicio'}.default.svc.cluster.local) solo resuelve dentro de un pod. Prueba: kubectl run tmp --rm -it --image=busybox -- nslookup ${rest[0] || 'web'})\n`, exitCode: 1 };
+      return {
+        output: `;; connection timed out; no servers could be reached\n\n(Estás fuera del clúster: el DNS interno (${rest[0] || 'servicio'}.default.svc.cluster.local) solo resuelve dentro de un pod. Prueba: kubectl run tmp --rm -it --image=busybox -- nslookup ${rest[0] || 'web'})\n`,
+        exitCode: 1,
+      };
     case 'echo':
       return ok(rest.join(' ') + '\n');
     case 'ls': {
       const dir = (rest.find((x) => !x.startsWith('-')) || '').replace(/^\.\/?/, '').replace(/\/$/, '');
       const prefix = dir ? dir + '/' : '';
       const names = new Set<string>();
-      for (const f of Object.keys(ctx.files)) if (f.startsWith(prefix)) names.add(f.slice(prefix.length).split('/')[0] + (f.slice(prefix.length).includes('/') ? '/' : ''));
+      for (const f of Object.keys(ctx.files))
+        if (f.startsWith(prefix)) names.add(f.slice(prefix.length).split('/')[0] + (f.slice(prefix.length).includes('/') ? '/' : ''));
       if (!names.size) return { output: `ls: cannot access '${dir}': No such file or directory\n`, exitCode: 2 };
       return ok([...names].sort().join('\n') + '\n');
     }
@@ -323,9 +332,17 @@ function finish(r: ShellResult, redirect: { file: string; append: boolean } | un
   if (redirect.file === '/dev/null') return { ...r, output: '' };
   // Error lines stay on the terminal (stderr); the rest goes to the file.
   const errLines = r.output.split('\n').filter((x) => /^(error|Error from server|warning)/i.test(x));
-  const body = r.output.split('\n').filter((x) => !/^(error|Error from server|warning)/i.test(x)).join('\n');
+  const body = r.output
+    .split('\n')
+    .filter((x) => !/^(error|Error from server|warning)/i.test(x))
+    .join('\n');
   const prev = redirect.append ? ctx.files[redirect.file] || '' : '';
-  return { ...r, output: errLines.length ? errLines.join('\n') + '\n' : '', writeFiles: { ...(r.writeFiles || {}), [redirect.file]: prev + body }, openFile: redirect.file };
+  return {
+    ...r,
+    output: errLines.length ? errLines.join('\n') + '\n' : '',
+    writeFiles: { ...(r.writeFiles || {}), [redirect.file]: prev + body },
+    openFile: redirect.file,
+  };
 }
 
 export { KUBECTL_HELP };

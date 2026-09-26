@@ -6,6 +6,7 @@ title: "Estrategias de Despliegue"
 import LabActions from '@site/src/components/shared/LabActions';
 import BlueGreenSwitcher from '@site/src/components/demos/gitops/BlueGreenSwitcher';
 import CanaryDeploySlider from '@site/src/components/demos/gitops/CanaryDeploySlider';
+import K8sPlaygroundLink from '@site/src/components/shared/K8sPlaygroundLink';
 
 # Estrategias de Despliegue
 
@@ -39,6 +40,13 @@ El repositorio [gitops-status-demo-config](https://github.com/salvamiguel/gitops
 
 Puedes probarlos en local con `kind` y `make rollouts`.
 :::
+
+Puedes ver las cuatro en marcha, con Kubernetes nativo, en el playground: el diagrama muestra cómo conviven (o no) los pods de cada versión.
+
+<K8sPlaygroundLink example="rolling">Rolling update</K8sPlaygroundLink>
+<K8sPlaygroundLink example="recreate">Recreate</K8sPlaygroundLink>
+<K8sPlaygroundLink example="bluegreen">Blue/green con un Service</K8sPlaygroundLink>
+<K8sPlaygroundLink example="canary">Canary por número de réplicas</K8sPlaygroundLink>
 
 ## 2. Rolling Update (Kubernetes nativo)
 

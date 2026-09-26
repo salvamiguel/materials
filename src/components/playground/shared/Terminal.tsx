@@ -46,6 +46,8 @@ interface Props {
   insert?: { text: string; seq: number };
   /** Wrap long lines instead of scrolling sideways. */
   wrap?: boolean;
+  /** Ctrl+C: stop the command that is running. */
+  onInterrupt?: () => void;
 }
 
 function Output({ text, colorize, wrap }: { text: string; colorize: (text: string) => OutLine[]; wrap: boolean }) {
@@ -83,6 +85,7 @@ export default function Terminal({
   secret = false,
   insert,
   wrap = false,
+  onInterrupt,
 }: Props) {
   const [input, setInput] = useState('');
   const [histIdx, setHistIdx] = useState<number | null>(null);
@@ -127,6 +130,10 @@ export default function Terminal({
     } else if (e.key === 'l' && e.ctrlKey) {
       e.preventDefault();
       onCommand('clear');
+    } else if (e.key === 'c' && e.ctrlKey && onInterrupt && !window.getSelection()?.toString() && e.currentTarget.selectionStart === e.currentTarget.selectionEnd) {
+      e.preventDefault();
+      setInput('');
+      onInterrupt();
     }
   };
 

@@ -22,7 +22,12 @@ export function jobController(cl: Cluster) {
     const uid = job.metadata.uid;
     // Admission-time labels and selector.
     if (!job.spec.selector) {
-      const labels = { 'batch.kubernetes.io/controller-uid': uid, 'batch.kubernetes.io/job-name': job.metadata.name, 'controller-uid': uid, 'job-name': job.metadata.name };
+      const labels = {
+        'batch.kubernetes.io/controller-uid': uid,
+        'batch.kubernetes.io/job-name': job.metadata.name,
+        'controller-uid': uid,
+        'job-name': job.metadata.name,
+      };
       job.spec.selector = { matchLabels: { 'batch.kubernetes.io/controller-uid': uid } };
       job.spec.template.metadata ??= {};
       job.spec.template.metadata.labels = { ...labels, ...(job.spec.template.metadata.labels || {}) };
@@ -74,7 +79,9 @@ export function jobController(cl: Cluster) {
     } else {
       const want = Math.min(parallelism, completions - succeeded) - active.length;
       // Pods that failed are replaced after an exponential back-off.
-      const lastFail = pods.filter((p) => p.status?.phase === 'Failed').reduce((m, p) => Math.max(m, Date.parse(p.status?.containerStatuses?.[0]?.state?.terminated?.finishedAt || '') || 0), 0);
+      const lastFail = pods
+        .filter((p) => p.status?.phase === 'Failed')
+        .reduce((m, p) => Math.max(m, Date.parse(p.status?.containerStatuses?.[0]?.state?.terminated?.finishedAt || '') || 0), 0);
       const wait = failedPods ? Math.min(360_000, 10_000 * 2 ** (failedPods - 1)) : 0;
       if (want > 0 && cl.now - lastFail >= wait) {
         for (let i = 0; i < want; i++) createPod(cl, job, job.spec.template, { generateName: `${job.metadata.name}-` });
@@ -127,7 +134,13 @@ export function cronJobController(cl: Cluster) {
         cj.status.lastScheduleTime = cl.ts(next);
         const policy = cj.spec.concurrencyPolicy || 'Allow';
         if (policy === 'Forbid' && active.length) {
-          cl.emit(cj, 'Normal', 'JobAlreadyActive', 'Not starting job because prior execution is running and concurrency policy is Forbid', 'cronjob-controller');
+          cl.emit(
+            cj,
+            'Normal',
+            'JobAlreadyActive',
+            'Not starting job because prior execution is running and concurrency policy is Forbid',
+            'cronjob-controller',
+          );
         } else {
           if (policy === 'Replace') {
             for (const j of active) {
@@ -159,8 +172,14 @@ export function cronJobController(cl: Cluster) {
       }
     }
     // History limits.
-    const done = cl.children(cj, 'Job').filter((j) => jobFinished(j)).sort((a, b) => Date.parse(a.metadata.creationTimestamp) - Date.parse(b.metadata.creationTimestamp));
-    for (const [kind, limit] of [['Complete', cj.spec.successfulJobsHistoryLimit ?? 3], ['Failed', cj.spec.failedJobsHistoryLimit ?? 1]] as const) {
+    const done = cl
+      .children(cj, 'Job')
+      .filter((j) => jobFinished(j))
+      .sort((a, b) => Date.parse(a.metadata.creationTimestamp) - Date.parse(b.metadata.creationTimestamp));
+    for (const [kind, limit] of [
+      ['Complete', cj.spec.successfulJobsHistoryLimit ?? 3],
+      ['Failed', cj.spec.failedJobsHistoryLimit ?? 1],
+    ] as const) {
       const list = done.filter((j) => jobFinished(j) === kind);
       while (list.length > limit) {
         const j = list.shift()!;
@@ -170,7 +189,15 @@ export function cronJobController(cl: Cluster) {
     }
     cj.status ??= {};
     const act = cl.children(cj, 'Job').filter((j) => !jobFinished(j));
-    if (act.length) cj.status.active = act.map((j) => ({ apiVersion: 'batch/v1', kind: 'Job', name: j.metadata.name, namespace: j.metadata.namespace, resourceVersion: j.metadata.resourceVersion, uid: j.metadata.uid }));
+    if (act.length)
+      cj.status.active = act.map((j) => ({
+        apiVersion: 'batch/v1',
+        kind: 'Job',
+        name: j.metadata.name,
+        namespace: j.metadata.namespace,
+        resourceVersion: j.metadata.resourceVersion,
+        uid: j.metadata.uid,
+      }));
     else delete cj.status.active;
     if (JSON.stringify(cj) !== before) cj.metadata.resourceVersion = String(++cl.s.rv);
   }
