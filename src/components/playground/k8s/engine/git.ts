@@ -377,3 +377,9 @@ function workTreeExtras(workTree: Record<string, string>): Record<string, string
 export function gitLine(line: string, repo: GitRepo, files: Record<string, string>, now: number): GitResult {
   return git(shellSplit(line).slice(1), repo, files, now);
 }
+
+/** For the editor's "Commit & push" button: uncommitted files and unpushed commits. */
+export function pendingChanges(repo: GitRepo, workTree: Record<string, string>): { changed: string[]; ahead: number } {
+  const head = commitBySha(repo, repo.head);
+  return { changed: head ? changes(head.files, tracked(workTree)).map((c) => c.path) : [], ahead: aheadBy(repo) };
+}

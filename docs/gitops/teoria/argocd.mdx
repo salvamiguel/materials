@@ -4,6 +4,7 @@ title: "ArgoCD: Implementación GitOps"
 ---
 
 import LabActions from '@site/src/components/shared/LabActions';
+import K8sPlaygroundLink from '@site/src/components/shared/K8sPlaygroundLink';
 import Drawio from '@theme/Drawio';
 import argoArchitecture from '!!raw-loader!./argo.drawio';
 import { SiArgo } from "react-icons/si";
@@ -66,6 +67,12 @@ graph LR
 
 ## 2. Instalación en clúster local
 
+:::tip Pruébalo sin clúster
+El [playground de Kubernetes](/k8s-playground) simula un ArgoCD ligero: los mismos comandos de esta sección, la UI web (pestaña «Navegador») y el CLI `argocd`, contra un repositorio Git simulado en el que haces `git commit` y `git push`. Sus pods son pods de sistema y la reconciliación ocurre dentro de `argocd-application-controller-0`.
+
+<K8sPlaygroundLink example="argocd">Abre el repo de clase gitops-status-demo-config en el playground</K8sPlaygroundLink>
+:::
+
 La instalación oficial se realiza aplicando el manifiesto estable publicado en el repositorio de ArgoCD:
 
 ```bash
@@ -101,6 +108,8 @@ Tras el primer login, cambia la contraseña desde la UI o con `argocd account up
 :::warning HTTPS con certificado autofirmado
 La UI de ArgoCD usa HTTPS con un certificado autofirmado. El navegador mostrará un aviso de seguridad — puedes aceptarlo en local. En producción, configura un certificado real con cert-manager.
 :::
+
+<LabActions title="Repositorio de la configuración (kustomize & argocd)" repo="https://github.com/salvamiguel/gitops-status-demo-config" codespace={false} fork={false} k8s={true} />
 
 ## 3. El recurso Application
 

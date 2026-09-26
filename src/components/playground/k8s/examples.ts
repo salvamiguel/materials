@@ -1124,7 +1124,8 @@ O con el CLI:
 
       git commit -am "Sube a v2" && git push
 
-  dev y staging se sincronizan solos (la página pasa a azul); prod es manual:
+  dev y staging se sincronizan solos (la página muestra v2; el color lo fija
+  APP_COLOR en cada overlay); prod es manual:
   \`argocd app sync status-prod\` o el botón SYNC de la UI.
 - Prueba el selfHeal: \`kubectl scale deploy gitops-status-demo -n status-dev --replicas=5\`
 - Rollback: \`git revert HEAD && git push\` (o History and Rollback en prod).

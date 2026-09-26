@@ -174,10 +174,7 @@ const IMAGES: [RegExp, ImageInfo][] = [
   ],
   [/dexidp\/dex/, { ports: [5556], mode: 'forever', logs: () => ['time="{T}" level=info msg="listening (http) on 0.0.0.0:5556"'], pullMs: 2000 }],
   [/library\/redis/, { ports: [6379], mode: 'forever', logs: () => ['1:M {T} * Ready to accept connections tcp'], pullMs: 1500 }],
-  [
-    /gitops-status-demo-app/,
-    { ports: [8080], mode: 'server', logs: (c) => [`gitops-status-demo ${demoVersion(c.image)} listening on :8080`], pullMs: 1800 },
-  ],
+  [/gitops-status-demo-app/, { ports: [8080], mode: 'server', logs: (c) => [`gitops-status-demo ${demoVersion(c.image)} listening on :8080`], pullMs: 1800 }],
   [
     /kube-proxy|kindnet|local-path-provisioner|etcd|kube-apiserver|kube-controller-manager|kube-scheduler/,
     { ports: [], mode: 'forever', logs: () => ['I0926 {T} 1 server.go:484] "Version info" version="v1.33.1"'], pullMs: 800 },
@@ -376,7 +373,9 @@ export function argoComponent(c: Json): string {
 }
 
 function argoPort(c: Json): number {
-  return { server: 8080, 'repo-server': 8081, 'application-controller': 8082, 'applicationset-controller': 7000, notifications: 9001 }[argoComponent(c)] ?? 8080;
+  return (
+    { server: 8080, 'repo-server': 8081, 'application-controller': 8082, 'applicationset-controller': 7000, notifications: 9001 }[argoComponent(c)] ?? 8080
+  );
 }
 
 /** gitops-status-demo-app: the version is the image tag ("dev" for latest). */
@@ -515,7 +514,11 @@ export function httpAnswer(cl: Cluster, pod: Obj, port: number, path: string, ho
     if (/argoproj\/argocd/.test(img)) {
       if (argoComponent(c) !== 'server') return { status: 404, body: '404 page not found\n' };
       if (path.startsWith('/healthz')) return { status: 200, body: 'ok\n' };
-      if (path.startsWith('/api/version')) return { status: 200, body: JSON.stringify({ Version: 'v2.13.3+b9b8fc7', BuildDate: '2025-01-03T15:25:45Z', GoVersion: 'go1.23.1', Platform: 'linux/amd64' }) + '\n' };
+      if (path.startsWith('/api/version'))
+        return {
+          status: 200,
+          body: JSON.stringify({ Version: 'v2.13.3+b9b8fc7', BuildDate: '2025-01-03T15:25:45Z', GoVersion: 'go1.23.1', Platform: 'linux/amd64' }) + '\n',
+        };
       return {
         status: 200,
         argocd: true,
@@ -527,7 +530,8 @@ export function httpAnswer(cl: Cluster, pod: Obj, port: number, path: string, ho
       const color = env.APP_COLOR || demoColor(version);
       const started = Date.parse(pod.status?.startTime || '') || cl.now;
       const up = Math.max(0, Math.floor((cl.now - started) / 1000));
-      const uptime = up >= 3600 ? `${Math.floor(up / 3600)}h${Math.floor((up % 3600) / 60)}m${up % 60}s` : up >= 60 ? `${Math.floor(up / 60)}m${up % 60}s` : `${up}s`;
+      const uptime =
+        up >= 3600 ? `${Math.floor(up / 3600)}h${Math.floor((up % 3600) / 60)}m${up % 60}s` : up >= 60 ? `${Math.floor(up / 60)}m${up % 60}s` : `${up}s`;
       const envName = env.ENV || 'local';
       const clean = path.split('?')[0];
       if (clean === '/health') return { status: 200, body: JSON.stringify({ status: 'ok', version }) + '\n' };

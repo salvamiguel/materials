@@ -5,7 +5,10 @@ import type { Cluster } from './engine/cluster';
 import { resolveResource, RESOURCES } from './engine/resources';
 import { shellSplit } from '../shared/shell';
 
-const TOP = ['kubectl', 'helm', 'kustomize build', 'curl', 'watch', 'clear', 'help', 'ls', 'cat', 'k'];
+const TOP = ['kubectl', 'helm', 'kustomize build', 'curl', 'watch', 'clear', 'help', 'ls', 'cat', 'k', 'git', 'argocd', 'open'];
+const GIT = ['status', 'add', 'commit', 'push', 'pull', 'log', 'diff', 'show', 'revert', 'restore', 'checkout', 'reset', 'remote', 'rev-parse', 'branch'];
+const ARGOCD = ['login', 'logout', 'app', 'admin', 'version', 'proj', 'repo', 'cluster'];
+const ARGOCD_APP = ['list', 'get', 'sync', 'diff', 'history', 'rollback', 'create', 'delete', 'set', 'wait', 'manifests', 'resources'];
 const VERBS = [
   'get',
   'describe',
@@ -73,6 +76,9 @@ const TYPES = [
   'pvc',
   'pv',
   'ing',
+  'applications',
+  'app',
+  'appproj',
 ];
 
 function common(cands: string[]): string | undefined {
@@ -122,6 +128,20 @@ export function completeLine(cl: Cluster, files: Record<string, string>, input: 
         false,
       );
     if (['uninstall', 'rollback', 'history', 'status', 'upgrade', 'get'].includes(prev[1])) return pick(cl.s.helm.map((r) => r.name));
+    return undefined;
+  }
+  if (cmd === 'git') {
+    if (prev.length === 1) return pick(GIT);
+    if (['add', 'restore', 'checkout', 'diff'].includes(prev[1])) return pick(fileCands(), false);
+    return undefined;
+  }
+  if (cmd === 'argocd') {
+    if (prev.length === 1) return pick(ARGOCD);
+    if (prev[1] === 'app' && prev.length === 2) return pick(ARGOCD_APP);
+    if (prev[1] === 'app' && prev.length === 3) return pick(cl.list('Application').map((a) => a.metadata.name));
+    if (prev[1] === 'admin' && prev.length === 2) return pick(['initial-password']);
+    if (prev[1] === 'login' && prev.length === 2) return pick(cl.s.portForwards.filter((f) => /argocd-server/.test(f.name)).map((f) => `localhost:${f.local}`));
+    if (['proj', 'repo', 'cluster'].includes(prev[1]) && prev.length === 2) return pick(['list']);
     return undefined;
   }
   if (cmd === 'kustomize')

@@ -36,7 +36,7 @@ export interface DNode {
   terminating?: boolean;
 }
 
-export type EdgeKind = 'owner' | 'select' | 'route' | 'storage' | 'config' | 'scale';
+export type EdgeKind = 'owner' | 'select' | 'route' | 'storage' | 'config' | 'scale' | 'manage';
 
 export interface DEdge {
   id: string;
@@ -59,6 +59,8 @@ export interface Lane {
   health?: Health;
   status?: string;
   kind: 'Namespace' | 'Node';
+  /** A namespace an ArgoCD Application will create (it doesn't exist yet). */
+  virtual?: boolean;
 }
 
 export interface Diagram {
@@ -69,9 +71,10 @@ export interface Diagram {
   height: number;
 }
 
-export const SYSTEM_NAMESPACES = ['kube-system', 'kube-public', 'kube-node-lease', 'local-path-storage', 'ingress-nginx'];
+export const SYSTEM_NAMESPACES = ['kube-system', 'kube-public', 'kube-node-lease', 'local-path-storage', 'ingress-nginx', 'argocd'];
 
 const COLUMN: Record<string, number> = {
+  Application: -1,
   Ingress: 0,
   Service: 1,
   HorizontalPodAutoscaler: 1,
@@ -214,6 +217,20 @@ function health(cl: Cluster, o: Obj): { health: Health; status: string; sub?: st
         status: o.status?.phase || 'Available',
         sub: `${o.spec.capacity?.storage || ''} ${o.spec.persistentVolumeReclaimPolicy}`,
       };
+    case 'Application': {
+      const sync = o.status?.sync?.status || 'Unknown';
+      const h = o.status?.health?.status || 'Unknown';
+      const op = o.operation || o.status?.operationState?.phase === 'Running';
+      const err = (o.status?.conditions || []).some((c: Json) => /Error/.test(c.type));
+      const src = o.spec?.source || o.spec?.sources?.[0] || {};
+      const rev = o.status?.sync?.revision ? ` @ ${String(o.status.sync.revision).slice(0, 7)}` : '';
+      return {
+        health: err || h === 'Degraded' ? 'err' : op ? 'warn' : sync === 'Synced' && h === 'Healthy' ? 'ok' : h === 'Suspended' ? 'off' : 'warn',
+        status: op ? 'Syncing…' : err ? 'ComparisonError' : `${sync} · ${h}`,
+        sub: `${src.path || src.chart || '.'}${rev}`,
+        badge: o.spec?.syncPolicy?.automated ? 'auto' : 'manual',
+      };
+    }
     case 'ConfigMap':
     case 'Secret': {
       const n = Object.keys(o.data || {}).length;
@@ -275,8 +292,13 @@ export function buildDiagram(cl: Cluster, opts: { showSystem: boolean }): Diagra
     .list('Namespace')
     .map((n) => n.metadata.name)
     .filter((n) => opts.showSystem || !SYSTEM_NAMESPACES.includes(n));
-  const kinds = Object.keys(COLUMN).filter((k) => k !== 'PersistentVolume');
+  const kinds = Object.keys(COLUMN).filter((k) => k !== 'PersistentVolume' && k !== 'Application');
   const objs: Obj[] = [];
+  // ArgoCD Applications live in argocd but are drawn next to what they manage,
+  // in their destination namespace (a virtual lane if it doesn't exist yet).
+  const apps = cl.s.argocd?.installed ? cl.list('Application') : [];
+  const destOf = (a: Obj): string => a.spec?.destination?.namespace || 'default';
+  for (const a of apps) if (!visibleNs.includes(destOf(a))) visibleNs.push(destOf(a));
   for (const k of kinds) {
     for (const o of cl.list(k)) {
       if (!visibleNs.includes(o.metadata.namespace)) continue;
@@ -302,8 +324,9 @@ export function buildDiagram(cl: Cluster, opts: { showSystem: boolean }): Diagra
     const ref = pv.spec.claimRef;
     if (ref ? visibleNs.includes(ref.namespace) : opts.showSystem) objs.push(pv);
   }
+  objs.push(...apps);
   const byUid = new Map(objs.map((o) => [o.metadata.uid, o]));
-  const nsOf = (o: Obj) => o.metadata.namespace ?? o.spec?.claimRef?.namespace ?? 'default';
+  const nsOf = (o: Obj) => (o.kind === 'Application' ? destOf(o) : (o.metadata.namespace ?? o.spec?.claimRef?.namespace ?? 'default'));
 
   // Relations.
   const rel: { from: Obj; to: Obj; kind: EdgeKind; live: boolean }[] = [];
@@ -323,6 +346,13 @@ export function buildDiagram(cl: Cluster, opts: { showSystem: boolean }): Diagra
       for (const r of o.spec?.rules || []) for (const p of r.http?.paths || []) if (p.backend?.service?.name) names.add(p.backend.service.name);
       if (o.spec?.defaultBackend?.service?.name) names.add(o.spec.defaultBackend.service.name);
       for (const n of names) add(o, cl.get('Service', o.metadata.namespace, n), 'route');
+    }
+    if (o.kind === 'Application') {
+      // Only the top of each managed tree (the rest hangs from its owner).
+      for (const r of o.status?.resources || []) {
+        const live = cl.get(r.kind, r.namespace, r.name);
+        if (live && !cl.controllerOf(live)) add(o, live, 'manage', r.status === 'Synced');
+      }
     }
     if (o.kind === 'HorizontalPodAutoscaler') add(o, cl.get(o.spec.scaleTargetRef?.kind, o.metadata.namespace, o.spec.scaleTargetRef?.name), 'scale');
     if (o.kind === 'PersistentVolumeClaim' && o.spec.volumeName) add(o, cl.get('PersistentVolume', undefined, o.spec.volumeName), 'storage');
@@ -408,7 +438,7 @@ export function buildDiagram(cl: Cluster, opts: { showSystem: boolean }): Diagra
         return own ? (ownerRank.get(own.metadata.uid) ?? 9999) : 9999;
       };
       cols.get(4)?.sort((a, b) => podRank(a) - podRank(b) || a.metadata.name.localeCompare(b.metadata.name));
-      for (const c of [0, 1, 5, 6]) cols.get(c)?.sort((a, b) => a.kind.localeCompare(b.kind) || a.metadata.name.localeCompare(b.metadata.name));
+      for (const c of [-1, 0, 1, 5, 6]) cols.get(c)?.sort((a, b) => a.kind.localeCompare(b.kind) || a.metadata.name.localeCompare(b.metadata.name));
       const heightOf = (c: number) => (cols.get(c) || []).reduce((h, o) => h + (o.kind === 'Pod' ? POD_H : H) + ROW_GAP, -ROW_GAP);
       const gh = Math.max(...[...cols.keys()].map(heightOf));
       for (const [c, list] of cols) {
@@ -449,7 +479,8 @@ export function buildDiagram(cl: Cluster, opts: { showSystem: boolean }): Diagra
       empty: !ordered.length,
       kind: 'Namespace',
       health: nsObj?.metadata.deletionTimestamp ? 'off' : 'ok',
-      status: nsObj?.metadata.deletionTimestamp ? 'Terminating' : undefined,
+      status: nsObj?.metadata.deletionTimestamp ? 'Terminating' : nsObj ? undefined : '(todavía no existe: ArgoCD lo creará al sincronizar)',
+      virtual: !nsObj,
     });
     y += 14;
   }

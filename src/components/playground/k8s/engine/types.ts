@@ -156,6 +156,8 @@ export interface ArgoState {
   appsetParams: Record<string, Record<string, string>[]>;
   /** argocd CLI session. */
   session?: { server: string; user: string };
+  /** Web UI session (the Browser tab). */
+  ui?: { user: string };
   /** Push counter of the local remote the repo-server last saw. */
   seenPush?: number;
 }

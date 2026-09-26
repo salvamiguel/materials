@@ -5,7 +5,7 @@
 import { Cluster } from '../cluster';
 import { httpGet } from '../net';
 import { apiGroup } from '../resources';
-import { ApiError, type Obj } from '../types';
+import { ApiError, type Obj, type RenderedDoc } from '../types';
 import { clone, pad } from '../util';
 import { toYaml } from '../kubectl/printers';
 import { unifiedDiff } from '../kubectl/patch';
@@ -238,6 +238,83 @@ function waitOperation(cl: Cluster, name: string, server: string, since: string 
   return ok(header, { stream });
 }
 
+export interface ResourceDiff {
+  group: string;
+  kind: string;
+  namespace?: string;
+  name: string;
+  /** Unified diff (live → target) without file headers. */
+  text: string;
+  live: string;
+  target: string;
+}
+
+function cleanObj(o: Obj): Obj {
+  const c = clone(o);
+  delete c.status;
+  for (const k of ['managedFields', 'resourceVersion', 'generation', 'uid', 'creationTimestamp', 'ownerReferences']) delete c.metadata[k];
+  if (c.metadata.annotations) {
+    for (const k of Object.keys(c.metadata.annotations))
+      if (k.startsWith('kubectl.kubernetes.io/') || k.startsWith('deployment.kubernetes.io/')) delete c.metadata.annotations[k];
+    if (!Object.keys(c.metadata.annotations).length) delete c.metadata.annotations;
+  }
+  return c;
+}
+
+/** Live vs desired, per resource that differs (argocd app diff, the UI's App Diff). */
+export function appDiff(cl: Cluster, app: Obj, docs: RenderedDoc[]): ResourceDiff[] {
+  const sim = Cluster.fromJSON(cl.toJSON());
+  const out: ResourceDiff[] = [];
+  for (const d of desiredDocs(app, docs)) {
+    const live = liveOf(cl, d.obj);
+    let merged: Obj;
+    try {
+      merged = sim.apply(d.obj, d.obj.metadata.namespace || 'default').obj;
+    } catch (e) {
+      if (!(e instanceof ApiError)) throw e;
+      merged = d.obj; // e.g. the namespace doesn't exist yet
+    }
+    const a = live ? toYaml(cleanObj(live)) : '';
+    const b = toYaml(cleanObj(merged));
+    const text = unifiedDiff(a, b, 'live', 'target');
+    if (!text) continue;
+    const body = text
+      .split('\n')
+      .filter((l) => !l.startsWith('---') && !l.startsWith('+++'))
+      .join('\n');
+    out.push({
+      group: apiGroup(d.obj.kind),
+      kind: d.obj.kind,
+      namespace: d.obj.metadata.namespace,
+      name: d.obj.metadata.name,
+      text: body.endsWith('\n') ? body : body + '\n',
+      live: a,
+      target: b,
+    });
+  }
+  for (const res of app.status?.resources || []) {
+    if (!res.requiresPruning) continue;
+    const live = cl.get(res.kind, res.namespace, res.name);
+    if (!live) continue;
+    const a = toYaml(cleanObj(live));
+    out.push({
+      group: res.group,
+      kind: res.kind,
+      namespace: res.namespace,
+      name: res.name,
+      text:
+        a
+          .split('\n')
+          .filter(Boolean)
+          .map((l) => '< ' + l)
+          .join('\n') + '\n',
+      live: a,
+      target: '',
+    });
+  }
+  return out;
+}
+
 function appCommand(sub: string, fl: Flags, cl: Cluster, server: string): Result {
   const a = argo(cl)!;
   const name = fl.pos[0];
@@ -334,46 +411,9 @@ function appCommand(sub: string, fl: Flags, cl: Cluster, server: string): Result
       if ('err' in r) return r.err!;
       const m = a.manifests[appKey(r.app)];
       if (!m || m.error) return fatal(`rpc error: code = Unknown desc = ${m?.error || 'manifests not rendered yet (espera un momento)'}`);
-      const sim = Cluster.fromJSON(cl.toJSON());
-      let out = '';
-      for (const d of desiredDocs(r.app, m.docs)) {
-        const live = liveOf(cl, d.obj);
-        let merged: Obj;
-        try {
-          merged = sim.apply(d.obj, d.obj.metadata.namespace || 'default').obj;
-        } catch (e) {
-          if (!(e instanceof ApiError)) throw e;
-          merged = d.obj; // e.g. the namespace doesn't exist yet
-        }
-        const clean = (o: Obj) => {
-          const c = clone(o);
-          delete c.status;
-          for (const k of ['managedFields', 'resourceVersion', 'generation', 'uid', 'creationTimestamp', 'ownerReferences']) delete c.metadata[k];
-          if (c.metadata.annotations) {
-            for (const k of Object.keys(c.metadata.annotations))
-              if (k.startsWith('kubectl.kubernetes.io/') || k.startsWith('deployment.kubernetes.io/')) delete c.metadata.annotations[k];
-            if (!Object.keys(c.metadata.annotations).length) delete c.metadata.annotations;
-          }
-          return c;
-        };
-        const text = unifiedDiff(live ? toYaml(clean(live)) : '', toYaml(clean(merged)), 'live', 'target');
-        const body = text
-          .split('\n')
-          .filter((l) => !l.startsWith('---') && !l.startsWith('+++'))
-          .join('\n');
-        if (text)
-          out += `\n===== ${apiGroup(d.obj.kind)}/${d.obj.kind} ${d.obj.metadata.namespace || ''}/${d.obj.metadata.name} ======\n${body.endsWith('\n') ? body : body + '\n'}`;
-      }
-      for (const res of r.app.status?.resources || []) {
-        if (!res.requiresPruning) continue;
-        const live = cl.get(res.kind, res.namespace, res.name);
-        if (live)
-          out += `\n===== ${res.group}/${res.kind} ${res.namespace || ''}/${res.name} ======\n${toYaml(live)
-            .split('\n')
-            .filter(Boolean)
-            .map((l) => '< ' + l)
-            .join('\n')}\n`;
-      }
+      const out = appDiff(cl, r.app, m.docs)
+        .map((d) => `\n===== ${d.group}/${d.kind} ${d.namespace || ''}/${d.name} ======\n${d.text}`)
+        .join('');
       return { output: out, exitCode: out ? 1 : 0 };
     }
     case 'manifests': {
