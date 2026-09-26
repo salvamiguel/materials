@@ -21,6 +21,7 @@ import { buildDiagram, buildNodesView } from './diagramModel';
 import { infoFor, menuFor, nodeMenu, type MenuItem } from './info';
 import { colorizeKubectl, highlightK8s } from './highlight';
 import { completeLine } from './complete';
+import { completeYaml } from './yamlComplete';
 import { EXAMPLES, DEFAULT_EXAMPLE } from './examples';
 import { K8splayWasm } from './wasm';
 import { helmCommand, kustomizeDocs } from './helm';
@@ -667,6 +668,7 @@ export default function K8sPlayground() {
               diagnostics={[]}
               highlighter={highlightK8s}
               reveal={reveal}
+              complete={/\.ya?ml$/.test(current) && !/(^|\/)templates\//.test(current) ? completeYaml : undefined}
             />
           )}
           <div className={shared.editorFooter}>

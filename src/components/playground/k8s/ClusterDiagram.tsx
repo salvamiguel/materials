@@ -146,7 +146,7 @@ export default function ClusterDiagram({ diagram, iconBase, selected, onSelect, 
             <TbZoomIn aria-hidden />
           </button>
         </div>
-        {!diagram.nodes.length && empty}
+        {!diagram.nodes.length && !diagram.lanes.length && empty}
         <div className={styles.canvas} style={{ width: diagram.width * s, height: diagram.height * s }}>
           <div className={styles.canvasInner} style={{ width: diagram.width, height: diagram.height, transform: `scale(${s})` }}>
             <svg className={styles.edges} width={diagram.width} height={diagram.height} aria-hidden>
