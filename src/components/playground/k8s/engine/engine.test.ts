@@ -426,6 +426,14 @@ describe('kubectl output', () => {
     expect(y).toContain('clusterIP: 10.96.');
   });
 
+  test('set image with registry paths', async () => {
+    const s = session();
+    await s.run('kubectl apply -f web.yaml');
+    const r = await s.run('kubectl set image deploy/web nginx=ghcr.io/nginx/nginx-unprivileged:1.27');
+    expect(r.output).toBe('deployment.apps/web image updated\n');
+    expect(s.cl.get('Deployment', 'default', 'web').spec.template.spec.containers[0].image).toBe('ghcr.io/nginx/nginx-unprivileged:1.27');
+  });
+
   test('create --dry-run -o yaml > file writes the manifest', async () => {
     const s = session({});
     const r = await s.run('kubectl create deployment api --image=nginx:1.27 --replicas=2 --dry-run=client -o yaml > api.yaml');
