@@ -2,7 +2,7 @@
 
 import type { Cluster } from '../cluster';
 import type { Obj } from '../types';
-import { fromLabelSelector, matches, stableJson } from '../util';
+import { fromLabelSelector, matches } from '../util';
 import { createPod, deletePod, isTerminating, ownerRef, podActive, podAvailable, podReady, scaleDownOrder } from './common';
 
 export function replicaSetController(cl: Cluster) {

@@ -5,7 +5,7 @@
 import type { Cluster } from '../cluster';
 import { INGRESS_IP } from '../bootstrap';
 import type { Obj } from '../types';
-import { fromMap, matches, parseQuantity, stableJson } from '../util';
+import { fromMap, matches, parseQuantity } from '../util';
 import { isTerminating, podReady, setCondition } from './common';
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any

@@ -2,7 +2,7 @@
 
 import type { Cluster } from '../cluster';
 import type { Obj } from '../types';
-import { clone, stableJson } from '../util';
+import { clone } from '../util';
 import { applyDefaults } from '../defaults';
 import { nextCron, parseCron } from '../validate';
 import { condition, createPod, deletePod, isTerminating, ownerRef, podReady, setCondition } from './common';

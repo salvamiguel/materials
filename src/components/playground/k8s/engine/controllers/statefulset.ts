@@ -3,7 +3,7 @@
 
 import type { Cluster } from '../cluster';
 import type { Obj } from '../types';
-import { clone, stableJson, templateHash } from '../util';
+import { clone, templateHash } from '../util';
 import { createPod, deletePod, isTerminating, podAvailable, podReady } from './common';
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any

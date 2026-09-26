@@ -2,7 +2,7 @@
 
 import type { Cluster } from '../cluster';
 import type { Obj } from '../types';
-import { intOrPercent, stableJson, templateHash } from '../util';
+import { intOrPercent, templateHash } from '../util';
 import { createPod, deletePod, isTerminating, podAvailable, podReady } from './common';
 import { REV_LABEL } from './statefulset';
 
