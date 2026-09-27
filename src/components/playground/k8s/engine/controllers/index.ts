@@ -6,6 +6,7 @@ import { daemonSetController } from './daemonset';
 import { cronJobController, jobController } from './job';
 import { hpaController } from './hpa';
 import { kubelet } from './kubelet';
+import { argocdController } from '../argocd/controller';
 import { garbageCollector, namespaceController, networkController, nodeController, storageController } from './infra';
 
 /** One reconcile pass of every controller, in dependency order. */
@@ -23,4 +24,5 @@ export function runControllers(cl: Cluster) {
   storageController(cl);
   kubelet(cl);
   networkController(cl);
+  argocdController(cl);
 }

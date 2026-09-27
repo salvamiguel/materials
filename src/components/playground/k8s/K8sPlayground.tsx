@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useBaseUrl from '@docusaurus/useBaseUrl';
-import { SiKubernetes } from 'react-icons/si';
+import { SiArgo, SiKubernetes } from 'react-icons/si';
 import { IoLink } from 'react-icons/io5';
 import { MdSettingsBackupRestore } from 'react-icons/md';
-import { TbPlayerPauseFilled, TbPlayerPlayFilled, TbHelp, TbSquareRoundedX } from 'react-icons/tb';
+import { TbPlayerPauseFilled, TbPlayerPlayFilled, TbHelp, TbSquareRoundedX, TbGitCommit, TbWorld, TbTopologyStar3 } from 'react-icons/tb';
 import HclEditor from '../terraform/HclEditor';
 import Terminal, { type TermEntry } from '../shared/Terminal';
 import ZoomControl, { usePlaygroundZoom, zoomStyle } from '../shared/Zoom';
@@ -25,6 +25,10 @@ import { completeYaml } from './yamlComplete';
 import { EXAMPLES, DEFAULT_EXAMPLE } from './examples';
 import { K8splayWasm } from './wasm';
 import { helmCommand, kustomizeDocs } from './helm';
+import { initRepo, pendingChanges, type GitRepo } from './engine/git';
+import { RepoServer } from './argocd/repoServer';
+import { requestRefresh, requestSync } from './engine/argocd/controller';
+import Browser from './Browser';
 import shared from '../shared/playground.module.css';
 import styles from './k8s.module.css';
 
@@ -107,6 +111,9 @@ export default function K8sPlayground() {
   const [showSystem, setShowSystem] = useState<boolean>(() => load('system', false));
   const [split, setSplit] = useState<number>(() => load('split', 38));
   const [termH, setTermH] = useState<number>(() => load('termH', 280));
+  const [gitRepo, setGitRepo] = useState<GitRepo>(() => load<GitRepo | null>('git', null) ?? initRepo(files, EXAMPLES.find((e) => e.id === exampleId)?.remote));
+  const [panel, setPanel] = useState<'diagram' | 'browser'>(() => load('panel', 'diagram'));
+  const [browserUrl, setBrowserUrl] = useState<string>(() => load('url', ''));
 
   const [entries, setEntries] = useState<TermEntry[]>([{ id: 0, prompt: '', command: undefined as unknown as string, output: WELCOME }]);
   const [busy, setBusy] = useState(false);
@@ -125,6 +132,8 @@ export default function K8sPlayground() {
   const jobsRef = useRef<Job[]>([]);
   const filesRef = useRef(files);
   filesRef.current = files;
+  const gitRef = useRef(gitRepo);
+  gitRef.current = gitRepo;
   const wasmRef = useRef<K8splayWasm | null>(null);
   const cl = clRef.current;
 
@@ -136,6 +145,9 @@ export default function K8sPlayground() {
   useEffect(() => save('system', showSystem), [showSystem]);
   useEffect(() => save('split', split), [split]);
   useEffect(() => save('termH', termH), [termH]);
+  useEffect(() => save('git', gitRepo), [gitRepo]);
+  useEffect(() => save('panel', panel), [panel]);
+  useEffect(() => save('url', browserUrl), [browserUrl]);
 
   // The Go/WASM engine (helm, kustomize) loads on first use.
   const wasm = useCallback(async () => {
@@ -151,6 +163,18 @@ export default function K8sPlayground() {
     return wasmRef.current;
   }, [wasmBase]);
   useEffect(() => () => wasmRef.current?.terminate(), []);
+
+  // ArgoCD's repo-server: reads the Git remote (the playground's repo or GitHub)
+  // and renders the Applications' manifests, off the clock.
+  const repoServer = useMemo(
+    () =>
+      new RepoServer({
+        git: () => gitRef.current,
+        renderer: wasm,
+        fetchGitHub: (owner, repo, ref) => fetchRepoFiles({ owner, repo, ref, path: '' }, undefined, isK8sFile, 'manifiestos YAML'),
+      }),
+    [wasm],
+  );
 
   const appendOutput = useCallback((id: number, text: string, done?: { exitCode?: number }) => {
     setEntries((es) => es.map((e) => (e.id === id ? { ...e, output: e.output + text, pending: false, ...(done ? { exitCode: done.exitCode } : {}) } : e)));
@@ -169,6 +193,7 @@ export default function K8sPlayground() {
     const t = setInterval(() => {
       const c = clRef.current!;
       if (!paused) c.advance(250 * speed);
+      if (c.s.argocd?.installed) void repoServer.pump(c);
       const f = fg.current;
       if (f) {
         const p = f.stream.poll(c);
@@ -208,12 +233,13 @@ export default function K8sPlayground() {
       }
     }, 250);
     return () => clearInterval(t);
-  }, [paused, speed, appendOutput, addEntry]);
+  }, [paused, speed, appendOutput, addEntry, repoServer]);
 
   const ctx = useCallback((): ShellCtx => {
     const c: ShellCtx = {
       cl: clRef.current!,
       files: filesRef.current,
+      git: gitRef.current,
       kustomize: async (dir: string) => kustomizeDocs(await wasm(), filesRef.current, dir),
       helm: async (args, sctx) => helmCommand(args, sctx, await wasm()),
     };
@@ -300,9 +326,15 @@ export default function K8sPlayground() {
         setBusy(false);
         return;
       }
-      if (r.writeFiles) {
-        setFiles((f) => ({ ...f, ...r!.writeFiles }));
+      if (r.git) setGitRepo(r.git);
+      if (r.files || r.writeFiles) {
+        const base = r.files;
+        setFiles((f) => ({ ...(base || f), ...(r!.writeFiles || {}) }));
         if (r.openFile) setActive(r.openFile);
+      }
+      if (r.browse) {
+        setBrowserUrl(/^https?:\/\//.test(r.browse) ? r.browse : `http://${r.browse}`);
+        setPanel('browser');
       }
       if (r.stream && r.stream.background) {
         const jid = (jobsRef.current[jobsRef.current.length - 1]?.id ?? 0) + 1;
@@ -310,6 +342,11 @@ export default function K8sPlayground() {
         setJobs(jobsRef.current);
         appendOutput(id, `[${jid}] ${4000 + jid * 17}\n${r.output}`, { exitCode: 0 });
         setBusy(false);
+        const pf = /port-forward\s.*?(\d+):(\d+)/.exec(trimmed);
+        if (pf) {
+          const https = /argocd-server/.test(trimmed) || pf[2] === '443';
+          addEntry(undefined, `# Ábrelo en la pestaña Navegador: open ${https ? 'https' : 'http'}://localhost:${pf[1]}`);
+        }
       } else if (r.stream) {
         appendOutput(id, r.output);
         fg.current = { id, stream: r.stream };
@@ -341,6 +378,7 @@ export default function K8sPlayground() {
       decodeShare(m[1]).then(
         (shared) => {
           setFiles(shared);
+          setGitRepo(initRepo(shared));
           setActive(Object.keys(shared)[0]);
           setExampleId('');
           history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -357,6 +395,7 @@ export default function K8sPlayground() {
       const e = EXAMPLES.find((x) => x.id === ex);
       if (e) {
         setFiles(e.files);
+        setGitRepo(initRepo(e.files, e.remote));
         setActive(Object.keys(e.files)[0]);
         setExampleId(e.id);
         addEntry(undefined, `Ejemplo: ${e.label}. ${e.description}${e.hint ? `\nPrueba: ${e.hint}` : ''}`);
@@ -377,6 +416,7 @@ export default function K8sPlayground() {
         (repoFiles) => {
           const names = Object.keys(repoFiles).sort();
           setFiles(repoFiles);
+          setGitRepo(initRepo(repoFiles, `https://github.com/${r.owner}/${r.repo}`));
           setActive(names.find((f) => !f.includes('/')) || names[0]);
           setExampleId(`gh:${label}`);
           const hasK = names.some((n) => /(^|\/)kustomization\.ya?ml$/.test(n));
@@ -406,6 +446,7 @@ export default function K8sPlayground() {
     const ex = EXAMPLES.find((e) => e.id === id);
     if (!ex) return;
     setFiles(ex.files);
+    setGitRepo(initRepo(ex.files, ex.remote));
     setActive(Object.keys(ex.files)[0]);
     setExampleId(ex.id);
     setSelected(undefined);
@@ -522,6 +563,28 @@ export default function K8sPlayground() {
         delete c.s.downNodes[m.uid];
         note(`Nodo ${o.metadata.name} encendido de nuevo.`);
         break;
+      case 'argo':
+        if (item.argo === 'ui') {
+          const pf = c.s.portForwards.find((f) => /argocd-server/.test(f.name));
+          if (!pf) {
+            note('Para abrir la UI de ArgoCD haz un port-forward a argocd-server: kubectl port-forward svc/argocd-server -n argocd 8443:443 &');
+            setInsert({ text: 'kubectl port-forward svc/argocd-server -n argocd 8443:443 &', seq: seq.current++ });
+            break;
+          }
+          setBrowserUrl(`https://localhost:${pf.local}/applications/${o.metadata.namespace}/${o.metadata.name}`);
+          setPanel('browser');
+        } else if (item.argo === 'sync' || item.argo === 'sync-prune') {
+          requestSync(c, o, { prune: item.argo === 'sync-prune' });
+          note(
+            `Sync de la Application ${o.metadata.name} pedido a ArgoCD (equivale a: argocd app sync ${o.metadata.name}${item.argo === 'sync-prune' ? ' --prune' : ''}).`,
+          );
+        } else {
+          requestRefresh(c, o, item.argo === 'hard-refresh');
+          note(
+            `Refresh de ${o.metadata.name}: el repo-server vuelve a leer Git (equivale a: argocd app get ${o.metadata.name} --${item.argo === 'hard-refresh' ? 'hard-' : ''}refresh).`,
+          );
+        }
+        break;
     }
     setRv(c.s.rv + 1);
   };
@@ -582,6 +645,20 @@ export default function K8sPlayground() {
         : current && /\.(ya?ml|json)$/.test(current)
           ? `kubectl apply -f ${current}`
           : undefined;
+  const pending = useMemo(() => pendingChanges(gitRepo, files), [gitRepo, files]);
+  const commitPush = () => {
+    if (!pending.changed.length) {
+      runCommand('git push');
+      return;
+    }
+    const msg = window.prompt(
+      `Mensaje del commit (${pending.changed.length} fichero${pending.changed.length === 1 ? '' : 's'}: ${pending.changed.slice(0, 4).join(', ')}${pending.changed.length > 4 ? '…' : ''}):`,
+      `Actualiza ${pending.changed[0]}${pending.changed.length > 1 ? ` y ${pending.changed.length - 1} más` : ''}`,
+    );
+    if (!msg) return;
+    runCommand(`git add -A && git commit -m "${msg.replace(/["&;|$`\\]/g, '')}" && git push`);
+  };
+  const hasApps = !!cl.s.argocd?.installed && cl.list('Application').length > 0;
   const docCount = current ? (files[current] || '').split(/^---\s*$/m).filter((d) => /\bkind:/.test(d)).length : 0;
   const simTime = new Date(cl.now).toISOString().slice(11, 19);
 
@@ -681,6 +758,16 @@ export default function K8sPlayground() {
                     ? `YAML · ${docCount} objeto${docCount === 1 ? '' : 's'}`
                     : 'YAML'}
             </span>
+            {(pending.changed.length > 0 || pending.ahead > 0) && (
+              <button
+                className={shared.btnSmallGhost}
+                onClick={commitPush}
+                disabled={busy || !!shell}
+                title={`Publica tus cambios en el remoto (${gitRepo.remote}): ArgoCD solo ve lo que está en Git`}
+              >
+                <TbGitCommit aria-hidden /> {pending.changed.length ? `Commit & push (${pending.changed.length})` : `git push (${pending.ahead})`}
+              </button>
+            )}
             {applyCmd && (
               <button className={shared.btnSmall} onClick={() => runCommand(applyCmd)} disabled={busy || !!shell} title={applyCmd}>
                 {applyCmd.startsWith('helm') ? 'helm upgrade --install' : applyCmd.includes(' -k ') ? 'apply -k' : 'kubectl apply'}
@@ -701,20 +788,29 @@ export default function K8sPlayground() {
 
         <section className={styles.diagramArea} aria-label="Diagrama del clúster">
           <div className={styles.panelHead}>
-            <span className={styles.panelTitle}>
-              <SiKubernetes aria-hidden className={styles.titleIconK8s} /> Clúster
-            </span>
-            <div className={styles.seg} role="group" aria-label="Vista">
-              <button type="button" aria-pressed={view === 'apps'} onClick={() => setView('apps')}>
-                Recursos
+            <div className={styles.seg} role="tablist" aria-label="Panel">
+              <button type="button" role="tab" aria-selected={panel === 'diagram'} aria-pressed={panel === 'diagram'} onClick={() => setPanel('diagram')}>
+                <TbTopologyStar3 aria-hidden /> Clúster
               </button>
-              <button type="button" aria-pressed={view === 'nodes'} onClick={() => setView('nodes')}>
-                Nodos
+              <button type="button" role="tab" aria-selected={panel === 'browser'} aria-pressed={panel === 'browser'} onClick={() => setPanel('browser')}>
+                <TbWorld aria-hidden /> Navegador
               </button>
             </div>
-            <label className={styles.check} title="Muestra kube-system, ingress-nginx…">
-              <input type="checkbox" checked={showSystem} onChange={(e) => setShowSystem(e.target.checked)} /> sistema
-            </label>
+            {panel === 'diagram' && (
+              <div className={styles.seg} role="group" aria-label="Vista">
+                <button type="button" aria-pressed={view === 'apps'} onClick={() => setView('apps')}>
+                  Recursos
+                </button>
+                <button type="button" aria-pressed={view === 'nodes'} onClick={() => setView('nodes')}>
+                  Nodos
+                </button>
+              </div>
+            )}
+            {panel === 'diagram' && (
+              <label className={styles.check} title="Muestra kube-system, ingress-nginx, argocd…">
+                <input type="checkbox" checked={showSystem} onChange={(e) => setShowSystem(e.target.checked)} /> sistema
+              </label>
+            )}
             <div className={styles.seg} role="group" aria-label="Reloj del clúster">
               <button
                 type="button"
@@ -743,52 +839,74 @@ export default function K8sPlayground() {
               {simTime}
             </span>
           </div>
-          <ClusterDiagram
-            diagram={diagram}
-            iconBase={iconBase}
-            selected={selected}
-            onSelect={select}
-            onContextMenu={(uid, x, y, target) => setMenu({ uid, x, y, target })}
-            info={info}
-            onOpenSource={openSource}
-            empty={
-              <div className={styles.emptyState}>
-                <p>
-                  El clúster está vacío. Aplica un manifiesto:{' '}
-                  <code>kubectl apply -f {Object.keys(files).find((f) => /\.ya?ml$/.test(f)) || 'fichero.yaml'}</code>
-                </p>
+          {panel === 'browser' ? (
+            <Browser
+              cl={cl}
+              url={browserUrl}
+              onUrl={setBrowserUrl}
+              rv={rv}
+              onChange={() => setRv(cl.s.rv + 1)}
+              iconBase={iconBase}
+              defaultRepo={gitRepo.remote}
+            />
+          ) : (
+            <>
+              <ClusterDiagram
+                diagram={diagram}
+                iconBase={iconBase}
+                selected={selected}
+                onSelect={select}
+                onContextMenu={(uid, x, y, target) => setMenu({ uid, x, y, target })}
+                info={info}
+                onOpenSource={openSource}
+                empty={
+                  <div className={styles.emptyState}>
+                    <p>
+                      El clúster está vacío. Aplica un manifiesto:{' '}
+                      <code>kubectl apply -f {Object.keys(files).find((f) => /\.ya?ml$/.test(f)) || 'fichero.yaml'}</code>
+                    </p>
+                  </div>
+                }
+              />
+              <div className={styles.legend} aria-hidden>
+                <span>
+                  <i className={styles.legendDot} style={{ background: 'var(--k-ok)' }} /> listo
+                </span>
+                <span>
+                  <i className={styles.legendDot} style={{ background: 'var(--k-warn)' }} /> en curso
+                </span>
+                <span>
+                  <i className={styles.legendDot} style={{ background: 'var(--k-err)' }} /> fallando
+                </span>
+                <span>
+                  <svg width="22" height="6">
+                    <line x1="0" y1="3" x2="22" y2="3" stroke="var(--k-edge)" strokeWidth="1.5" />
+                  </svg>
+                  controla
+                </span>
+                <span>
+                  <svg width="22" height="6">
+                    <line x1="0" y1="3" x2="22" y2="3" stroke="var(--k-select)" strokeWidth="1.5" strokeDasharray="4 3" />
+                  </svg>
+                  enruta tráfico
+                </span>
+                <span>
+                  <svg width="22" height="6">
+                    <line x1="0" y1="3" x2="22" y2="3" stroke="var(--k-config)" strokeWidth="1.5" strokeDasharray="2 3" />
+                  </svg>
+                  usa config/volumen
+                </span>
+                {hasApps && (
+                  <span>
+                    <svg width="22" height="6">
+                      <line x1="0" y1="3" x2="22" y2="3" stroke="#ef7b4d" strokeWidth="1.6" strokeDasharray="10 3 2 3" />
+                    </svg>
+                    <SiArgo aria-hidden style={{ color: '#ef7b4d' }} /> gestiona (ArgoCD)
+                  </span>
+                )}
               </div>
-            }
-          />
-          <div className={styles.legend} aria-hidden>
-            <span>
-              <i className={styles.legendDot} style={{ background: 'var(--k-ok)' }} /> listo
-            </span>
-            <span>
-              <i className={styles.legendDot} style={{ background: 'var(--k-warn)' }} /> en curso
-            </span>
-            <span>
-              <i className={styles.legendDot} style={{ background: 'var(--k-err)' }} /> fallando
-            </span>
-            <span>
-              <svg width="22" height="6">
-                <line x1="0" y1="3" x2="22" y2="3" stroke="var(--k-edge)" strokeWidth="1.5" />
-              </svg>
-              controla
-            </span>
-            <span>
-              <svg width="22" height="6">
-                <line x1="0" y1="3" x2="22" y2="3" stroke="var(--k-select)" strokeWidth="1.5" strokeDasharray="4 3" />
-              </svg>
-              enruta tráfico
-            </span>
-            <span>
-              <svg width="22" height="6">
-                <line x1="0" y1="3" x2="22" y2="3" stroke="var(--k-config)" strokeWidth="1.5" strokeDasharray="2 3" />
-              </svg>
-              usa config/volumen
-            </span>
-          </div>
+            </>
+          )}
         </section>
 
         <button
@@ -898,11 +1016,20 @@ function HowItWorks() {
         <li>
           <b>Repositorios</b>: <code>?repo=usuario/repo</code> en la URL carga sus YAML (los botones de los laboratorios lo hacen por ti).
         </li>
+        <li>
+          <b>Git y ArgoCD</b>: los ficheros del editor son un repositorio Git con un remoto simulado (<code>git status</code>, <code>commit</code>,{' '}
+          <code>push</code>, <code>revert</code>… o el botón «Commit &amp; push»). Instala ArgoCD como en clase (
+          <code>kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.13.3/manifests/install.yaml</code>): sus pods son pods de
+          sistema y la reconciliación ocurre dentro de <code>argocd-application-controller-0</code> (bórralo y verás que nada se sincroniza hasta que vuelve).
+          Las Applications leen lo que has empujado (o un repo público de GitHub), con Kustomize, Helm o YAML plano, auto-sync, selfHeal, prune y rollback. La
+          UI web se abre en la pestaña «Navegador» tras un <code>kubectl port-forward svc/argocd-server -n argocd 8443:443 &amp;</code>; también está el CLI{' '}
+          <code>argocd</code>.
+        </li>
       </ul>
       <pre style={{ whiteSpace: 'pre-wrap', fontSize: '0.85em' }}>{SHELL_HELP}</pre>
       <p style={{ fontSize: '0.85em' }}>
         Iconos: <a href="https://github.com/kubernetes/community/tree/master/icons">Kubernetes Icons Set</a> (The Kubernetes Authors, CC-BY-4.0). Limitaciones:
-        no hay RBAC, NetworkPolicies, CRDs ni operadores; los tiempos (desalojo, HPA) están acortados para que se vean en clase.
+        no hay RBAC, NetworkPolicies, CRDs (salvo las de ArgoCD) ni operadores; los tiempos (desalojo, HPA) están acortados para que se vean en clase.
       </p>
     </div>
   );

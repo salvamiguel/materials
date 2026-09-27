@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { TbZoomIn, TbZoomOut, TbArrowsMaximize } from 'react-icons/tb';
+import { SiArgo } from 'react-icons/si';
 import type { Diagram, DNode, Lane } from './diagramModel';
 import type { Info } from './info';
 import styles from './k8s.module.css';
@@ -117,7 +118,7 @@ export default function ClusterDiagram({ diagram, iconBase, selected, onSelect, 
   };
 
   const laneFor = (l: Lane) => (
-    <g key={l.id} className={styles.lane} data-kind={l.kind} data-health={l.health}>
+    <g key={l.id} className={`${styles.lane} ${l.virtual ? styles.laneVirtual : ''}`} data-kind={l.kind} data-health={l.health}>
       <rect x={l.x + 1} y={l.y + 1} width={l.w - 2} height={l.h - 2} rx={12} />
       <image href={`${iconBase}${l.kind === 'Node' ? 'node' : 'ns'}.svg`} x={l.x + 10} y={l.y + 6} width={18} height={18} />
       <text x={l.x + 34} y={l.y + 20} className={styles.laneLabel}>
@@ -219,7 +220,11 @@ export default function ClusterDiagram({ diagram, iconBase, selected, onSelect, 
                   onContextMenu(n.id, e.clientX, e.clientY, 'object');
                 }}
               >
-                <img src={`${iconBase}${ICON[n.kind] || 'pod'}.svg`} alt="" className={styles.icon} draggable={false} />
+                {n.kind === 'Application' ? (
+                  <SiArgo className={`${styles.icon} ${styles.iconArgo}`} aria-hidden />
+                ) : (
+                  <img src={`${iconBase}${ICON[n.kind] || 'pod'}.svg`} alt="" className={styles.icon} draggable={false} />
+                )}
                 <div className={styles.meta}>
                   {!n.compact && <span className={styles.kind}>{KIND_SHORT[n.kind] || n.kind}</span>}
                   <span className={styles.name} title={n.name}>

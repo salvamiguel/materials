@@ -148,7 +148,28 @@ export function infoFor(cl: Cluster, o: Obj): Info {
       rows.push(['Claves', Object.keys(o.data || {}).join(', ') || '(vacío)']);
       if (o.kind === 'Secret') rows.push(['Tipo', o.type]);
       break;
+    case 'Application': {
+      const src = o.spec?.source || o.spec?.sources?.[0] || {};
+      rows.push([
+        'Sync',
+        `${s.sync?.status || 'Unknown'}${s.sync?.revision ? ` a ${src.targetRevision || 'HEAD'} (${String(s.sync.revision).slice(0, 7)})` : ''}`,
+      ]);
+      rows.push(['Salud', `${s.health?.status || 'Unknown'}${s.health?.message ? ` · ${s.health.message}` : ''}`]);
+      rows.push(['Repo', src.repoURL || '']);
+      rows.push(['Ruta', `${src.path || '.'}${s.sourceType ? ` (${s.sourceType})` : ''}`]);
+      rows.push(['Destino', `${o.spec?.destination?.namespace || ''} en ${o.spec?.destination?.server || o.spec?.destination?.name || ''}`]);
+      const auto = o.spec?.syncPolicy?.automated;
+      rows.push(['Política', auto ? `automática${auto.prune ? ' + prune' : ''}${auto.selfHeal ? ' + selfHeal' : ''}` : 'manual (Sync a mano)']);
+      const out = (s.resources || []).filter((r: Json) => r.status !== 'Synced');
+      if (out.length) rows.push(['OutOfSync', out.map((r: Json) => `${r.kind}/${r.name}${r.requiresPruning ? ' (sobra)' : ''}`).join(', ')]);
+      if (s.operationState) rows.push(['Último sync', `${s.operationState.phase}: ${s.operationState.message || ''}`.slice(0, 160)]);
+      for (const c of s.conditions || []) rows.push([c.type, String(c.message).slice(0, 200)]);
+      break;
+    }
   }
+  const tracked = o.kind !== 'Application' && o.metadata.labels?.['app.kubernetes.io/instance'];
+  if (tracked && cl.get('Application', cl.s.argocd?.namespace || 'argocd', tracked))
+    rows.push(['ArgoCD', `lo gestiona la Application ${tracked}: cámbialo en Git (si tiene selfHeal, ArgoCD revierte los cambios a mano)`]);
   const labels = Object.entries(o.metadata.labels || {}).filter(
     ([k]) => k !== 'pod-template-hash' && !k.startsWith('batch.kubernetes.io') && k !== 'controller-uid' && k !== 'job-name',
   );
@@ -176,7 +197,8 @@ export interface MenuItem {
   /** kubectl command to run in the terminal. */
   cmd?: string;
   /** Other action handled by the playground. */
-  action?: 'fault' | 'heal' | 'open' | 'load' | 'node-down' | 'node-up' | 'select';
+  action?: 'fault' | 'heal' | 'open' | 'load' | 'node-down' | 'node-up' | 'select' | 'argo';
+  argo?: 'sync' | 'sync-prune' | 'refresh' | 'hard-refresh' | 'ui';
   fault?: FaultKind;
   load?: number;
   danger?: boolean;
@@ -281,6 +303,19 @@ export function menuFor(cl: Cluster, o: Obj): MenuItem[] {
       });
       break;
     }
+    case 'Application':
+      items.splice(0, items.length, ...items.filter((i) => i.label !== 'Describe' && i.label !== 'Ver YAML'));
+      items.push({ label: 'Abrir en la UI de ArgoCD', action: 'argo', argo: 'ui' });
+      items.push({ separator: true, label: 'ArgoCD' });
+      items.push({ label: 'Sync', action: 'argo', argo: 'sync', hint: 'aplica lo que hay en Git' });
+      items.push({ label: 'Sync con prune', action: 'argo', argo: 'sync-prune', hint: 'y borra lo que ya no está en Git', danger: true });
+      items.push({ label: 'Refresh', action: 'argo', argo: 'refresh', hint: 'vuelve a leer Git ya' });
+      items.push({ label: 'Hard refresh', action: 'argo', argo: 'hard-refresh' });
+      items.push({ separator: true, label: '' });
+      items.push({ label: 'Ver YAML', cmd: `kubectl get application ${o.metadata.name} -n ${o.metadata.namespace} -o yaml` });
+      items.push({ label: 'Eventos', cmd: `kubectl describe application ${o.metadata.name} -n ${o.metadata.namespace}` });
+      items.push({ label: 'Logs del application-controller', cmd: `kubectl logs argocd-application-controller-0 -n ${o.metadata.namespace} --tail=20` });
+      break;
     case 'Secret':
       items.push({ label: 'Decodificar', cmd: `kubectl get secret ${o.metadata.name}${ns} -o jsonpath='{.data}'` });
       break;
@@ -296,6 +331,13 @@ function deleteHint(cl: Cluster, o: Obj): string | undefined {
   if (o.kind === 'ReplicaSet' && owner) return `el ${owner.kind} lo volverá a crear`;
   if (['Deployment', 'StatefulSet', 'DaemonSet', 'Job', 'CronJob'].includes(o.kind)) return 'también se borran sus pods';
   if (o.kind === 'PersistentVolumeClaim') return 'se queda en Terminating mientras un pod lo use';
+  if (o.kind === 'Application')
+    return (o.metadata.finalizers || []).includes('resources-finalizer.argocd.argoproj.io') ? 'y todo lo que gestiona (finalizer)' : 'sus recursos se quedan';
+  if (
+    o.metadata.labels?.['app.kubernetes.io/instance'] &&
+    cl.list('Application').some((a) => a.metadata.name === o.metadata.labels['app.kubernetes.io/instance'])
+  )
+    return 'ArgoCD lo volverá a crear si tiene selfHeal';
   return undefined;
 }
 

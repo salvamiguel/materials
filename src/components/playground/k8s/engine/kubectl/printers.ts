@@ -333,6 +333,12 @@ export function tableFor(cl: Cluster, kind: string): Table {
           a(h),
         ],
       };
+    case 'Application':
+      return {
+        headers: ['NAME', 'SYNC STATUS', 'HEALTH STATUS'],
+        rows: (o) => [o.metadata.name, o.status?.sync?.status || 'Unknown', o.status?.health?.status || 'Unknown'],
+        wide: { headers: ['REVISION', 'PROJECT'], rows: (o) => [o.status?.sync?.revision || '', o.spec?.project || ''] },
+      };
     default:
       return { headers: ['NAME', 'AGE'], rows: (o) => [o.metadata.name, a(o)] };
   }
