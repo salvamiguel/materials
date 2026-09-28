@@ -98,8 +98,8 @@ El overlay de dev extiende la base y aplica sus parches específicos:
 
 Parche estratégico que solo modifica los campos que cambian entre entornos:
 <GitHubCode
-  title="Parche estratégico que solo modifica los campos que cambian entre entornos: k8s/overlays/dev/kustomization.yaml"
-  url="https://github.com/salvamiguel/gitops-status-demo-config/blob/main/k8s/overlays/dev/kustomization.yaml"
+  title="Parche estratégico que solo modifica los campos que cambian entre entornos: k8s/overlays/dev/patch-replicas.yaml"
+  url="https://github.com/salvamiguel/gitops-status-demo-config/blob/main/k8s/overlays/dev/patch-replicas.yaml"
   language="yaml"
 />
 
@@ -120,7 +120,20 @@ Parche estratégico que solo modifica los campos que cambian entre entornos:
 />
 
 :::tip Parches estratégicos vs JSON patches
-Kustomize soporta dos tipos de parches: los **estratégicos** (como los de arriba, que fusionan inteligentemente) y los **JSON patches** (`patchesJson6902`), que son más precisos para modificar elementos específicos de listas. Para la mayoría de casos, los parches estratégicos son suficientes.
+Kustomize soporta dos tipos de parches, y los dos se declaran en el campo `patches`: los **estratégicos** (como los de arriba, que fusionan inteligentemente) y los **JSON patches** (RFC 6902), que son más precisos para modificar elementos concretos de listas. Para la mayoría de casos, los parches estratégicos son suficientes.
+
+```yaml
+patches:
+  - target:
+      kind: Deployment
+      name: gitops-status-demo
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+```
+
+Los campos antiguos `patchesStrategicMerge` y `patchesJson6902` están **deprecados** desde Kustomize 5: `kustomize edit fix` los migra a `patches`.
 :::
 
 ## 3. Comandos Kustomize

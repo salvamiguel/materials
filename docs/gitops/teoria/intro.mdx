@@ -99,13 +99,13 @@ La combinación de auditoría completa vía Git + aprobaciones mediante Pull Req
 
 ## 4. Ecosistema de herramientas
 
-Existen varias herramientas que implementan el modelo GitOps. Las tres principales dentro del ecosistema CNCF son:
+Existen varias herramientas que implementan el modelo GitOps. Las tres más conocidas son ArgoCD y Flux (ambas de la CNCF) y Jenkins X (de la CD Foundation):
 
-| Herramienta | Descripción | Cuándo usarlo | Popularidad CNCF |
+| Herramienta | Descripción | Cuándo usarlo | Fundación y adopción |
 |-------------|-------------|---------------|------------------|
 | **ArgoCD** | Controlador GitOps declarativo para Kubernetes con interfaz web muy visual. Permite gestionar múltiples clústeres desde un panel centralizado, con visualización en tiempo real del estado de cada aplicación. | Equipos que valoran la observabilidad y la UI. Ideal para adopción de GitOps en organizaciones que empiezan. Muy usado en entornos enterprise. | Proyecto Graduado CNCF. Uno de los proyectos de mayor crecimiento en 2023-2024. |
 | **Flux** | Conjunto de controladores GitOps nativos de Kubernetes (operadores). Sigue la filosofía "GitOps Toolkit": componentes pequeños y componibles. Menos UI que ArgoCD, más orientado a automatización y CLI. | Equipos con experiencia en Kubernetes que prefieren integración nativa con el ecosistema (Helm, Kustomize, OCI). Buena opción para pipelines completamente automatizados. | Proyecto Graduado CNCF. Creado por Weaveworks, quienes acuñaron el término GitOps. |
-| **Jenkins X** | Plataforma GitOps completa que incluye CI/CD + gestión de entornos + preview environments. Construida sobre Kubernetes, Jenkins X automatiza todo el ciclo de vida desde el commit hasta producción. | Organizaciones que quieren una solución completa "batteries included" y no quieren componer herramientas individualmente. Curva de aprendizaje alta. | Proyecto Incubating CNCF. Menos adopción que ArgoCD y Flux en nuevos proyectos. |
+| **Jenkins X** | Plataforma GitOps completa que incluye CI/CD + gestión de entornos + preview environments. Construida sobre Kubernetes, Jenkins X automatiza todo el ciclo de vida desde el commit hasta producción. | Organizaciones que quieren una solución completa "batteries included" y no quieren componer herramientas individualmente. Curva de aprendizaje alta. | Proyecto de la CD Foundation (no de la CNCF). Menos adopción que ArgoCD y Flux en nuevos proyectos. |
 
 :::info ArgoCD vs Flux: la pregunta frecuente
 Ambas herramientas son excelentes y están en producción en miles de organizaciones. La diferencia principal es filosófica: **ArgoCD** prioriza la visibilidad y la experiencia de usuario, con una UI rica y opinionated. **Flux** prioriza la composabilidad y la integración nativa con Kubernetes. En este curso usaremos ArgoCD por su curva de aprendizaje más suave y su excelente interfaz para visualizar el estado del clúster.

@@ -73,14 +73,14 @@ El [playground de Kubernetes](/k8s-playground) simula un ArgoCD ligero: los mism
 <K8sPlaygroundLink example="argocd">Abre el repo de clase gitops-status-demo-config en el playground</K8sPlaygroundLink>
 :::
 
-La instalación oficial se realiza aplicando el manifiesto estable publicado en el repositorio de ArgoCD:
+La instalación oficial se realiza aplicando el manifiesto publicado en el repositorio de ArgoCD. Desde Argo CD 3 se aplica con **server-side apply** (`--server-side --force-conflicts`), porque algunas CRD superan el límite de tamaño de las anotaciones de `kubectl apply`:
 
 ```bash
 # Crear namespace dedicado
 kubectl create namespace argocd
 
-# Instalar ArgoCD (versión estable)
-kubectl apply -n argocd -f \
+# Instalar ArgoCD (en producción, fija una versión en lugar de stable, p. ej. v3.5.3)
+kubectl apply -n argocd --server-side --force-conflicts -f \
   https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 # Esperar a que todos los pods estén Running
@@ -97,6 +97,9 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 Obtén la contraseña del admin inicial:
 
 ```bash
+argocd admin initial-password -n argocd
+
+# Sin el CLI de argocd, leyendo el secret directamente:
 kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath="{.data.password}" | base64 -d && echo
 ```
@@ -125,7 +128,7 @@ spec:
   project: default           # Proyecto ArgoCD (control de acceso y políticas)
 
   source:
-    repoURL: https://github.com/salvamiguel/materials
+    repoURL: https://github.com/salvamiguel/gitops-status-demo-config
     targetRevision: HEAD     # Branch, tag o commit SHA
     path: k8s/overlays/dev   # Directorio dentro del repo con los manifiestos
 
@@ -193,6 +196,10 @@ argocd app sync mi-app
 :::tip Cuándo usar sync manual
 En producción crítica, muchos equipos prefieren sync manual con aprobación de un SRE. En dev/staging, el sync automático acelera el ciclo de feedback sin fricciones.
 :::
+
+import ArgoCDSyncSim from '@site/src/components/demos/gitops/ArgoCDSyncSim';
+
+<ArgoCDSyncSim />
 
 ## 5. Health checks y Sync Status
 
@@ -275,7 +282,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: https://github.com/salvamiguel/materials
+        repoURL: https://github.com/salvamiguel/gitops-status-demo-config
         targetRevision: HEAD
         path: 'k8s/overlays/{{cluster}}'
       destination:
@@ -309,7 +316,8 @@ argocd app sync mi-app
 # Ver el historial de despliegues (con IDs de revisión)
 argocd app history mi-app
 
-# Hacer rollback a una revisión anterior (usar el ID del historial)
+# Hacer rollback a una revisión anterior (usar el ID del historial;
+# solo funciona si la app NO tiene sincronización automática)
 argocd app rollback mi-app 2
 
 # Ver diferencias entre Git y el estado actual del clúster
@@ -317,7 +325,7 @@ argocd app diff mi-app
 
 # Crear una Application directamente desde la CLI
 argocd app create mi-app \
-  --repo https://github.com/salvamiguel/materials \
+  --repo https://github.com/salvamiguel/gitops-status-demo-config \
   --path k8s/overlays/dev \
   --dest-server https://kubernetes.default.svc \
   --dest-namespace mi-app-dev \

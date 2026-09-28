@@ -1967,6 +1967,34 @@ export const testState: TestConfig = {
       ],
       correctAnswer: [0, 2, 3],
     },
+    {
+      id: 'state-26',
+      title: 'Has renombrado aws_instance.web a aws_instance.app en el código. ¿Qué bloque evita que Terraform destruya y vuelva a crear la instancia?',
+      type: 'select',
+      points: 2,
+      explanation: 'Un bloque moved { from = aws_instance.web  to = aws_instance.app } (Terraform 1.1+) registra el cambio de dirección en el código: el plan muestra que el recurso se ha movido y no destruye nada. Es la alternativa declarativa a terraform state mv.',
+      answers: [
+        'Un bloque import',
+        'Un bloque moved',
+        'Un bloque removed',
+        'lifecycle { prevent_destroy = true }',
+      ],
+      correctAnswer: 1,
+    },
+    {
+      id: 'state-27',
+      title: '¿Qué ventaja tiene un bloque import { to = ..., id = ... } frente al comando terraform import?',
+      type: 'select',
+      points: 2,
+      explanation: 'Desde Terraform 1.5, el bloque import vive en el código: la importación aparece en el plan, se revisa en el pull request antes de aplicarse y funciona igual en la CI. Con terraform plan -generate-config-out, Terraform puede además generar el HCL del recurso.',
+      answers: [
+        'Importa el recurso sin necesidad de ejecutar plan ni apply',
+        'La importación aparece en el plan y se revisa en el pull request antes de aplicarse',
+        'Borra el recurso del proveedor y lo vuelve a crear gestionado por Terraform',
+        'Solo funciona con el backend local',
+      ],
+      correctAnswer: 1,
+    },
   ],
 };
 

@@ -56,7 +56,7 @@ echo "Primera entrada del log" >> app.log
 echo "Segunda entrada del log" >> app.log
 ```
 
-### Redireccion de entrada
+### Redirección de entrada
 
 **Leer desde un archivo con `<`**
 
@@ -71,12 +71,12 @@ sort < nombres.txt
 ```
 
 :::info Diferencia con pasar el archivo como argumento
-`wc -l datos.txt` y `wc -l < datos.txt` producen resultados ligeramente distintos. En el primer caso, `wc` recibe el nombre del archivo y lo muestra en la salida (`42 datos.txt`). En el segundo caso, `wc` lee de `stdin` y no sabe el nombre del archivo, asi que solo muestra el numero (`42`).
+`wc -l datos.txt` y `wc -l < datos.txt` producen resultados ligeramente distintos. En el primer caso, `wc` recibe el nombre del archivo y lo muestra en la salida (`42 datos.txt`). En el segundo caso, `wc` lee de `stdin` y no sabe el nombre del archivo, así que solo muestra el número (`42`).
 :::
 
-### Redireccion de stderr
+### Redirección de stderr
 
-Los errores van por el descriptor 2, asi que para redirigirlos se usa el prefijo `2`:
+Los errores van por el descriptor 2, así que para redirigirlos se usa el prefijo `2`:
 
 ```bash
 # Redirigir errores a un archivo (sobrescribir)
@@ -105,7 +105,7 @@ comando &>> salida.log
 La notacion `2>&1` significa _"redirige el descriptor 2 (stderr) al mismo destino que el descriptor 1 (stdout)"_. El ampersand indica que `1` es un descriptor de archivo, no un archivo literal llamado `1`.
 
 :::tip El orden importa
-La redireccion `2>&1` debe ir **despues** de `>`. El shell procesa las redirecciones de izquierda a derecha:
+La redirección `2>&1` debe ir **después** de `>`. El shell procesa las redirecciones de izquierda a derecha:
 
 ```bash
 # CORRECTO: primero stdout va al archivo, luego stderr sigue a stdout
@@ -119,7 +119,7 @@ comando 2>&1 > salida.log
 
 ### /dev/null -- el agujero negro
 
-`/dev/null` es un archivo especial que descarta todo lo que se escribe en el. Es util para silenciar salidas que no interesan:
+`/dev/null` es un archivo especial que descarta todo lo que se escribe en el. Es útil para silenciar salidas que no interesan:
 
 ```bash
 # Ejecutar un comando descartando toda la salida
@@ -132,13 +132,13 @@ find / -name "*.log" 2>/dev/null
 comando > /dev/null
 ```
 
-El patron `> /dev/null 2>&1` es tan comun en scripts de produccion que merece memorizarse. Silencia completamente un comando.
+El patrón `> /dev/null 2>&1` es tan común en scripts de producción que merece memorizarse. Silencia completamente un comando.
 
 ### Here documents y here strings
 
 **Here documents (`<<`)**
 
-Un here document permite pasar un bloque de texto multilinca como entrada estandar de un comando. Se delimita con una etiqueta (normalmente `EOF`, pero puede ser cualquier palabra):
+Un here document permite pasar un bloque de texto multilinca como entrada estándar de un comando. Se delimita con una etiqueta (normalmente `EOF`, pero puede ser cualquier palabra):
 
 ```bash
 cat <<EOF
@@ -148,7 +148,7 @@ Tambien puede incluir variables: $USER
 EOF
 ```
 
-Si entrecomillas la etiqueta, se desactiva la expansion de variables:
+Si entrecomillas la etiqueta, se desactiva la expansión de variables:
 
 ```bash
 cat <<'EOF'
@@ -157,7 +157,7 @@ Tampoco interpreta $(whoami)
 EOF
 ```
 
-Los here documents son especialmente utiles para generar archivos de configuracion desde scripts:
+Los here documents son especialmente útiles para generar archivos de configuración desde scripts:
 
 ```bash
 cat <<EOF > /etc/nginx/conf.d/app.conf
@@ -171,7 +171,7 @@ EOF
 
 **Here strings (`<<<`)**
 
-Un here string pasa una cadena simple como `stdin`. Es mas conciso que un here document para una sola linea:
+Un here string pasa una cadena simple como `stdin`. Es más conciso que un here document para una sola línea:
 
 ```bash
 # En lugar de: echo "hola mundo" | wc -w
@@ -203,11 +203,11 @@ make build 2>&1 | tee build.log | grep -i error
 
 ---
 
-## 2. Pipes: la filosofia Unix
+## 2. Pipes: la filosofía Unix
 
-### La filosofia: herramientas pequenas, conectadas
+### La filosofía: herramientas pequenas, conectadas
 
-La filosofia Unix se resume en una idea poderosa: construir programas pequenos que hagan una sola cosa bien y conectarlos entre si para resolver problemas complejos. En lugar de crear un programa monolitico que lo haga todo, se combinan herramientas simples como piezas de Lego.
+La filosofía Unix se resume en una idea poderosa: construir programas pequenos que hagan una sola cosa bien y conectarlos entre si para resolver problemas complejos. En lugar de crear un programa monolitico que lo haga todo, se combinan herramientas simples como piezas de Lego.
 
 Los tres principios fundamentales son:
 
@@ -217,7 +217,7 @@ Los tres principios fundamentales son:
 
 ### El operador pipe (`|`)
 
-El operador `|` conecta la salida estandar (`stdout`) de un comando con la entrada estandar (`stdin`) del siguiente. El shell crea un buffer en memoria entre ambos procesos:
+El operador `|` conecta la salida estándar (`stdout`) de un comando con la entrada estándar (`stdin`) del siguiente. El shell crea un buffer en memoria entre ambos procesos:
 
 ```bash
 # La salida de ls se convierte en la entrada de grep
@@ -227,36 +227,36 @@ ls -la | grep ".txt"
 cat /var/log/syslog | grep "error" | sort | uniq -c | sort -rn
 ```
 
-### Como funcionan los pipes internamente
+### Cómo funcionan los pipes internamente
 
 Cuando el shell encuentra un pipe, realiza las siguientes operaciones a nivel de sistema:
 
 1. **Crea un pipe** con la syscall `pipe()`, que devuelve dos file descriptors: uno para leer y otro para escribir.
 2. **Hace `fork()`** para crear un proceso hijo para cada comando.
 3. Usa **`dup2()`** para conectar el `stdout` del primer proceso al extremo de escritura del pipe y el `stdin` del segundo proceso al extremo de lectura.
-4. Ambos procesos se ejecutan **en paralelo**. El kernel gestiona la sincronizacion: si el buffer del pipe se llena, el escritor se bloquea; si esta vacio, el lector espera.
+4. Ambos procesos se ejecutan **en paralelo**. El kernel gestiona la sincronizacion: si el buffer del pipe se llena, el escritor se bloquea; si esta vacío, el lector espera.
 
-Este diseno significa que los datos fluyen entre los procesos conforme se producen, sin necesidad de escribir archivos intermedios a disco.
+Este diseño significa que los datos fluyen entre los procesos conforme se producen, sin necesidad de escribir archivos intermedios a disco.
 
 ### Pipeline paso a paso
 
-Analicemos un pipeline clasico para contar las palabras mas frecuentes en un archivo:
+Analicemos un pipeline clasico para contar las palabras más frecuentes en un archivo:
 
 ```bash
 cat access.log | awk '{print $7}' | sort | uniq -c | sort -rn | head -10
 ```
 
-| Paso | Comando | Funcion |
+| Paso | Comando | Función |
 |:----:|---------|---------|
 | 1 | `cat access.log` | Lee el archivo y envia su contenido a stdout. |
-| 2 | `awk '{print $7}'` | Extrae el septimo campo de cada linea (la URL en un log de Apache). |
-| 3 | `sort` | Ordena las lineas alfabeticamente. Necesario para que `uniq` funcione. |
+| 2 | `awk '{print $7}'` | Extrae el septimo campo de cada línea (la URL en un log de Apache). |
+| 3 | `sort` | Ordena las líneas alfabeticamente. Necesario para que `uniq` funcione. |
 | 4 | `uniq -c` | Elimina duplicados consecutivos y cuenta las repeticiones. |
 | 5 | `sort -rn` | Ordena numericamente (`-n`) en orden descendente (`-r`). |
-| 6 | `head -10` | Muestra solo las 10 primeras lineas (las URLs mas visitadas). |
+| 6 | `head -10` | Muestra solo las 10 primeras líneas (las URLs más visitadas). |
 
-:::info PIPESTATUS: codigos de salida en un pipeline
-Por defecto, `$?` solo contiene el codigo de salida del **ultimo** comando del pipeline. Para inspeccionar el codigo de cada comando, Bash ofrece el array `$PIPESTATUS`:
+:::info PIPESTATUS: códigos de salida en un pipeline
+Por defecto, `$?` solo contiene el código de salida del **último** comando del pipeline. Para inspeccionar el código de cada comando, Bash ofrece el array `$PIPESTATUS`:
 
 ```bash
 false | true | false
@@ -264,7 +264,7 @@ echo "${PIPESTATUS[0]} ${PIPESTATUS[1]} ${PIPESTATUS[2]}"
 # Salida: 1 0 1
 ```
 
-Otra opcion es activar `set -o pipefail`, que hace que el pipeline devuelva el codigo de salida del ultimo comando que fallo (en lugar del ultimo comando del pipeline):
+Otra opción es activar `set -o pipefail`, que hace que el pipeline devuelva el código de salida del último comando que fallo (en lugar del último comando del pipeline):
 
 ```bash
 set -o pipefail
@@ -275,7 +275,7 @@ echo $?  # Salida: 1 (en lugar de 0)
 
 ### Named pipes (mkfifo)
 
-Los pipes que hemos visto son anonimos: existen solo durante la ejecucion del pipeline. Tambien existen los **named pipes** (o FIFOs), que son archivos especiales en el sistema de ficheros que permiten comunicar dos procesos que no estan en el mismo pipeline:
+Los pipes que hemos visto son anonimos: existen solo durante la ejecución del pipeline. También existen los **named pipes** (o FIFOs), que son archivos especiales en el sistema de ficheros que permiten comunicar dos procesos que no están en el mismo pipeline:
 
 ```bash
 # Crear un named pipe
@@ -291,17 +291,17 @@ cat /tmp/mi_pipe
 rm /tmp/mi_pipe
 ```
 
-Los named pipes son utiles para comunicacion entre procesos en scripts complejos, aunque en la practica son menos frecuentes que los pipes anonimos.
+Los named pipes son útiles para comunicacion entre procesos en scripts complejos, aunque en la practica son menos frecuentes que los pipes anonimos.
 
 ---
 
-## 3. grep -- busqueda de patrones
+## 3. grep -- búsqueda de patrones
 
-### Que es grep
+### Qué es grep
 
-`grep` (Global Regular Expression Print) busca lineas que coincidan con un patron en uno o mas archivos. Es una de las herramientas mas utilizadas en Unix/Linux y probablemente la primera que se aprende a combinar con pipes.
+`grep` (Global Regular Expression Print) busca líneas que coincidan con un patrón en uno o más archivos. Es una de las herramientas más utilizadas en Unix/Linux y probablemente la primera que se aprende a combinar con pipes.
 
-### Uso basico
+### Uso básico
 
 ```bash
 # Buscar un patron en un archivo
@@ -314,37 +314,37 @@ grep "TODO" *.py
 dmesg | grep "usb"
 ```
 
-### Flags mas importantes
+### Flags más importantes
 
-| Flag | Nombre | Descripcion | Ejemplo |
+| Flag | Nombre | Descripción | Ejemplo |
 |------|--------|-------------|---------|
 | `-i` | Case insensitive | Ignora mayusculas y minusculas | `grep -i "error" app.log` |
 | `-r` | Recursive | Busca en todos los archivos del directorio recursivamente | `grep -r "TODO" src/` |
-| `-n` | Line numbers | Muestra el numero de linea de cada coincidencia | `grep -n "def " app.py` |
-| `-c` | Count | Cuenta el numero de lineas que coinciden | `grep -c "404" access.log` |
+| `-n` | Line numbers | Muestra el número de línea de cada coincidencia | `grep -n "def " app.py` |
+| `-c` | Count | Cuenta el número de líneas que coinciden | `grep -c "404" access.log` |
 | `-l` | Files only | Muestra solo los nombres de los archivos con coincidencias | `grep -rl "deprecated" lib/` |
-| `-v` | Invert | Muestra las lineas que **no** coinciden | `grep -v "^#" config.conf` |
+| `-v` | Invert | Muestra las líneas que **no** coinciden | `grep -v "^#" config.conf` |
 | `-w` | Word | Coincide solo con la palabra completa | `grep -w "error" log.txt` |
 | `-E` | Extended regex | Habilita expresiones regulares extendidas | `grep -E "error|warning" log.txt` |
-| `-P` | Perl regex | Habilita expresiones regulares Perl (mas potentes) | `grep -P "\d{3}-\d{4}" datos.txt` |
-| `-o` | Only matching | Muestra solo la parte que coincide, no la linea entera | `grep -oE "\b[0-9]+\b" datos.txt` |
-| `-A n` | After | Muestra `n` lineas despues de cada coincidencia | `grep -A 3 "Exception" app.log` |
-| `-B n` | Before | Muestra `n` lineas antes de cada coincidencia | `grep -B 2 "FATAL" app.log` |
-| `-C n` | Context | Muestra `n` lineas antes y despues de cada coincidencia | `grep -C 5 "segfault" kern.log` |
+| `-P` | Perl regex | Habilita expresiones regulares Perl (más potentes) | `grep -P "\d{3}-\d{4}" datos.txt` |
+| `-o` | Only matching | Muestra solo la parte que coincide, no la línea entera | `grep -oE "\b[0-9]+\b" datos.txt` |
+| `-A n` | After | Muestra `n` líneas después de cada coincidencia | `grep -A 3 "Exception" app.log` |
+| `-B n` | Before | Muestra `n` líneas antes de cada coincidencia | `grep -B 2 "FATAL" app.log` |
+| `-C n` | Context | Muestra `n` líneas antes y después de cada coincidencia | `grep -C 5 "segfault" kern.log` |
 
-### Expresiones regulares basicas con grep
+### Expresiones regulares básicas con grep
 
-| Patron | Significado | Ejemplo |
+| Patrón | Significado | Ejemplo |
 |--------|-------------|---------|
-| `.` | Cualquier caracter | `grep "h.la" archivo` coincide con hola, hala, hula... |
-| `*` | Cero o mas repeticiones del caracter anterior | `grep "ab*c" archivo` coincide con ac, abc, abbc... |
-| `^` | Inicio de linea | `grep "^Error" log` lineas que empiezan por Error |
-| `$` | Final de linea | `grep "\.conf$" lista` lineas que terminan en .conf |
-| `[]` | Clase de caracteres | `grep "[aeiou]" archivo` lineas con vocales |
-| `[^]` | Negacion de clase | `grep "[^0-9]" archivo` lineas con caracteres no numericos |
+| `.` | Cualquier carácter | `grep "h.la" archivo` coincide con hola, hala, hula... |
+| `*` | Cero o más repeticiones del carácter anterior | `grep "ab*c" archivo` coincide con ac, abc, abbc... |
+| `^` | Inicio de línea | `grep "^Error" log` líneas que empiezan por Error |
+| `$` | Final de línea | `grep "\.conf$" lista` líneas que terminan en .conf |
+| `[]` | Clase de caracteres | `grep "[aeiou]" archivo` líneas con vocales |
+| `[^]` | Negacion de clase | `grep "[^0-9]" archivo` líneas con caracteres no numéricos |
 | `\` | Escape | `grep "\." archivo` busca un punto literal |
 
-### Ejemplos practicos
+### Ejemplos prácticos
 
 ```bash
 # Buscar errores en un log mostrando numeros de linea
@@ -377,13 +377,13 @@ grep -C 3 "NullPointerException" app.log
 
 ## 4. sed -- editor de flujo
 
-### Que es sed
+### Qué es sed
 
-`sed` (Stream Editor) es un editor de flujo que procesa texto linea por linea. Recibe texto por `stdin` (o desde un archivo), aplica una o mas transformaciones y emite el resultado por `stdout`. Es extremadamente util para hacer sustituciones, eliminar lineas y transformar texto en scripts automatizados.
+`sed` (Stream Editor) es un editor de flujo que procesa texto línea por línea. Recibe texto por `stdin` (o desde un archivo), aplica una o más transformaciones y emite el resultado por `stdout`. Es extremadamente útil para hacer sustituciones, eliminar líneas y transformar texto en scripts automatizados.
 
-### Sustitucion: el uso mas comun
+### Sustitución: el uso más común
 
-La sintaxis de sustitucion sigue el patron `s/patron/reemplazo/flags`:
+La sintaxis de sustitución sigue el patrón `s/patron/reemplazo/flags`:
 
 ```bash
 # Sustituir la primera ocurrencia en cada linea
@@ -399,7 +399,7 @@ echo "Hola HOLA hola" | sed 's/hola/hey/gI'
 # Salida: hey hey hey
 ```
 
-El delimitador no tiene que ser `/`. Si el patron contiene barras, puedes usar otro caracter para evitar escaparlas:
+El delimitador no tiene que ser `/`. Si el patrón contiene barras, puedes usar otro carácter para evitar escaparlas:
 
 ```bash
 # Sustituir una ruta (usando | como delimitador)
@@ -409,7 +409,7 @@ sed 's|/usr/local/bin|/opt/bin|g' script.sh
 sed 's#viejo#nuevo#g' archivo.txt
 ```
 
-### Edicion in-place
+### Edición in-place
 
 El flag `-i` modifica el archivo directamente en lugar de escribir a `stdout`:
 
@@ -422,7 +422,7 @@ sed -i.bak 's/antiguo/nuevo/g' archivo.txt
 ```
 
 :::warning macOS y BSD sed
-En macOS, `sed -i` requiere un argumento obligatorio para la extension del backup. Para editar sin backup, hay que pasar una cadena vacia:
+En macOS, `sed -i` requiere un argumento obligatorio para la extensión del backup. Para editar sin backup, hay que pasar una cadena vacía:
 
 ```bash
 # macOS: edicion in-place sin backup
@@ -440,9 +440,9 @@ sed -i.bak 's/antiguo/nuevo/g' archivo.txt && rm archivo.txt.bak
 ```
 :::
 
-### Eliminar lineas
+### Eliminar líneas
 
-El comando `d` elimina las lineas que coincidan con un patron:
+El comando `d` elimina las líneas que coincidan con un patrón:
 
 ```bash
 # Eliminar lineas que contengan "DEBUG"
@@ -458,9 +458,9 @@ sed '/^#/d' config.conf
 sed '/^#/d; /^$/d' config.conf
 ```
 
-### Imprimir lineas especificas
+### Imprimir líneas específicas
 
-El flag `-n` suprime la salida por defecto, y el comando `p` imprime las lineas seleccionadas:
+El flag `-n` suprime la salida por defecto, y el comando `p` imprime las líneas seleccionadas:
 
 ```bash
 # Mostrar solo la linea 5
@@ -478,7 +478,7 @@ sed -n '$p' archivo.txt
 
 ### Rangos de direcciones
 
-`sed` permite aplicar comandos solo a un rango de lineas o a lineas que coincidan con un patron:
+`sed` permite aplicar comandos solo a un rango de líneas o a líneas que coincidan con un patrón:
 
 ```bash
 # Sustituir solo en las lineas 2 a 5
@@ -491,7 +491,7 @@ sed '/START/,/END/s/viejo/nuevo/g' archivo.txt
 sed '10,$d' archivo.txt
 ```
 
-### Multiples comandos
+### Múltiples comandos
 
 Puedes encadenar varios comandos con `-e` o separandolos con punto y coma:
 
@@ -503,7 +503,7 @@ sed -e 's/foo/bar/g' -e 's/baz/qux/g' archivo.txt
 sed 's/foo/bar/g; s/baz/qux/g' archivo.txt
 ```
 
-### Ejemplos practicos
+### Ejemplos prácticos
 
 ```bash
 # Eliminar comentarios y lineas vacias de un archivo de configuracion
@@ -532,11 +532,11 @@ sed 's/\t/    /g' archivo.txt
 
 ## 5. awk -- procesamiento de campos
 
-### Que es awk
+### Qué es awk
 
-`awk` es un lenguaje de procesamiento de texto orientado a campos. Mientras que `grep` busca patrones y `sed` transforma texto linea por linea, `awk` destaca en dividir cada linea en campos y operar sobre ellos. Es especialmente potente para procesar datos tabulares como CSVs, logs y salidas de comandos.
+`awk` es un lenguaje de procesamiento de texto orientado a campos. Mientras que `grep` busca patrones y `sed` transforma texto línea por línea, `awk` destaca en dividir cada línea en campos y operar sobre ellos. Es especialmente potente para procesar datos tabulares como CSVs, logs y salidas de comandos.
 
-### Sintaxis basica
+### Sintaxis básica
 
 La estructura de un programa `awk` es:
 
@@ -544,24 +544,24 @@ La estructura de un programa `awk` es:
 awk 'patron {accion}' archivo
 ```
 
-- Si se omite el **patron**, la accion se aplica a todas las lineas.
-- Si se omite la **accion**, se imprime la linea completa (equivalente a `{print $0}`).
+- Si se omite el **patrón**, la acción se aplica a todas las líneas.
+- Si se omite la **acción**, se imprime la línea completa (equivalente a `{print $0}`).
 
 ### Campos y variables predefinidas
 
-`awk` divide cada linea en campos usando un separador (por defecto, espacios y tabuladores). Los campos se acceden con `$1`, `$2`, etc.:
+`awk` divide cada línea en campos usando un separador (por defecto, espacios y tabuladores). Los campos se acceden con `$1`, `$2`, etc.:
 
 | Variable | Significado |
 |----------|-------------|
-| `$0` | La linea completa |
+| `$0` | La línea completa |
 | `$1`, `$2`, ... | Primer campo, segundo campo, etc. |
-| `$NF` | Ultimo campo de la linea |
-| `NR` | Numero de registro (linea) actual |
-| `NF` | Numero de campos en la linea actual |
+| `$NF` | Último campo de la línea |
+| `NR` | Número de registro (línea) actual |
+| `NF` | Número de campos en la línea actual |
 | `FS` | Separador de campos de entrada (por defecto: espacio/tabulador) |
 | `OFS` | Separador de campos de salida (por defecto: espacio) |
-| `RS` | Separador de registros (por defecto: nueva linea) |
-| `ORS` | Separador de registros de salida (por defecto: nueva linea) |
+| `RS` | Separador de registros (por defecto: nueva línea) |
+| `ORS` | Separador de registros de salida (por defecto: nueva línea) |
 
 ```bash
 # Imprimir el primer y tercer campo de cada linea
@@ -594,7 +594,7 @@ awk -F'[,;]' '{print $1, $2}' datos.txt
 
 ### Bloques BEGIN y END
 
-`awk` permite ejecutar codigo antes de procesar el archivo (`BEGIN`) y despues de procesarlo (`END`):
+`awk` permite ejecutar código antes de procesar el archivo (`BEGIN`) y después de procesarlo (`END`):
 
 ```bash
 # Imprimir cabecera, contenido y resumen
@@ -607,7 +607,7 @@ awk 'BEGIN {print "Nombre\tShell"}
 
 ### Condiciones y filtros
 
-`awk` puede filtrar lineas con condiciones antes de la accion:
+`awk` puede filtrar líneas con condiciones antes de la acción:
 
 ```bash
 # Solo lineas donde el tercer campo sea mayor que 100
@@ -639,13 +639,13 @@ awk 'BEGIN {printf "%-15s %10s %10s\n", "Nombre", "Precio", "Stock"}
 | Formato | Significado |
 |---------|-------------|
 | `%s` | Cadena de texto |
-| `%d` | Numero entero |
-| `%f` | Numero decimal |
-| `%10s` | Cadena con ancho minimo de 10 (alineada a la derecha) |
-| `%-10s` | Cadena con ancho minimo de 10 (alineada a la izquierda) |
+| `%d` | Número entero |
+| `%f` | Número decimal |
+| `%10s` | Cadena con ancho mínimo de 10 (alineada a la derecha) |
+| `%-10s` | Cadena con ancho mínimo de 10 (alineada a la izquierda) |
 | `%10.2f` | Decimal con 10 de ancho y 2 decimales |
 
-### Ejemplos practicos
+### Ejemplos prácticos
 
 ```bash
 # Extraer la segunda columna de un CSV
@@ -679,9 +679,9 @@ awk -F: '$7 ~ /bash/ {print $1, $7}' /etc/passwd
 
 ### Por que jq
 
-JSON esta en todas partes: APIs REST, archivos de configuracion, salidas de herramientas como `kubectl`, `aws cli`, `gh`, `docker inspect` y cualquier servicio moderno. Procesar JSON con herramientas clasicas como `grep` o `awk` es fragil y propenso a errores. `jq` es un procesador de JSON en linea de comandos que entiende la estructura del documento y permite consultarlo, filtrarlo y transformarlo de forma segura.
+JSON esta en todas partes: APIs REST, archivos de configuración, salidas de herramientas como `kubectl`, `aws cli`, `gh`, `docker inspect` y cualquier servicio moderno. Procesar JSON con herramientas clasicas como `grep` o `awk` es fragil y propenso a errores. `jq` es un procesador de JSON en línea de comandos que entiende la estructura del documento y permite consultarlo, filtrarlo y transformarlo de forma segura.
 
-### Instalacion
+### Instalación
 
 ```bash
 # macOS
@@ -694,7 +694,7 @@ sudo apt install jq
 sudo yum install jq
 ```
 
-### Uso basico
+### Uso básico
 
 ```bash
 # Pretty-print (formatear JSON)
@@ -711,19 +711,19 @@ echo '{"nombre":"Ana","edad":30}' | jq -r '.nombre'
 
 ### Filtros principales
 
-| Filtro | Descripcion | Ejemplo |
+| Filtro | Descripción | Ejemplo |
 |--------|-------------|---------|
 | `.` | Elemento raiz | `jq '.'` |
 | `.clave` | Accede a una clave del objeto | `jq '.nombre'` |
 | `.clave.sub` | Acceso anidado | `jq '.metadata.name'` |
 | `.[]` | Itera sobre los elementos de un array | `jq '.items[]'` |
-| `.[0]` | Accede a un elemento por indice | `jq '.items[0]'` |
+| `.[0]` | Accede a un elemento por índice | `jq '.items[0]'` |
 | `.[2:5]` | Slice de un array | `jq '.items[2:5]'` |
 | `| ` | Pipe (encadena filtros) | `jq '.items[] | .name'` |
 
 ### Seleccionar y filtrar
 
-El filtro `select()` permite filtrar elementos que cumplan una condicion:
+El filtro `select()` permite filtrar elementos que cumplan una condición:
 
 ```bash
 # Filtrar pods en estado "Running"
@@ -770,9 +770,9 @@ echo '[1,2,3,4,5]' | jq 'map(select(. > 3))'
 # Salida: [4,5]
 ```
 
-### Funciones utiles
+### Funciones útiles
 
-| Funcion | Descripcion | Ejemplo |
+| Función | Descripción | Ejemplo |
 |---------|-------------|---------|
 | `length` | Longitud de un array u objeto | `jq '.items | length'` |
 | `keys` | Claves de un objeto | `jq 'keys'` |
@@ -822,9 +822,9 @@ done
 
 ## 7. Expresiones regulares
 
-### Referencia rapida
+### Referencia rápida
 
-Las expresiones regulares (regex) son patrones que describen conjuntos de cadenas. Son el lenguaje comun de `grep`, `sed`, `awk` y muchas otras herramientas. Existen tres niveles de complejidad:
+Las expresiones regulares (regex) son patrones que describen conjuntos de cadenas. Son el lenguaje común de `grep`, `sed`, `awk` y muchas otras herramientas. Existen tres niveles de complejidad:
 
 | Tipo | Herramienta | Activacion |
 |------|-------------|------------|
@@ -832,16 +832,20 @@ Las expresiones regulares (regex) son patrones que describen conjuntos de cadena
 | **ERE** (Extended) | `grep -E`, `sed -E`, `awk` | Flag `-E` |
 | **PCRE** (Perl-compatible) | `grep -P` | Flag `-P` (solo GNU grep) |
 
+import RegexPlayground from '@site/src/components/demos/scripting/RegexPlayground';
+
+<RegexPlayground />
+
 ### Metacaracteres
 
 | Simbolo | Significado | BRE | ERE | Ejemplo |
 |---------|-------------|:---:|:---:|---------|
-| `.` | Cualquier caracter | Si | Si | `a.c` -> abc, aXc |
-| `*` | Cero o mas del anterior | Si | Si | `ab*c` -> ac, abc, abbc |
-| `+` | Uno o mas del anterior | `\+` | Si | `ab+c` -> abc, abbc |
+| `.` | Cualquier carácter | Si | Si | `a.c` -> abc, aXc |
+| `*` | Cero o más del anterior | Si | Si | `ab*c` -> ac, abc, abbc |
+| `+` | Uno o más del anterior | `\+` | Si | `ab+c` -> abc, abbc |
 | `?` | Cero o uno del anterior | `\?` | Si | `ab?c` -> ac, abc |
-| `^` | Inicio de linea | Si | Si | `^Error` -> lineas que empiezan con Error |
-| `$` | Fin de linea | Si | Si | `\.log$` -> lineas que terminan en .log |
+| `^` | Inicio de línea | Si | Si | `^Error` -> líneas que empiezan con Error |
+| `$` | Fin de línea | Si | Si | `\.log$` -> líneas que terminan en .log |
 | `[]` | Clase de caracteres | Si | Si | `[aeiou]` -> cualquier vocal |
 | `[^]` | Negacion de clase | Si | Si | `[^0-9]` -> no es digito |
 | `{}` | Cuantificador | `\{\}` | Si | `a{2,4}` -> aa, aaa, aaaa |
@@ -860,14 +864,14 @@ Las expresiones regulares (regex) son patrones que describen conjuntos de cadena
 | `[[:upper:]]` | `[A-Z]` | Mayusculas |
 | `[[:lower:]]` | `[a-z]` | Minusculas |
 
-En PCRE (`grep -P`), tambien se dispone de atajos:
+En PCRE (`grep -P`), también se dispone de atajos:
 
 | Atajo | Equivalente | Significado |
 |-------|-------------|-------------|
 | `\d` | `[0-9]` | Digito |
 | `\D` | `[^0-9]` | No digito |
-| `\w` | `[a-zA-Z0-9_]` | Caracter de palabra |
-| `\W` | `[^a-zA-Z0-9_]` | No caracter de palabra |
+| `\w` | `[a-zA-Z0-9_]` | Carácter de palabra |
+| `\W` | `[^a-zA-Z0-9_]` | No carácter de palabra |
 | `\s` | `[ \t\n\r]` | Espacio en blanco |
 | `\S` | `[^ \t\n\r]` | No espacio en blanco |
 | `\b` | | Limite de palabra |
@@ -876,8 +880,8 @@ En PCRE (`grep -P`), tambien se dispone de atajos:
 
 | Cuantificador | Significado |
 |---------------|-------------|
-| `*` | Cero o mas (greedy) |
-| `+` | Uno o mas (greedy) |
+| `*` | Cero o más (greedy) |
+| `+` | Uno o más (greedy) |
 | `?` | Cero o uno |
 | `{n}` | Exactamente n |
 | `{n,}` | Al menos n |
@@ -898,14 +902,14 @@ echo "hola" | sed -E 's/(.*)/\1 \1/'
 # Salida: hola hola
 ```
 
-### Cuando usar cada tipo
+### Cuándo usar cada tipo
 
 - **BRE**: es el valor por defecto de `grep` y `sed`. Suficiente para patrones simples. Los metacaracteres `+`, `?`, `{}`, `()` y `|` requieren escape con `\`.
 - **ERE**: activalo con `-E`. Recomendado para la mayoria de los casos. Todos los metacaracteres funcionan sin escape.
 - **PCRE**: activalo con `-P` en GNU grep. Necesario cuando requieres atajos como `\d`, `\w`, lookahead/lookbehind o cuantificadores no-greedy.
 
 :::tip Usa ERE por defecto
-En la practica, casi siempre es mejor usar `grep -E` y `sed -E` para evitar tener que escapar metacaracteres. El unico coste es escribir dos caracteres mas, y el resultado es mucho mas legible.
+En la practica, casi siempre es mejor usar `grep -E` y `sed -E` para evitar tener que escapar metacaracteres. El único coste es escribir dos caracteres más, y el resultado es mucho más legible.
 :::
 
 ---
@@ -914,23 +918,27 @@ En la practica, casi siempre es mejor usar `grep -E` y `sed -E` para evitar tene
 
 La verdadera potencia de estas herramientas aparece cuando se combinan en pipelines que resuelven problemas reales. Estos son ejemplos completos y ejecutables.
 
+import BashPipeViz from '@site/src/components/demos/scripting/BashPipeViz';
+
+<BashPipeViz />
+
 ### Ejemplo 1: Top 10 IPs en un log de acceso
 
-Dado un archivo de log de Apache/Nginx con el formato estandar (IP en el primer campo):
+Dado un archivo de log de Apache/Nginx con el formato estándar (IP en el primer campo):
 
 ```bash
 awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -10
 ```
 
-**Explicacion paso a paso:**
+**Explicación paso a paso:**
 
-1. `awk '{print $1}'` extrae la IP (primer campo) de cada linea.
+1. `awk '{print $1}'` extrae la IP (primer campo) de cada línea.
 2. `sort` ordena las IPs alfabeticamente (necesario para `uniq`).
 3. `uniq -c` cuenta las ocurrencias consecutivas.
 4. `sort -rn` ordena numericamente en orden descendente.
-5. `head -10` muestra las 10 IPs mas frecuentes.
+5. `head -10` muestra las 10 IPs más frecuentes.
 
-**Salida tipica:**
+**Salida típica:**
 
 ```
    4523 192.168.1.100
@@ -939,7 +947,7 @@ awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -10
    ...
 ```
 
-### Ejemplo 2: Buscar y reemplazar en multiples archivos
+### Ejemplo 2: Buscar y reemplazar en múltiples archivos
 
 Reemplazar una cadena en todos los archivos Python de un proyecto:
 
@@ -951,7 +959,7 @@ grep -rl "old_function_name" src/ --include="*.py" | \
   done
 ```
 
-Alternativa mas concisa con `xargs`:
+Alternativa más concisa con `xargs`:
 
 ```bash
 grep -rl "old_function_name" src/ --include="*.py" | \
@@ -960,7 +968,7 @@ grep -rl "old_function_name" src/ --include="*.py" | \
 
 ### Ejemplo 3: Extraer datos de una API JSON
 
-Obtener los 5 repositorios mas populares de un usuario de GitHub, mostrando nombre y estrellas:
+Obtener los 5 repositorios más populares de un usuario de GitHub, mostrando nombre y estrellas:
 
 ```bash
 curl -s "https://api.github.com/users/torvalds/repos?per_page=100" | \
@@ -978,9 +986,9 @@ ps aux | \
   sort -t'%' -k1 -rn
 ```
 
-### Ejemplo 5: Analizar errores en un log de aplicacion
+### Ejemplo 5: Analizar errores en un log de aplicación
 
-Extraer los tipos de error mas frecuentes de un log con formato `[TIMESTAMP] ERROR tipo: mensaje`:
+Extraer los tipos de error más frecuentes de un log con formato `[TIMESTAMP] ERROR tipo: mensaje`:
 
 ```bash
 grep "ERROR" app.log | \
@@ -1019,16 +1027,16 @@ cat datos_sucios.csv | \
 
 Estos son los puntos clave de esta unidad:
 
-- Todo proceso Unix tiene tres flujos: **stdin** (fd 0), **stdout** (fd 1) y **stderr** (fd 2). La redireccion (`>`, `>>`, `<`, `2>`, `2>&1`, `&>`) permite cambiar su origen o destino.
-- **/dev/null** descarta cualquier dato que se envie a el. El patron `> /dev/null 2>&1` silencia un comando por completo.
+- Todo proceso Unix tiene tres flujos: **stdin** (fd 0), **stdout** (fd 1) y **stderr** (fd 2). La redirección (`>`, `>>`, `<`, `2>`, `2>&1`, `&>`) permite cambiar su origen o destino.
+- **/dev/null** descarta cualquier dato que se envie a el. El patrón `> /dev/null 2>&1` silencia un comando por completo.
 - **Here documents** (`<<EOF`) y **here strings** (`<<<`) permiten pasar texto como stdin sin archivos intermedios.
 - **tee** bifurca un flujo para enviarlo a stdout y a un archivo simultaneamente.
-- El **pipe** (`|`) conecta la salida de un comando con la entrada del siguiente, siguiendo la filosofia Unix de combinar herramientas pequenas.
-- **grep** busca lineas que coinciden con un patron. Con `-E` activa regex extendida; con `-r` busca recursivamente.
-- **sed** transforma texto linea por linea. Su uso mas comun es la sustitucion (`s/viejo/nuevo/g`). En macOS requiere `sed -i ''` para edicion in-place.
+- El **pipe** (`|`) conecta la salida de un comando con la entrada del siguiente, siguiendo la filosofía Unix de combinar herramientas pequenas.
+- **grep** busca líneas que coinciden con un patrón. Con `-E` activa regex extendida; con `-r` busca recursivamente.
+- **sed** transforma texto línea por línea. Su uso más común es la sustitución (`s/viejo/nuevo/g`). En macOS requiere `sed -i ''` para edición in-place.
 - **awk** procesa texto por campos. Es ideal para datos tabulares: extraer columnas, filtrar por condiciones y calcular agregados.
-- **jq** es imprescindible para procesar JSON desde la linea de comandos. Soporta filtros, seleccion, transformacion y construccion de objetos.
-- Las **expresiones regulares** son el lenguaje comun de estas herramientas. Prefiere ERE (`-E`) por legibilidad.
+- **jq** es imprescindible para procesar JSON desde la línea de comandos. Soporta filtros, seleccion, transformacion y construccion de objetos.
+- Las **expresiones regulares** son el lenguaje común de estas herramientas. Prefiere ERE (`-E`) por legibilidad.
 - La potencia real aparece al **combinar herramientas** en pipelines: cada comando hace una tarea simple y el pipe los conecta para resolver problemas complejos.
 
 ```mermaid

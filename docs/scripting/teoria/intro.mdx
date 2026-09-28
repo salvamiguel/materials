@@ -42,13 +42,13 @@ Un shell puede ejecutarse en dos modos, y entender la diferencia es importante p
 - **Interactivo**: el shell espera que el usuario escriba comandos. Muestra un prompt (`$`, `#`, o personalizado), procesa cada línea y muestra la salida. Es lo que usas cuando abres una terminal. Carga archivos de configuración como `~/.bashrc`.
 - **No interactivo**: el shell ejecuta comandos desde un archivo (un script) sin interacción del usuario. No muestra prompt, no espera entrada y termina cuando se acaban los comandos. Carga `~/.bash_profile` o `~/.profile` dependiendo de la configuración, pero **no** carga `~/.bashrc` por defecto.
 
-Esta distincion explica por que a veces un script no se comporta igual que cuando ejecutas los comandos manualmente en la terminal: los archivos de configuracion cargados son diferentes.
+Esta distinción explica por que a veces un script no se comporta igual que cuando ejecutas los comandos manualmente en la terminal: los archivos de configuración cargados son diferentes.
 
 ### Donde se usa bash en el mundo real
 
 Bash no es solo "esa cosa que usas en la terminal". Es una herramienta omnipresente en la infraestructura moderna:
 
-- **Servidores Linux**: practicamente todos los servidores Linux tienen bash instalado. Los scripts de arranque, mantenimiento, backups y monitorizacion suelen estar escritos en bash.
+- **Servidores Linux**: prácticamente todos los servidores Linux tienen bash instalado. Los scripts de arranque, mantenimiento, backups y monitorizacion suelen estar escritos en bash.
 - **CI/CD**: los pipelines de GitHub Actions, GitLab CI, Jenkins y similares ejecutan pasos como comandos bash. Cada `run:` en un workflow de GitHub Actions es, por defecto, un script bash.
 - **Contenedores Docker**: los `Dockerfile` usan `RUN` para ejecutar comandos shell. Los entrypoints y healthchecks de contenedores son frecuentemente scripts bash.
 - **Cron jobs**: las tareas programadas del sistema se definen como comandos shell que `cron` ejecuta periodicamente.
@@ -148,7 +148,7 @@ Usar `source` ejecuta el script en tu shell actual. Esto significa que cualquier
 
 En bash, las variables se declaran asignándoles un valor. No existen tipos de datos explícitos: todo es, en esencia, una cadena de texto (aunque bash permite operaciones aritméticas).
 
-La regla mas importante de la sintaxis de variables en bash es: **no puede haber espacios alrededor del `=`**:
+La regla más importante de la sintaxis de variables en bash es: **no puede haber espacios alrededor del `=`**:
 
 ```bash
 # Correcto
@@ -162,7 +162,7 @@ nombre ="Juan"     # Error: intenta ejecutar 'nombre' con argumento '=Juan'
 nombre= "Juan"     # Ejecuta 'Juan' con la variable nombre vacia temporalmente
 ```
 
-Este es probablemente el error mas comun de principiantes en bash. El parser del shell interpreta el primer token de una linea como un comando a ejecutar. Si hay un espacio despues de `nombre`, bash piensa que `nombre` es un comando.
+Este es probablemente el error más común de principiantes en bash. El parser del shell interpreta el primer token de una línea como un comando a ejecutar. Si hay un espacio después de `nombre`, bash piensa que `nombre` es un comando.
 
 ### Expansión de variables
 
@@ -313,9 +313,9 @@ directorio=`basename \`dirname \\\`pwd\\\`\``
 
 ## 4. Variables especiales y argumentos
 
-### Parametros posicionales
+### Parámetros posicionales
 
-Cuando ejecutas un script con argumentos, bash los asigna automaticamente a variables numeradas llamadas **parametros posicionales**:
+Cuando ejecutas un script con argumentos, bash los asigna automáticamente a variables numeradas llamadas **parámetros posicionales**:
 
 ```bash
 #!/usr/bin/env bash
@@ -331,22 +331,22 @@ echo "Numero de argumentos: $#" # 2
 
 ### Tabla de variables especiales
 
-Bash define un conjunto de variables especiales que proporcionan informacion sobre el estado del script y sus argumentos:
+Bash define un conjunto de variables especiales que proporcionan información sobre el estado del script y sus argumentos:
 
-| Variable | Descripcion | Ejemplo de uso |
+| Variable | Descripción | Ejemplo de uso |
 |----------|-------------|----------------|
 | `$0` | Nombre del script (tal como fue invocado) | `echo "Uso: $0 [opciones]"` |
-| `$1`, `$2`, ... `$9` | Parametros posicionales 1 al 9 | `archivo=$1` |
-| `${10}`, `${11}`, ... | Parametros posicionales 10+ (requieren llaves) | `decimo=${10}` |
+| `$1`, `$2`, ... `$9` | Parámetros posicionales 1 al 9 | `archivo=$1` |
+| `${10}`, `${11}`, ... | Parámetros posicionales 10+ (requieren llaves) | `decimo=${10}` |
 | `$@` | Todos los argumentos como palabras separadas | `for arg in "$@"; do ...` |
-| `$*` | Todos los argumentos como una unica cadena | Rara vez util |
-| `$#` | Numero de argumentos | `if [ $# -eq 0 ]; then ...` |
-| `$?` | Codigo de salida del ultimo comando (0 = exito) | `if [ $? -ne 0 ]; then ...` |
+| `$*` | Todos los argumentos como una única cadena | Rara vez útil |
+| `$#` | Número de argumentos | `if [ $# -eq 0 ]; then ...` |
+| `$?` | Código de salida del último comando (0 = éxito) | `if [ $? -ne 0 ]; then ...` |
 | `$$` | PID del proceso actual (el script) | `echo "Mi PID: $$"` |
-| `$!` | PID del ultimo proceso en segundo plano | `comando & pid=$!` |
+| `$!` | PID del último proceso en segundo plano | `comando & pid=$!` |
 | `$-` | Flags activos del shell actual | `echo "Opciones: $-"` |
 
-### La diferencia critica entre `$@` y `$*`
+### La diferencia crítica entre `$@` y `$*`
 
 Ambas variables contienen todos los argumentos, pero se comportan de forma muy diferente cuando se usan con comillas dobles:
 
@@ -368,7 +368,7 @@ done
 # Argumento: 'hola mundo adios'
 ```
 
-Con `"$@"`, cada argumento original se preserva como una entidad separada, incluyendo los espacios internos. Con `"$*"`, todos los argumentos se concatenan en una unica cadena.
+Con `"$@"`, cada argumento original se preserva como una entidad separada, incluyendo los espacios internos. Con `"$*"`, todos los argumentos se concatenan en una única cadena.
 
 :::tip Usa siempre `"$@"` (con comillas dobles)
 En el 99% de los casos, `"$@"` es lo que quieres. Preserva los argumentos exactamente como los paso el usuario, respetando espacios y caracteres especiales. `$*` sin comillas o `$@` sin comillas rompen argumentos que contienen espacios.
@@ -376,7 +376,7 @@ En el 99% de los casos, `"$@"` es lo que quieres. Preserva los argumentos exacta
 
 ### El comando `shift`
 
-`shift` elimina el primer parametro posicional y desplaza todos los demas una posicion a la izquierda:
+`shift` elimina el primer parámetro posicional y desplaza todos los demas una posicion a la izquierda:
 
 ```bash
 #!/usr/bin/env bash
@@ -387,7 +387,7 @@ shift 2
 echo "Despues de shift 2: $1"  # (vacio, ya no quedan)
 ```
 
-Es especialmente util para procesar opciones en un bucle:
+Es especialmente útil para procesar opciones en un bucle:
 
 ```bash
 #!/usr/bin/env bash
@@ -706,7 +706,7 @@ ShellCheck se integra con la extensión Bash IDE de VSCode, mostrando errores di
 
 ### Un script completo paso a paso
 
-Vamos a escribir un script que combine todos los conceptos vistos en esta unidad. El script recibira un nombre de usuario como argumento, validara la entrada y mostrara informacion del sistema:
+Vamos a escribir un script que combine todos los conceptos vistos en esta unidad. El script recibira un nombre de usuario como argumento, validara la entrada y mostrara información del sistema:
 
 ```bash
 #!/usr/bin/env bash
@@ -771,9 +771,9 @@ echo "${SEPARADOR}"
 exit 0
 ```
 
-### Ejecucion paso a paso
+### Ejecución paso a paso
 
-**Paso 1**: Crear el archivo y darle permisos de ejecucion.
+**Paso 1**: Crear el archivo y darle permisos de ejecución.
 
 ```bash
 # Crear el archivo (con tu editor preferido o con cat)
@@ -783,7 +783,7 @@ vim info_usuario.sh
 chmod +x info_usuario.sh
 ```
 
-**Paso 2**: Ejecutar sin argumentos para ver la validacion.
+**Paso 2**: Ejecutar sin argumentos para ver la validación.
 
 ```bash
 $ ./info_usuario.sh
@@ -793,7 +793,7 @@ Uso: ./info_usuario.sh <nombre>
 ============================================
 ```
 
-El script devuelve codigo de salida 1 (error). Podemos comprobarlo:
+El script devuelve código de salida 1 (error). Podemos comprobarlo:
 
 ```bash
 $ echo $?
@@ -825,7 +825,7 @@ $ ./info_usuario.sh "Ana Lopez"
 ============================================
 ```
 
-**Paso 4**: Verificar el codigo de salida correcto.
+**Paso 4**: Verificar el código de salida correcto.
 
 ```bash
 $ echo $?
@@ -836,9 +836,9 @@ Observa como cada concepto de esta unidad aparece en el script:
 - `#!/usr/bin/env bash` -- shebang portable.
 - `readonly` -- constantes que no cambian.
 - `$#`, `$0`, `$1`, `$@`, `$$` -- variables especiales.
-- `$(comando)` -- sustitucion de comandos.
-- `"${variable}"` -- expansion con comillas dobles y llaves.
-- `exit 0` / `exit 1` -- codigos de salida.
+- `$(comando)` -- sustitución de comandos.
+- `"${variable}"` -- expansión con comillas dobles y llaves.
+- `exit 0` / `exit 1` -- códigos de salida.
 
 ---
 

@@ -21,7 +21,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build and deploy
         run: |
           echo "Checking dependencies..."
@@ -64,7 +64,7 @@ mi-proyecto/
     workflows/
       deploy.yml        # Orquestación: QUE ejecutar y CUANDO
   scripts/
-    terraform-wrapper.sh  # Lógica: COMO ejecutar Terraform
+    terraform_wrapper.sh  # Lógica: COMO ejecutar Terraform
     validate.sh           # Lógica: COMO validar configuraciones
     notify.sh             # Lógica: COMO enviar notificaciones
 ```
@@ -85,7 +85,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Run validation
         run: ./scripts/validate.sh
@@ -135,7 +135,7 @@ Si tu bloque `run: |` supera las 10-15 líneas, es momento de extraerlo a un arc
 
 ## 2. Variables de entorno en CI/CD
 
-Las variables de entorno son el mecanismo principal para pasar configuracion a los scripts dentro de un pipeline. GitHub Actions ofrece tres niveles de variables: las predefinidas del sistema, las personalizadas y los secrets.
+Las variables de entorno son el mecanismo principal para pasar configuración a los scripts dentro de un pipeline. GitHub Actions ofrece tres niveles de variables: las predefinidas del sistema, las personalizadas y los secrets.
 
 ### Variables predefinidas de GitHub
 
@@ -192,11 +192,25 @@ jobs:
 Los secrets son variables cifradas que se configuran en `Settings > Secrets and variables > Actions` del repositorio. GitHub los enmascara automáticamente en los logs, pero conviene ser cuidadoso:
 
 ```yaml
-- name: Configure cloud credentials
+- name: Llamar a una API con un token
   env:
-    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  run: ./scripts/terraform-wrapper.sh plan
+    API_TOKEN: ${{ secrets.API_TOKEN }}
+  run: ./scripts/notify.sh
+```
+
+Para las credenciales de la nube, mejor que un secret es **OIDC**: el runner pide a AWS, Azure o GCP credenciales temporales asumiendo un rol, y no guardas ninguna clave. Es el mismo patrón que se usa en el módulo de Terraform:
+
+```yaml
+permissions:
+  id-token: write      # permite pedir el token OIDC
+  contents: read
+
+steps:
+  - uses: aws-actions/configure-aws-credentials@v4
+    with:
+      role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+      aws-region: eu-west-1
+  - run: ./scripts/terraform_wrapper.sh plan
 ```
 
 :::warning Nunca hagas echo de un secret
@@ -247,7 +261,7 @@ GitHub Actions proporciona dos mecanismos para compartir datos entre steps del m
     ./scripts/deploy.sh "$DEPLOY_ENV"
 ```
 
-La diferencia clave: `$GITHUB_OUTPUT` crea valores asociados a un step especifico (accesibles con `${{ steps.id.outputs.name }}`), mientras que `$GITHUB_ENV` crea variables de entorno disponibles para todos los steps posteriores del job.
+La diferencia clave: `$GITHUB_OUTPUT` crea valores asociados a un step específico (accesibles con `${{ steps.id.outputs.name }}`), mientras que `$GITHUB_ENV` crea variables de entorno disponibles para todos los steps posteriores del job.
 
 ---
 
@@ -296,41 +310,49 @@ jobs:
     name: Terraform ${{ github.event_name == 'push' && 'Apply' || 'Plan' }}
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write     # credenciales temporales de AWS por OIDC
+      contents: read
+
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       TF_WORKSPACE: staging
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: eu-west-1
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.9.5
+          terraform_version: 1.11.0   # la mínima del curso; fija la que use tu equipo
 
       - name: Terraform Plan
         if: github.event_name == 'pull_request'
-        run: ./scripts/terraform-wrapper.sh plan -e staging -d infra/
+        run: ./scripts/terraform_wrapper.sh plan -e staging -d infra/
         shell: bash
 
       - name: Terraform Apply
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: ./scripts/terraform-wrapper.sh apply -e production -d infra/ -a
+        run: ./scripts/terraform_wrapper.sh apply -e production -d infra/ -a
         shell: bash
 ```
 
-:::info Conexion con los modulos de Terraform y GitOps
-Este patron conecta directamente con lo aprendido en las unidades anteriores. En el modulo de Terraform (S1-S2) vimos como estructurar configuraciones con HCL. En el modulo de GitOps (S3-S4) vimos como GitHub Actions orquesta el despliegue. El wrapper script es la pieza que une ambos mundos: encapsula la logica de Terraform en un script testeable y reutilizable que GitHub Actions ejecuta como un step mas.
+:::info Conexión con los módulos de Terraform y GitOps
+Este patrón conecta directamente con lo aprendido en las unidades anteriores. En el módulo de Terraform (S1-S2) vimos como estructurar configuraciones con HCL. En el módulo de GitOps (S3-S4) vimos como GitHub Actions orquesta el despliegue. El wrapper script es la pieza que une ambos mundos: encapsula la lógica de Terraform en un script testeable y reutilizable que GitHub Actions ejecuta como un step más.
 :::
 
 ---
 
 ## 4. Wrapper script para kubectl
 
-### El patron de despliegue seguro
+### El patrón de despliegue seguro
 
-Desplegar en Kubernetes directamente con `kubectl apply` es arriesgado. Un manifiesto mal formado puede tumbar un servicio en produccion. El wrapper aplica el mismo principio que con Terraform: validar antes de actuar y tener un plan de reversion.
+Desplegar en Kubernetes directamente con `kubectl apply` es arriesgado. Un manifiesto mal formado puede tumbar un servicio en producción. El wrapper aplica el mismo principio que con Terraform: validar antes de actuar y tener un plan de reversion.
 
 ### Wrapper completo
 
@@ -344,39 +366,39 @@ Desplegar en Kubernetes directamente con `kubectl apply` es arriesgado. Un manif
 
 ```yaml
 - name: Deploy to Kubernetes
-  run: ./scripts/kubectl-wrapper.sh apply -f k8s/deployment.yaml -n production -t 180s
+  run: ./scripts/kubectl_wrapper.sh apply -f k8s/deployment.yaml -n production -t 180s
   shell: bash
   env:
     KUBECONFIG: ${{ secrets.KUBECONFIG }}
 ```
 
-La clave de este wrapper es el **rollback automatico**: si el rollout falla (por ejemplo, porque la nueva imagen tiene un error y los pods no arrancan), el script revierte automaticamente al estado anterior sin intervencion humana.
+La clave de este wrapper es el **rollback automático**: si el rollout falla (por ejemplo, porque la nueva imagen tiene un error y los pods no arrancan), el script revierte automáticamente al estado anterior sin intervencion humana.
 
 ---
 
-## 5. Validacion de configuraciones
+## 5. Validación de configuraciones
 
-Antes de ejecutar cualquier despliegue, un script de validacion puede detectar errores comunes que ahorrarian minutos (o horas) de depuracion. Este patron se conoce como **pre-flight checks**.
+Antes de ejecutar cualquier despliegue, un script de validación puede detectar errores comunes que ahorrarian minutos (o horas) de depuración. Este patrón se conoce como **pre-flight checks**.
 
-### Script de validacion completo
+### Script de validación completo
 
 <GitHubCode
-  title="validate.sh: script de validacion"
+  title="validate.sh: script de validación"
   url="https://github.com/salvamiguel/scripting-examples/blob/main/validate.sh"
   language="bash"
 />
 
-:::tip Validacion como primer paso del pipeline
-Coloca siempre el script de validacion como el primer step de tu job de despliegue. Un fallo rapido en la validacion ahorra el tiempo de init, plan y apply. Ademas, los mensajes de error son mucho mas claros que los errores cripticos de Terraform o kubectl.
+:::tip Validación como primer paso del pipeline
+Coloca siempre el script de validación como el primer step de tu job de despliegue. Un fallo rápido en la validación ahorra el tiempo de init, plan y apply. Además, los mensajes de error son mucho más claros que los errores cripticos de Terraform o kubectl.
 
 ```yaml
 steps:
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v5
   - name: Pre-flight checks
     run: ./scripts/validate.sh
     shell: bash
   - name: Deploy
-    run: ./scripts/terraform-wrapper.sh apply -e production
+    run: ./scripts/terraform_wrapper.sh apply -e production
     shell: bash
 ```
 :::
@@ -385,18 +407,18 @@ steps:
 
 ## 6. Testing de scripts con bats
 
-### Que es bats
+### Qué es bats
 
-**bats** (Bash Automated Testing System) es un framework de testing para scripts de Bash. Permite escribir tests con una sintaxis simple y ejecutarlos como parte del pipeline de CI/CD, aplicando al scripting las mismas practicas de testing que usamos con codigo de aplicacion.
+**bats** (Bash Automated Testing System) es un framework de testing para scripts de Bash. Permite escribir tests con una sintaxis simple y ejecutarlos como parte del pipeline de CI/CD, aplicando al scripting las mismas prácticas de testing que usamos con código de aplicación.
 
-### Instalacion
+### Instalación
 
 ```bash
-# Con npm (la forma mas sencilla)
-npm install -g bats
-
 # En macOS con Homebrew
 brew install bats-core
+
+# En Debian/Ubuntu
+sudo apt install bats
 
 # Desde el repositorio oficial
 git clone https://github.com/bats-core/bats-core.git
@@ -404,19 +426,22 @@ cd bats-core
 ./install.sh /usr/local
 ```
 
-Para funcionalidades adicionales, instala las librerias auxiliares:
+Para funcionalidades adicionales (aserciones más expresivas y funciones auxiliares), añade las librerías `bats-assert` y `bats-support` al repositorio como submódulos de Git y cárgalas con `load` desde tus tests:
 
 ```bash
-# Aserciones mas expresivas
-npm install -g bats-assert
+git submodule add https://github.com/bats-core/bats-support tests/test_helper/bats-support
+git submodule add https://github.com/bats-core/bats-assert  tests/test_helper/bats-assert
+```
 
-# Funciones auxiliares para testing
-npm install -g bats-support
+```bash
+# Al principio de cada fichero .bats
+load 'test_helper/bats-support/load'
+load 'test_helper/bats-assert/load'
 ```
 
 ### Estructura de un test
 
-Los archivos de test de bats usan la extension `.bats` y siguen esta estructura:
+Los archivos de test de bats usan la extensión `.bats` y siguen esta estructura:
 
 ```bash
 #!/usr/bin/env bats
@@ -445,15 +470,15 @@ Los archivos de test de bats usan la extension `.bats` y siguen esta estructura:
     [[ "$output" =~ "no esta definida" ]]
 }
 
-@test "terraform-wrapper.sh rejects invalid action" {
-    run ./scripts/terraform-wrapper.sh invalid-action
+@test "terraform_wrapper.sh rejects invalid action" {
+    run ./scripts/terraform_wrapper.sh invalid-action
 
     [ "$status" -eq 1 ]
     [[ "$output" =~ "Accion invalida" ]]
 }
 
-@test "terraform-wrapper.sh requires at least one argument" {
-    run ./scripts/terraform-wrapper.sh
+@test "terraform_wrapper.sh requires at least one argument" {
+    run ./scripts/terraform_wrapper.sh
 
     [ "$status" -ne 0 ]
     [[ "$output" =~ "Uso:" ]]
@@ -466,14 +491,14 @@ El comando `run` es el nucleo de bats. Ejecuta un comando y captura:
 
 | Variable | Contenido |
 |---|---|
-| `$status` | Codigo de salida del comando |
+| `$status` | Código de salida del comando |
 | `$output` | Salida completa (stdout + stderr) |
-| `$lines` | Array con cada linea de la salida |
-| `${lines[0]}` | Primera linea de la salida |
+| `$lines` | Array con cada línea de la salida |
+| `${lines[0]}` | Primera línea de la salida |
 
 ### setup() y teardown()
 
-Estas funciones se ejecutan antes y despues de cada test, respectivamente. Son ideales para preparar y limpiar el entorno:
+Estas funciones se ejecutan antes y después de cada test, respectivamente. Son ideales para preparar y limpiar el entorno:
 
 ```bash
 #!/usr/bin/env bats
@@ -530,7 +555,7 @@ teardown() {
 
 ### Funciones auxiliares
 
-Para tests mas complejos, puedes definir funciones auxiliares en un archivo separado:
+Para tests más complejos, puedes definir funciones auxiliares en un archivo separado:
 
 ```bash
 # tests/helpers.bash
@@ -594,7 +619,7 @@ teardown() {
     # Crear un PATH vacio para simular que terraform no existe
     mock_command "terraform" 127 "command not found"
 
-    run ./scripts/terraform-wrapper.sh plan
+    run ./scripts/terraform_wrapper.sh plan
     [ "$status" -ne 0 ]
     [[ "$output" =~ "no esta instalado" ]]
 }
@@ -608,34 +633,38 @@ jobs:
     name: Test Bash Scripts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Install bats
-        run: |
-          npm install -g bats bats-assert bats-support
+      - name: Setup bats y sus librerías
+        id: setup-bats
+        uses: bats-core/bats-action@4.0.0
 
       - name: Run script tests
+        env:
+          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
         run: bats tests/ --formatter tap
         shell: bash
 ```
 
-:::tip Testear scripts es tan importante como testear codigo
-Un script de despliegue roto puede causar mas danos que un bug en la aplicacion. Si tu script hace `terraform destroy` en lugar de `terraform apply` por un error de logica, las consecuencias son inmediatas e irreversibles. Testear scripts con bats es una inversion minima con un retorno enorme.
+:::tip Testear scripts es tan importante como testear código
+Un script de despliegue roto puede causar más daños que un bug en la aplicación. Si tu script hace `terraform destroy` en lugar de `terraform apply` por un error de lógica, las consecuencias son inmediatas e irreversibles. Testear scripts con bats es una inversión minima con un retorno enorme.
 :::
 
 ---
 
-## 7. Automatizacion de releases
+## 7. Automatización de releases
 
 Los scripts de Bash son ideales para automatizar el proceso de release: generar changelogs, calcular versiones, crear tags y notificar al equipo.
 
 ### Script de release
 
 <GitHubCode
-  title="release.sh: script de automatizacion de releases"
+  title="release.sh: script de automatización de releases"
   url="https://github.com/salvamiguel/scripting-examples/blob/main/release.sh"
   language="bash"
 />
+
+`release.sh` calcula la nueva versión SemVer a partir del último tag, genera el changelog con `git log` entre tags, hace el commit y crea un tag anotado; si existe `SLACK_WEBHOOK`, avisa al canal. **No hace `git push` ni crea la release de GitHub**: esos dos pasos los añade el workflow.
 
 ### Uso desde GitHub Actions
 
@@ -657,7 +686,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0    # Necesario para git log y tags
 
@@ -676,30 +705,35 @@ jobs:
         run: |
           git push origin main
           git push origin --tags
+
+      - name: Create GitHub release
+        run: gh release create "$(git describe --tags --abbrev=0)" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
 ```
 
 ---
 
-## 8. Buenas practicas de scripting en pipelines
+## 8. Buenas prácticas de scripting en pipelines
 
 ### Tabla de referencia
 
-| Practica | Descripcion | Ejemplo |
+| Practica | Descripción | Ejemplo |
 |---|---|---|
-| **Fail fast** | Usa `set -euo pipefail` en la primera linea de cada script | Detiene la ejecucion al primer error |
+| **Fail fast** | Usa `set -euo pipefail` en la primera línea de cada script | Detiene la ejecución al primer error |
 | **Idempotencia** | Ejecutar el script dos veces debe ser seguro | Usa `terraform plan` antes de `apply`, comprueba si un recurso existe antes de crearlo |
 | **Logging estructurado** | Prefija cada mensaje con timestamp, nivel y contexto | `[INFO] 2024-03-15 10:30:00 Iniciando despliegue...` |
-| **Codigos de salida** | Usa codigos diferentes para tipos de error distintos | `exit 2` para errores de formato, `exit 3` para errores de init |
+| **Códigos de salida** | Usa códigos diferentes para tipos de error distintos | `exit 2` para errores de formato, `exit 3` para errores de init |
 | **Scripts en el repo** | Mantiene los scripts en `scripts/`, nunca inline en YAML | Permite testing local y code review |
 | **Portabilidad** | Evita bashismos cuando el script deba correr en `sh` | Usa `$(command)` en lugar de `` `command` `` |
-| **Testa localmente** | Ejecuta el script en tu maquina antes de hacer push | `./scripts/validate.sh` funciona identico en local y en CI |
+| **Testa localmente** | Ejecuta el script en tu máquina antes de hacer push | `./scripts/validate.sh` funciona identico en local y en CI |
 | **Variables de entorno** | No hardcodees valores; usa `env:` en el workflow | Permite reutilizar el script en diferentes entornos |
 | **Manejo de secretos** | Nunca hagas echo de secrets ni los guardes en archivos | Pasalos como variables de entorno y usalos directamente |
-| **Dry-run** | Ofrece un modo de ejecucion sin efectos secundarios | `--dry-run` para verificar sin aplicar cambios |
+| **Dry-run** | Ofrece un modo de ejecución sin efectos secundarios | `--dry-run` para verificar sin aplicar cambios |
 
 ### Estructura recomendada de un script de pipeline
 
-Todo script que se ejecute en un pipeline deberia seguir esta plantilla:
+Todo script que se ejecute en un pipeline debería seguir esta plantilla:
 
 ```bash
 #!/usr/bin/env bash
@@ -728,8 +762,8 @@ log_error() { echo "[ERROR] $(date '+%H:%M:%S') $*" >&2; }
 # Codigo de salida significativo
 ```
 
-:::danger Nunca ignores los codigos de salida
-Sin `set -e`, un comando que falla no detiene el script. Esto puede llevar a situaciones donde `terraform plan` falla pero `terraform apply` se ejecuta igualmente con un plan anterior o sin plan. El resultado: cambios no deseados en infraestructura de produccion.
+:::danger Nunca ignores los códigos de salida
+Sin `set -e`, un comando que falla no detiene el script. Esto puede llevar a situaciones donde `terraform plan` falla pero `terraform apply` se ejecuta igualmente con un plan anterior o sin plan. El resultado: cambios no deseados en infraestructura de producción.
 
 ```bash
 # SIN set -e: terraform apply se ejecuta aunque plan falle
@@ -749,21 +783,21 @@ terraform apply tfplan        # Solo se ejecuta si plan tuvo exito
 
 Estos son los puntos clave de esta unidad:
 
-- Los **scripts externos** son preferibles a los comandos inline en YAML: son testeables, reutilizables y mas faciles de depurar.
+- Los **scripts externos** son preferibles a los comandos inline en YAML: son testeables, reutilizables y más faciles de depurar.
 - Las **variables de entorno** en GitHub Actions operan a tres niveles (workflow, job, step) y los secrets se pasan siempre mediante `env:`, nunca interpolados en `run:`.
-- Los **wrapper scripts** encapsulan la ejecucion de herramientas como Terraform y kubectl con validacion, logging y manejo de errores.
-- La **validacion previa** (pre-flight checks) detecta errores antes de que causen danos: herramientas ausentes, variables no definidas, YAML invalido, secretos hardcodeados.
-- **bats** permite testear scripts con la misma disciplina que el codigo de aplicacion, con `setup()`, `teardown()` y aserciones expresivas.
-- La **automatizacion de releases** con scripts estandariza el proceso de versionado, changelog y notificacion.
+- Los **wrapper scripts** encapsulan la ejecución de herramientas como Terraform y kubectl con validación, logging y manejo de errores.
+- La **validación previa** (pre-flight checks) detecta errores antes de que causen daños: herramientas ausentes, variables no definidas, YAML invalido, secretos hardcodeados.
+- **bats** permite testear scripts con la misma disciplina que el código de aplicación, con `setup()`, `teardown()` y aserciones expresivas.
+- La **automatización de releases** con scripts estandariza el proceso de versionado, changelog y notificación.
 - `set -euo pipefail` es **obligatorio** en cualquier script de pipeline para garantizar un comportamiento fail-fast.
 
 ```mermaid
 graph LR
     A["Pre-flight<br/>Checks<br/><i>validate.sh</i>"] --> B["Build /<br/>Lint<br/><i>build.sh</i>"]
     B --> C["Test<br/>Scripts<br/><i>bats tests/</i>"]
-    C --> D["Terraform<br/>Plan<br/><i>tf-wrapper.sh plan</i>"]
-    D --> E["Terraform<br/>Apply<br/><i>tf-wrapper.sh apply</i>"]
-    E --> F["K8s<br/>Deploy<br/><i>kubectl-wrapper.sh</i>"]
+    C --> D["Terraform<br/>Plan<br/><i>terraform_wrapper.sh plan</i>"]
+    D --> E["Terraform<br/>Apply<br/><i>terraform_wrapper.sh apply</i>"]
+    E --> F["K8s<br/>Deploy<br/><i>kubectl_wrapper.sh</i>"]
     F --> G["Release /<br/>Notify<br/><i>release.sh</i>"]
 
     style A fill:#d4edda,stroke:#28a745

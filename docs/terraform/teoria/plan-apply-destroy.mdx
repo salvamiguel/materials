@@ -138,7 +138,7 @@ import TerraformPlanSim from '@site/src/components/demos/terraform/TerraformPlan
 <TerraformPlanSim />
 
 :::tip Pruébalo con Terraform "de verdad"
-En el [playground de Terraform](/terraform-playground) puedes escribir tu propia configuración y ejecutar `init`, `plan`, `apply` y `destroy` en el navegador, con el esquema real del proveedor AWS y sin credenciales.
+En el [playground de Terraform](/terraform-playground) puedes escribir tu propia configuración y ejecutar `init`, `plan`, `apply` y `destroy` en el navegador, con los esquemas reales de los proveedores AWS, Google Cloud, random, null y local, y sin credenciales.
 :::
 
 ### Lectura del output
@@ -685,7 +685,7 @@ Crea el archivo `main.tf`:
 
 ```hcl
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.11"
 
   required_providers {
     local = {

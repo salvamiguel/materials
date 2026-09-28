@@ -90,7 +90,7 @@ Dentro del bloque `terraform {}`, debes especificar los providers que tu configu
 
 ```hcl
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.11"
 
   required_providers {
     aws = {
@@ -110,7 +110,7 @@ terraform {
 
 ```hcl
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.11"
 
   required_providers {
     google = {
@@ -130,7 +130,7 @@ terraform {
 
 ```hcl
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.11"
 
   required_providers {
     azurerm = {
@@ -825,6 +825,10 @@ Si tu `terraform plan` tarda demasiado, revisa el grafo de dependencias. Un árb
 import TerraformDagViz from '@site/src/components/demos/terraform/TerraformDagViz';
 
 <TerraformDagViz />
+
+:::tip Pruébalo en el playground
+Abre el ejemplo [«Red en AWS: VPC, subredes y EC2»](/terraform-playground?example=vpc) y mira la pestaña **Grafo de dependencias**: es el grafo real que calcula Terraform para esa configuración.
+:::
 
 ---
 

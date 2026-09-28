@@ -166,6 +166,22 @@ export default function TerraformPlayground() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Links from the lessons and the slides: ?example=<id> opens one of the
+  // built-in examples (examples.ts), asking first if there is state to lose.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const id = url.searchParams.get('example');
+    if (!id) return;
+    url.searchParams.delete('example');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+    if (!EXAMPLES.some((e) => e.id === id)) {
+      addEntry('', `Error: no existe el ejemplo "${id}". Elige uno en el selector «Ejemplo».`);
+      return;
+    }
+    loadExample(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Links from the lessons: ?repo=owner/name[&ref=branch][&path=dir] loads the
   // Terraform files of that GitHub repository.
   useEffect(() => {

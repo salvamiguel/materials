@@ -61,8 +61,10 @@ argocd app rollback mi-app 2
 argocd app get mi-app
 ```
 
-:::warning Rollback de ArgoCD vs rollback de Git
-El rollback de ArgoCD es **temporal**: si tienes `selfHeal: true` activado, ArgoCD volverá a sincronizar con el HEAD de Git poco después. Para que el rollback sea permanente, debes hacer `git revert` y actualizar el repositorio.
+:::warning Solo con sincronización manual
+ArgoCD **rechaza** `argocd app rollback` cuando la Application tiene sincronización automática (`syncPolicy.automated`): si no, volvería a aplicar el HEAD de Git en el siguiente ciclo. Por eso esta opción sirve para aplicaciones con sync manual, como `status-prod` en el repo de clase. En dev y staging (sync automático) el rollback se hace con `git revert`, que además deja constancia en Git.
+
+Aunque la uses en prod, el rollback de ArgoCD no cambia Git: haz también el `git revert` para que el repositorio vuelva a describir lo que corre en el clúster.
 :::
 
 ### Opción 3: ArgoCD UI — History and Rollback

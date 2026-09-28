@@ -1,0 +1,330 @@
+---
+sidebar_position: 1
+title: "Ejercicios prácticos de GitOps"
+description: "Cuatro laboratorios progresivos: Kubernetes local, CI con GitHub Actions, ArgoCD multi-entorno y un pipeline end-to-end de un git tag a producción."
+---
+
+import LabActions from '@site/src/components/shared/LabActions';
+import K8sPlaygroundLink from '@site/src/components/shared/K8sPlaygroundLink';
+
+# Ejercicios prácticos de GitOps
+
+Esta página reúne los cuatro laboratorios del módulo. Cada uno tiene **ejercicios guiados** (con pasos y solución) y un **reto opcional** (sin solución). Se construyen unos sobre otros, así que conviene hacerlos en orden.
+
+Todos giran alrededor de dos repositorios de clase:
+
+| Repositorio | Contenido |
+|-------------|-----------|
+| [`gitops-status-demo-app`](https://github.com/salvamiguel/gitops-status-demo-app) | App en Go que muestra versión, entorno y color. Su workflow `ci.yaml` construye la imagen al publicar un tag `v*`. |
+| [`gitops-status-demo-config`](https://github.com/salvamiguel/gitops-status-demo-config) | Manifiestos con Kustomize (base + overlays dev, staging y prod), Applications de ArgoCD y un `Makefile` para levantar todo en kind. |
+
+:::tip Antes de empezar
+- Docker, [kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) y kubectl instalados (`kind version`, `kubectl version --client`).
+- Una cuenta de GitHub con acceso a GitHub Actions y GHCR.
+- **Sin instalar nada:** los labs 1, 3 y 4 se pueden hacer en el [playground de Kubernetes](/k8s-playground), un clúster simulado en el navegador con kubectl, Kustomize, Helm y ArgoCD.
+:::
+
+---
+
+## Lab 1: Kubernetes local (UD 1)
+
+Objetivo: levantar un clúster local y desplegar tus primeros manifiestos.
+
+<K8sPlaygroundLink example="hola">Haz este lab en el playground de Kubernetes (sin clúster)</K8sPlaygroundLink>
+
+### Ejercicio 1.1 — Clúster con kind
+
+1. Crea un clúster: `kind create cluster --name gitops-demo`.
+2. Comprueba que el nodo está `Ready` con `kubectl get nodes`.
+3. Mira qué pods trae el clúster de serie con `kubectl get pods -A`.
+
+<details>
+<summary>Solución</summary>
+
+```bash
+kind create cluster --name gitops-demo
+kubectl wait --for=condition=Ready nodes --all --timeout=120s
+kubectl get nodes
+kubectl get pods -A     # coredns, etcd, kube-apiserver, kube-proxy…
+```
+
+</details>
+
+### Ejercicio 1.2 — Deployment, Service y ConfigMap
+
+Escribe `web.yaml` con:
+
+1. Un **ConfigMap** `web-config` con `APP_COLOR=green`.
+2. Un **Deployment** `web` de 3 réplicas con la imagen `ghcr.io/salvamiguel/gitops-status-demo-app:v1`, puerto 8080 y el ConfigMap cargado con `envFrom`.
+3. Un **Service** `web` de tipo ClusterIP que exponga el puerto 80 hacia el 8080 de los pods.
+
+Aplícalo y abre la app con `kubectl port-forward svc/web 8080:80`.
+
+<details>
+<summary>Solución</summary>
+
+```yaml title="web.yaml"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+data:
+  APP_COLOR: green
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: web }
+  template:
+    metadata:
+      labels: { app: web }
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/salvamiguel/gitops-status-demo-app:v1
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: web-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  selector: { app: web }
+  ports:
+    - port: 80
+      targetPort: 8080
+```
+
+```bash
+kubectl apply -f web.yaml
+kubectl get deploy,rs,pods,svc
+kubectl port-forward svc/web 8080:80   # http://localhost:8080
+```
+
+</details>
+
+### Ejercicio 1.3 — Autorreparación y rolling update
+
+1. Borra uno de los pods y observa con `kubectl get pods -w` cómo el ReplicaSet crea otro.
+2. Cambia el color en el ConfigMap y reinicia el Deployment con `kubectl rollout restart deploy/web`.
+3. Sigue la actualización con `kubectl rollout status deploy/web` y consulta el historial con `kubectl rollout history deploy/web`.
+
+:::tip Pistas
+- Un cambio en un ConfigMap **no** reinicia los pods: las variables de entorno se leen al arrancar.
+- `kubectl get rs` muestra el ReplicaSet viejo con 0 réplicas: es lo que permite `kubectl rollout undo`.
+:::
+
+### Ejercicio 1.4 — Primer contacto con Kustomize
+
+1. Clona `gitops-status-demo-config` y renderiza el overlay de dev: `kubectl kustomize k8s/overlays/dev`.
+2. Compara dev y prod: `diff <(kubectl kustomize k8s/overlays/dev) <(kubectl kustomize k8s/overlays/prod)`.
+3. Despliega dev con `kubectl apply -k k8s/overlays/dev` y comprueba el namespace `status-dev`.
+
+<K8sPlaygroundLink example="kustomize">Base y overlays de Kustomize en el playground</K8sPlaygroundLink>
+
+### Reto 1.5 — Depurar una readinessProbe
+
+Añade al Deployment `web` una `readinessProbe` HTTP contra una ruta que no existe (por ejemplo `/ready`). Averigua por qué el Service no recibe tráfico usando solo `kubectl describe pod`, `kubectl get endpoints web` y `kubectl get events`, y corrígelo (la app responde en `/health`).
+
+---
+
+## Lab 2: Workflow de CI (UD 2)
+
+Objetivo: crear un workflow de CI completo con feedback en los pull requests.
+
+<LabActions
+  repo="https://github.com/salvamiguel/gitops-status-demo-app"
+  title="App de clase (haz fork)"
+  codespace={true}
+  fork={true}
+/>
+
+### Ejercicio 2.1 — Build, test y lint
+
+En tu fork, crea `.github/workflows/ci.yml` que se ejecute en `push` a `main` y en `pull_request`, con un job que:
+
+1. Haga checkout del código.
+2. Instale Go con `actions/setup-go` (la versión que marca `go.mod`).
+3. Ejecute `make test` y `go vet ./...`.
+4. Compile con `make build`.
+
+<details>
+<summary>Solución</summary>
+
+```yaml title=".github/workflows/ci.yml"
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: make test
+      - run: make build
+```
+
+</details>
+
+### Ejercicio 2.2 — Matriz, caché y artefactos
+
+1. Convierte el job en una **matriz** con dos versiones de Go (`1.24` y `stable`).
+2. Comprueba en el log que `setup-go` restaura la **caché** de módulos en la segunda ejecución.
+3. Sube el binario `server` como **artefacto** con `actions/upload-artifact` y descárgalo en un segundo job `smoke` que lo arranque y haga `curl localhost:8080/health`.
+
+:::tip Pistas
+- `strategy.matrix.go: ['1.24', 'stable']` y `go-version: ${{ matrix.go }}`.
+- `setup-go` activa la caché por defecto; no hace falta `actions/cache`.
+- El job `smoke` necesita `needs: test` y `actions/download-artifact`; recuerda `chmod +x server`.
+:::
+
+### Ejercicio 2.3 — Secrets, environments y protección de rama
+
+1. Crea un **environment** `staging` con un revisor obligatorio (*Settings → Environments*).
+2. Añade un job `deploy-staging` con `environment: staging` que solo haga `echo` y lea un secret del environment.
+3. Abre un PR y comprueba que el check aparece en la conversación.
+4. En *Settings → Rules*, exige que el check `test` pase antes de fusionar en `main`.
+
+### Reto 2.4 — Composite action
+
+Extrae los pasos de checkout, setup-go y `make test` a una **composite action** en `.github/actions/go-test/action.yml` y úsala desde el workflow con `uses: ./.github/actions/go-test`.
+
+:::info Referencia
+El workflow real de la app, [`ci.yaml`](https://github.com/salvamiguel/gitops-status-demo-app/blob/main/.github/workflows/ci.yaml), hace tests, construye una imagen multiarquitectura en GHCR y actualiza el repo de configuración. Lo usarás en el Lab 4.
+:::
+
+---
+
+## Lab 3: ArgoCD multi-entorno (UD 3)
+
+Objetivo: instalar ArgoCD, conectarlo al repo de configuración y desplegar dev, staging y prod.
+
+<LabActions
+  repo="https://github.com/salvamiguel/gitops-status-demo-config"
+  title="Repo de configuración (haz fork)"
+  fork={true}
+  k8s={true}
+/>
+
+<K8sPlaygroundLink example="argocd">Todo el lab en el playground: ArgoCD simulado con UI, CLI argocd y git commit/push</K8sPlaygroundLink>
+
+### Ejercicio 3.1 — Instalar ArgoCD
+
+1. Crea el clúster del repo: `make cluster` (usa `kind-config.yaml`).
+2. Instala ArgoCD 3 con *server-side apply* (sus CRDs superan el límite de anotaciones del apply clásico).
+3. Obtén la contraseña de `admin` y entra en la UI.
+
+<details>
+<summary>Solución</summary>
+
+```bash
+make cluster
+kubectl create namespace argocd
+kubectl apply -n argocd --server-side --force-conflicts \
+  -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.3/manifests/install.yaml
+kubectl wait --for=condition=Ready pods --all -n argocd --timeout=300s
+
+argocd admin initial-password -n argocd      # o con kubectl y base64 -d
+kubectl port-forward svc/argocd-server -n argocd 8443:443
+# https://localhost:8443  · usuario admin
+```
+
+</details>
+
+### Ejercicio 3.2 — Applications de dev, staging y prod
+
+1. En tu fork, cambia `repoURL` en los tres ficheros de `argocd/` para que apunten a tu repositorio.
+2. Aplícalos: `kubectl apply -f argocd/` (o `make apps`).
+3. Comprueba que **dev y staging** sincronizan solos y que **prod** queda `OutOfSync` (sincronización manual).
+4. Sincroniza prod desde la CLI tras revisar el diff.
+
+<details>
+<summary>Solución</summary>
+
+```bash
+kubectl apply -f argocd/
+kubectl get applications -n argocd        # dev y staging: Synced · prod: OutOfSync
+
+argocd login localhost:8443 --username admin --insecure
+argocd app diff status-prod
+argocd app sync status-prod
+kubectl get pods -n status-prod           # 4 réplicas
+```
+
+</details>
+
+### Ejercicio 3.3 — Reconciliación y selfHeal
+
+1. En tu fork, cambia `APP_COLOR` en `k8s/overlays/dev/kustomization.yaml`, haz commit y push.
+2. Espera la reconciliación (hasta 3 minutos) o pulsa *Refresh* en la UI, y mira cómo dev se actualiza solo.
+3. Escala dev a mano: `kubectl scale deploy/gitops-status-demo -n status-dev --replicas=5`.
+4. Observa cómo `selfHeal` devuelve el Deployment a lo que dice Git.
+
+:::tip Pistas
+- `kubectl get pods -n status-dev -w` en otra terminal deja ver cómo se crean y se borran los pods.
+- En el playground, `git commit` y `git push` también funcionan, y el cambio de `newTag` a `v2` se ve en el diagrama.
+:::
+
+### Reto 3.4 — ApplicationSet
+
+Sustituye las tres Applications por un único **ApplicationSet** con un generador `list` (dev, staging y prod) que mantenga la sincronización automática en dev y staging y manual en prod.
+
+---
+
+## Lab 4: Pipeline end-to-end (UD 4 y UD 5)
+
+Objetivo: unir CI y GitOps. Un `git tag` en el repo de la app acaba en producción sin que nadie toque el clúster.
+
+<LabActions
+  repo="https://github.com/salvamiguel/gitops-status-demo-app"
+  title="App de clase"
+  fork={true}
+/>
+
+### Ejercicio 4.1 — Conectar los dos repos
+
+1. Ten forks de los dos repositorios (app y config) y el Lab 3 funcionando contra tu config repo.
+2. En el workflow `ci.yaml` de tu app, cambia `repository:` del job `update-manifests` por tu config repo.
+3. En tu config repo, cambia la imagen de `k8s/base/kustomization.yaml` a `ghcr.io/<tu-usuario>/gitops-status-demo-app`.
+4. Crea un **fine-grained token** con permiso `Contents: write` **solo** sobre el config repo y guárdalo en la app como secret `CONFIG_REPO_TOKEN`.
+
+### Ejercicio 4.2 — De un tag a producción
+
+1. Haz un cambio visible en la app y publica un tag: `git tag v1.1.0 && git push origin v1.1.0`.
+2. Sigue el workflow: `test` → `build-and-push` (imagen en GHCR) → `update-manifests`.
+3. Comprueba en el config repo el commit automático que cambia `newTag`.
+4. Mira cómo ArgoCD sincroniza **dev y staging**; promueve **prod** con `argocd app sync status-prod`.
+
+:::tip Pistas
+- La primera vez, el paquete de GHCR se crea privado: hazlo público en *Packages → Package settings* o el clúster no podrá descargar la imagen.
+- `kubectl get pods -n status-dev -o jsonpath='{.items[*].spec.containers[*].image}'` muestra la versión desplegada.
+:::
+
+### Ejercicio 4.3 — Blue-green y canary
+
+1. Instala Argo Rollouts: `make rollouts`.
+2. Cambia `targetRevision` de las Applications a la rama `strategy/blue-green` (o `strategy/canary`) y vuelve a aplicarlas.
+3. Publica una versión nueva y sigue la estrategia con `kubectl argo rollouts get rollout gitops-status-demo -n status-dev --watch`.
+4. Promueve (`promote`) o aborta (`abort`) el despliegue.
+
+<K8sPlaygroundLink example="canary">Rolling update, blue-green y canary en el playground</K8sPlaygroundLink>
+
+### Reto 4.4 — Volver atrás con Git
+
+Publica una versión que falle la `readinessProbe` (por ejemplo, que `/health` devuelva 500). Vuelve a la versión anterior **sin tocar el clúster**, con `git revert` en el config repo. Explica por qué `argocd app rollback` no es una opción en dev y staging (pista: sincronización automática).

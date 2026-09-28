@@ -78,7 +78,7 @@ Mantén cada módulo **pequeño y enfocado** en una sola responsabilidad. Un mó
 
 ```hcl
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.11"
 
   required_providers {
     aws = {
@@ -94,7 +94,7 @@ terraform {
 
 ```hcl
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.11"
 
   required_providers {
     google = {
@@ -110,7 +110,7 @@ terraform {
 
 ```hcl
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.11"
 
   required_providers {
     azurerm = {
@@ -830,6 +830,10 @@ module "vpc" {
 
 Ventajas: simplicidad, sin dependencias externas, cambios atómicos con el resto del código.
 
+:::tip Pruébalo en el playground
+El ejemplo [«Módulos locales»](/terraform-playground?example=modulos) reutiliza un módulo dos veces con `for_each`: fíjate en las direcciones `module.x["clave"]` del plan.
+:::
+
 ### Terraform Registry
 
 El [Terraform Registry](https://registry.terraform.io/) es el repositorio público de módulos de la comunidad. Contiene módulos verificados y mantenidos activamente.
@@ -1543,6 +1547,48 @@ Un módulo debe ser reutilizable en distintos contextos. Evita asumir detalles d
 - No asumas nombres de redes, regiones o cuentas del provider.
 - No incluyas configuración de backend (el root module se encarga).
 - No declares bloques `provider` dentro del módulo (usa `required_providers` en su lugar).
+
+### Tests de módulos con `terraform test` (1.6+)
+
+Terraform trae su propio framework de tests. Los ficheros `*.tftest.hcl` (en la raíz del módulo o en `tests/`) contienen bloques `run` que ejecutan un `plan` o un `apply` y comprueban el resultado con `assert`. Con `mock_provider` (Terraform 1.7+) no hacen falta credenciales:
+
+```hcl
+# modules/webapp/tests/webapp.tftest.hcl
+mock_provider "aws" {}
+
+variables {
+  app_name  = "demo"
+  ami_id    = "ami-12345678"
+  subnet_id = "subnet-12345678"
+  vpc_id    = "vpc-12345678"
+}
+
+run "nombre_de_la_instancia" {
+  command = plan
+
+  assert {
+    condition     = aws_instance.webapp.tags["Name"] == "demo-instance"
+    error_message = "La instancia debe llamarse <app_name>-instance."
+  }
+}
+
+run "tipo_por_defecto" {
+  command = plan
+
+  assert {
+    condition     = aws_instance.webapp.instance_type == "t2.micro"
+    error_message = "El tipo por defecto debe ser t2.micro."
+  }
+}
+```
+
+```bash
+cd modules/webapp
+terraform init
+terraform test
+```
+
+Con `command = plan` no se crea nada. Con `command = apply` (el valor por defecto), Terraform crea la infraestructura de prueba, comprueba los `assert` y la destruye al terminar. `expect_failures = [var.x]` permite comprobar que una `validation` rechaza un valor incorrecto.
 
 ### Checklist de calidad
 

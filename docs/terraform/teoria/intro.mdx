@@ -176,10 +176,10 @@ brew install hashicorp/tap/terraform
 ### Linux (Debian/Ubuntu)
 
 ```bash
-# Anadir la clave GPG de HashiCorp
+# Añadir la clave GPG de HashiCorp
 wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
 
-# Anadir el repositorio
+# Añadir el repositorio
 echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
 
 # Instalar
@@ -230,10 +230,10 @@ Si necesitas trabajar con diferentes versiones de Terraform en distintos proyect
 # Instalar tfenv (macOS)
 brew install tfenv
 
-# Instalar una version especifica
+# Instalar una versión específica
 tfenv install 1.9.5
 
-# Usar esa version
+# Usar esa versión
 tfenv use 1.9.5
 ```
 :::
@@ -568,7 +568,7 @@ Los módulos son paquetes reutilizables de configuración. Pueden venir del Terr
 
 ```hcl
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.11"
 
   required_providers {
     aws = {

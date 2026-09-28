@@ -16,6 +16,10 @@ En esta sección estudiaremos los tres mecanismos que Terraform ofrece para gest
 
 <VariablePlayground />
 
+:::tip Pruébalo con Terraform en el navegador
+El ejemplo [«Variables, validaciones y tfvars»](/terraform-playground?example=variables) del playground usa tipos complejos, `optional()`, `validation`, `sensitive` y `terraform.tfvars`: cambia los valores y ejecuta `plan`.
+:::
+
 ---
 
 ## 1. Input Variables
@@ -999,6 +1003,58 @@ variable "subnets" {
 | `alltrue(l)`       | Todos los elementos de la lista son `true`   | `alltrue([for x in var.l : x > 0])`                  |
 | `anytrue(l)`       | Al menos un elemento es `true`               | `anytrue([for x in var.l : x > 0])`                  |
 
+### Más allá de `validation`: condiciones personalizadas
+
+`validation` solo comprueba el valor de una variable. Terraform tiene tres bloques más para expresar lo que das por supuesto sobre la infraestructura, y los tres entran en el examen Terraform Associate (004):
+
+| Bloque | Dónde se escribe | Cuándo se evalúa | Si no se cumple |
+|--------|------------------|------------------|-----------------|
+| `precondition` | En el `lifecycle` de un resource o data source, o en un `output` | Antes de crear o modificar | Error: el plan o el apply se detiene |
+| `postcondition` | En el `lifecycle` de un resource o data source | Después de leer o aplicar | Error |
+| `check` (1.5+) | Bloque de nivel superior | Al final de cada plan y apply | Aviso: no detiene nada |
+
+```hcl
+data "aws_ami" "app" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]
+  }
+}
+
+resource "aws_instance" "app" {
+  ami           = data.aws_ami.app.id
+  instance_type = var.instance_type
+
+  lifecycle {
+    precondition {
+      condition     = data.aws_ami.app.architecture == "x86_64"
+      error_message = "La AMI debe ser x86_64."
+    }
+
+    postcondition {
+      condition     = self.public_ip != ""
+      error_message = "La instancia necesita una IP pública."
+    }
+  }
+}
+
+check "web_responde" {
+  data "http" "web" {
+    url = "http://${aws_instance.app.public_dns}"
+  }
+
+  assert {
+    condition     = data.http.web.status_code == 200
+    error_message = "La web no devuelve 200."
+  }
+}
+```
+
+`self` solo existe dentro de una `postcondition` y apunta al propio recurso. Un bloque `check` puede declarar su propio data source (aquí, del provider `hashicorp/http`) y solo produce avisos: sirve para vigilar la infraestructura sin bloquear despliegues.
+
 ---
 
 ## 4. Variables sensibles
@@ -1158,6 +1214,29 @@ terraform apply -var-file="secrets.tfvars"
 *.tfstate.*
 secrets.tfvars
 ```
+
+### Valores efímeros (Terraform 1.10+)
+
+`sensitive` oculta el valor en pantalla, pero lo sigue guardando en el plan y en el state. Terraform 1.10 añadió los valores **efímeros**, que nunca se escriben en ninguno de los dos:
+
+- `ephemeral = true` en una variable (o en un output de un módulo hijo).
+- **Recursos efímeros**, declarados con `ephemeral "tipo" "nombre"`, que leen un secreto solo mientras dura el plan o el apply.
+- **Argumentos write-only** (Terraform 1.11), terminados en `_wo`: el proveedor recibe el valor, pero no se guarda.
+
+```hcl
+variable "db_password" {
+  type      = string
+  ephemeral = true
+}
+
+resource "aws_db_instance" "main" {
+  # ...
+  password_wo         = var.db_password
+  password_wo_version = 1   # súbelo para rotar la contraseña
+}
+```
+
+Un valor efímero solo puede usarse en sitios que tampoco se guardan: argumentos write-only, otros valores efímeros o la configuración de un provider.
 
 ---
 
@@ -1876,7 +1955,7 @@ instance_type = "t2.micro"
 ```hcl
 # versions.tf
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.11"
 
   required_providers {
     aws = {

@@ -31,7 +31,7 @@ then
 fi
 ```
 
-Es importante entender que `if` en Bash no evalúa expresiones booleanas como en otros lenguajes. Lo que evalúa es el **exit code** del comando que le sigue: si el comando devuelve `0` (éxito), la condición es verdadera; cualquier otro valor es falso. Esto significa que puedes usar cualquier comando como condicion:
+Es importante entender que `if` en Bash no evalúa expresiones booleanas como en otros lenguajes. Lo que evalúa es el **exit code** del comando que le sigue: si el comando devuelve `0` (éxito), la condición es verdadera; cualquier otro valor es falso. Esto significa que puedes usar cualquier comando como condición:
 
 ```bash
 if grep -q "error" /var/log/syslog; then
@@ -65,18 +65,18 @@ test -f /etc/passwd
 | Caracteristica | `[ ]` (test) | `[[ ]]` (Bash keyword) |
 |----------------|-------------|----------------------|
 | **Tipo** | Comando externo / builtin | Keyword del shell |
-| **Entrecomillado de variables** | Obligatorio (`"$var"`) para evitar errores con cadenas vacias | Opcional, maneja cadenas vacias sin error |
+| **Entrecomillado de variables** | Obligatorio (`"$var"`) para evitar errores con cadenas vacías | Opcional, maneja cadenas vacías sin error |
 | **Operadores logicos** | `-a` (AND), `-o` (OR) | `&&` (AND), `\|\|` (OR) |
 | **Soporte regex** | No | Si, con `=~` |
-| **Globbing / pattern matching** | No | Si, con `==` (sin entrecomillar el patron) |
+| **Globbing / pattern matching** | No | Si, con `==` (sin entrecomillar el patrón) |
 | **Word splitting** | Si (problematico con variables sin comillas) | No |
 | **Portabilidad POSIX** | Si (funciona en `sh`, `dash`, etc.) | No (solo Bash, Zsh, Ksh) |
 
 :::tip Usa [[ ]] en scripts Bash
-Si tu script empieza con `#!/bin/bash` (o `#!/usr/bin/env bash`), usa siempre `[[ ]]`. Es mas seguro, mas legible y mas potente. Reserva `[ ]` unicamente para scripts que deben ser compatibles con POSIX `/bin/sh`.
+Si tu script empieza con `#!/bin/bash` (o `#!/usr/bin/env bash`), usa siempre `[[ ]]`. Es más seguro, más legible y más potente. Reserva `[ ]` unicamente para scripts que deben ser compatibles con POSIX `/bin/sh`.
 :::
 
-El problema mas comun con `[ ]` ocurre cuando una variable esta vacia:
+El problema más común con `[ ]` ocurre cuando una variable esta vacía:
 
 ```bash
 nombre=""
@@ -120,12 +120,12 @@ fi
 ```
 
 :::info = vs == dentro de [[ ]]
-Dentro de `[[ ]]`, tanto `=` como `==` funcionan para comparar cadenas. Se recomienda usar `==` por consistencia con otros lenguajes y para diferenciarlo claramente de la asignacion (`=`).
+Dentro de `[[ ]]`, tanto `=` como `==` funcionan para comparar cadenas. Se recomienda usar `==` por consistencia con otros lenguajes y para diferenciarlo claramente de la asignación (`=`).
 :::
 
-### Comparaciones numericas
+### Comparaciones numéricas
 
-Para comparar numeros enteros, Bash utiliza operadores especificos en lugar de los simbolos matematicos habituales. Esto se debe a que `<` y `>` son operadores de redireccion en el shell:
+Para comparar números enteros, Bash utiliza operadores específicos en lugar de los simbolos matematicos habituales. Esto se debe a que `<` y `>` son operadores de redirección en el shell:
 
 | Operador | Significado | Ejemplo |
 |----------|-------------|---------|
@@ -146,8 +146,8 @@ else
 fi
 ```
 
-:::info Aritmetica con (( ))
-Para comparaciones numericas tambien puedes usar la construccion aritmetica `(( ))`, que acepta los operadores matematicos habituales:
+:::info Aritmética con (( ))
+Para comparaciones numéricas también puedes usar la construccion aritmética `(( ))`, que acepta los operadores matematicos habituales:
 
 ```bash
 if (( edad >= 18 && edad <= 65 )); then
@@ -171,9 +171,9 @@ Bash proporciona un conjunto amplio de operadores para comprobar propiedades de 
 | `-w` | Es escribible (writable) | `[[ -w "$ruta" ]]` |
 | `-x` | Es ejecutable | `[[ -x "$ruta" ]]` |
 | `-s` | Existe y tiene tamano mayor que cero | `[[ -s "$ruta" ]]` |
-| `-L` | Es un enlace simbolico | `[[ -L "$ruta" ]]` |
-| `-nt` | Es mas reciente que otro archivo (_newer than_) | `[[ "$a" -nt "$b" ]]` |
-| `-ot` | Es mas antiguo que otro archivo (_older than_) | `[[ "$a" -ot "$b" ]]` |
+| `-L` | Es un enlace simbólico | `[[ -L "$ruta" ]]` |
+| `-nt` | Es más reciente que otro archivo (_newer than_) | `[[ "$a" -nt "$b" ]]` |
+| `-ot` | Es más antiguo que otro archivo (_older than_) | `[[ "$a" -ot "$b" ]]` |
 
 ### Combinando condiciones
 
@@ -202,7 +202,7 @@ fi
 ```
 
 :::warning Operadores logicos dentro de [ ]
-Dentro de `[ ]`, los operadores logicos son diferentes: `-a` para AND y `-o` para OR. Sin embargo, POSIX desaconseja su uso porque generan ambiguedades. La alternativa POSIX es encadenar multiples comandos `[ ]` con `&&` y `||` del shell:
+Dentro de `[ ]`, los operadores logicos son diferentes: `-a` para AND y `-o` para OR. Sin embargo, POSIX desaconseja su uso porque generan ambiguedades. La alternativa POSIX es encadenar múltiples comandos `[ ]` con `&&` y `||` del shell:
 
 ```bash
 # Evita esto (operadores dentro de [ ]):
@@ -218,7 +218,7 @@ Dentro de `[ ]`, los operadores logicos son diferentes: `-a` para AND y `-o` par
 import GitHubCode from '@site/src/components/shared/GitHubCode';
 
 <GitHubCode
-  title="check_file.sh: comprueba si un archivo existe, es legible y no esta vacio"
+  title="check_file.sh: comprueba si un archivo existe, es legible y no esta vacío"
   url="https://github.com/salvamiguel/scripting-examples/blob/main/check_file_exists.sh"
   language="bash"
 />
@@ -232,9 +232,9 @@ import LabActions from '@site/src/components/shared/LabActions';
 
 ## 2. La sentencia `case`
 
-### Sintaxis basica
+### Sintaxis básica
 
-La sentencia `case` es la alternativa elegante a las cadenas largas de `if/elif/else` cuando necesitas comparar una variable contra multiples patrones. Su sintaxis es:
+La sentencia `case` es la alternativa elegante a las cadenas largas de `if/elif/else` cuando necesitas comparar una variable contra múltiples patrones. Su sintaxis es:
 
 ```bash
 case "$variable" in
@@ -250,16 +250,16 @@ case "$variable" in
 esac
 ```
 
-Cada patron soporta los mismos globs que el shell: `*` (cualquier cadena), `?` (un caracter), `[abc]` (un caracter del conjunto), `[a-z]` (un rango). El operador `|` permite agrupar multiples patrones para el mismo bloque de comandos.
+Cada patrón soporta los mismos globs que el shell: `*` (cualquier cadena), `?` (un carácter), `[abc]` (un carácter del conjunto), `[a-z]` (un rango). El operador `|` permite agrupar múltiples patrones para el mismo bloque de comandos.
 
 ### Terminadores: `;;`, `;&` y `;;&`
 
-El terminador al final de cada bloque controla el comportamiento de `case` despues de encontrar una coincidencia:
+El terminador al final de cada bloque controla el comportamiento de `case` después de encontrar una coincidencia:
 
 | Terminador | Comportamiento |
 |------------|---------------|
 | `;;` | Sale del `case` inmediatamente (comportamiento por defecto, equivalente a `break` implicito) |
-| `;&` | Ejecuta el siguiente bloque sin comprobar su patron (_fall-through_) |
+| `;&` | Ejecuta el siguiente bloque sin comprobar su patrón (_fall-through_) |
 | `;;&` | Continua comprobando los siguientes patrones (_test-next_) |
 
 ```bash
@@ -290,17 +290,17 @@ esac
 # Salida: las tres lineas (todas las condiciones se cumplen)
 ```
 
-### Ejemplo real: parseo de flags de linea de comandos
+### Ejemplo real: parseo de flags de línea de comandos
 
 <GitHubCode
-  title="commands_flags.sh: parseo de flags de linea de comandos"
+  title="commands_flags.sh: parseo de flags de línea de comandos"
   url="https://github.com/salvamiguel/scripting-examples/blob/main/commands_flags.sh"
   language="bash"
 />
 
 
-:::tip El patron -- en scripts
-El patron `--` (doble guion) es una convencion universal en CLI que indica el fin de las opciones. Todo lo que viene despues se trata como argumento posicional, incluso si empieza con `-`. Implementarlo es buena practica en cualquier script que acepte flags.
+:::tip El patrón -- en scripts
+El patrón `--` (doble guion) es una convencion universal en CLI que indica el fin de las opciones. Todo lo que viene después se trata como argumento posicional, incluso si empieza con `-`. Implementarlo es buena practica en cualquier script que acepte flags.
 :::
 
 ---
@@ -309,7 +309,7 @@ El patron `--` (doble guion) es una convencion universal en CLI que indica el fi
 
 ### `for`: iterar sobre listas
 
-Bash ofrece dos estilos de bucle `for`: el clasico **for-in** (iterar sobre una lista) y el estilo C (iterar con un contador numerico).
+Bash ofrece dos estilos de bucle `for`: el clasico **for-in** (iterar sobre una lista) y el estilo C (iterar con un contador numérico).
 
 #### for-in
 
@@ -347,7 +347,7 @@ done
 ```
 
 :::warning Globbing y word splitting
-Cuando iteras sobre la salida de un comando con `$(...)`, Bash aplica _word splitting_ (separacion por espacios, tabulaciones y saltos de linea). Esto causa problemas con nombres de archivo que contienen espacios. Para esos casos, usa `while read` en lugar de `for`:
+Cuando iteras sobre la salida de un comando con `$(...)`, Bash aplica _word splitting_ (separacion por espacios, tabulaciones y saltos de línea). Esto causa problemas con nombres de archivo que contienen espacios. Para esos casos, usa `while read` en lugar de `for`:
 
 ```bash
 # PELIGROSO: se rompe con espacios en nombres
@@ -382,9 +382,9 @@ for ((i = 0; i < ${#colores[@]}; i++)); do
 done
 ```
 
-### `while`: repetir mientras se cumpla una condicion
+### `while`: repetir mientras se cumpla una condición
 
-El bucle `while` ejecuta su cuerpo mientras la condicion devuelva exit code 0:
+El bucle `while` ejecuta su cuerpo mientras la condición devuelva exit code 0:
 
 ```bash
 # Contador basico
@@ -409,9 +409,9 @@ done
 echo "Servicio disponible"
 ```
 
-#### Leer archivos linea por linea
+#### Leer archivos línea por línea
 
-El patron mas comun con `while` es leer archivos o streams linea por linea:
+El patrón más común con `while` es leer archivos o streams línea por línea:
 
 ```bash
 # Forma correcta de leer un archivo linea por linea
@@ -422,12 +422,12 @@ done < /etc/hosts
 
 Desglosemos los componentes:
 
-- **`IFS=`**: establece el separador de campos interno como vacio, lo que evita que Bash elimine espacios en blanco al inicio y al final de cada linea.
-- **`read -r`**: el flag `-r` evita que `read` interprete las barras invertidas como caracteres de escape. Sin este flag, `\n` se convertiria en un salto de linea y `\\` en una sola barra invertida.
-- **`< archivo`**: redirige el contenido del archivo como entrada estandar del bucle.
+- **`IFS=`**: establece el separador de campos interno como vacío, lo que evita que Bash elimine espacios en blanco al inicio y al final de cada línea.
+- **`read -r`**: el flag `-r` evita que `read` interprete las barras invertidas como caracteres de escape. Sin este flag, `\n` se convertiria en un salto de línea y `\\` en una sola barra invertida.
+- **`< archivo`**: redirige el contenido del archivo como entrada estándar del bucle.
 
 :::warning Cuidado con el word splitting al leer archivos
-Sin `IFS=` y sin `-r`, Bash modifica las lineas que lee:
+Sin `IFS=` y sin `-r`, Bash modifica las líneas que lee:
 
 ```bash
 # Archivo de ejemplo con espacios y barras invertidas:
@@ -451,7 +451,7 @@ done < archivo.txt
 ```
 :::
 
-Tambien puedes leer campos separados por delimitadores:
+También puedes leer campos separados por delimitadores:
 
 ```bash
 # Leer un CSV con campos separados por comas
@@ -465,9 +465,9 @@ ps aux | while IFS= read -r linea; do
 done
 ```
 
-### `until`: repetir hasta que se cumpla una condicion
+### `until`: repetir hasta que se cumpla una condición
 
-`until` es el inverso logico de `while`: ejecuta su cuerpo mientras la condicion sea **falsa** (exit code distinto de 0):
+`until` es el inverso lógico de `while`: ejecuta su cuerpo mientras la condición sea **falsa** (exit code distinto de 0):
 
 ```bash
 # Equivalente al while anterior, pero con logica invertida
@@ -485,14 +485,14 @@ done
 echo "Proceso completado"
 ```
 
-En la practica, `until` se usa poco porque la mayoria de desarrolladores prefieren `while` con la condicion negada. Sin embargo, en ciertos casos `until` produce codigo mas legible.
+En la practica, `until` se usa poco porque la mayoria de desarrolladores prefieren `while` con la condición negada. Sin embargo, en ciertos casos `until` produce código más legible.
 
 ### `break` y `continue`
 
 Estos dos comandos controlan el flujo dentro de un bucle:
 
-- **`break`**: sale del bucle inmediatamente, continuando con el codigo posterior.
-- **`continue`**: salta a la siguiente iteracion, omitiendo el resto del cuerpo del bucle.
+- **`break`**: sale del bucle inmediatamente, continuando con el código posterior.
+- **`continue`**: salta a la siguiente iteración, omitiendo el resto del cuerpo del bucle.
 
 ```bash
 # break: detener el bucle cuando encontremos lo que buscamos
@@ -513,7 +513,7 @@ for archivo in *.txt; do
 done
 ```
 
-Ambos aceptan un argumento numerico para actuar sobre bucles anidados:
+Ambos aceptan un argumento numérico para actuar sobre bucles anidados:
 
 ```bash
 # break 2 sale de dos niveles de bucles
@@ -529,7 +529,7 @@ done
 
 ### Bucles infinitos
 
-Los bucles infinitos son utiles para demonios, menus interactivos o cualquier proceso que deba ejecutarse continuamente hasta que se le indique parar:
+Los bucles infinitos son útiles para demonios, menus interactivos o cualquier proceso que deba ejecutarse continuamente hasta que se le indique parar:
 
 ```bash
 # Dos formas equivalentes de crear un bucle infinito
@@ -550,7 +550,7 @@ while :; do
 done
 ```
 
-Un patron habitual es un menu interactivo:
+Un patrón habitual es un menu interactivo:
 
 ```bash
 while true; do
@@ -573,10 +573,10 @@ while true; do
 done
 ```
 
-### Ejemplo: procesar un archivo de log linea por linea
+### Ejemplo: procesar un archivo de log línea por línea
 
 <GitHubCode
-  title="log_processing.sh: procesar un archivo de log linea por linea"
+  title="log_processing.sh: procesar un archivo de log línea por línea"
   url="https://github.com/salvamiguel/scripting-examples/blob/main/log_processing.sh"
   language="bash"
 />
@@ -584,7 +584,7 @@ done
 
 ## 4. Funciones
 
-### Declaracion de funciones
+### Declaración de funciones
 
 Bash soporta dos sintaxis para declarar funciones:
 
@@ -605,22 +605,22 @@ function nombre_funcion() {
 }
 ```
 
-:::tip Recomendacion de estilo
-Usa la forma `nombre()` (sin el keyword `function`). Es compatible con POSIX, mas concisa y la preferida por guias de estilo como la de Google para Shell.
+:::tip Recomendación de estilo
+Usa la forma `nombre()` (sin el keyword `function`). Es compatible con POSIX, más concisa y la preferida por guias de estilo como la de Google para Shell.
 :::
 
 ### Argumentos dentro de funciones
 
-Las funciones reciben argumentos de la misma forma que los scripts: a traves de los parametros posicionales `$1`, `$2`, etc. Los parametros especiales tambien funcionan dentro de la funcion:
+Las funciones reciben argumentos de la misma forma que los scripts: a través de los parámetros posicionales `$1`, `$2`, etc. Los parámetros especiales también funcionan dentro de la función:
 
-| Parametro | Significado |
+| Parámetro | Significado |
 |-----------|-------------|
 | `$1`, `$2`, ... | Argumentos posicionales |
 | `$@` | Todos los argumentos como palabras separadas |
 | `$*` | Todos los argumentos como una sola cadena |
-| `$#` | Numero de argumentos |
-| `$0` | Sigue siendo el nombre del script (no el de la funcion) |
-| `$FUNCNAME` | Nombre de la funcion actual |
+| `$#` | Número de argumentos |
+| `$0` | Sigue siendo el nombre del script (no el de la función) |
+| `$FUNCNAME` | Nombre de la función actual |
 
 ```bash
 saludar() {
@@ -643,7 +643,7 @@ saludar                   # Error de uso, return 1
 ### Variable scope: el keyword `local`
 
 :::warning Las variables en Bash son globales por defecto
-A diferencia de la mayoria de lenguajes de programacion, las variables declaradas dentro de una funcion en Bash son **globales**. Esto significa que cualquier variable que crees o modifiques dentro de una funcion afecta al ambito del script completo. Este comportamiento es una fuente constante de bugs sutiles y dificiles de depurar.
+A diferencia de la mayoria de lenguajes de programación, las variables declaradas dentro de una función en Bash son **globales**. Esto significa que cualquier variable que crees o modifiques dentro de una función afecta al ámbito del script completo. Este comportamiento es una fuente constante de bugs sutiles y dificiles de depurar.
 :::
 
 ```bash
@@ -660,7 +660,7 @@ echo "$resultado"  # "procesado"  (modificado por la funcion)
 echo "$i"          # "999"        (modificado por la funcion)
 ```
 
-La solucion es usar `local` para limitar el alcance de las variables al cuerpo de la funcion:
+La solución es usar `local` para limitar el alcance de las variables al cuerpo de la función:
 
 ```bash
 # CORRECTO: variables locales
@@ -677,15 +677,15 @@ echo "$resultado"    # "pendiente"  (no modificado)
 echo "$i"            # "0"          (no modificado)
 ```
 
-**Regla de oro**: declara **todas** las variables dentro de funciones con `local`, salvo que intencionalmente necesites modificar el ambito global.
+**Regla de oro**: declara **todas** las variables dentro de funciones con `local`, salvo que intencionalmente necesites modificar el ámbito global.
 
 ### `return` vs `echo`: dos formas de devolver valores
 
-Las funciones en Bash tienen dos mecanismos para "devolver" informacion, y es fundamental entender la diferencia:
+Las funciones en Bash tienen dos mecanismos para "devolver" información, y es fundamental entender la diferencia:
 
-**`return N`**: establece el exit code de la funcion (un entero entre 0 y 255). Se usa para indicar exito o fracaso, no para devolver datos.
+**`return N`**: establece el exit code de la función (un entero entre 0 y 255). Se usa para indicar éxito o fracaso, no para devolver datos.
 
-**`echo` (stdout)**: la forma de devolver datos es imprimirlos por la salida estandar. El llamante los captura con `$(...)`.
+**`echo` (stdout)**: la forma de devolver datos es imprimirlos por la salida estándar. El llamante los captura con `$(...)`.
 
 ```bash
 # return: para indicar exito/fracaso
@@ -715,7 +715,7 @@ echo "Extension: $ext"  # "Extension: pdf"
 ```
 
 :::danger No mezcles echo de datos con echo de mensajes
-Si tu funcion usa `echo` tanto para devolver datos como para imprimir mensajes informativos, el llamante capturara **todo**. Envia los mensajes informativos a stderr (`>&2`) para que no contaminen la salida:
+Si tu función usa `echo` tanto para devolver datos como para imprimir mensajes informativos, el llamante capturara **todo**. Envia los mensajes informativos a stderr (`>&2`) para que no contaminen la salida:
 
 ```bash
 # MAL: el mensaje se mezcla con el resultado
@@ -749,19 +749,19 @@ echo "$resultado"  # "8"
 
 ### Convenciones y significado
 
-Cada comando en Bash termina con un **exit code** (tambien llamado _exit status_ o _return code_): un numero entero entre 0 y 255 que indica el resultado de la ejecucion. El exit code se almacena en la variable especial `$?` inmediatamente despues de que un comando termina.
+Cada comando en Bash termina con un **exit code** (también llamado _exit status_ o _return code_): un número entero entre 0 y 255 que indica el resultado de la ejecución. El exit code se almacena en la variable especial `$?` inmediatamente después de que un comando termina.
 
-La convencion es simple: **0 significa exito, cualquier otro valor significa error**. Sin embargo, existen convenciones mas especificas que la mayoria de herramientas y scripts respetan:
+La convencion es simple: **0 significa éxito, cualquier otro valor significa error**. Sin embargo, existen convenciones más específicas que la mayoria de herramientas y scripts respetan:
 
 | Exit code | Significado | Ejemplo |
 |-----------|-------------|---------|
-| `0` | Exito | Comando ejecutado correctamente |
+| `0` | Éxito | Comando ejecutado correctamente |
 | `1` | Error general | Error generico, catch-all para fallos |
 | `2` | Uso incorrecto del comando | Argumentos invalidos, opciones desconocidas |
 | `126` | Comando encontrado pero no ejecutable | Permisos insuficientes |
 | `127` | Comando no encontrado | Binario no existe en `$PATH` |
 | `128` | Argumento invalido para `exit` | `exit 3.14` (no es entero) |
-| `128+N` | Proceso terminado por senal N | `130` = Ctrl+C (SIGINT=2), `137` = SIGKILL (9), `143` = SIGTERM (15) |
+| `128+N` | Proceso terminado por señal N | `130` = Ctrl+C (SIGINT=2), `137` = SIGKILL (9), `143` = SIGTERM (15) |
 | `255` | Exit code fuera de rango | `exit -1` se convierte en 255 |
 
 ```bash
@@ -776,21 +776,21 @@ comando_inventado 2>/dev/null
 echo "Exit code: $?"  # 127 (command not found)
 ```
 
-:::info Exit codes de senales
-Cuando un proceso es terminado por una senal, su exit code es `128 + numero_de_senal`. Las mas comunes son:
+:::info Exit codes de señales
+Cuando un proceso es terminado por una señal, su exit code es `128 + numero_de_senal`. Las más comunes son:
 
 - **130** (128+2): el usuario presiono Ctrl+C (SIGINT)
 - **137** (128+9): el proceso fue matado con `kill -9` (SIGKILL)
-- **143** (128+15): el proceso recibio `kill` sin especificar senal (SIGTERM)
+- **143** (128+15): el proceso recibio `kill` sin especificar señal (SIGTERM)
 
-Esto es util para distinguir entre un error del programa y una terminacion externa.
+Esto es útil para distinguir entre un error del programa y una terminacion externa.
 :::
 
-### Ejecucion condicional con `&&` y `||`
+### Ejecución condicional con `&&` y `||`
 
 Bash permite encadenar comandos basandose en el exit code del comando anterior:
 
-- **`&&` (AND)**: el comando de la derecha solo se ejecuta si el de la izquierda tuvo exito (exit code 0).
+- **`&&` (AND)**: el comando de la derecha solo se ejecuta si el de la izquierda tuvo éxito (exit code 0).
 - **`||` (OR)**: el comando de la derecha solo se ejecuta si el de la izquierda fallo (exit code distinto de 0).
 
 ```bash
@@ -804,8 +804,8 @@ cd /directorio/inexistente || echo "No se pudo cambiar de directorio"
 ping -c 1 -W 2 google.com &>/dev/null && echo "Online" || echo "Offline"
 ```
 
-:::danger El patron cmd && ok || fail no es un if/else fiable
-El patron `comando && exito || fracaso` parece un `if/else` compacto, pero tiene un fallo sutil: si el comando de **exito** falla (devuelve un exit code distinto de 0), el comando de **fracaso** tambien se ejecuta.
+:::danger El patrón cmd && ok || fail no es un if/else fiable
+El patrón `comando && exito || fracaso` parece un `if/else` compacto, pero tiene un fallo sutil: si el comando de **éxito** falla (devuelve un exit code distinto de 0), el comando de **fracaso** también se ejecuta.
 
 ```bash
 # PROBLEMA: si 'echo' falla por alguna razon, ambos se ejecutan
@@ -823,6 +823,10 @@ else
 fi
 ```
 :::
+
+import ExitCodeDemo from '@site/src/components/demos/scripting/ExitCodeDemo';
+
+<ExitCodeDemo />
 
 ### Usando exit codes en scripts
 
@@ -870,7 +874,7 @@ main "$@"
 
 ## 6. Combinando todo: script completo
 
-El siguiente script aplica todos los conceptos vistos en esta unidad: condicionales, `case`, bucles, funciones con variables locales, exit codes y procesamiento de archivos. Es un analizador de archivos de log que acepta opciones por linea de comandos.
+El siguiente script aplica todos los conceptos vistos en esta unidad: condicionales, `case`, bucles, funciones con variables locales, exit codes y procesamiento de archivos. Es un analizador de archivos de log que acepta opciones por línea de comandos.
 
 ```bash
 #!/usr/bin/env bash
@@ -1173,17 +1177,17 @@ exit $EXIT_OK
 
 El script anterior combina todos los conceptos de esta unidad. Veamos como se aplica cada uno:
 
-| Seccion | Conceptos aplicados |
+| Sección | Conceptos aplicados |
 |---------|-------------------|
 | **Constantes** | `readonly` para valores inmutables, exit codes como constantes con nombre |
-| **`mostrar_ayuda()`** | Funcion con _here document_ (`<<EOF`) para texto multilinea |
-| **`log_msg()`** | Funcion con `local`, salida a stderr (`>&2`), condicional con variable global |
+| **`mostrar_ayuda()`** | Función con _here document_ (`<<EOF`) para texto multilinea |
+| **`log_msg()`** | Función con `local`, salida a stderr (`>&2`), condicional con variable global |
 | **`nivel_es_valido()`** | Bucle `for-in` sobre array, `return` para exit codes |
 | **`validar_archivo()`** | Tests de archivo (`-e`, `-d`, `-r`, `-s`), `if/elif/else` encadenados |
-| **`analizar_archivo()`** | `while IFS= read -r`, array asociativo local, bucle `for` estilo C, aritmetica con `(( ))` |
-| **Parseo de argumentos** | `case` con patrones multiples, `shift`, validacion de flags |
+| **`analizar_archivo()`** | `while IFS= read -r`, array asociativo local, bucle `for` estilo C, aritmética con `(( ))` |
+| **Parseo de argumentos** | `case` con patrones múltiples, `shift`, validación de flags |
 | **Procesamiento** | Bucle `for-in`, `continue` para saltar errores, captura de salida con `$(...)` |
-| **Salida condicional** | Exit codes distintos segun el resultado del procesamiento |
+| **Salida condicional** | Exit codes distintos según el resultado del procesamiento |
 
 ---
 
@@ -1192,15 +1196,15 @@ El script anterior combina todos los conceptos de esta unidad. Veamos como se ap
 Estos son los puntos clave de esta unidad:
 
 - **`if`** evalua el exit code del comando que le sigue: 0 es verdadero, cualquier otro valor es falso.
-- **`[[ ]]`** es preferible a `[ ]` en scripts Bash: maneja cadenas vacias, soporta regex, usa `&&`/`||` como operadores logicos y no sufre word splitting.
+- **`[[ ]]`** es preferible a `[ ]` en scripts Bash: maneja cadenas vacías, soporta regex, usa `&&`/`||` como operadores logicos y no sufre word splitting.
 - Los **tests de archivo** (`-f`, `-d`, `-e`, `-r`, `-w`, `-x`, `-s`) permiten validar la existencia y permisos de archivos y directorios antes de operar con ellos.
-- **`case`** simplifica las comparaciones multiples con soporte de patrones glob y el operador `|` para agrupar opciones.
-- **`for-in`** itera sobre listas, globs y arrays; el **for estilo C** es ideal para contadores numericos.
-- **`while IFS= read -r`** es la forma correcta de leer archivos linea por linea preservando espacios y barras invertidas.
-- Las **funciones** agrupan logica reutilizable. Usa `local` en todas las variables internas para evitar contaminar el ambito global.
-- **`return`** establece el exit code de la funcion (0-255); **`echo`** envia datos por stdout para capturar con `$(...)`.
-- Los **exit codes** siguen la convencion: 0 = exito, 1 = error general, 2 = uso incorrecto, 127 = comando no encontrado, 128+N = senal.
-- El patron **`cmd && ok || fail`** no es un `if/else` fiable porque `fail` se ejecuta tambien si `ok` falla.
+- **`case`** simplifica las comparaciones múltiples con soporte de patrones glob y el operador `|` para agrupar opciones.
+- **`for-in`** itera sobre listas, globs y arrays; el **for estilo C** es ideal para contadores numéricos.
+- **`while IFS= read -r`** es la forma correcta de leer archivos línea por línea preservando espacios y barras invertidas.
+- Las **funciones** agrupan lógica reutilizable. Usa `local` en todas las variables internas para evitar contaminar el ámbito global.
+- **`return`** establece el exit code de la función (0-255); **`echo`** envia datos por stdout para capturar con `$(...)`.
+- Los **exit codes** siguen la convencion: 0 = éxito, 1 = error general, 2 = uso incorrecto, 127 = comando no encontrado, 128+N = señal.
+- El patrón **`cmd && ok || fail`** no es un `if/else` fiable porque `fail` se ejecuta también si `ok` falla.
 
 ```mermaid
 graph TD
