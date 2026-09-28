@@ -41,7 +41,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build and push Docker image
         run: |
@@ -80,7 +80,7 @@ El pipeline necesita `secrets.KUBECONFIG`, un secreto que contiene las credencia
 - **Estado fuera de Git**: el estado real del clúster en producción no está necesariamente documentado en ningún repositorio. Lo que hay en Git puede no coincidir con lo que está desplegado.
 
 :::warning Riesgo real: escape de credenciales
-En julio de 2023, el grupo de seguridad de GitHub publicó que miles de organizaciones tenían tokens de acceso a Kubernetes almacenados en secretos de GitHub Actions con permisos excesivos. En el modelo push, estas credenciales son un objetivo prioritario para cualquier atacante que consiga acceso al entorno de CI.
+En el modelo push, el sistema de CI guarda credenciales con acceso de escritura al clúster. Cualquiera que comprometa la CI (una Action de terceros maliciosa, un secret filtrado en un log, un runner compartido) obtiene ese acceso. Si no puedes evitar el push, usa credenciales de corta duración (OIDC) y con los permisos mínimos.
 :::
 
 ---

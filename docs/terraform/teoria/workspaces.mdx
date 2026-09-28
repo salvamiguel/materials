@@ -259,6 +259,10 @@ En la práctica, muchos equipos profesionales prefieren directorios separados co
 
 ## 2. for_each
 
+:::tip Pruébalo en el playground
+El ejemplo [«S3 con for_each y políticas IAM»](/terraform-playground?example=s3) crea buckets con `for_each` sobre un map de objetos. Quita una clave, ejecuta `plan` y compara con lo que pasaría con `count`.
+:::
+
 ### Iteración sobre maps y sets
 
 El meta-argumento `for_each` permite crear múltiples instancias de un recurso iterando sobre un `map` o un `set` de strings. A diferencia de `count`, cada instancia se identifica por su clave, no por un índice numérico, lo que proporciona estabilidad ante cambios en la colección.
@@ -1416,7 +1420,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

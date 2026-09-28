@@ -1,0 +1,20 @@
+---
+sidebar_position: 1
+title: "Autoevaluación y tests"
+description: "Tests interactivos para evaluar tus conocimientos de GitOps: fundamentos, GitHub Actions, ArgoCD, estrategias de despliegue y pipeline end-to-end."
+---
+
+import ModuleTest from '@site/src/components/test/ModuleTest';
+import { testFundamentos, testGithubActions, testArgoCD, testEstrategias, testPipeline } from './test-data';
+
+# Tests de GitOps
+
+Evalúa tus conocimientos con estos tests interactivos. Tu progreso se guarda automáticamente en el navegador.
+
+<ModuleTest title='GitOps' tests={[
+  { id: 'go-fundamentos', title: 'Fundamentos de GitOps y Kubernetes', config: testFundamentos },
+  { id: 'go-actions', title: 'GitHub Actions', config: testGithubActions },
+  { id: 'go-argocd', title: 'ArgoCD y multi-entorno', config: testArgoCD },
+  { id: 'go-estrategias', title: 'Estrategias de despliegue y rollback', config: testEstrategias },
+  { id: 'go-pipeline', title: 'Pipeline end-to-end', config: testPipeline },
+]} />

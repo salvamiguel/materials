@@ -19,14 +19,14 @@ Sigue las instrucciones del README del config repo para montar el entorno local 
 
 ## 1. El flujo completo
 
-Este es el flujo GitOps completo desde que un desarrollador hace `git push` hasta que el cambio llega al clúster de Kubernetes:
+Este es el flujo GitOps completo desde que un desarrollador publica un tag de versión hasta que el cambio llega al clúster de Kubernetes:
 
 ```mermaid
 graph LR
-  Dev[Developer] -->|git push| AppRepo[App Repo]
+  Dev[Developer] -->|git tag v* + push| AppRepo[App Repo]
   AppRepo -->|trigger| CI[GitHub Actions]
-  CI -->|docker build + push| Registry[GHCR / Docker Hub]
-  CI -->|update image tag| ConfigRepo[Config Repo / manifests]
+  CI -->|docker build + push| Registry[GHCR]
+  CI -->|update newTag| ConfigRepo[Config Repo / manifests]
   ArgoCD[ArgoCD] -->|detects change| ConfigRepo
   ArgoCD -->|kubectl apply| K8s[Kubernetes]
 ```
@@ -35,9 +35,9 @@ graph LR
 
 | Paso | Actor | Acción | Resultado |
 |------|-------|--------|-----------|
-| 1 | Developer | `git push` al app repo | Dispara el pipeline de CI |
-| 2 | GitHub Actions | Build y push de la imagen Docker | Imagen publicada en GHCR con el SHA del commit |
-| 3 | GitHub Actions | Actualiza el image tag en el config repo | Nuevo commit en el repo de manifiestos |
+| 1 | Developer | `git tag v1.2.0` y `git push origin v1.2.0` en el app repo | Dispara el pipeline de CI |
+| 2 | GitHub Actions | Tests, build multiarquitectura y push de la imagen | Imagen publicada en GHCR con la versión, el SHA y `latest` |
+| 3 | GitHub Actions | Actualiza `newTag` en `k8s/base/kustomization.yaml` del config repo | Nuevo commit en el repo de manifiestos |
 | 4 | ArgoCD | Detecta el nuevo commit en el config repo | Compara con el estado actual del clúster |
 | 5 | ArgoCD | `kubectl apply` de los manifiestos actualizados | Nueva versión desplegada en Kubernetes |
 
@@ -47,91 +47,122 @@ A diferencia del modelo push tradicional (donde la CI hace `kubectl apply` direc
 
 ## 2. El workflow completo de GitHub Actions
 
-Este es el workflow real que implementa el flujo completo descrito arriba:
+Este es el workflow real del app repo ([`.github/workflows/ci.yaml`](https://github.com/salvamiguel/gitops-status-demo-app/blob/main/.github/workflows/ci.yaml)). No se dispara con cada push, sino al publicar un **tag de versión** (`v1.2.0`), de modo que cada despliegue corresponde a una versión con nombre:
 
 ```yaml
 name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    tags:
+      - 'v*'
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Run tests
+        run: make test
+
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write      # Necesario para publicar en GHCR
     steps:
       - uses: actions/checkout@v5
-
+      - name: Extract version from tag
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           push: true
+          platforms: linux/amd64,linux/arm64
+          build-args: VERSION=${{ env.VERSION }}
           tags: |
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+            ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
             ${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   update-manifests:
-    needs: build-and-push      # Solo corre si el build fue exitoso
+    needs: build-and-push
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v5
         with:
-          repository: salvamiguel/gitops-status-demo-config    # Config repo separado
-          token: ${{ secrets.CONFIG_REPO_TOKEN }}     # PAT con acceso al config repo
-
+          repository: salvamiguel/gitops-status-demo-config
+          token: ${{ secrets.CONFIG_REPO_TOKEN }}
       - name: Update image tag in manifests
         run: |
-          sed -i "s|image: .*|image: ${{ env.IMAGE_NAME }}:${{ github.sha }}|" \
-            k8s/base/deployment.yaml
-
-      - name: Commit and push manifest update
+          VERSION="${GITHUB_REF#refs/tags/}"
+          sed -i "s|newTag:.*|newTag: ${VERSION}|" k8s/base/kustomization.yaml
+          echo "Updated image tag to ${VERSION}"
+          cat k8s/base/kustomization.yaml
+      - name: Commit and push
         run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
           git config user.email "ci@github.com"
           git config user.name "GitHub Actions"
-          git add k8s/base/deployment.yaml
-          git commit -m "chore: update image to ${{ github.sha }}
-
+          git add k8s/base/kustomization.yaml
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "chore: update image to ${VERSION}
           Triggered by: ${{ github.repository }}@${{ github.sha }}
           Actor: ${{ github.actor }}
           Workflow: ${{ github.workflow }}"
           git push
 ```
 
+Para publicar una versión basta con:
+
+```bash
+git tag v1.2.0
+git push origin v1.2.0
+```
+
 ### Desglose del workflow
+
+**Job `test`:** ejecuta `make test` con Go 1.24. Si falla, no se construye ninguna imagen.
 
 **Job `build-and-push`:**
 
-- `actions/checkout@v5`: clona el repositorio de la aplicación.
+- `needs: test`: solo construye si los tests pasan.
+- Extrae la versión del tag (`v1.2.0`) a la variable `VERSION`.
+- `setup-qemu-action` y `setup-buildx-action` permiten construir la imagen para `linux/amd64` y `linux/arm64` (Mac con Apple Silicon incluido).
 - `docker/login-action@v3`: autentica en GHCR usando el `GITHUB_TOKEN` automático.
-- `docker/build-push-action@v6`: construye la imagen y la publica con dos tags: el SHA del commit (inmutable) y `latest`.
+- `docker/build-push-action@v6`: publica tres tags: la versión (`v1.2.0`), el SHA del commit (`sha-…`, inmutable) y `latest`.
 - `cache-from/cache-to`: utiliza la caché de GitHub Actions para acelerar builds sucesivos.
 
 **Job `update-manifests`:**
 
-- `needs: build-and-push`: garantiza que solo actualiza el manifiesto si la imagen se publicó correctamente.
-- Hace checkout del **config repo** (no del app repo) usando un Personal Access Token almacenado en secrets.
-- `sed -i`: actualiza la línea de la imagen en el `deployment.yaml` con el SHA exacto del commit.
-- Commit con mensaje descriptivo que incluye quién disparó el pipeline y desde qué repo.
+- `needs: build-and-push`: solo actualiza la configuración si la imagen se publicó correctamente.
+- Hace checkout del **config repo** (no del app repo) con el token `CONFIG_REPO_TOKEN`. Usa un **fine-grained personal access token** con permiso *Contents: Read and write* solo sobre `gitops-status-demo-config`, o mejor aún una **GitHub App** instalada en ese repo; evita los tokens clásicos con acceso a todos tus repositorios.
+- `sed -i`: cambia `newTag` en `k8s/base/kustomization.yaml`. Como es la base, el cambio llega a los tres overlays: dev y staging se sincronizan solos y prod espera a un sync manual.
+- `git diff --cached --quiet`: si el tag ya estaba puesto, no crea un commit vacío.
+- Commit con un mensaje que incluye quién disparó el pipeline y desde qué repo.
 
 :::tip SHA en lugar de latest para producción
-Usar el SHA del commit como tag de imagen garantiza **inmutabilidad**: siempre sabes exactamente qué código está desplegado. Nunca uses `:latest` en producción porque puede cambiar en cualquier momento sin que Git lo registre.
+Desplegar una versión (`v1.2.0`) o el SHA del commit garantiza **inmutabilidad**: siempre sabes exactamente qué código está desplegado. Nunca uses `:latest` en producción porque puede cambiar en cualquier momento sin que Git lo registre.
 :::
 
 ## 3. Separación app repo / config repo

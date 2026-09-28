@@ -1097,7 +1097,7 @@ tree y \`git push\` publica en el remoto que lee ArgoCD
 ## 1. Instala ArgoCD (como en \`make argocd\`)
 
     kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.13.3/manifests/install.yaml
+    kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.3/manifests/install.yaml
     kubectl wait --for=condition=Ready pods --all -n argocd --timeout=300s
     kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 

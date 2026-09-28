@@ -669,25 +669,24 @@ Settings → Environments → production → Secrets → DATABASE_URL = postgres
 
 ## 11. Caso Real: El Pipeline de Este Sitio
 
-Este mismo sitio de materiales que estás leyendo se despliega automáticamente con GitHub Actions cada vez que se hace un push a `main`.
+Este mismo sitio de materiales que estás leyendo se construye en cada pull request y se despliega automáticamente con GitHub Actions cada vez que se hace un push a `main`.
 
-Puedes inspeccionar el pipeline real en el repositorio:
+import GitHubCode from '@site/src/components/shared/GitHubCode';
 
-```
-.github/workflows/deploy.yml
-```
+<GitHubCode
+  title="Workflow de despliegue de este sitio: .github/workflows/deploy.yml"
+  url="https://github.com/salvamiguel/materials/blob/main/.github/workflows/deploy.yml"
+  language="yaml"
+/>
 
 El workflow sigue este flujo:
 
-1. **Trigger**: push a `main`
-2. **Build**: instala dependencias con `npm ci`, ejecuta `npm run build` (Docusaurus genera el HTML estático)
-3. **Deploy**: sube el contenido de `build/` a GitHub Pages usando `peaceiris/actions-gh-pages`
+1. **Trigger**: `push` y `pull_request` contra `main`, y `workflow_dispatch` para lanzarlo a mano.
+2. **Build**: instala dependencias con `bun install --frozen-lockfile`, prueba y compila a WebAssembly los motores de los playgrounds (Go), pasa los tests y el typecheck y ejecuta `bun run build` (Docusaurus genera el HTML estático).
+3. **Artefacto**: fuera de los PR, sube `build/` con `actions/upload-pages-artifact`.
+4. **Deploy**: un segundo job (`needs: build`) publica en GitHub Pages con `actions/deploy-pages`, dentro del environment `github-pages`. Los permisos `pages: write` e `id-token: write` sustituyen a cualquier token guardado.
 
-Es un ejemplo concreto de **GitOps aplicado a documentación**: el contenido vive en Git, y cualquier cambio aprobado en la rama principal se refleja automáticamente en producción sin intervención manual.
-
-:::info Explora el código
-Abre el fichero `.github/workflows/deploy.yml` en el repositorio de materiales para ver el YAML real, incluyendo cómo se usa `GITHUB_TOKEN` para los permisos de escritura en GitHub Pages.
-:::
+En los pull requests el sitio se construye y se prueba, pero no se publica: el despliegue solo ocurre cuando el cambio llega a `main`. Es un ejemplo concreto de **GitOps aplicado a documentación**: el contenido vive en Git, y cualquier cambio aprobado en la rama principal se refleja automáticamente en producción sin intervención manual.
 
 
 ## Resumen

@@ -14,9 +14,9 @@ Este módulo capacita al alumno en **Bash scripting** como herramienta fundament
 
 | Unidad | Título | Páginas | Horas |
 |--------|--------|---------|-------|
-| UD 1 | Fundamentos de Bash Scripting | [Introducción a Bash](./teoria/intro), [Estructuras de Control y Funciones](./teoria/estructuras-control) | 1 h |
+| UD 1 | Fundamentos de Bash Scripting | [Introducción a Bash](./teoria/intro), [Estructuras de Control y Funciones](./teoria/estructuras-control) | 2 h |
 | UD 2 | Procesamiento de Texto y Automatización | [Pipes y Herramientas de Texto](./teoria/pipes-herramientas), [Automatización y Manejo de Errores](./teoria/automatizacion) | 2 h |
-| UD 3 | Scripting en Pipelines CI/CD | [Scripting en Pipelines](./teoria/scripting-pipelines) | 1 h |
+| UD 3 | Scripting en Pipelines CI/CD | [Scripting en Pipelines](./teoria/scripting-pipelines) | 2 h |
 
 ---
 
@@ -53,7 +53,7 @@ En formato FS el módulo se concentra en una única sesión de 4 h, cubriendo lo
 | bash | >= 4.0 (5.x recomendado) | En macOS instalar bash 5 vía Homebrew |
 | Visual Studio Code | Última estable | Con la extensión **Bash IDE** o **ShellCheck** |
 | Git | >= 2.30 | Control de versiones |
-| jq | >= 1.6 | Procesador JSON — [stedolan.github.io/jq](https://stedolan.github.io/jq/) |
+| jq | >= 1.7 | Procesador JSON — [jqlang.github.io/jq](https://jqlang.github.io/jq/) (pruébalo en [play.jqlang.org](https://play.jqlang.org/)) |
 | shellcheck | >= 0.9 | Linter de scripts Bash — [shellcheck.net](https://www.shellcheck.net/) |
 | Terminal bash o zsh | -- | Incluida en macOS/Linux; en Windows usar WSL2 |
 | Cuenta de GitHub | -- | Gratuita — necesaria para labs de integración en pipelines |
@@ -62,13 +62,17 @@ En formato FS el módulo se concentra en una única sesión de 4 h, cubriendo lo
 Se recomienda verificar la versión de bash (`bash --version`), instalar jq y shellcheck, y confirmar acceso a una terminal con bash funcional antes de la primera sesión. En macOS la versión preinstalada es bash 3; se recomienda actualizar vía `brew install bash`.
 :::
 
+:::tip Sin instalar nada
+Si no puedes instalar software en tu portátil, abre el [repositorio de ejercicios](https://github.com/salvamiguel/scripting-exercises) en **GitHub Codespaces**: tienes una terminal Linux con bash 5 en el navegador, incluida en la cuota gratuita de tu cuenta de GitHub. Para validar scripts sin instalar ShellCheck, usa [shellcheck.net](https://www.shellcheck.net/).
+:::
+
 ---
 
 ## Recursos de referencia
 
 - [GNU Bash Manual](https://www.gnu.org/software/bash/manual/)
 - [ShellCheck Wiki](https://www.shellcheck.net/wiki/)
-- [jq Manual](https://stedolan.github.io/jq/manual/)
+- [jq Manual](https://jqlang.github.io/jq/manual/)
 - [Crontab Guru](https://crontab.guru/)
 - [ExplainShell](https://explainshell.com/)
 - [Pure Bash Bible](https://github.com/dylanaraps/pure-bash-bible)

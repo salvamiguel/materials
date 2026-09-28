@@ -62,10 +62,14 @@ Este módulo se benefició de la transferencia de 2 horas desde el módulo de Te
 | ArgoCD CLI | Última estable | Se instala durante el Lab 3 |
 | Visual Studio Code | Última estable | Con extensiones YAML, Kubernetes y GitHub Actions |
 | Cuenta de GitHub | — | Gratuita — incluye 2.000 min/mes de GitHub Actions |
-| Cuenta de Docker Hub | — | Gratuita — para push de imágenes en los labs |
+| GitHub Container Registry (GHCR) | — | Incluido con tu cuenta de GitHub — los labs publican ahí las imágenes con `GITHUB_TOKEN` |
 
 :::tip Preparación previa
 Se enviará una guía de setup al menos 1 semana antes de S3. Incluye instalación de kind, verificación de kubectl y un workflow de prueba para comprobar que GitHub Actions funciona. **Prepara el entorno antes de la primera sesión** para maximizar el tiempo de práctica.
+:::
+
+:::tip Sin instalar nada
+Si no puedes instalar kind o Docker, el [playground de Kubernetes](/k8s-playground) simula un clúster con `kubectl`, Helm, Kustomize y un ArgoCD ligero en el navegador. El [ejemplo ArgoCD](/k8s-playground?example=argocd) carga el repositorio de configuración de clase con su propio `git commit` y `git push`.
 :::
 
 ---

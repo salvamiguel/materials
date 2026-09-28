@@ -392,10 +392,9 @@ terraform {
 </CloudTab>
 </CloudTabs>
 
-### 3.4 Terraform Cloud / HCP Terraform
+### 3.4 HCP Terraform (antes Terraform Cloud)
 
-Terraform Cloud es la alternativa SaaS de HashiCorp. En lugar de gestionar tu propio
-backend, delegas el almacenamiento del state a su plataforma:
+HCP Terraform es la plataforma SaaS de HashiCorp; hasta 2024 se llamaba Terraform Cloud. Además de guardar el state con locking, ejecuta los runs por ti. Se conecta con el bloque `cloud` en lugar de un `backend`:
 
 ```hcl
 terraform {
@@ -409,18 +408,20 @@ terraform {
 }
 ```
 
-Ventajas adicionales respecto a un backend clásico:
+Conceptos clave, que el examen Terraform Associate (004) pregunta con detalle:
 
-- **UI web** para visualizar state, historial de runs y outputs.
-- **Policy as Code** con Sentinel o OPA.
-- **Run remoto**: la ejecución de `plan` y `apply` ocurre en los servidores de
-  Terraform Cloud, no en tu portátil.
-- **Control de acceso** granular por workspace y equipo.
+- **Workspaces de HCP Terraform**: cada uno tiene su propio state, variables, permisos e historial de runs. No son lo mismo que los workspaces de la CLI (`terraform workspace`) de la UD 5.
+- **Projects**: agrupan workspaces y los permisos de cada equipo.
+- **Runs remotos**: `plan` y `apply` se ejecutan en los servidores de HCP Terraform (o en agentes propios), no en tu portátil. Con un repositorio conectado (flujo VCS), cada pull request lanza un **plan especulativo** y el merge lanza el apply.
+- **Variables y variable sets**: variables de Terraform y de entorno, marcadas como sensibles si hace falta, y compartidas entre workspaces.
+- **Dynamic provider credentials**: HCP Terraform obtiene credenciales temporales de AWS, Azure o GCP por OIDC; no guardas claves en ningún sitio.
+- **Run triggers**: el apply de un workspace puede lanzar el del siguiente (por ejemplo, red → cómputo).
+- **Políticas**: Sentinel u OPA revisan cada plan antes del apply.
+- **Health assessments**: detectan drift y evalúan los bloques `check` de forma periódica (según el plan contratado).
+- **Registro privado** de módulos y providers para toda la organización.
 
-:::info Free tier
-Terraform Cloud ofrece un tier gratuito para equipos pequeños (hasta 500 recursos
-gestionados). Es una opción excelente para empezar sin montar infraestructura de
-backend.
+:::info Plan gratuito
+HCP Terraform tiene un plan gratuito, limitado por número de recursos gestionados, suficiente para prácticas y equipos pequeños. Consulta los límites actuales en [la página de precios](https://www.hashicorp.com/products/terraform/pricing).
 :::
 
 ---
@@ -892,6 +893,36 @@ terraform state mv module.old.azurerm_linux_virtual_machine.web module.new.azure
 
 El siguiente `terraform plan` mostrará `No changes`.
 
+:::tip Bloques `moved` (Terraform 1.1+)
+En lugar de `terraform state mv`, declara el movimiento en el código. Así pasa por el `plan`, se revisa en el pull request y se aplica igual en todos los entornos:
+
+```hcl
+moved {
+  from = aws_instance.web
+  to   = aws_instance.app
+}
+
+moved {
+  from = aws_s3_bucket.logs
+  to   = module.logging.aws_s3_bucket.this
+}
+```
+
+El plan muestra `aws_instance.web has moved to aws_instance.app` sin destruir nada. Para dejar de gestionar un recurso sin destruirlo, Terraform 1.7 añadió el bloque `removed`:
+
+```hcl
+removed {
+  from = aws_instance.legacy
+
+  lifecycle {
+    destroy = false
+  }
+}
+```
+
+Pruébalo en el ejemplo [«Ciclo de vida (lifecycle y moved)»](/terraform-playground?example=lifecycle) del playground.
+:::
+
 ### 5.4 terraform state rm
 
 Elimina un recurso del state **sin destruirlo** en el proveedor. El recurso seguirá
@@ -1321,6 +1352,10 @@ es drift.
 import StateDriftDetector from '@site/src/components/demos/terraform/StateDriftDetector';
 
 <StateDriftDetector />
+
+:::tip Provoca drift en el playground
+En el ejemplo [«random + local_file»](/terraform-playground?example=local) ejecuta `apply`, edita el fichero generado (o el `terraform.tfstate` en la pestaña Estado) y lanza `plan`: verás «Objects have changed outside of Terraform». Resuélvelo con `apply` o con `apply -refresh-only`.
+:::
 
 ### 7.2 Cómo detecta Terraform el drift
 
