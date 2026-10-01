@@ -16,7 +16,8 @@
     "build:wasm": "bash tools/tfplay/build-wasm.sh && bash tools/k8splay/build-wasm.sh",
     "test:wasm": "(cd tools/tfplay && go test ./...) && (cd tools/k8splay && go test ./...)",
     "test:awsplay": "bun test src/components/playground/aws",
-    "test:playgrounds": "bun test src/components/playground"
+    "test:playgrounds": "bun test src/components/playground",
+    "test:perceptron": "bun test src/components/ai/perceptron"
   },
   "dependencies": {
     "@docusaurus/core": "^3.10.0",
