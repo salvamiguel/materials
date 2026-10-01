@@ -120,6 +120,7 @@ const config: Config = {
             {to: '/terraform-playground', label: 'Terraform'},
             {to: '/aws-playground', label: 'AWS CLI'},
             {to: '/k8s-playground', label: 'Kubernetes'},
+            {to: '/perceptron', label: 'Perceptrón'},
           ],
         },
         {type: 'custom-presentation', position: 'right'},

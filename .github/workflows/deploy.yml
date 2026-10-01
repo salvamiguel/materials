@@ -46,6 +46,9 @@ jobs:
       - name: Test playground engines (AWS CLI, Kubernetes, graph layout)
         run: bun run test:playgrounds
 
+      - name: Test the perceptron model
+        run: bun run test:perceptron
+
       - name: Typecheck
         run: bun run typecheck
 

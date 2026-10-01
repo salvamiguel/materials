@@ -6,6 +6,7 @@ description: "Conceptos basicos de Inteligencia Artificial, tipos de Machine Lea
 
 import { FaAws } from "react-icons/fa";
 import SkillBuilderLab from '@site/src/components/shared/SkillBuilderLab';
+import PerceptronLink from '@site/src/components/shared/PerceptronLink';
 
 # Conceptos Fundamentales de IA y ML <FaAws style={{ verticalAlign: 'middle' }} />
 
@@ -112,6 +113,10 @@ Antes de profundizar en algoritmos y metricas, es esencial dominar el vocabulari
 **Random Forests (Bosques Aleatorios):** Son un conjunto (ensemble) de multiples Decision Trees entrenados con diferentes subconjuntos de datos y features. La prediccion final se obtiene promediando las predicciones de todos los arboles (regresion) o por votacion mayoritaria (clasificacion). Son mucho mas robustos que un unico arbol de decision y reducen significativamente el overfitting.
 
 **Neural Networks (Redes Neuronales):** Estan inspiradas en la estructura del cerebro humano. Consisten en capas de nodos (neuronas) interconectados que transforman los datos de entrada en predicciones. Son extremadamente flexibles y pueden aprender relaciones no lineales complejas, pero requieren grandes cantidades de datos y capacidad computacional.
+
+La pieza basica de cualquier red neuronal es el **perceptron** (Rosenblatt, 1958): suma sus entradas multiplicadas por unos pesos y se activa si la suma supera un umbral. Entrenar es ajustar esos pesos a partir de los errores. Puedes girar los pesos a mano y verlo aprender en la replica interactiva del Perceptron Mark I:
+
+<PerceptronLink />
 
 ### Algoritmos de Unsupervised Learning
 

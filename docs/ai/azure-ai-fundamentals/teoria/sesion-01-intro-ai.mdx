@@ -5,6 +5,7 @@ description: "Que es la IA, terminologia AI/ML/DL/GenAI, tipos de aprendizaje au
 ---
 
 import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+import PerceptronLink from '@site/src/components/shared/PerceptronLink';
 
 # Introduccion a la IA
 
@@ -101,6 +102,10 @@ No todos los problemas necesitan IA o ML. Si existe una formula sencilla o regla
 ## 9. De ML a Deep Learning e IA Generativa
 
 El **Deep Learning** usa redes neuronales de muchas capas, muy adecuadas para datos en crudo (pixeles, formas de onda de audio, secuencias de palabras); hitos como ImageNet (vision), el reconocimiento de voz o la traduccion automatica son avances de DL. La **IA Generativa** usa modelos grandes (LLMs, modelos de difusion, etc.) capaces de generar texto, imagenes, codigo, audio o video nuevos y coherentes, y requiere datasets enormes y computo a escala de nube.
+
+Todas estas redes se construyen con la misma pieza: la neurona artificial o **perceptron**, que multiplica cada entrada por un peso, suma y se "enciende" si supera un umbral. Entrenar consiste en ajustar esos pesos a partir de los errores. Pruebalo en la replica del Perceptron Mark I de 1958:
+
+<PerceptronLink />
 
 ### RLHF: Reinforcement Learning from Human Feedback
 
