@@ -23,6 +23,7 @@ import { DIGITS, GRID, LETTERS, bbox, makeClassDataset, renderGlyph, rng, shift,
 import Retina, { Thumb } from '../perceptron/Retina';
 import ps from '../perceptron/perceptron.module.css';
 import FeatureMap, { maxAbs } from './FeatureMap';
+import Perspective from './Perspective';
 import {
   ARCHS,
   KMAX,
@@ -680,6 +681,22 @@ export default function Cnn() {
           </p>
         </section>
       </div>
+
+      {/* ── the whole network in perspective ── */}
+      <section className={`${ps.panel} ${ps.rack}`} aria-labelledby="cn-persp">
+        <h2 id="cn-persp">Toda la red en perspectiva</h2>
+        <Perspective
+          net={n}
+          act={act}
+          retina={retina}
+          focus={focus}
+          reveal={scan ?? undefined}
+          onPick={(f, x, y) => {
+            setScan(null);
+            setFocus({ f, x, y });
+          }}
+        />
+      </section>
 
       {/* ── training ── */}
       <section className={`${ps.panel} ${ps.training}`} aria-labelledby="cn-train">
