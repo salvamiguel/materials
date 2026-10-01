@@ -470,18 +470,26 @@ async function pipe(b: Uint8Array, stream: CompressionStream | DecompressionStre
   return new Uint8Array(await out.arrayBuffer());
 }
 
-/** A URL-safe code for the machine: deflated when the browser can (prefix "z"), raw otherwise ("r"). */
-export async function shareCode(m: Machine): Promise<string> {
-  const raw = pack(m);
+/** Bytes → URL-safe code: deflated when the browser can (prefix "z"), raw otherwise ("r"). */
+export async function encodeBytes(raw: Uint8Array): Promise<string> {
   if (typeof CompressionStream !== 'undefined') return 'z' + toBase64Url(await pipe(raw, new CompressionStream('deflate-raw')));
   return 'r' + toBase64Url(raw);
 }
 
-export async function fromShareCode(code: string): Promise<Machine> {
+export async function decodeBytes(code: string): Promise<Uint8Array> {
   const body = fromBase64Url(code.slice(1));
-  if (code[0] === 'z') return unpack(await pipe(body, new DecompressionStream('deflate-raw')));
-  if (code[0] === 'r') return unpack(body);
+  if (code[0] === 'z') return pipe(body, new DecompressionStream('deflate-raw'));
+  if (code[0] === 'r') return body;
   throw new Error('Código de pesos no válido');
+}
+
+/** A URL-safe code for the machine. */
+export async function shareCode(m: Machine): Promise<string> {
+  return encodeBytes(pack(m));
+}
+
+export async function fromShareCode(code: string): Promise<Machine> {
+  return unpack(await decodeBytes(code));
 }
 
 /** Readable export for the download button: the knobs as plain numbers. */

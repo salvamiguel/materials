@@ -7,6 +7,7 @@ description: "Conceptos basicos de Inteligencia Artificial, tipos de Machine Lea
 import { FaAws } from "react-icons/fa";
 import SkillBuilderLab from '@site/src/components/shared/SkillBuilderLab';
 import PerceptronLink from '@site/src/components/shared/PerceptronLink';
+import CnnLink from '@site/src/components/shared/CnnLink';
 
 # Conceptos Fundamentales de IA y ML <FaAws style={{ verticalAlign: 'middle' }} />
 
@@ -31,6 +32,10 @@ Machine Learning es un subconjunto de la AI. En lugar de programar reglas explic
 ### Deep Learning (DL)
 
 Deep Learning es un subconjunto de Machine Learning que utiliza **redes neuronales artificiales con multiples capas** (de ahi el termino "deep", profundo). Estas redes son capaces de aprender representaciones jerarquicas de los datos: las primeras capas detectan caracteristicas simples (bordes en una imagen, fonemas en audio) y las capas superiores combinan esas caracteristicas para reconocer patrones complejos (rostros, frases). Deep Learning es la tecnologia detras de los avances recientes en vision por computador, procesamiento de lenguaje natural y IA Generativa.
+
+En vision, este aprendizaje por capas lo hacen las **redes neuronales convolucionales (CNN)**: pequenos filtros que recorren la imagen buscando trazos y bordes, y capas posteriores que los combinan en formas. Puedes disenar filtros a mano y ver como la red los aprende sola en la demo interactiva:
+
+<CnnLink />
 
 ### Generative AI
 

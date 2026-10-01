@@ -5,6 +5,7 @@ description: "Azure Computer Vision, Custom Vision, y como Microsoft Foundry int
 ---
 
 import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+import CnnLink from '@site/src/components/shared/CnnLink';
 
 # Vision y Generacion de Imagenes con Foundry
 
@@ -29,6 +30,10 @@ Esta sesion es "Microsoft Foundry (III)" del temario: la primera mitad, centrada
 ## 3. Que es Azure AI Custom Vision
 
 Custom Vision es un servicio de reconocimiento de imagenes basado en la nube: creas tus propios clasificadores de imagenes y detectores de objetos para tus propias categorias. Usa transfer learning por debajo, asi que no se parte de cero, y se expone mediante un portal web, APIs REST y SDKs para integrarlo en aplicaciones.
+
+Por debajo, los clasificadores de imagenes suelen ser **redes neuronales convolucionales (CNN)**: filtros pequenos que recorren la imagen detectando trazos, bordes y texturas, y capas que combinan esos rasgos en formas y objetos. El transfer learning reutiliza esos filtros ya aprendidos y solo reentrena las capas finales con tus etiquetas. Puedes ver una CNN por dentro (y congelar sus filtros, como hace el transfer learning) en la demo interactiva:
+
+<CnnLink />
 
 ### Cuando usar Custom Vision
 

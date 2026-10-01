@@ -121,6 +121,7 @@ const config: Config = {
             {to: '/aws-playground', label: 'AWS CLI'},
             {to: '/k8s-playground', label: 'Kubernetes'},
             {to: '/perceptron', label: 'Perceptrón'},
+            {to: '/cnn', label: 'Red convolucional'},
           ],
         },
         {type: 'custom-presentation', position: 'right'},
