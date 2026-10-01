@@ -316,3 +316,55 @@
   text-align: right;
   color: var(--p-muted);
 }
+
+/* ── perspective view ── */
+.persp {
+  position: relative;
+  width: 100%;
+}
+
+.persp canvas {
+  display: block;
+  border-radius: 8px;
+  background: radial-gradient(ellipse at 50% 40%, #262a30, #121417 75%);
+  cursor: grab;
+  touch-action: none;
+}
+
+.persp canvas:active {
+  cursor: grabbing;
+}
+
+.perspBar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.perspBtn,
+.perspOn {
+  padding: 4px 10px;
+  border: 1px solid #3a3f46;
+  border-radius: 6px;
+  background: rgba(21, 23, 26, 0.85);
+  color: #d7dbe0;
+  font-family: var(--p-mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.perspOn {
+  background: var(--p-accent);
+  border-color: var(--p-accent);
+  color: #0d0d0d;
+  font-weight: 700;
+}
+
+.perspHint {
+  margin: 6px 0 0;
+  font-size: 0.74rem;
+  color: #9aa3ad;
+}
