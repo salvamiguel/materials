@@ -17,7 +17,7 @@
     "test:wasm": "(cd tools/tfplay && go test ./...) && (cd tools/k8splay && go test ./...)",
     "test:awsplay": "bun test src/components/playground/aws",
     "test:playgrounds": "bun test src/components/playground",
-    "test:perceptron": "bun test src/components/ai/perceptron"
+    "test:ai-demos": "bun test src/components/ai"
   },
   "dependencies": {
     "@docusaurus/core": "^3.10.0",

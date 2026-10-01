@@ -1,35 +1,31 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import {
   FaBolt,
   FaDice,
   FaDownload,
-  FaEraser,
   FaFolderOpen,
   FaPause,
-  FaPen,
   FaPlay,
   FaShareAlt,
   FaStepForward,
-  FaTrashAlt,
   FaUndo,
   FaVolumeMute,
   FaVolumeUp,
 } from 'react-icons/fa';
 
 import AccuracyChart, { type Point } from './AccuracyChart';
+import DrawTools, { CharOptions, SIZES } from './DrawTools';
 import { isMuted, setMuted, sfx } from './chiptune';
 import Knob, { KnobDefs } from './Knob';
 import {
   DIGITS,
-  GRID,
   LETTERS,
   MODES,
   THETA_MAX,
   WMAX,
   accuracy,
-  addNoise,
   decide,
-  emptyGrid,
   fromJSON,
   fromShareCode,
   isClassifier,
@@ -39,11 +35,9 @@ import {
   makeClassDataset,
   makeDataset,
   newMachine,
-  randomStyle,
   renderGlyph,
   rng,
   shareCode,
-  shift,
   toJSON,
   type Example,
   type Grid,
@@ -63,7 +57,6 @@ const MAX_EPOCHS = 60;
 /** Examples per second at ×1; ×10 and ×100 multiply it. */
 const BASE_RATE = 3;
 const RANGES = [5, 10, 20, 50];
-const SIZES = { S: { w: 5, h: 7 }, M: { w: 7, h: 10 }, L: { w: 10, h: 14 } } as const;
 const STORE = 'perceptron:machine';
 
 interface Data {
@@ -111,7 +104,6 @@ export default function Perceptron() {
 
   const [retina, setRetina] = useState<Grid>(() => renderGlyph('3', { ...SIZES.L, x: 3, y: 1, bold: true, italic: 0 }));
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
-  const [glyph, setGlyph] = useState({ ch: '3', size: 'L' as keyof typeof SIZES, bold: true, italic: false });
   const [view, setView] = useState<'knobs' | 'map'>('knobs');
   const [range, setRange] = useState(20);
 
@@ -352,34 +344,6 @@ export default function Perceptron() {
     }
   };
 
-  // ── drawing helpers ──
-
-  const writeGlyph = (random: boolean) => {
-    sfx.click();
-    if (random) {
-      setRetina(renderGlyph(glyph.ch, randomStyle(rng(Date.now()))));
-      return;
-    }
-    const { w, h } = SIZES[glyph.size];
-    const bold = glyph.bold;
-    setRetina(
-      renderGlyph(glyph.ch, {
-        w,
-        h,
-        bold,
-        italic: glyph.italic ? 0.3 : 0,
-        x: Math.floor((GRID - w - (bold ? 1 : 0)) / 2),
-        y: Math.floor((GRID - h) / 2),
-      }),
-    );
-  };
-
-  const fromSet = () => {
-    if (!data) return;
-    sfx.click();
-    setRetina(data.test[Math.floor(Math.random() * data.test.length)].grid);
-  };
-
   // ── derived view data ──
 
   const dims = knobDims(m.mode);
@@ -490,76 +454,13 @@ export default function Perceptron() {
             window={m.mode === 'scanner' ? reading.at : undefined}
             label="Retina: dibuja con el ratón o el dedo"
           />
-          <div className={styles.toolRow}>
-            <button className={tool === 'pen' ? styles.toolOn : styles.tool} onClick={() => setTool('pen')} title="Lápiz">
-              <FaPen />
-            </button>
-            <button className={tool === 'eraser' ? styles.toolOn : styles.tool} onClick={() => setTool('eraser')} title="Goma">
-              <FaEraser />
-            </button>
-            <button className={styles.tool} onClick={() => setRetina(emptyGrid())} title="Borrar la retina">
-              <FaTrashAlt />
-            </button>
-          </div>
-          <div className={styles.toolRow}>
-            <button className={styles.tool} onClick={() => setRetina(addNoise(retina, 0.04))} title="Añadir ruido (4 % de celdas)">
-              Ruido
-            </button>
-            <span className={styles.sep} />
-            {(
-              [
-                ['←', -1, 0],
-                ['↑', 0, -1],
-                ['↓', 0, 1],
-                ['→', 1, 0],
-              ] as const
-            ).map(([l, dx, dy]) => (
-              <button key={l} className={styles.tool} onClick={() => setRetina(shift(retina, dx, dy))} title="Desplazar el dibujo">
-                {l}
-              </button>
-            ))}
-          </div>
-          <div className={styles.toolRow}>
-            <select
-              className={styles.select}
-              value={glyph.ch}
-              onChange={(e) => setGlyph({ ...glyph, ch: e.target.value })}
-              aria-label="Carácter"
-            >
-              <optgroup label="Dígitos">
-                {DIGITS.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </optgroup>
-              <optgroup label="Letras">
-                {LETTERS.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </optgroup>
-            </select>
-            {(Object.keys(SIZES) as (keyof typeof SIZES)[]).map((s) => (
-              <button key={s} className={glyph.size === s ? styles.toolOn : styles.tool} onClick={() => setGlyph({ ...glyph, size: s })} title="Tamaño">
-                {s}
-              </button>
-            ))}
-            <button className={glyph.bold ? styles.toolOn : styles.tool} onClick={() => setGlyph({ ...glyph, bold: !glyph.bold })} title="Negrita">
-              <b>B</b>
-            </button>
-            <button className={glyph.italic ? styles.toolOn : styles.tool} onClick={() => setGlyph({ ...glyph, italic: !glyph.italic })} title="Cursiva">
-              <i>I</i>
-            </button>
-          </div>
-          <div className={styles.toolRow}>
-            <button className={styles.btn} onClick={() => writeGlyph(false)}>
-              Escribir
-            </button>
-            <button className={styles.btn} onClick={() => writeGlyph(true)} title="Tamaño, posición y estilo al azar">
-              <FaDice /> Al azar
-            </button>
-            <button className={styles.btn} onClick={fromSet} disabled={!data} title="Un ejemplo del conjunto de prueba">
-              Del conjunto
-            </button>
-          </div>
+          <DrawTools
+            retina={retina}
+            setRetina={setRetina}
+            tool={tool}
+            setTool={setTool}
+            fromSet={data ? () => setRetina(data.test[Math.floor(Math.random() * data.test.length)].grid) : undefined}
+          />
           {(m.mode === 'centered' || m.mode === 'normalized') && (
             <div className={styles.seen}>
               <Retina grid={reading.input} small label="Lo que llega a los mandos" />
@@ -728,16 +629,7 @@ export default function Perceptron() {
             <label className={styles.field}>
               Detectar
               <select className={styles.select} value={m.classes[0]} onChange={(e) => reset(m.mode, [e.target.value])}>
-                <optgroup label="Dígitos">
-                  {DIGITS.map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Letras">
-                  {LETTERS.map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </optgroup>
+                <CharOptions />
               </select>
               <span className={styles.muted}>frente al resto de {family === 'digits' ? 'dígitos' : 'letras'}</span>
             </label>
@@ -902,6 +794,10 @@ export default function Perceptron() {
           <li>
             Los modos muestran por qué importa el preprocesado: el MARK I confunde un carácter desplazado con otro; centrar,
             normalizar el tamaño o escanear con una plantilla hacen el problema mucho más fácil.
+          </li>
+          <li>
+            ¿Y si la máquina aprendiera ella misma ese preprocesado? Es lo que hace una{' '}
+            <a href={useBaseUrl('/cnn')}>red convolucional</a>: muchos filtros pequeños que recorren la imagen, apilados en capas.
           </li>
         </ol>
       </details>

@@ -1,0 +1,318 @@
+/* Convolutional network demo: the layout and the pieces the perceptron does
+ * not have (feature maps, the magnifier, the probability bars). Panels,
+ * buttons, knobs and the rack come from ../perceptron/perceptron.module.css. */
+
+.machine {
+  display: grid;
+  grid-template-columns: minmax(260px, 330px) minmax(0, 1fr) minmax(240px, 300px);
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 1250px) {
+  .machine {
+    grid-template-columns: minmax(260px, 1fr) minmax(240px, 1fr);
+  }
+  .rack {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+}
+
+@media (max-width: 720px) {
+  .machine {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── feature maps ── */
+.map {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #3a3f46;
+  background: #15171a;
+}
+
+.map canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.mapPick {
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.mapMark {
+  position: absolute;
+  border: 2px solid #ffb020;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.tiny {
+  max-width: 48px;
+  justify-self: center;
+}
+
+/* ── layer 1 rows ── */
+.colHeads,
+.filterRow {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.25fr) repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: center;
+}
+
+.colHeads span {
+  font-family: var(--p-mono);
+  font-size: 0.7rem;
+  color: #9aa3ad;
+  text-align: center;
+}
+
+.filterRow {
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+}
+
+.filterSel {
+  border-color: rgba(255, 176, 32, 0.55);
+  background: rgba(255, 176, 32, 0.05);
+}
+
+@media (max-width: 720px) {
+  .colHeads {
+    display: none;
+  }
+  .filterRow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .filterCtl {
+    grid-column: 1 / -1;
+  }
+}
+
+.filterCtl {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.kernel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  flex: 1;
+  max-width: 150px;
+}
+
+.biasBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 82px;
+  font-family: var(--p-mono);
+  font-size: 0.66rem;
+  color: #9aa3ad;
+}
+
+.biasBox > div {
+  width: 44px;
+}
+
+.preset {
+  width: 100%;
+  padding: 2px;
+  border: 1px solid #3a3f46;
+  border-radius: 4px;
+  background: #23262a;
+  color: #d7dbe0;
+  font-family: var(--p-mono);
+  font-size: 0.64rem;
+}
+
+/* ── layer 2 ── */
+.note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #9aa3ad;
+}
+
+.layer2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 10px;
+}
+
+.l2Card {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #33373d;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.l2Name {
+  font-family: var(--p-mono);
+  font-size: 0.72rem;
+  color: #d7dbe0;
+}
+
+.l2Kernels {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3px;
+}
+
+/* ── flatten ── */
+.flatten {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #c4cad1;
+  font-family: var(--p-mono);
+}
+
+.featStrip {
+  display: flex;
+  gap: 2px;
+}
+
+.featStrip span {
+  flex: 1;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--p-led-pos);
+}
+
+/* ── magnifier ── */
+.lupa {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--p-border);
+}
+
+.lupaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.lupaCell {
+  padding: 5px 2px;
+  border-radius: 4px;
+  text-align: center;
+  font-family: var(--p-mono);
+  font-size: 0.74rem;
+  border: 1px solid var(--p-border);
+  background: var(--p-cell);
+  color: var(--ifm-font-color-base);
+}
+
+.lupaOn {
+  border-color: #ffb020;
+  box-shadow: inset 0 0 0 1px #ffb020;
+}
+
+.lupaPad {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+.wPos {
+  color: var(--p-ok);
+  font-weight: 700;
+}
+
+.wNeg {
+  color: var(--p-bad);
+  font-weight: 700;
+}
+
+.lupaSum {
+  margin: 0;
+  font-family: var(--p-mono);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+/* ── output ── */
+.answer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.answer span:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.answer small {
+  color: var(--p-muted);
+}
+
+.answerCh {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.4rem;
+  line-height: 1;
+  color: var(--p-accent);
+}
+
+.probs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 460px;
+  overflow: auto;
+}
+
+.probRow {
+  display: grid;
+  grid-template-columns: 18px 1fr 44px;
+  gap: 8px;
+  align-items: center;
+  font-family: var(--p-mono);
+  font-size: 0.8rem;
+}
+
+.probBar {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--ifm-color-emphasis-200);
+  overflow: hidden;
+}
+
+.probBar span {
+  display: block;
+  height: 100%;
+  background: var(--p-muted);
+  border-radius: 5px;
+  transition: width 0.15s;
+}
+
+.probWin .probBar span {
+  background: var(--p-accent);
+}
+
+.probWin .probName {
+  color: var(--p-accent);
+  font-weight: 700;
+}
+
+.probPct {
+  text-align: right;
+  color: var(--p-muted);
+}

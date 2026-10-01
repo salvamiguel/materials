@@ -13,11 +13,13 @@ interface Props {
   tool?: 'pen' | 'eraser';
   /** Scanner: where the template matched best. */
   window?: { x: number; y: number };
+  /** Size of that window; the perceptron's scanner template by default. */
+  windowSize?: { w: number; h: number };
   small?: boolean;
   label: string;
 }
 
-export default function Retina({ grid, onChange, tool = 'pen', window: win, small, label }: Props) {
+export default function Retina({ grid, onChange, tool = 'pen', window: win, windowSize = { w: SCAN_W, h: SCAN_H }, small, label }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const paint = useRef<number | null>(null);
   const cur = useRef(grid);
@@ -73,8 +75,8 @@ export default function Retina({ grid, onChange, tool = 'pen', window: win, smal
           style={{
             left: `${(win.x / GRID) * 100}%`,
             top: `${(win.y / GRID) * 100}%`,
-            width: `${(SCAN_W / GRID) * 100}%`,
-            height: `${(SCAN_H / GRID) * 100}%`,
+            width: `${(windowSize.w / GRID) * 100}%`,
+            height: `${(windowSize.h / GRID) * 100}%`,
           }}
         />
       )}
