@@ -14,7 +14,16 @@ export interface Point {
 const W = 460, H = 190;
 const PAD = { l: 34, r: 44, t: 10, b: 22 };
 
-export default function AccuracyChart({ points }: { points: Point[] }) {
+export default function AccuracyChart({
+  points,
+  labels = { train: 'Entrenamiento', test: 'Prueba (no vistos)' },
+  unit = 'ejemplos',
+}: {
+  points: Point[];
+  /** Names of the two series. */
+  labels?: { train: string; test: string };
+  unit?: string;
+}) {
   const [hover, setHover] = useState<number | null>(null);
   const maxX = Math.max(points.length ? points[points.length - 1].seen : 0, 200);
   const x = (s: number) => PAD.l + (s / maxX) * (W - PAD.l - PAD.r);
@@ -38,10 +47,10 @@ export default function AccuracyChart({ points }: { points: Point[] }) {
     <figure className={styles.chart}>
       <figcaption className={styles.chartLegend}>
         <span>
-          <i className={styles.swTrain} /> Entrenamiento
+          <i className={styles.swTrain} /> {labels.train}
         </span>
         <span>
-          <i className={styles.swTest} /> Prueba (no vistos)
+          <i className={styles.swTest} /> {labels.test}
         </span>
       </figcaption>
       <svg viewBox={`0 0 ${W} ${H}`} onPointerMove={onMove} onPointerLeave={() => setHover(null)} role="img"
@@ -55,7 +64,7 @@ export default function AccuracyChart({ points }: { points: Point[] }) {
           </g>
         ))}
         <text x={W - PAD.r} y={H - 6} className={styles.axisX}>
-          {maxX} ejemplos
+          {maxX} {unit}
         </text>
         {points.length > 0 && (
           <>
@@ -84,7 +93,7 @@ export default function AccuracyChart({ points }: { points: Point[] }) {
       </svg>
       {h && (
         <div className={styles.tooltip} style={{ left: `${(x(h.seen) / W) * 100}%` }}>
-          <b>{h.seen} ejemplos</b>
+          <b>{h.seen} {unit}</b>
           <span>
             <i className={styles.swTrain} /> {Math.round(h.train * 100)} %
           </span>

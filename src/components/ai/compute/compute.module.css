@@ -1,0 +1,239 @@
+/* The compute panel. It lives inside a demo's .root, so it uses the demo's
+ * --p-* colour variables. CPU and GPU bars use the validated two-series pair
+ * of the accuracy charts. */
+
+.panel {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(300px, 1.3fr);
+  gap: 22px;
+  --c-cpu: #6e56cf;
+  --c-gpu: #00a35c;
+}
+
+:global([data-theme='dark']) .panel {
+  --c-cpu: #8b72e6;
+  --c-gpu: #14a862;
+}
+
+@media (max-width: 900px) {
+  .panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.controls,
+.benchCol {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.status {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--p-muted);
+}
+
+.sizes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 4px;
+}
+
+.size,
+.sizeOn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 6px 8px;
+  border: 1px solid var(--p-border);
+  border-radius: 7px;
+  background: var(--p-surface);
+  color: inherit;
+  font-family: var(--p-mono);
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.size small,
+.sizeOn small {
+  font-size: 0.66rem;
+  opacity: 0.75;
+}
+
+.size:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sizeOn {
+  border-color: var(--p-accent);
+  background: color-mix(in srgb, var(--p-accent) 14%, var(--p-surface));
+}
+
+.speed {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--p-border);
+  border-radius: 8px;
+  font-family: var(--p-mono);
+  font-size: 0.85rem;
+}
+
+.speed b {
+  font-size: 1.5rem;
+}
+
+.speed small {
+  width: 100%;
+  color: var(--p-muted);
+}
+
+.benchHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.linkBtn {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--p-accent);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.empty {
+  display: grid;
+  place-items: center;
+  min-height: 140px;
+  border: 1px dashed var(--p-border);
+  border-radius: 8px;
+  color: var(--p-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 12px;
+}
+
+/* ── chart ── */
+.chart {
+  margin: 0;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.78rem;
+  color: var(--p-muted);
+  margin-bottom: 4px;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.swCpu,
+.swGpu {
+  display: inline-block;
+  width: 12px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.swCpu {
+  background: var(--c-cpu);
+}
+
+.swGpu {
+  background: var(--c-gpu);
+}
+
+.axisNote {
+  margin-left: auto;
+}
+
+.grid {
+  stroke: var(--ifm-color-emphasis-200);
+  stroke-width: 1;
+}
+
+.tick,
+.rowSub,
+.na,
+.val,
+.valHover,
+.ratio {
+  font-family: var(--p-mono);
+  font-size: 10px;
+  fill: var(--p-muted);
+}
+
+.tick {
+  text-anchor: middle;
+}
+
+.rowLabel {
+  font-family: var(--p-mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-anchor: end;
+  fill: var(--ifm-font-color-base);
+}
+
+.rowSub {
+  text-anchor: end;
+  font-size: 9px;
+}
+
+.barCpu {
+  fill: var(--c-cpu);
+}
+
+.barGpu {
+  fill: var(--c-gpu);
+}
+
+.valHover {
+  fill: var(--ifm-font-color-base);
+  font-weight: 700;
+}
+
+.ratio {
+  text-anchor: end;
+  font-weight: 700;
+  fill: var(--ifm-font-color-base);
+}
+
+.summary {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+}

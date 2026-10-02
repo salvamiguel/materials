@@ -15,11 +15,15 @@ import {
   FaVolumeUp,
 } from 'react-icons/fa';
 
-import AccuracyChart, { type Point } from '../perceptron/AccuracyChart';
+import ComputePanel from '../compute/ComputePanel';
+import { MAX_AUTOSAVE, MAX_SHARE, TOO_BIG_TO_SHARE } from '../compute/limits';
+import { playSounds } from '../compute/sounds';
+import { useTrainer, type Tick } from '../compute/useTrainer';
+import AccuracyChart from '../perceptron/AccuracyChart';
 import DrawTools, { SIZES } from '../perceptron/DrawTools';
 import { isMuted, setMuted, sfx } from '../perceptron/chiptune';
 import Knob, { KnobDefs } from '../perceptron/Knob';
-import { DIGITS, GRID, LETTERS, bbox, makeClassDataset, renderGlyph, rng, shift, type Example, type Grid } from '../perceptron/model';
+import { DIGITS, GRID, LETTERS, makeClassDataset, renderGlyph, type Example, type Grid } from '../perceptron/model';
 import Retina, { Thumb } from '../perceptron/Retina';
 import ps from '../perceptron/perceptron.module.css';
 import FeatureMap, { maxAbs } from './FeatureMap';
@@ -28,8 +32,8 @@ import {
   ARCHS,
   KMAX,
   PRESETS,
+  WIDTHS,
   applyPreset,
-  evaluate,
   forward,
   fromJSON,
   fromShareCode,
@@ -37,11 +41,10 @@ import {
   newNet,
   shareCode,
   toJSON,
-  trainStep,
   type ArchId,
   type Net,
-  type StepResult,
 } from './model';
+import { MAX_EPOCHS, freshStats, tensorsOf, type Report, type Snapshot, type Stats } from './trainer';
 import cs from './cnn.module.css';
 
 type Speed = 0 | 1 | 10 | 100;
@@ -49,27 +52,16 @@ type Speed = 0 | 1 | 10 | 100;
 /** Examples per class: CNNs need more data than a perceptron with hand-made preprocessing. */
 const TRAIN_PER_CLASS = 60;
 const TEST_PER_CLASS = 20;
-const MAX_EPOCHS = 40;
-const BASE_RATE = 3;
-const POINT_EVERY = 200;
 const STORE = 'cnn:net';
+const BATCHES = [1, 8, 32, 128];
+/** Filters drawn in the rack: past this, the rest train but are not shown. */
+const SHOW1 = 4;
+const SHOW2 = 8;
 
 interface Data {
   train: Example[];
   test: Example[];
 }
-
-interface Stats {
-  epoch: number;
-  cursor: number;
-  seen: number;
-  epochLoss: number;
-  epochCount: number;
-  points: Point[];
-  done: '' | 'converged' | 'gaveup';
-}
-
-const freshStats = (): Stats => ({ epoch: 0, cursor: 0, seen: 0, epochLoss: 0, epochCount: 0, points: [], done: '' });
 
 function store(fn: () => void) {
   try {
@@ -77,16 +69,6 @@ function store(fn: () => void) {
   } catch {
     /* private mode or blocked storage: the demo works without it */
   }
-}
-
-/** Data augmentation: move the drawing up to 2 cells, never off the retina. */
-function jitter(g: Grid, r: () => number): Grid {
-  const b = bbox(g);
-  if (!b) return g;
-  const pick = (lo: number, hi: number) => lo + Math.floor(r() * (hi - lo + 1));
-  const dx = pick(Math.max(-2, -b.x0), Math.min(2, GRID - 1 - b.x1));
-  const dy = pick(Math.max(-2, -b.y0), Math.min(2, GRID - 1 - b.y1));
-  return dx || dy ? shift(g, dx, dy) : g;
 }
 
 const fmt = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
@@ -113,7 +95,11 @@ export default function Cnn() {
   const [freeze, setFreeze] = useState(false);
   const [lr, setLr] = useState(0.02);
   const seed = useRef(1);
-  const [data, setData] = useState<Data | null>(null);
+  const [data, setData] = useState<Data | null>(() => ({
+    train: makeClassDataset(DIGITS, TRAIN_PER_CLASS * 10, 2, { variants: true }),
+    test: makeClassDataset(DIGITS, TEST_PER_CLASS * 10, 3, { variants: true }),
+  }));
+  const [batch, setBatch] = useState(1);
   const [stats, setStats] = useState<Stats>(freshStats);
   const [speed, setSpeed] = useState<Speed>(0);
   const [last, setLast] = useState<{ correct: boolean; text: string } | null>(null);
@@ -124,6 +110,39 @@ export default function Cnn() {
     setToast(t);
     window.setTimeout(() => setToast((x) => (x === t ? '' : x)), 2600);
   }, []);
+
+  // ── the training worker ──
+
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  const onTick = (t: Tick) => {
+    if (t.stats) setStats(t.stats as Stats);
+    const rep = t.report as Report | undefined;
+    if (rep) {
+      setRetina(rep.grid);
+      setLast({ correct: rep.correct, text: rep.text });
+    }
+    playSounds(t.sounds);
+    const snap = t.snapshot as Snapshot | undefined;
+    const mine = tensorsOf(net.current);
+    if (snap && snap.tensors.length === mine.length && snap.tensors.every((x, i) => x.length === mine[i].length)) {
+      mine.forEach((x, i) => x.set(snap.tensors[i]));
+      bump();
+    }
+    if (!t.running) setSpeed(0);
+  };
+  const trainer = useTrainer('cnn', () => ({ net: net.current, data, opts: { lr, augment, freezeFirst: freeze }, stats }), onTick);
+  const { send } = trainer;
+  const pushQueued = useRef(false);
+  /** Send the knobs to the worker, at most once per frame. */
+  const pushNet = useCallback(() => {
+    if (pushQueued.current) return;
+    pushQueued.current = true;
+    requestAnimationFrame(() => {
+      pushQueued.current = false;
+      send({ t: 'set', patch: { net: net.current } });
+    });
+  }, [send]);
 
   // ── installing a network (new architecture, new classes, a loaded file…) ──
 
@@ -146,15 +165,27 @@ export default function Cnn() {
       setSpeed(0);
       setScan(null);
       setStats(freshStats());
+      send({ t: 'set', patch: { net: next, stats: freshStats() } });
       setLast(null);
       setFocus((f) => ({ ...f, f: Math.min(f.f, next.layers[0].cout - 1) }));
       if (!sameClasses || !data) setData(makeData(next.classes));
       bump();
     },
-    [bump, makeData, data],
+    [bump, makeData, data, send],
   );
 
-  const reset = (arch: ArchId, classes: string[]) => install(newNet(arch, classes, Date.now() >>> 0));
+  const reset = (arch: ArchId, classes: string[], width = n.width) => install(newNet(arch, classes, Date.now() >>> 0, width));
+
+  const firstData = useRef(true);
+  useEffect(() => {
+    if (firstData.current) {
+      firstData.current = false;
+      return;
+    }
+    if (data) send({ t: 'set', patch: { data, stats: freshStats() } });
+  }, [data, send]);
+  useEffect(() => send({ t: 'set', patch: { opts: { lr, augment, freezeFirst: freeze } } }), [lr, augment, freeze, send]);
+  useEffect(() => send({ t: 'speed', speed }), [speed, send]);
 
   // Restore: a shared link wins over the copy kept in this browser.
   useEffect(() => {
@@ -165,10 +196,7 @@ export default function Cnn() {
           install(x);
           say('Pesos cargados desde el enlace');
         })
-        .catch(() => {
-          setData(makeData(n.classes));
-          say('El enlace no contiene pesos válidos');
-        });
+        .catch(() => say('El enlace no contiene pesos válidos'));
       return;
     }
     let saved: string | null = null;
@@ -181,11 +209,12 @@ export default function Cnn() {
         /* stale format: start fresh */
       }
     }
-    setData(makeData(n.classes));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    // Big models do not fit in localStorage (and serialising them would stall the page).
+    if (tensorsOf(net.current).reduce((a, t) => a + t.length, 0) > MAX_AUTOSAVE) return;
     const t = window.setTimeout(() => store(() => window.localStorage.setItem(STORE, toJSON(net.current))), 800);
     return () => window.clearTimeout(t);
   }, [rev]);
@@ -196,15 +225,17 @@ export default function Cnn() {
     (i: number, v: number) => {
       net.current.layers[0].w[i] = v;
       bump();
+      pushNet();
     },
-    [bump],
+    [bump, pushNet],
   );
   const onBias = useCallback(
     (f: number, v: number) => {
       net.current.layers[0].b[f] = v;
       bump();
+      pushNet();
     },
-    [bump],
+    [bump, pushNet],
   );
 
   // ── reading the retina ──
@@ -244,76 +275,17 @@ export default function Cnn() {
 
   // ── training ──
 
-  const statsRef = useRef(stats);
-  statsRef.current = stats;
-  const dataRef = useRef(data);
-  dataRef.current = data;
-  const augRng = useRef(rng(7));
-
-  const trainSteps = useCallback(
-    (count: number, verbose: boolean): boolean => {
-      const d = dataRef.current;
-      if (!d) return false;
-      const nn = net.current;
-      const s = { ...statsRef.current };
-      let lastStep: StepResult | null = null;
-      let shown: Example | null = null;
-      let keepGoing = true;
-      for (let k = 0; k < count && keepGoing; k++) {
-        const base = d.train[s.cursor];
-        const ex = augment ? { ...base, grid: jitter(base.grid, augRng.current) } : base;
-        lastStep = trainStep(nn, ex, lr, { freezeFirst: freeze });
-        shown = ex;
-        s.epochLoss += lastStep.loss;
-        s.epochCount++;
-        s.cursor++;
-        s.seen++;
-        const epochEnd = s.cursor >= d.train.length;
-        if (epochEnd || s.seen % POINT_EVERY === 0) {
-          const tr = evaluate(nn, d.train), te = evaluate(nn, d.test);
-          s.points = [...s.points, { seen: s.seen, train: tr.accuracy, test: te.accuracy }];
-          if (epochEnd) {
-            s.epoch++;
-            if (tr.accuracy === 1) s.done = 'converged';
-            else if (s.epoch >= MAX_EPOCHS) s.done = 'gaveup';
-            if (s.done === 'converged') sfx.win();
-            else if (!verbose) sfx.epoch(tr.accuracy);
-            s.cursor = 0;
-            s.epochLoss = 0;
-            s.epochCount = 0;
-            if (s.done) keepGoing = false;
-          }
-        }
-      }
-      if (lastStep && shown) {
-        setRetina(shown.grid);
-        if (verbose) (lastStep.correct ? sfx.ok : sfx.error)();
-        setLast({ correct: lastStep.correct, text: describe(nn, lastStep, shown, freeze) });
-      }
-      setStats(s);
-      bump();
-      return keepGoing;
-    },
-    [bump, lr, freeze, augment],
-  );
-
-  useEffect(() => {
-    if (!speed) return;
-    let budget = 1;
-    const id = window.setInterval(() => {
-      budget += (BASE_RATE * speed) / 20;
-      const k = Math.floor(budget);
-      if (!k) return;
-      budget -= k;
-      if (!trainSteps(k, speed === 1)) setSpeed(0);
-    }, 50);
-    return () => window.clearInterval(id);
-  }, [speed, trainSteps]);
+  const clearDone = () => {
+    if (!stats.done) return;
+    const st = { ...stats, done: '' as const };
+    setStats(st);
+    send({ t: 'set', patch: { stats: st } });
+  };
 
   const play = (s: Speed) => {
     sfx.click();
     setScan(null);
-    if (stats.done) setStats({ ...stats, done: '' });
+    clearDone();
     setSpeed((cur) => (cur === s ? 0 : s));
   };
 
@@ -328,6 +300,10 @@ export default function Cnn() {
 
   const share = async () => {
     sfx.click();
+    if (tensorsOf(n).reduce((a, t) => a + t.length, 0) > MAX_SHARE) {
+      say(TOO_BIG_TO_SHARE);
+      return;
+    }
     const code = await shareCode(n);
     const url = `${window.location.origin}${window.location.pathname}#w=${code}`;
     window.history.replaceState(null, '', `#w=${code}`);
@@ -368,6 +344,15 @@ export default function Cnn() {
   const A1 = act.layers[1];
   const winP = act.probs[act.winner];
   const order = useMemo(() => n.classes.map((_, i) => i), [n.classes]);
+  const shown0 = Math.min(L0.cout, SHOW1);
+  const sizes = useMemo(
+    () =>
+      WIDTHS.map((w) => {
+        const probe = newNet(n.arch, n.classes, 1, w);
+        return { value: w, label: `×${w}`, weights: tensorsOf(probe).reduce((a, t) => a + t.length, 0) };
+      }),
+    [n.arch, n.classes],
+  );
 
   return (
     <div className={ps.root}>
@@ -496,7 +481,7 @@ export default function Cnn() {
               ReLU: max(0, z) = <b className={mag.a > 0 ? cs.wPos : ''}>{mag.a.toFixed(2)}</b>
             </p>
             <div className={ps.toolRow}>
-              {Array.from({ length: L0.cout }, (_, f) => (
+              {Array.from({ length: shown0 }, (_, f) => (
                 <button key={f} className={focus.f === f ? ps.toolOn : ps.tool} onClick={() => setFocus({ ...focus, f })}>
                   F{f + 1}
                 </button>
@@ -518,14 +503,16 @@ export default function Cnn() {
 
         {/* ── the network ── */}
         <section className={`${ps.panel} ${ps.rack} ${cs.rack}`} aria-labelledby="cn-net">
-          <h2 id="cn-net">Capa 1 · {L0.cout} filtros 3×3</h2>
+          <h2 id="cn-net">
+            Capa 1 · {L0.cout} filtros 3×3{L0.cout > shown0 && <span className={cs.more}>se muestran {shown0}</span>}
+          </h2>
           <div className={cs.colHeads} aria-hidden="true">
             <span>Filtro (pesos + sesgo)</span>
             <span>Convolución z</span>
             <span>ReLU</span>
             <span>Max-pool {L0.pool}×{L0.pool}</span>
           </div>
-          {Array.from({ length: L0.cout }, (_, f) => (
+          {Array.from({ length: shown0 }, (_, f) => (
             <div key={f} className={`${cs.filterRow} ${focus.f === f ? cs.filterSel : ''}`}>
               <div className={cs.filterCtl}>
                 <div className={cs.kernel}>
@@ -555,6 +542,7 @@ export default function Cnn() {
                       sfx.click();
                       setFocus({ ...focus, f });
                       bump();
+                      pushNet();
                     }}
                     aria-label={`Cargar un filtro hecho a mano en el filtro ${f + 1}`}
                   >
@@ -605,13 +593,14 @@ export default function Cnn() {
             <>
               <h2>
                 Capa 2 · {L1.cout} filtros 3×3×{L1.cin}
+                {L1.cout > SHOW2 && <span className={cs.more}>se muestran {SHOW2}</span>}
               </h2>
               <p className={cs.note}>
                 Cada filtro de la segunda capa mira a la vez los {L1.cin} mapas reducidos de la capa 1 (una columna de 3×3 por mapa)
                 y responde a combinaciones: «trazo vertical arriba y horizontal abajo»…
               </p>
               <div className={cs.layer2}>
-                {Array.from({ length: L1.cout }, (_, o) => {
+                {Array.from({ length: Math.min(L1.cout, SHOW2) }, (_, o) => {
                   const SS1 = L1.size * L1.size, T1 = L1.size / L1.pool;
                   const ws = L1.w.subarray(o * L1.cin * 9, (o + 1) * L1.cin * 9);
                   const wScale = maxAbs(L1.w);
@@ -619,7 +608,7 @@ export default function Cnn() {
                     <div key={o} className={cs.l2Card}>
                       <span className={cs.l2Name}>G{o + 1}</span>
                       <div className={cs.l2Kernels}>
-                        {Array.from({ length: L1.cin }, (_, i) => (
+                        {Array.from({ length: Math.min(L1.cin, SHOW1) }, (_, i) => (
                           <FeatureMap key={i} data={ws.subarray(i * 9, (i + 1) * 9)} size={3} scale={wScale} signed label={`Pesos de G${o + 1} sobre el mapa F${i + 1}`} />
                         ))}
                       </div>
@@ -750,7 +739,8 @@ export default function Cnn() {
                 setSpeed(0);
                 setScan(null);
                 if (stats.done) setStats({ ...stats, done: '' });
-                trainSteps(1, true);
+                clearDone();
+                send({ t: 'step' });
               }}
               disabled={!data}
               title="Un ejemplo"
@@ -819,6 +809,34 @@ export default function Cnn() {
         </div>
       </section>
 
+      <ComputePanel
+        sizes={sizes}
+        size={n.width}
+        onSize={(w) => {
+          sfx.click();
+          reset(n.arch, n.classes, w);
+        }}
+        status={trainer.status}
+        onBackend={(b) => {
+          sfx.click();
+          trainer.setCompute(b, batch);
+        }}
+        batch={batch}
+        batches={BATCHES}
+        onBatch={(b) => {
+          setBatch(b);
+          trainer.setCompute(trainer.status.backend, b);
+        }}
+        perf={{ value: trainer.perf, running: speed !== 0 }}
+        bench={trainer.bench}
+        onBench={() => {
+          setSpeed(0);
+          trainer.runBench(WIDTHS, batch, ['cpu', 'gpu']);
+        }}
+        onStopBench={trainer.stopBench}
+        unit="ejemplos"
+      />
+
       <details className={ps.howto}>
         <summary>¿Cómo funciona?</summary>
         <ol>
@@ -851,6 +869,16 @@ export default function Cnn() {
             Compárala con el <a href={useBaseUrl('/perceptron')}>perceptrón</a> con los mismos dígitos: allí había que centrar
             y reescalar el dibujo a mano para que funcionara; aquí la red aprende a tolerar los desplazamientos.
           </li>
+          <li>
+            ¿Y el texto? Para el lenguaje, las convoluciones dieron paso a la atención: mira el{' '}
+            <a href={useBaseUrl('/transformer')}>Transformer</a>.
+          </li>
+          <li>
+            Todo el cálculo corre en un <b>Web Worker</b>, un hilo aparte, para que la página no se congele. En «Motor de
+            cálculo» puedes llevarlo a la <b>GPU</b> con WebGPU, agrandar el modelo y comparar: con modelos pequeños gana la CPU
+            (mandar trabajo a la GPU tiene un coste fijo); con modelos grandes y lotes grandes, la GPU. Por eso las redes de
+            verdad se entrenan en miles de GPU.
+          </li>
         </ol>
       </details>
 
@@ -861,14 +889,4 @@ export default function Cnn() {
       )}
     </div>
   );
-}
-
-function describe(n: Net, step: StepResult, ex: Example, frozen: boolean): string {
-  const said = n.classes[step.act.winner];
-  const p = step.act.probs[step.label];
-  const params = n.layers.reduce((a, L, i) => a + (frozen && i === 0 ? 0 : L.w.length + L.b.length), 0) + n.dense.length + n.dbias.length;
-  const head = step.correct
-    ? `Era «${ex.ch}» y la red dijo «${said}»`
-    : `Era «${ex.ch}» pero la red dijo «${said}»`;
-  return `${head} (p(«${ex.ch}») = ${pct(p)}). Pérdida = −ln ${p.toFixed(2)} = ${step.loss.toFixed(2)}. El gradiente ajusta ${params} pesos${frozen ? ' (la capa 1 está congelada)' : ''}.`;
 }

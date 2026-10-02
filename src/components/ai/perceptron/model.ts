@@ -50,16 +50,40 @@ export const MODES: { id: Mode; label: string; knobs: string; blurb: string }[] 
   },
 ];
 
-export function knobDims(mode: Mode): { w: number; h: number } {
-  return mode === 'scanner' ? { w: SCAN_W, h: SCAN_H } : { w: GRID, h: GRID };
+/** Retina resolutions: the 16×16 drawing is enlarged so every cell covers scale×scale photocells.
+ *  More weights, the same problem: only the amount of arithmetic grows. */
+export const SCALES = [1, 2, 4, 8];
+/** The scanner's template grows too; past ×4 it would need too much memory. */
+export const maxScale = (mode: Mode) => (mode === 'scanner' ? 4 : 8);
+
+export function knobDims(mode: Mode, scale = 1): { w: number; h: number } {
+  return mode === 'scanner' ? { w: SCAN_W * scale, h: SCAN_H * scale } : { w: GRID * scale, h: GRID * scale };
+}
+
+/** The drawing at scale×: every cell becomes a scale×scale block. */
+export function upsample(g: Grid, scale: number): Uint8Array {
+  if (scale === 1) return g;
+  const S = GRID * scale;
+  const out = new Uint8Array(S * S);
+  for (let y = 0; y < S; y++) {
+    const row = Math.floor(y / scale) * GRID;
+    for (let x = 0; x < S; x++) out[y * S + x] = g[row + Math.floor(x / scale)];
+  }
+  return out;
+}
+
+/** What the photocells see before the scanner or the weights: the wiring's preprocessing, enlarged. */
+export function retinaInput(mode: Mode, g: Grid, scale = 1): Uint8Array {
+  const pre = mode === 'centered' ? center(g) : mode === 'normalized' ? normalize(g) : g;
+  return upsample(pre, scale);
 }
 
 export function emptyGrid(): Grid {
   return new Uint8Array(CELLS);
 }
 
-export function emptyWeights(mode: Mode): Float32Array {
-  const { w, h } = knobDims(mode);
+export function emptyWeights(mode: Mode, scale = 1): Float32Array {
+  const { w, h } = knobDims(mode, scale);
   return new Float32Array(w * h);
 }
 
@@ -253,24 +277,26 @@ function dot(w: Float32Array, x: Uint8Array): number {
   return s;
 }
 
-/** Copies the SCAN_W×SCAN_H window at (x, y). */
-export function patch(g: Grid, x: number, y: number): Uint8Array {
-  const p = new Uint8Array(SCAN_W * SCAN_H);
-  for (let j = 0; j < SCAN_H; j++)
-    for (let i = 0; i < SCAN_W; i++) p[j * SCAN_W + i] = g[(y + j) * GRID + x + i];
+/** Copies the pw×ph window at (x, y) of a side×side retina (the scanner's template by default). */
+export function patch(g: Uint8Array, x: number, y: number, side = GRID, pw = SCAN_W, ph = SCAN_H): Uint8Array {
+  const p = new Uint8Array(pw * ph);
+  for (let j = 0; j < ph; j++)
+    for (let i = 0; i < pw; i++) p[j * pw + i] = g[(y + j) * side + x + i];
   return p;
 }
 
-export function read(mode: Mode, w: Float32Array, g: Grid): Reading {
-  if (mode === 'mark1') return { sum: dot(w, g), input: g };
-  if (mode === 'centered' || mode === 'normalized') {
-    const c = mode === 'centered' ? center(g) : normalize(g);
-    return { sum: dot(w, c), input: c };
+/** The reading of one unit. With scale > 1 the retina has (16·scale)² photocells; `at` is in photocells. */
+export function read(mode: Mode, w: Float32Array, g: Grid, scale = 1): Reading {
+  if (mode !== 'scanner') {
+    const x = retinaInput(mode, g, scale);
+    return { sum: dot(w, x), input: x };
   }
+  const side = GRID * scale, pw = SCAN_W * scale, ph = SCAN_H * scale;
+  const big = upsample(g, scale);
   let best: Reading | null = null;
-  for (let y = 0; y <= GRID - SCAN_H; y++)
-    for (let x = 0; x <= GRID - SCAN_W; x++) {
-      const p = patch(g, x, y);
+  for (let y = 0; y <= side - ph; y++)
+    for (let x = 0; x <= side - pw; x++) {
+      const p = patch(big, x, y, side, pw, ph);
       const s = dot(w, p);
       // Ties go to the window with more ink, so a blank template still "looks" at the drawing.
       if (!best || s > best.sum || (s === best.sum && ink(p) > ink(best.input))) best = { sum: s, input: p, at: { x, y } };
@@ -285,7 +311,9 @@ function ink(p: Uint8Array): number {
 }
 
 export const clampW = (v: number) => Math.max(-WMAX, Math.min(WMAX, v));
-export const clampTheta = (v: number) => Math.max(-THETA_MAX, Math.min(THETA_MAX, v));
+/** The threshold dial's end stops; sums grow with the number of photocells, so the dial does too. */
+export const thetaLimit = (scale = 1) => THETA_MAX * scale * scale;
+export const clampTheta = (v: number, scale = 1) => Math.max(-thetaLimit(scale), Math.min(thetaLimit(scale), v));
 
 /** A bank of perceptrons sharing one retina and one wiring. A detector has a
  * single unit; a classifier has one unit per class and answers with the unit
@@ -295,10 +323,12 @@ export interface Machine {
   classes: string[];
   weights: Float32Array[];
   thetas: number[];
+  /** Retina resolution multiplier (1 = the 16×16 knob board). */
+  scale: number;
 }
 
-export function newMachine(mode: Mode, classes: string[]): Machine {
-  return { mode, classes, weights: classes.map(() => emptyWeights(mode)), thetas: classes.map(() => 0) };
+export function newMachine(mode: Mode, classes: string[], scale = 1): Machine {
+  return { mode, classes, weights: classes.map(() => emptyWeights(mode, scale)), thetas: classes.map(() => 0), scale };
 }
 
 export const isClassifier = (m: Machine) => m.classes.length > 1;
@@ -312,7 +342,7 @@ export interface Decision {
 }
 
 export function decide(m: Machine, g: Grid): Decision {
-  const readings = m.weights.map((w) => read(m.mode, w, g));
+  const readings = m.weights.map((w) => read(m.mode, w, g, m.scale));
   let winner = 0;
   for (let k = 1; k < readings.length; k++)
     if (readings[k].sum - m.thetas[k] > readings[winner].sum - m.thetas[winner]) winner = k;
@@ -322,7 +352,7 @@ export function decide(m: Machine, g: Grid): Decision {
 function nudge(m: Machine, k: number, input: Uint8Array, d: number) {
   const w = m.weights[k];
   for (let i = 0; i < w.length; i++) if (input[i]) w[i] = clampW(w[i] + d);
-  m.thetas[k] = clampTheta(m.thetas[k] - d);
+  m.thetas[k] = clampTheta(m.thetas[k] - d, m.scale);
 }
 
 export interface StepResult {
@@ -360,6 +390,52 @@ export function learn(m: Machine, e: Example, eta: number): StepResult {
     }
   }
   return { decision, correct, changed };
+}
+
+/** Rosenblatt's rule on a mini-batch: every example is judged with the same knobs, then all the
+ *  corrections are added at once. With one example it is exactly `learn`. Returns the mistakes. */
+export function learnBatch(m: Machine, batch: Example[], eta: number): { first: StepResult; mistakes: number } {
+  if (batch.length === 1) {
+    const first = learn(m, batch[0], eta);
+    return { first, mistakes: first.correct ? 0 : 1 };
+  }
+  const dw = m.weights.map(() => null as Float32Array | null);
+  const dt = m.thetas.map(() => 0);
+  let first: StepResult | null = null;
+  let mistakes = 0;
+  const push = (k: number, input: Uint8Array, d: number) => {
+    const acc = (dw[k] ??= new Float32Array(m.weights[k].length));
+    for (let i = 0; i < acc.length; i++) if (input[i]) acc[i] += d;
+    dt[k] -= d;
+  };
+  for (const e of batch) {
+    const decision = decide(m, e.grid);
+    const correct = isCorrect(m, decision, e);
+    const changed: StepResult['changed'] = [];
+    if (!correct) {
+      mistakes++;
+      if (!isClassifier(m)) {
+        const dir = e.target ? 1 : -1;
+        push(0, decision.readings[0].input, dir * eta);
+        changed.push({ unit: 0, dir });
+      } else {
+        const right = m.classes.indexOf(e.ch);
+        if (right >= 0) {
+          push(right, decision.readings[right].input, eta);
+          changed.push({ unit: right, dir: 1 });
+        }
+        push(decision.winner, decision.readings[decision.winner].input, -eta);
+        changed.push({ unit: decision.winner, dir: -1 });
+      }
+    }
+    first ??= { decision, correct, changed };
+  }
+  m.weights.forEach((w, k) => {
+    const acc = dw[k];
+    if (acc) for (let i = 0; i < w.length; i++) w[i] = clampW(w[i] + acc[i]);
+    if (dt[k]) m.thetas[k] = clampTheta(m.thetas[k] + dt[k], m.scale);
+  });
+  return { first: first!, mistakes };
 }
 
 export function accuracy(m: Machine, set: Example[]): number {
@@ -426,7 +502,7 @@ const MAGIC = 0x50; // 'P'
 
 export function pack(m: Machine): Uint8Array {
   const header = new TextEncoder().encode(
-    JSON.stringify({ v: 1, mode: m.mode, classes: m.classes, thetas: m.thetas.map((t) => Math.round(t * 100) / 100) }),
+    JSON.stringify({ v: 1, mode: m.mode, classes: m.classes, scale: m.scale, thetas: m.thetas.map((t) => Math.round(t * 100) / 100) }),
   );
   const n = m.weights.reduce((a, w) => a + w.length, 0);
   const out = new Uint8Array(3 + header.length + n);
@@ -445,13 +521,20 @@ export function unpack(bytes: Uint8Array): Machine {
   const h = JSON.parse(new TextDecoder().decode(bytes.subarray(3, 3 + hl)));
   if (h.v !== 1 || !MODES.some((x) => x.id === h.mode) || !Array.isArray(h.classes) || !h.classes.length)
     throw new Error('Formato de pesos desconocido');
-  const m = newMachine(h.mode, h.classes.map(String));
+  const m = newMachine(h.mode, h.classes.map(String), validScale(h.mode, h.scale));
   const size = m.weights[0].length;
   if (bytes.length !== 3 + hl + size * m.classes.length) throw new Error('El fichero de pesos está incompleto');
   let o = 3 + hl;
   for (const w of m.weights) for (let i = 0; i < size; i++) w[i] = ((bytes[o++] << 24) >> 24) / 100;
-  m.thetas = m.classes.map((_, k) => clampTheta(Number(h.thetas?.[k]) || 0));
+  m.thetas = m.classes.map((_, k) => clampTheta(Number(h.thetas?.[k]) || 0, m.scale));
   return m;
+}
+
+/** Files from before the resolution option have no scale: they are 16×16. */
+function validScale(mode: Mode, s: unknown): number {
+  const v = s === undefined ? 1 : Number(s);
+  if (!SCALES.includes(v) || v > maxScale(mode)) throw new Error('Resolución de la retina no válida');
+  return v;
 }
 
 export function toBase64Url(b: Uint8Array): string {
@@ -500,6 +583,7 @@ export function toJSON(m: Machine): string {
       v: 1,
       mode: m.mode,
       classes: m.classes,
+      scale: m.scale,
       thetas: m.thetas.map((t) => Math.round(t * 100) / 100),
       weights: m.weights.map((w) => Array.from(w, (x) => Math.round(x * 100) / 100)),
     },
@@ -512,13 +596,13 @@ export function fromJSON(text: string): Machine {
   const j = JSON.parse(text);
   if (j?.format !== 'perceptron' || j.v !== 1 || !MODES.some((x) => x.id === j.mode) || !Array.isArray(j.classes) || !j.classes.length)
     throw new Error('No es un fichero de pesos del perceptrón');
-  const m = newMachine(j.mode, j.classes.map(String));
+  const m = newMachine(j.mode, j.classes.map(String), validScale(j.mode, j.scale));
   if (!Array.isArray(j.weights) || j.weights.length !== m.classes.length) throw new Error('El fichero de pesos está incompleto');
   m.weights.forEach((w, k) => {
     const src = j.weights[k];
     if (!Array.isArray(src) || src.length !== w.length) throw new Error('El fichero de pesos está incompleto');
     for (let i = 0; i < w.length; i++) w[i] = clampW(Number(src[i]) || 0);
   });
-  m.thetas = m.classes.map((_, k) => clampTheta(Number(j.thetas?.[k]) || 0));
+  m.thetas = m.classes.map((_, k) => clampTheta(Number(j.thetas?.[k]) || 0, m.scale));
   return m;
 }

@@ -1,0 +1,700 @@
+/* Transformer demo: layout and the pieces the other demos do not have
+ * (sentence builder, attention matrices and arcs, the attention lab, the
+ * positional encoding). Panels, buttons, knobs and the rack come from
+ * ../perceptron/perceptron.module.css. */
+
+.machine {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(280px, 380px);
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 1250px) {
+  .machine {
+    grid-template-columns: minmax(260px, 1fr) minmax(280px, 1fr);
+  }
+  .machine > section:nth-child(2) {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .machine {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.labs {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .labs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── top bar ── */
+.config {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+  border: 1px solid var(--p-border);
+  border-radius: 10px;
+  background: var(--p-surface);
+}
+
+.configGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.configGroup small,
+.palette small {
+  font-family: var(--p-mono);
+  font-size: 0.68rem;
+  color: var(--p-muted);
+  margin-right: 4px;
+}
+
+.configGroup button {
+  padding: 4px 10px;
+}
+
+.configCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--p-mono);
+  font-size: 0.75rem;
+}
+
+/* ── sentence builder ── */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 34px;
+  padding: 6px;
+  border: 1px dashed var(--p-border);
+  border-radius: 8px;
+}
+
+.chip {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--p-accent);
+  color: #0d0d0d;
+  font-family: var(--p-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.palette {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.palette > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.word {
+  padding: 2px 7px;
+  border: 1px solid var(--p-border);
+  border-radius: 5px;
+  background: var(--p-surface);
+  color: inherit;
+  font-family: var(--p-mono);
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.word:hover:not(:disabled) {
+  border-color: var(--p-accent);
+}
+
+.word:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── translation ── */
+.panelHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gen,
+.genOn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid #3a3f46;
+  border-radius: 6px;
+  background: #23262a;
+  color: #d7dbe0;
+  font-family: var(--p-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.genOn {
+  background: var(--p-accent);
+  border-color: var(--p-accent);
+  color: #0d0d0d;
+}
+
+.output {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.outWord {
+  position: relative;
+  padding: 4px 10px 6px;
+  border: 1px solid #3a3f46;
+  border-radius: 6px;
+  background: #1b1e22;
+  color: #4affa0;
+  font-family: var(--p-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  overflow: hidden;
+  transition: opacity 0.2s;
+}
+
+.outSel {
+  border-color: #ffb020;
+  color: #ffb020;
+  box-shadow: 0 0 0 1px #ffb020;
+}
+
+.outHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.conf {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+.verdictOk,
+.verdictBad {
+  font-family: var(--p-mono);
+  font-size: 0.78rem;
+}
+
+.verdictOk {
+  color: #3fb950;
+}
+
+.verdictBad {
+  color: #f85149;
+}
+
+.arcs {
+  width: 100%;
+  display: block;
+}
+
+.arc,
+.arcSel {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.arc {
+  stroke: #9aa3ad;
+}
+
+.arcSel {
+  stroke: #ffb020;
+}
+
+.wordTop,
+.wordBottom,
+.wordSel,
+.wordPct {
+  font-family: 'JetBrains Mono', monospace;
+  text-anchor: middle;
+}
+
+.wordTop {
+  font-size: 15px;
+  font-weight: 700;
+  fill: #f0ede8;
+}
+
+.wordPct {
+  font-size: 11px;
+  fill: #ffb020;
+}
+
+.wordBottom,
+.wordSel {
+  font-size: 15px;
+  font-weight: 700;
+  fill: #4affa0;
+  cursor: pointer;
+  dominant-baseline: hanging;
+}
+
+.wordSel {
+  fill: #ffb020;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: #c4cad1;
+}
+
+.option {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--p-mono);
+}
+
+.optionBar {
+  display: inline-block;
+  width: 50px;
+  height: 6px;
+  border-radius: 3px;
+  background: #33373d;
+  overflow: hidden;
+}
+
+.optionBar span {
+  display: block;
+  height: 100%;
+  background: var(--p-accent);
+}
+
+/* ── tabs ── */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.tab,
+.tabOn {
+  padding: 3px 10px;
+  border: 1px solid var(--p-border);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-family: var(--p-mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.tabOn {
+  background: var(--p-accent);
+  border-color: var(--p-accent);
+  color: #0d0d0d;
+  font-weight: 700;
+}
+
+.rack .tab,
+:global(.rack) .tab {
+  color: #d7dbe0;
+}
+
+/* ── attention matrix ── */
+.matrix {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  overflow-x: auto;
+}
+
+.matrixCaption {
+  grid-column: 1 / -1;
+  font-size: 0.74rem;
+  color: var(--p-muted);
+  margin-bottom: 2px;
+}
+
+.colLabel {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--p-mono);
+  font-size: 0.7rem;
+  text-align: left;
+  padding: 2px 0;
+  justify-self: center;
+}
+
+.rowLabel {
+  padding: 0 6px 0 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font-family: var(--p-mono);
+  font-size: 0.72rem;
+  text-align: right;
+  cursor: pointer;
+}
+
+.rowLabel:disabled {
+  cursor: default;
+}
+
+.rowSel {
+  color: #ffb020;
+  font-weight: 700;
+}
+
+.cell {
+  aspect-ratio: 1;
+  min-width: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+  font-family: var(--p-mono);
+  font-size: 0.62rem;
+  background: rgba(46, 230, 140, 0.06);
+  cursor: pointer;
+}
+
+.cellMasked {
+  background: repeating-linear-gradient(45deg, transparent 0 3px, var(--ifm-color-emphasis-200) 3px 5px);
+  color: var(--p-muted);
+}
+
+.cellRowSel {
+  box-shadow: inset 0 0 0 1px #ffb020;
+}
+
+/* ── attention lab ── */
+.lab {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(180px, 240px) minmax(200px, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .lab {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.labCol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.labKnobRow {
+  display: flex;
+  gap: 12px;
+}
+
+.labMatrix {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #2a2e33, #1d2024);
+}
+
+.labMatrixName {
+  display: block;
+  font-family: var(--p-mono);
+  font-size: 0.72rem;
+  color: #d7dbe0;
+  margin-bottom: 4px;
+}
+
+.labKnobs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 56px));
+  gap: 4px;
+}
+
+.plane {
+  width: 100%;
+  border-radius: 8px;
+  background: #15171a;
+}
+
+.axis {
+  stroke: #33373d;
+}
+
+.vecKey,
+.vecQuery,
+.vecOut {
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.vecKey {
+  stroke: #9aa3ad;
+}
+
+.vecQuery {
+  stroke: #ffb020;
+  stroke-width: 3.5;
+}
+
+.vecOut {
+  stroke: #2ee68c;
+  stroke-dasharray: 5 3;
+}
+
+.labLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  fill: #d7dbe0;
+}
+
+.labTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--p-mono);
+  font-size: 0.76rem;
+  display: table;
+}
+
+.labTable th,
+.labTable td {
+  padding: 4px 6px;
+  border: none;
+  text-align: left;
+}
+
+.labTable tr {
+  border: none;
+  background: none;
+}
+
+.labWin td {
+  color: var(--p-accent);
+  font-weight: 700;
+}
+
+.labBar {
+  display: inline-block;
+  width: 60px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 4px;
+  background: var(--ifm-color-emphasis-200);
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.labBar span {
+  display: block;
+  height: 100%;
+  background: var(--p-accent);
+}
+
+/* ── positional encoding ── */
+.pe {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 8px;
+}
+
+.peRows {
+  display: grid;
+  font-family: var(--p-mono);
+  font-size: 0.7rem;
+  color: var(--p-muted);
+}
+
+.peRows span {
+  display: flex;
+  align-items: center;
+}
+
+.peCanvas {
+  width: 100%;
+  height: 100%;
+  min-height: 140px;
+  image-rendering: pixelated;
+  border-radius: 4px;
+}
+
+.peAxis {
+  grid-column: 2;
+  margin: 0;
+  font-family: var(--p-mono);
+  font-size: 0.68rem;
+  color: var(--p-muted);
+}
+
+.labHidden td {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+/* ── causal arcs (GPT mode) ── */
+.causalWord {
+  cursor: pointer;
+}
+
+.wordSelTop {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: #ffb020;
+}
+
+.wordFuture {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: #5c636c;
+}
+
+.guess,
+.guessSel,
+.guessLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-anchor: middle;
+  fill: #7d8590;
+}
+
+.guessSel {
+  fill: #4affa0;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.guessLabel {
+  text-anchor: start;
+  font-size: 9px;
+}
+
+.nextList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nextRow {
+  display: grid;
+  grid-template-columns: 16px minmax(70px, auto) 1fr 44px;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font-family: var(--p-mono);
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nextRow:hover:not(:disabled) {
+  border-color: var(--p-accent);
+}
+
+.nextRow:disabled {
+  cursor: default;
+}
+
+.nextOk {
+  color: #3fb950;
+}
+
+.nextBad {
+  color: #f85149;
+}
+
+.nextBar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--ifm-color-emphasis-200);
+  overflow: hidden;
+}
+
+.nextBar span {
+  display: block;
+  height: 100%;
+  background: var(--p-accent);
+}
+
+.status {
+  font-family: var(--p-mono);
+  font-size: 0.78rem;
+}
+
+.samplesList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--p-mono);
+  font-size: 0.78rem;
+}
+
+.modeBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.modeBar > span {
+  font-family: var(--p-mono);
+  font-size: 0.72rem;
+  color: var(--p-muted);
+}
+
+.layerArcs {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 4px;
+  border-top: 1px solid #2c3036;
+}
+
+.layerName {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  font-family: var(--p-mono);
+  font-size: 0.7rem;
+  color: #9aa3ad;
+}

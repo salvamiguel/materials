@@ -102,7 +102,9 @@ export default function Perspective({ net, act, retina, focus, reveal, onPick }:
       const side = Math.max(5, S), pside = Math.max(5, T * (side / S) * 1.25);
       const sp = li === 0 ? 2.4 : 1.5;
       const aScale = Math.max(0.5, maxAbs(A.a));
-      for (let o = 0; o < L.cout; o++)
+      // Big networks: draw the first maps of each stack, it reads the same.
+      const C = Math.min(L.cout, 8);
+      for (let o = 0; o < C; o++)
         planes.push({
           x: x + o * sp,
           y: 0,
@@ -115,9 +117,9 @@ export default function Perspective({ net, act, retina, focus, reveal, onPick }:
           highlight: li === 0 && o === fc.f,
           reveal: li === 0 && o === fc.f ? rv : undefined,
         });
-      labels.push({ x: x + ((L.cout - 1) * sp) / 2, y: -side / 2, text: [`Conv 3×3 + ReLU`, `${L.cout} × ${S}×${S}`] });
-      x += (L.cout - 1) * sp + LAYER_GAP * 0.8;
-      for (let o = 0; o < L.cout; o++)
+      labels.push({ x: x + ((C - 1) * sp) / 2, y: -side / 2, text: [`Conv 3×3 + ReLU`, `${L.cout} × ${S}×${S}`] });
+      x += (C - 1) * sp + LAYER_GAP * 0.8;
+      for (let o = 0; o < C; o++)
         planes.push({
           x: x + o * sp,
           y: 0,
@@ -129,8 +131,8 @@ export default function Perspective({ net, act, retina, focus, reveal, onPick }:
           channel: o,
           highlight: li === 0 && o === fc.f,
         });
-      labels.push({ x: x + ((L.cout - 1) * sp) / 2, y: -pside / 2, text: [`Max-pool ${L.pool}×${L.pool}`, `${L.cout} × ${T}×${T}`] });
-      x += (L.cout - 1) * sp + LAYER_GAP;
+      labels.push({ x: x + ((C - 1) * sp) / 2, y: -pside / 2, text: [`Max-pool ${L.pool}×${L.pool}`, `${L.cout} × ${T}×${T}`] });
+      x += (C - 1) * sp + LAYER_GAP;
     });
 
     const feat: Column = {
