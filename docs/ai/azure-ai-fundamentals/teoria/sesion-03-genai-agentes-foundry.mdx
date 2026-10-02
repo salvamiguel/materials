@@ -5,6 +5,7 @@ description: "Que es Microsoft Foundry, prompting, desplegar un modelo, construi
 ---
 
 import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+import TransformerLink from '@site/src/components/shared/TransformerLink';
 
 # IA Generativa y Agentes con Foundry
 
@@ -23,6 +24,10 @@ Microsoft Foundry es la plataforma unificada de Microsoft en Azure para construi
 ### El catalogo de modelos
 
 Foundry reune en un unico catalogo modelos de Azure OpenAI (chat, completions, embeddings) junto con otros modelos de Microsoft y de partners, incluyendo modelos de vision, voz o especializados. Se puede filtrar por tarea (chat, resumen, clasificacion, generacion...) y abrir un playground directamente desde la pagina de cada modelo para probarlo antes de decidir cual usar.
+
+Casi todos los modelos de chat del catalogo son **Transformers**, la arquitectura de 2017 basada en el mecanismo de **atencion**: cada palabra decide a que otras palabras del texto prestar atencion. Puedes ver uno por dentro, entrenarlo y observar su atencion en la demo interactiva:
+
+<TransformerLink />
 
 :::info Importante para el examen
 "Identificar un modelo adecuado segun sus capacidades" es literalmente una de las habilidades que evalua AI-901: no se trata de memorizar nombres de modelos, sino de saber que preguntarte (¿necesito texto, vision o ambos? ¿cuanto contexto? ¿que coste y latencia?) para elegir bien en el catalogo.

@@ -851,6 +851,10 @@ export default function Cnn() {
             Compárala con el <a href={useBaseUrl('/perceptron')}>perceptrón</a> con los mismos dígitos: allí había que centrar
             y reescalar el dibujo a mano para que funcionara; aquí la red aprende a tolerar los desplazamientos.
           </li>
+          <li>
+            ¿Y el texto? Para el lenguaje, las convoluciones dieron paso a la atención: mira el{' '}
+            <a href={useBaseUrl('/transformer')}>Transformer</a>.
+          </li>
         </ol>
       </details>
 

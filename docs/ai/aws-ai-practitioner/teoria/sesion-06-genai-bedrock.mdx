@@ -6,6 +6,7 @@ description: "Fundamentos de IA Generativa, modelos fundacionales, arquitectura 
 
 import { FaAws } from "react-icons/fa";
 import SkillBuilderLab from '@site/src/components/shared/SkillBuilderLab';
+import TransformerLink from '@site/src/components/shared/TransformerLink';
 
 # IA Generativa y Amazon Bedrock <FaAws style={{ verticalAlign: 'middle' }} />
 
@@ -80,6 +81,10 @@ La arquitectura Transformer, introducida en 2017, es la base de practicamente to
 **Layer Normalization y Residual Connections:** Mejoran la estabilidad del entrenamiento y permiten que los gradientes fluyan de manera efectiva a traves de la red, haciendo posible entrenar modelos con muchas capas.
 
 **Feedforward Neural Networks:** Se aplican a cada posicion de forma independiente despues del procesamiento de atencion, transformando aun mas los datos.
+
+Todas estas piezas (atencion multi-cabeza, positional encoding, encoder-decoder, Add & Norm) estan en una replica en miniatura del Transformer original que traduce frases sencillas del espanol al ingles. Se entrena en el navegador en segundos y muestra a que palabras atiende al traducir cada una:
+
+<TransformerLink />
 
 ---
 

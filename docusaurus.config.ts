@@ -122,6 +122,7 @@ const config: Config = {
             {to: '/k8s-playground', label: 'Kubernetes'},
             {to: '/perceptron', label: 'Perceptrón'},
             {to: '/cnn', label: 'Red convolucional'},
+            {to: '/transformer', label: 'Transformer'},
           ],
         },
         {type: 'custom-presentation', position: 'right'},
