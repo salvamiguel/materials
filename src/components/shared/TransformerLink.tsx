@@ -1,6 +1,6 @@
 import React from 'react';
 import useBaseUrl from '@docusaurus/useBaseUrl';
-import { FaLanguage } from 'react-icons/fa';
+import { FaRobot } from 'react-icons/fa';
 
 import styles from './LabActions.module.css';
 
@@ -15,9 +15,9 @@ export default function TransformerLink({ children }: { children?: React.ReactNo
           target="_blank"
           rel="noopener noreferrer"
           className={`${styles.btn} ${styles.btnPrimary}`}
-          title="Un Transformer que traduce del español al inglés: entrénalo y mira su atención"
+          title="Un Transformer que predice la siguiente palabra, como GPT: entrénalo y mira a qué palabras atiende"
         >
-          <FaLanguage /> {children || 'Prueba el Transformer interactivo'}
+          <FaRobot /> {children || 'Prueba el Transformer interactivo'}
         </a>
       </div>
     </div>

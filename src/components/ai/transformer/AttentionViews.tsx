@@ -149,3 +149,63 @@ export function HeadTabs({ heads, value, onChange }: { heads: number; value: num
     </div>
   );
 }
+
+interface CausalProps {
+  map: AttnMap;
+  head: number;
+  words: string[];
+  /** The model's guess for the next word at every position. */
+  guesses: string[];
+  selected: number;
+  onSelect: (i: number) => void;
+  /** Also draw the other positions' attention, faintly. */
+  all: boolean;
+}
+
+/** One sentence; arcs from each word back to the earlier words it looks at (GPT-style attention). */
+export function CausalArcs({ map, head, words, guesses, selected, onSelect, all }: CausalProps) {
+  const W = 760, H = 230, pad = 46;
+  const n = words.length;
+  const x = (i: number) => pad + (n === 1 ? (W - 2 * pad) / 2 : (i * (W - 2 * pad)) / (n - 1));
+  const base = 150;
+  const arc = (i: number, j: number) => {
+    if (i === j) return `M${x(i) - 9} ${base - 18} C ${x(i) - 22} ${base - 62}, ${x(i) + 22} ${base - 62}, ${x(i) + 9} ${base - 18}`;
+    const h = Math.min(125, 30 + Math.abs(i - j) * 26);
+    return `M${x(i)} ${base - 18} C ${x(i)} ${base - 18 - h}, ${x(j)} ${base - 18 - h}, ${x(j)} ${base - 18}`;
+  };
+  const rowW = weights(map, head, selected);
+  return (
+    <svg className={ts.arcs} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Atención de «${words[selected]}» hacia las palabras anteriores`}>
+      {all &&
+        Array.from({ length: n }, (_, i) =>
+          i === selected
+            ? null
+            : weights(map, head, i).map((v, j) =>
+                j <= i && v > 0.08 ? <path key={`${i}-${j}`} d={arc(i, j)} className={ts.arc} style={{ strokeWidth: 0.8 + v * 3, opacity: 0.08 + 0.3 * v }} /> : null,
+              ),
+        )}
+      {rowW.map((v, j) =>
+        j <= selected && v > 0.02 ? <path key={`s${j}`} d={arc(selected, j)} className={ts.arcSel} style={{ strokeWidth: 1 + v * 10, opacity: 0.3 + 0.7 * v }} /> : null,
+      )}
+      {words.map((w, i) => {
+        const v = rowW[i] ?? 0;
+        const future = i > selected;
+        return (
+          <g key={i} onClick={() => onSelect(i)} role="button" tabIndex={0} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelect(i)} className={ts.causalWord}>
+            {!future && i !== selected && v >= 0.05 && (
+              <text x={x(i)} y={base - 26} className={ts.wordPct}>
+                {pct(v)}
+              </text>
+            )}
+            <text x={x(i)} y={base} className={i === selected ? ts.wordSelTop : future ? ts.wordFuture : ts.wordTop}>
+              {w}
+            </text>
+            <text x={x(i)} y={base + 30} className={i === selected ? ts.guessSel : ts.guess}>
+              → {guesses[i] ?? ''}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}

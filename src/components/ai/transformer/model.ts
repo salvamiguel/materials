@@ -1,6 +1,10 @@
-/* A small Transformer translator, as in "Attention Is All You Need"
- * (Vaswani et al., 2017), free of React so it can be tested.
+/* A small Transformer, as in "Attention Is All You Need" (Vaswani et al.,
+ * 2017), free of React so it can be tested. Two kinds share every piece:
  *
+ *   gpt (decoder only, like GPT): the words so far → masked self-attention,
+ *     each word looking only at the ones before it → the next word.
+ *
+ *   translator (the paper's encoder–decoder):
  *   Spanish words → embedding·√d + positional encoding
  *     → encoder: [multi-head self-attention → Add & Norm → feed-forward → Add & Norm] × N
  *   English so far → embedding·√d + positional encoding
@@ -14,9 +18,12 @@
 
 import { decodeBytes, encodeBytes, rng } from '../perceptron/model';
 import { Graph, Mat } from './autograd';
-import { BOS, EOS, MAX_TGT, SRC_VOCAB, TGT_VOCAB, type Pair } from './grammar';
+import { BOS, EOS, LM_VOCAB, MAX_SRC, MAX_TGT, SRC_VOCAB, TGT_VOCAB, nextWords, reference, type Pair } from './grammar';
+
+export type Kind = 'gpt' | 'translator';
 
 export interface Config {
+  kind: Kind;
   d: number;
   heads: number;
   ff: number;
@@ -25,7 +32,8 @@ export interface Config {
   posEnc: boolean;
 }
 
-export const DEFAULT_CONFIG: Config = { d: 32, heads: 2, ff: 64, layers: 1, posEnc: true };
+export const DEFAULT_CONFIG: Config = { kind: 'translator', d: 32, heads: 2, ff: 64, layers: 1, posEnc: true };
+export const GPT_CONFIG: Config = { ...DEFAULT_CONFIG, kind: 'gpt', layers: 2 };
 export const HEAD_OPTIONS = [1, 2, 4];
 export const LAYER_OPTIONS = [1, 2];
 
@@ -54,15 +62,17 @@ interface EncLayer {
 interface DecLayer {
   self: Attn;
   n1: Norm;
-  cross: Attn;
-  n2: Norm;
+  /** Translator only: attention to the encoder. */
+  cross?: Attn;
+  n2?: Norm;
   ffn: FFN;
   n3: Norm;
 }
 
 export interface Model {
   cfg: Config;
-  srcEmb: Mat;
+  /** Translator only. */
+  srcEmb: Mat | null;
   tgtEmb: Mat;
   enc: EncLayer[];
   dec: DecLayer[];
@@ -75,6 +85,8 @@ export interface Model {
 
 export const srcId = (w: string) => SRC_VOCAB.indexOf(w);
 export const tgtId = (w: string) => TGT_VOCAB.indexOf(w);
+/** Words the decoder reads and writes. */
+export const outVocab = (m: Model | Config) => (('cfg' in m ? m.cfg : m).kind === 'gpt' ? LM_VOCAB : TGT_VOCAB);
 
 // ── construction ─────────────────────────────────────────────────────
 
@@ -103,12 +115,16 @@ export function newModel(cfg: Config = DEFAULT_CONFIG, seed = 1): Model {
   const norm = (): Norm => ({ g: ones(d), b: zeros(d) });
   const ffn = (): FFN => ({ w1: glorot(d, ff), b1: zeros(ff), w2: glorot(ff, d), b2: zeros(d) });
 
-  const srcEmb = mat(SRC_VOCAB.length, d, 1 / Math.sqrt(d));
-  const tgtEmb = mat(TGT_VOCAB.length, d, 1 / Math.sqrt(d));
-  const enc = Array.from({ length: cfg.layers }, () => ({ self: attn(), n1: norm(), ffn: ffn(), n2: norm() }));
-  const dec = Array.from({ length: cfg.layers }, () => ({ self: attn(), n1: norm(), cross: attn(), n2: norm(), ffn: ffn(), n3: norm() }));
-  const wout = glorot(d, TGT_VOCAB.length);
-  const bout = zeros(TGT_VOCAB.length);
+  const seq2seq = cfg.kind === 'translator';
+  const V = outVocab(cfg).length;
+  const srcEmb = seq2seq ? mat(SRC_VOCAB.length, d, 1 / Math.sqrt(d)) : null;
+  const tgtEmb = mat(V, d, 1 / Math.sqrt(d));
+  const enc = seq2seq ? Array.from({ length: cfg.layers }, () => ({ self: attn(), n1: norm(), ffn: ffn(), n2: norm() })) : [];
+  const dec: DecLayer[] = Array.from({ length: cfg.layers }, () =>
+    seq2seq ? { self: attn(), n1: norm(), cross: attn(), n2: norm(), ffn: ffn(), n3: norm() } : { self: attn(), n1: norm(), ffn: ffn(), n3: norm() },
+  );
+  const wout = glorot(d, V);
+  const bout = zeros(V);
   return {
     cfg,
     srcEmb,
@@ -179,7 +195,7 @@ function embed(g: Graph, m: Model, table: Mat, ids: number[]): Mat {
 }
 
 export function encode(g: Graph, m: Model, src: number[], trace?: Trace): Mat {
-  let x = embed(g, m, m.srcEmb, src);
+  let x = embed(g, m, m.srcEmb!, src);
   trace?.encStates.push(x.data);
   for (const L of m.enc) {
     const a = multiHead(g, L.self, x, x, m.cfg.heads, false);
@@ -191,16 +207,19 @@ export function encode(g: Graph, m: Model, src: number[], trace?: Trace): Mat {
   return x;
 }
 
-export function decode(g: Graph, m: Model, memory: Mat, tgtIn: number[], trace?: Trace): Mat {
+/** The decoder; `memory` is the encoder's output, or null for a decoder-only (GPT) model. */
+export function decode(g: Graph, m: Model, memory: Mat | null, tgtIn: number[], trace?: Trace): Mat {
   let x = embed(g, m, m.tgtEmb, tgtIn);
   trace?.decStates.push(x.data);
   for (const L of m.dec) {
     const s = multiHead(g, L.self, x, x, m.cfg.heads, true);
     trace?.decSelf.push(s.map);
     x = g.layerNorm(g.add(x, s.out), L.n1.g, L.n1.b);
-    const c = multiHead(g, L.cross, x, memory, m.cfg.heads, false);
-    trace?.cross.push(c.map);
-    x = g.layerNorm(g.add(x, c.out), L.n2.g, L.n2.b);
+    if (L.cross && L.n2 && memory) {
+      const c = multiHead(g, L.cross, x, memory, m.cfg.heads, false);
+      trace?.cross.push(c.map);
+      x = g.layerNorm(g.add(x, c.out), L.n2.g, L.n2.b);
+    }
     x = g.layerNorm(g.add(x, feedForward(g, L.ffn, x)), L.n3.g, L.n3.b);
     trace?.decStates.push(x.data);
   }
@@ -234,11 +253,11 @@ export interface Optim {
 export const DEFAULT_OPTIM: Optim = { lr: 0.003, warmup: 40 };
 
 /** One optimiser step on a mini-batch. Returns the mean loss. */
-export function trainBatch(m: Model, batch: Pair[], opt: Optim = DEFAULT_OPTIM): number {
+export function trainBatch(m: Model, batch: (Pair | string[])[], opt: Optim = DEFAULT_OPTIM): number {
   let loss = 0;
   for (const p of batch) {
     const g = new Graph(true);
-    const l = pairLoss(g, m, p);
+    const l = Array.isArray(p) ? lmLoss(g, m, p) : pairLoss(g, m, p);
     loss += l.data[0];
     g.backward(l);
   }
@@ -320,6 +339,85 @@ export function evaluate(m: Model, set: Pair[]): { exact: number; words: number 
   return { exact: exact / set.length, words: right / total };
 }
 
+// ── the language model (GPT mode) ────────────────────────────────────
+
+const lmIds = (words: string[]) => ids(words, LM_VOCAB);
+export const lmId = (w: string) => LM_VOCAB.indexOf(w);
+
+/** Loss of predicting every next word of a sentence; one pass covers all positions thanks to the mask. */
+export function lmLoss(g: Graph, m: Model, sentence: string[]): Mat {
+  const seq = lmIds([BOS, ...sentence, EOS]);
+  const logits = decode(g, m, null, seq.slice(0, -1));
+  return g.crossEntropy(logits, seq.slice(1));
+}
+
+export interface Prediction {
+  /** Every word, most likely first. */
+  ranked: { word: string; p: number }[];
+  /** Attention and vectors of the whole prefix (<s> + words). */
+  trace: Trace;
+  /** What the model would say next at every position of the prefix. */
+  guesses: string[];
+}
+
+/** Probabilities of the next word after `prefix`. */
+export function predictNext(m: Model, prefix: string[]): Prediction {
+  const trace = emptyTrace();
+  const logits = decode(new Graph(false), m, null, lmIds([BOS, ...prefix]), trace);
+  const V = logits.c;
+  const row = (r: number) => softmax(logits.data.subarray(r * V, (r + 1) * V));
+  const guesses = Array.from({ length: logits.r }, (_, r) => {
+    const p = row(r);
+    let best = 0;
+    for (let i = 1; i < V; i++) if (p[i] > p[best]) best = i;
+    return LM_VOCAB[best];
+  });
+  const last = row(logits.r - 1);
+  const ranked = Array.from(last, (p, i) => ({ word: LM_VOCAB[i], p })).sort((a, b) => b.p - a.p);
+  return { ranked, trace, guesses };
+}
+
+/** Pick a word from a prediction: the most likely at temperature 0, more adventurous as it rises. */
+export function sample(ranked: Prediction['ranked'], temperature: number, r: () => number): string {
+  const usable = ranked.filter((x) => x.word !== BOS && x.word !== LM_VOCAB[0]);
+  if (temperature <= 0.01) return usable[0].word;
+  const w = usable.map((x) => Math.pow(Math.max(x.p, 1e-12), 1 / temperature));
+  const total = w.reduce((a, b) => a + b, 0);
+  let t = r() * total;
+  for (let i = 0; i < usable.length; i++) if ((t -= w[i]) <= 0) return usable[i].word;
+  return usable[0].word;
+}
+
+/** Continue `prefix` word by word until the model ends the sentence. */
+export function generate(m: Model, prefix: string[], temperature: number, r: () => number): string[] {
+  const out = [...prefix];
+  while (out.length <= MAX_SRC) {
+    const w = sample(predictNext(m, out).ranked, temperature, r);
+    if (w === EOS) return out;
+    out.push(w);
+  }
+  return out;
+}
+
+/** How well the model knows the grammar: is its top guess for the next word allowed, and are the sentences it writes correct? */
+export function lmEvaluate(m: Model, sentences: string[][], samples: number, seed = 1): { next: number; generated: number } {
+  let ok = 0, total = 0;
+  for (const s of sentences) {
+    const { guesses } = predictNext(m, s);
+    guesses.forEach((gss, i) => {
+      total++;
+      if (nextWords(s.slice(0, i))?.includes(gss)) ok++;
+    });
+  }
+  const r = rng(seed);
+  let good = 0;
+  for (let k = 0; k < samples; k++) {
+    const s = generate(m, [], 1, r);
+    if (s.length <= MAX_SRC && reference(s)) good++;
+  }
+  return { next: ok / total, generated: samples ? good / samples : 0 };
+}
+
 export const countParams = (m: Model) => m.params.reduce((a, p) => a + p.data.length, 0);
 
 // ── saving and sharing ───────────────────────────────────────────────
@@ -332,7 +430,7 @@ export function pack(m: Model): Uint8Array {
     for (const v of p.data) mx = Math.max(mx, Math.abs(v));
     return mx / 127;
   });
-  const header = new TextEncoder().encode(JSON.stringify({ v: 1, cfg: m.cfg, vocab: [SRC_VOCAB.length, TGT_VOCAB.length], scales }));
+  const header = new TextEncoder().encode(JSON.stringify({ v: 1, cfg: m.cfg, vocab: [m.srcEmb ? SRC_VOCAB.length : 0, outVocab(m).length], scales }));
   const total = countParams(m);
   const out = new Uint8Array(3 + header.length + total);
   out[0] = MAGIC;
@@ -348,14 +446,16 @@ export function pack(m: Model): Uint8Array {
 
 function validCfg(c: unknown): c is Config {
   const x = c as Config;
-  return !!x && HEAD_OPTIONS.includes(x.heads) && LAYER_OPTIONS.includes(x.layers) && x.d === DEFAULT_CONFIG.d && x.ff === DEFAULT_CONFIG.ff && typeof x.posEnc === 'boolean';
+  // Files saved before the GPT mode existed are translators.
+  if (x && x.kind === undefined) x.kind = 'translator';
+  return !!x && (x.kind === 'gpt' || x.kind === 'translator') && HEAD_OPTIONS.includes(x.heads) && LAYER_OPTIONS.includes(x.layers) && x.d === DEFAULT_CONFIG.d && x.ff === DEFAULT_CONFIG.ff && typeof x.posEnc === 'boolean';
 }
 
 export function unpack(bytes: Uint8Array): Model {
   if (bytes[0] !== MAGIC) throw new Error('No es un fichero de pesos del Transformer');
   const hl = (bytes[1] << 8) | bytes[2];
   const h = JSON.parse(new TextDecoder().decode(bytes.subarray(3, 3 + hl)));
-  if (h.v !== 1 || !validCfg(h.cfg) || h.vocab?.[0] !== SRC_VOCAB.length || h.vocab?.[1] !== TGT_VOCAB.length)
+  if (h.v !== 1 || !validCfg(h.cfg) || h.vocab?.[0] !== (h.cfg.kind === 'translator' ? SRC_VOCAB.length : 0) || h.vocab?.[1] !== outVocab(h.cfg).length)
     throw new Error('Formato de pesos desconocido');
   const m = newModel(h.cfg);
   if (bytes.length !== 3 + hl + countParams(m) || h.scales.length !== m.params.length) throw new Error('El fichero de pesos está incompleto');
@@ -372,13 +472,14 @@ export const fromShareCode = async (code: string) => unpack(await decodeBytes(co
 const r4 = (x: number) => Math.round(x * 1e4) / 1e4;
 
 export function toJSON(m: Model): string {
-  return JSON.stringify({ format: 'transformer', v: 1, cfg: m.cfg, vocab: { es: SRC_VOCAB, en: TGT_VOCAB }, params: m.params.map((p) => Array.from(p.data, r4)) });
+  return JSON.stringify({ format: 'transformer', v: 1, cfg: m.cfg, vocab: { in: m.srcEmb ? SRC_VOCAB : null, out: outVocab(m) }, params: m.params.map((p) => Array.from(p.data, r4)) });
 }
 
 export function fromJSON(text: string): Model {
   const j = JSON.parse(text);
   if (j?.format !== 'transformer' || j.v !== 1 || !validCfg(j.cfg)) throw new Error('No es un fichero de pesos del Transformer');
-  if (j.vocab?.es?.join() !== SRC_VOCAB.join() || j.vocab?.en?.join() !== TGT_VOCAB.join()) throw new Error('El vocabulario no coincide');
+  const inOk = j.cfg.kind === 'translator' ? (j.vocab?.in ?? j.vocab?.es)?.join() === SRC_VOCAB.join() : true;
+  if (!inOk || (j.vocab?.out ?? j.vocab?.en)?.join() !== outVocab(j.cfg).join()) throw new Error('El vocabulario no coincide');
   const m = newModel(j.cfg);
   if (!Array.isArray(j.params) || j.params.length !== m.params.length) throw new Error('El fichero de pesos está incompleto');
   m.params.forEach((p, k) => {

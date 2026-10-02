@@ -30,7 +30,8 @@ const PRESETS: { id: string; label: string; q: M2; k: M2; query: number }[] = [
 const mul = (m: M2, v: [number, number]): [number, number] => [m[0] * v[0] + m[1] * v[1], m[2] * v[0] + m[3] * v[1]];
 const fmt = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
 
-export default function AttentionLab() {
+/** With `causal`, a word can only look at itself and the words before it, as in GPT. */
+export default function AttentionLab({ causal = false }: { causal?: boolean }) {
   const [wq, setWq] = useState<M2>(PRESETS[0].q);
   const [wk, setWk] = useState<M2>(PRESETS[0].k);
   const [query, setQuery] = useState(PRESETS[0].query);
@@ -41,8 +42,9 @@ export default function AttentionLab() {
   const q = mul(wq, WORDS[query].x);
   const keys = WORDS.map((w) => mul(wk, w.x));
   const scores = keys.map((k) => (q[0] * k[0] + q[1] * k[1]) / Math.SQRT2);
-  const mx = Math.max(...scores);
-  const e = scores.map((s) => Math.exp(s - mx));
+  const hidden = (j: number) => causal && j > query;
+  const mx = Math.max(...scores.filter((_, j) => !hidden(j)));
+  const e = scores.map((s, j) => (hidden(j) ? 0 : Math.exp(s - mx)));
   const sum = e.reduce((a, b) => a + b, 0);
   const p = e.map((v) => v / sum);
   const out: [number, number] = [0, 1].map((d) => WORDS.reduce((s, w, j) => s + p[j] * w.x[d], 0)) as [number, number];
@@ -125,7 +127,7 @@ export default function AttentionLab() {
         </defs>
         <line x1={0} y1={S / 2} x2={S} y2={S / 2} className={ts.axis} />
         <line x1={S / 2} y1={0} x2={S / 2} y2={S} className={ts.axis} />
-        {keys.map((k, j) => arrow(k, ts.vecKey, `k${j}`, `k ${WORDS[j].w}`, 'tl-k'))}
+        {keys.map((k, j) => !hidden(j) && arrow(k, ts.vecKey, `k${j}`, `k ${WORDS[j].w}`, 'tl-k'))}
         {arrow(out, ts.vecOut, 'out', 'salida', 'tl-o')}
         {arrow(q, ts.vecQuery, 'q', `q ${WORDS[query].w}`, 'tl-q')}
       </svg>
@@ -141,10 +143,10 @@ export default function AttentionLab() {
           </thead>
           <tbody>
             {WORDS.map((w, j) => (
-              <tr key={w.w} className={j === p.indexOf(Math.max(...p)) ? ts.labWin : undefined}>
+              <tr key={w.w} className={hidden(j) ? ts.labHidden : j === p.indexOf(Math.max(...p)) ? ts.labWin : undefined}>
                 <td>{w.w}</td>
-                <td>{scores[j].toFixed(2)}</td>
-                <td>
+                <td>{hidden(j) ? '×' : scores[j].toFixed(2)}</td>
+                <td title={hidden(j) ? 'Todavía no se ha escrito: la máscara la oculta' : undefined}>
                   <span className={ts.labBar}>
                     <span style={{ width: `${p[j] * 100}%` }} />
                   </span>
@@ -155,8 +157,9 @@ export default function AttentionLab() {
           </tbody>
         </table>
         <p className={ps.muted}>
-          «{WORDS[query].w}» pregunta con <b>q</b>; cada palabra responde con su <b>k</b>. Cuanto más se alinean, más atención
+          «{WORDS[query].w}» pregunta con <b>q</b>; cada palabra{causal ? ' anterior' : ''} responde con su <b>k</b>. Cuanto más se alinean, más atención
           recibe. La <b>salida</b> mezcla los valores de las palabras con esos porcentajes.
+          {causal && ' Las palabras que vienen después están ocultas (×): al escribir, el modelo aún no las conoce.'}
         </p>
       </div>
     </div>

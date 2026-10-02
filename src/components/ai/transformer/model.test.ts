@@ -2,9 +2,13 @@ import { describe, expect, test } from 'bun:test';
 
 import { rng } from '../perceptron/model';
 import { Graph, Mat } from './autograd';
-import { HELD_OUT, SRC_VOCAB, TGT_VOCAB, makePairs, reference } from './grammar';
+import { HELD_OUT, SRC_VOCAB, TGT_VOCAB, makePairs, makeSentences, nextWords, reference } from './grammar';
 import {
   DEFAULT_CONFIG,
+  GPT_CONFIG,
+  generate,
+  lmEvaluate,
+  predictNext,
   evaluate,
   fromJSON,
   fromShareCode,
@@ -128,7 +132,7 @@ describe('the transformer', () => {
     const cross = t.trace.cross[0];
     const row = es.map((_, j) => cross.heads.reduce((s, h) => s + h[1 * cross.cols + j], 0));
     expect(row.indexOf(Math.max(...row))).toBe(es.indexOf('negro'));
-  });
+  }, 60_000);
 });
 
 describe('saving', () => {
@@ -144,5 +148,60 @@ describe('saving', () => {
     expect(() => fromJSON('{"format":"cnn"}')).toThrow();
     expect(SRC_VOCAB.length).toBeGreaterThan(50);
     expect(TGT_VOCAB[0]).toBe('·');
+  });
+});
+
+describe('GPT mode', () => {
+  const sentences = makeSentences(3000, 1, 'train');
+  const held = makeSentences(60, 2, 'test');
+
+  test('the grammar knows what may come next', () => {
+    expect(nextWords([])).toContain('los');
+    expect(nextWords('los gatos negros'.split(' '))!.sort()).toEqual(['comen', 'quieren', 'tienen', 'ven']);
+    expect(nextWords('el gato come una'.split(' '))!.sort()).toEqual(['flor', 'manzana']);
+    expect(nextWords('el gato ve la casa'.split(' '))).toContain('</s>');
+    expect(nextWords('el gato negra'.split(' '))).toBeNull();
+    for (const s of sentences.slice(0, 300)) s.forEach((w, i) => expect(nextWords(s.slice(0, i))).toContain(w));
+  });
+
+  test('every position looks only at itself and earlier words', () => {
+    const m = newModel(GPT_CONFIG, 3);
+    const p = predictNext(m, 'la niña ve un'.split(' '));
+    expect(p.trace.cross.length).toBe(0);
+    expect(p.trace.decSelf.length).toBe(2);
+    for (const map of p.trace.decSelf)
+      for (const h of map.heads)
+        for (let i = 0; i < map.rows; i++) for (let j = i + 1; j < map.cols; j++) expect(h[i * map.cols + j]).toBe(0);
+    expect(p.guesses.length).toBe(5);
+    expect(p.ranked.reduce((s, x) => s + x.p, 0)).toBeCloseTo(1, 4);
+  });
+
+  test('it learns the grammar from examples: agreement across words and what can be eaten', () => {
+    const m = newModel(GPT_CONFIG, 1);
+    let k = 0;
+    for (let s = 0; s < 500; s++) trainBatch(m, Array.from({ length: 8 }, () => sentences[k++ % sentences.length]));
+    const e = lmEvaluate(m, held, 40);
+    expect(e.next).toBeGreaterThan(0.95);
+    expect(e.generated).toBeGreaterThan(0.6);
+    const p = (prefix: string, w: string) => predictNext(m, prefix.split(' ')).ranked.find((x) => x.word === w)!.p;
+    // The verb agrees with a plural subject even with an adjective in between.
+    expect(p('los gatos negros', 'comen')).toBeGreaterThan(p('los gatos negros', 'come'));
+    expect(p('el gato negro', 'come')).toBeGreaterThan(p('el gato negro', 'comen'));
+    // The adjective agrees with the noun.
+    expect(p('la vaca', 'negra')).toBeGreaterThan(p('la vaca', 'negro'));
+    // Writing at temperature 0 gives a grammatical sentence.
+    const s = generate(m, 'unas niñas'.split(' '), 0, () => 0.5);
+    expect(reference(s)).not.toBeNull();
+  }, 60_000);
+
+  test('GPT models save and load as GPT models', async () => {
+    const m = newModel({ ...GPT_CONFIG, heads: 4, layers: 1 }, 6);
+    for (let s = 0; s < 20; s++) trainBatch(m, sentences.slice(s * 8, s * 8 + 8));
+    const want = predictNext(m, ['el']).ranked[0];
+    for (const back of [unpack(pack(m)), await fromShareCode(await shareCode(m)), fromJSON(toJSON(m))]) {
+      expect(back.cfg.kind).toBe('gpt');
+      expect(back.srcEmb).toBeNull();
+      expect(predictNext(back, ['el']).ranked[0].word).toBe(want.word);
+    }
   });
 });

@@ -5,7 +5,8 @@ import { weights } from './AttentionViews';
 import type { Trace } from './model';
 
 /* The Transformer in perspective, like the figure of the paper: the encoder
- * tower on the left, the decoder on the right. Every floor is one layer and
+ * tower on the left, the decoder on the right (a GPT-style model is the
+ * decoder alone). Every floor is one layer and
  * every word is a strip of its d numbers (green positive, red negative).
  * Lines are attention: inside each tower from the floor below, and the
  * cross-attention from the top of the encoder to every decoder layer; the
@@ -66,14 +67,14 @@ export default function Perspective({ trace, d, src, dec, out, head, selected, o
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
     const { trace: tr, d: dd, src: S, dec: D, out: O, head: hd, selected: sel } = props.current;
-    if (!tr.encStates.length) return;
+    if (!tr.decStates.length) return;
 
     // ── layout: x along the words, y up the layers ──
     const encX = (j: number) => j * STEP;
-    const decX0 = (S.length - 1) * STEP + GAP + STRIP_W;
+    const decX0 = S.length ? (S.length - 1) * STEP + GAP + STRIP_W : 0;
     const decX = (i: number) => decX0 + i * STEP;
     const yOf = (level: number) => level * FLOOR;
-    const levels = tr.encStates.length; // embeddings + one per layer
+    const levels = Math.max(tr.encStates.length, tr.decStates.length); // embeddings + one per layer
     const width = decX(D.length - 1) + STRIP_W;
     const height = yOf(levels - 1) + STRIP_H;
     const center: V3 = [width / 2, height / 2, 0];
@@ -176,7 +177,7 @@ export default function Perspective({ trace, d, src, dec, out, head, selected, o
       for (let i = 0; i < map.rows; i++)
         weights(map, hd, i).forEach((v, j) => v > 0.12 && curve(top(decX(j), l), bottom(decX(i), l + 1), `rgba(154, 163, 173, ${0.08 + 0.3 * v})`, 0.5 + 1.5 * v));
     });
-    const encTop = levels - 1;
+    const encTop = tr.encStates.length - 1;
     tr.cross.forEach((map, l) => {
       for (let i = 0; i < map.rows; i++) {
         const isSel = i === sel;
@@ -206,11 +207,12 @@ export default function Perspective({ trace, d, src, dec, out, head, selected, o
       label([decX(i) + STRIP_W / 2, height + 1.4, 0], w, i === sel ? AMBER : '#4affa0', `${i === sel ? 700 : 600} 13px "JetBrains Mono", monospace`),
     );
     label([decX(0) + ((D.length - 1) * STEP) / 2, height + 4.2, 0], 'salida: siguiente palabra', '#9aa3ad', '10px "JetBrains Mono", monospace');
-    label([((S.length - 1) * STEP) / 2, height + 1.6, 0], 'CODIFICADOR', '#9aa3ad', '700 11px "JetBrains Mono", monospace');
+    if (S.length) label([((S.length - 1) * STEP) / 2, height + 1.6, 0], 'CODIFICADOR', '#9aa3ad', '700 11px "JetBrains Mono", monospace');
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
+    const leftX = (S.length ? 0 : decX0) - 0.8;
     for (let lv = 0; lv < levels; lv++)
-      label([-0.8, yOf(lv) + STRIP_H / 2, 0], lv ? `capa ${lv}` : 'embedding + posición', '#9aa3ad', '10px "JetBrains Mono", monospace');
+      label([leftX, yOf(lv) + STRIP_H / 2, 0], lv ? `capa ${lv}` : 'embedding + posición', '#9aa3ad', '10px "JetBrains Mono", monospace');
     ctx.shadowBlur = 0;
   }, [size]);
 
@@ -312,7 +314,11 @@ export default function Perspective({ trace, d, src, dec, out, head, selected, o
         onPointerDown={onPointerDown}
         onDoubleClick={() => animateTo('persp')}
         role="img"
-        aria-label={`El Transformer en perspectiva: codificador con ${src.length} palabras y decodificador con ${dec.length}; las líneas son la atención.`}
+        aria-label={
+          src.length
+            ? `El Transformer en perspectiva: codificador con ${src.length} palabras y decodificador con ${dec.length}; las líneas son la atención.`
+            : `El Transformer en perspectiva: ${dec.length} posiciones, cada una mirando a las anteriores; las líneas son la atención.`
+        }
       />
       <div className={cs.perspBar}>
         {(Object.keys(VIEWS) as ViewId[]).map((id) => (
@@ -324,7 +330,7 @@ export default function Perspective({ trace, d, src, dec, out, head, selected, o
           Girar
         </button>
       </div>
-      <p className={cs.perspHint}>Arrastra para girar · rueda para acercar · doble clic para volver · clic en una columna del decodificador para ver su atención</p>
+      <p className={cs.perspHint}>Arrastra para girar · rueda para acercar · doble clic para volver · clic en una columna para ver su atención</p>
     </div>
   );
 }

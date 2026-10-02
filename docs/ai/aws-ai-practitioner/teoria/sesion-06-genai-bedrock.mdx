@@ -82,7 +82,7 @@ La arquitectura Transformer, introducida en 2017, es la base de practicamente to
 
 **Feedforward Neural Networks:** Se aplican a cada posicion de forma independiente despues del procesamiento de atencion, transformando aun mas los datos.
 
-Todas estas piezas (atencion multi-cabeza, positional encoding, encoder-decoder, Add & Norm) estan en una replica en miniatura del Transformer original que traduce frases sencillas del espanol al ingles. Se entrena en el navegador en segundos y muestra a que palabras atiende al traducir cada una:
+Todas estas piezas (atencion multi-cabeza, positional encoding, Add & Norm) estan en un Transformer en miniatura que hace lo mismo que un LLM: leer las palabras anteriores y predecir la siguiente. Se entrena en el navegador en segundos y muestra a que palabras anteriores atiende para elegir cada una (por ejemplo, el verbo mira al sujeto para saber si va en plural). Tambien incluye el modo encoder-decoder del paper original, que traduce:
 
 <TransformerLink />
 

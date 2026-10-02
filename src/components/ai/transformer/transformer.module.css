@@ -554,3 +554,147 @@
   font-size: 0.68rem;
   color: var(--p-muted);
 }
+
+.labHidden td {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+/* ── causal arcs (GPT mode) ── */
+.causalWord {
+  cursor: pointer;
+}
+
+.wordSelTop {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: #ffb020;
+}
+
+.wordFuture {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: #5c636c;
+}
+
+.guess,
+.guessSel,
+.guessLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-anchor: middle;
+  fill: #7d8590;
+}
+
+.guessSel {
+  fill: #4affa0;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.guessLabel {
+  text-anchor: start;
+  font-size: 9px;
+}
+
+.nextList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nextRow {
+  display: grid;
+  grid-template-columns: 16px minmax(70px, auto) 1fr 44px;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font-family: var(--p-mono);
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nextRow:hover:not(:disabled) {
+  border-color: var(--p-accent);
+}
+
+.nextRow:disabled {
+  cursor: default;
+}
+
+.nextOk {
+  color: #3fb950;
+}
+
+.nextBad {
+  color: #f85149;
+}
+
+.nextBar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--ifm-color-emphasis-200);
+  overflow: hidden;
+}
+
+.nextBar span {
+  display: block;
+  height: 100%;
+  background: var(--p-accent);
+}
+
+.status {
+  font-family: var(--p-mono);
+  font-size: 0.78rem;
+}
+
+.samplesList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--p-mono);
+  font-size: 0.78rem;
+}
+
+.modeBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.modeBar > span {
+  font-family: var(--p-mono);
+  font-size: 0.72rem;
+  color: var(--p-muted);
+}
+
+.layerArcs {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 4px;
+  border-top: 1px solid #2c3036;
+}
+
+.layerName {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  font-family: var(--p-mono);
+  font-size: 0.7rem;
+  color: #9aa3ad;
+}

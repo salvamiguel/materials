@@ -6,7 +6,7 @@ export default function TransformerPage() {
   return (
     <Layout
       title="Transformer"
-      description="Un Transformer de bolsillo, como en «Attention Is All You Need»: traduce del español al inglés, entrénalo en el navegador y mira a qué palabras atiende."
+      description="Un Transformer de bolsillo, como en «Attention Is All You Need»: predice la siguiente palabra como GPT (o traduce, como en el artículo original); entrénalo en el navegador y mira a qué palabras atiende."
     >
       <main>
         <BrowserOnly fallback={<div style={{ padding: 32 }}>Cargando el Transformer…</div>}>

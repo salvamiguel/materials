@@ -193,3 +193,67 @@ export function reference(es: string[]): string[] | null {
   if (!o || o[1] !== es.length || !fits(v, o[0])) return null;
   return sentence(s[0], v, o[0]).en;
 }
+
+// ── language model (GPT mode) ────────────────────────────────────────
+/* The same Spanish sentences, now read left to right: the model only has to
+ * guess the next word. To get it right it must look back: the adjective
+ * agrees with its noun, the verb with the subject (across the adjective),
+ * and «come» only takes food. */
+
+export const LM_VOCAB = [PAD, BOS, EOS, ...SRC_VOCAB.slice(1)];
+
+/** Every word that can grammatically follow `prefix` (EOS included), or null if the prefix is already wrong. */
+export function nextWords(prefix: string[]): string[] | null {
+  const out = new Set<string>();
+  // A noun phrase starting at i: returns the words allowed at `at`, or where the phrase ends.
+  type Ph = { end: number; plural: boolean; noun: number; form: number } | 'open' | null;
+  const phrase = (i: number, nouns: number[], want: (w: string) => void): Ph => {
+    if (i >= prefix.length) {
+      for (const d of DETS) for (let f = 0; f < 4; f++) if (nouns.some((n) => (NOUNS[n].g === 'f' ? 1 : 0) + (f >= 2 ? 2 : 0) === f)) want(d.es[f]);
+      return 'open';
+    }
+    const det = DETS.find((d) => d.es.includes(prefix[i]));
+    if (!det) return null;
+    const forms = [0, 1, 2, 3].filter((f) => det.es[f] === prefix[i]);
+    const fits = (n: number, f: number) => (NOUNS[n].g === 'f' ? 1 : 0) + (f >= 2 ? 2 : 0) === f;
+    if (i + 1 >= prefix.length) {
+      for (const f of forms) for (const n of nouns) if (fits(n, f)) want(NOUNS[n].es[f >= 2 ? 1 : 0]);
+      return 'open';
+    }
+    for (const f of forms)
+      for (const n of nouns)
+        if (fits(n, f) && NOUNS[n].es[f >= 2 ? 1 : 0] === prefix[i + 1]) {
+          const plural = f >= 2;
+          if (i + 2 < prefix.length && ADJS.some((a) => a.es[f] === prefix[i + 2])) return { end: i + 3, plural, noun: n, form: f };
+          return { end: i + 2, plural, noun: n, form: f };
+        }
+    return null;
+  };
+  const animate = NOUNS.map((n, i) => (n.animate ? i : -1)).filter((i) => i >= 0);
+  const s = phrase(0, animate, (w) => out.add(w));
+  if (s === null) return null;
+  if (s === 'open') return [...out];
+  // Right after the subject noun: an adjective may still come, or the verb.
+  const verbAt = s.end;
+  if (verbAt >= prefix.length) {
+    if (verbAt === 2) ADJS.forEach((a) => out.add(a.es[s.form]));
+    VERBS.forEach((v) => out.add(v.es[s.plural ? 1 : 0]));
+    return [...out];
+  }
+  const v = VERBS.findIndex((x) => x.es[s.plural ? 1 : 0] === prefix[verbAt]);
+  if (v < 0) return null;
+  const objNouns = NOUNS.map((_, i) => i).filter((i) => !VERBS[v].objects || VERBS[v].objects!.includes(NOUNS[i].es[0]));
+  const o = phrase(verbAt + 1, objNouns, (w) => out.add(w));
+  if (o === null) return null;
+  if (o === 'open') return [...out];
+  if (o.end > prefix.length) return null;
+  if (o.end === prefix.length) {
+    if (o.end === verbAt + 3) ADJS.forEach((a) => out.add(a.es[o.form]));
+    out.add(EOS);
+    return [...out];
+  }
+  return null;
+}
+
+/** Spanish sentences for the language model, with the same train/test split as the translator. */
+export const makeSentences = (n: number, seed: number, split: 'train' | 'test') => makePairs(n, seed, split).map((p) => p.es);
