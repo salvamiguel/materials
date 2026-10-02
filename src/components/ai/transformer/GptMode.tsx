@@ -15,7 +15,11 @@ import {
   FaVolumeUp,
 } from 'react-icons/fa';
 
-import AccuracyChart, { type Point } from '../perceptron/AccuracyChart';
+import ComputePanel from '../compute/ComputePanel';
+import { MAX_AUTOSAVE, MAX_SHARE, TOO_BIG_TO_SHARE } from '../compute/limits';
+import { playSounds } from '../compute/sounds';
+import { useTrainer, type Tick } from '../compute/useTrainer';
+import AccuracyChart from '../perceptron/AccuracyChart';
 import { isMuted, setMuted, sfx } from '../perceptron/chiptune';
 import { KnobDefs } from '../perceptron/Knob';
 import { rng } from '../perceptron/model';
@@ -28,21 +32,22 @@ import {
   HEAD_OPTIONS,
   LAYER_OPTIONS,
   countParams,
+  paramCount,
   fromJSON,
   fromShareCode,
-  generate,
-  lmEvaluate,
+  D_OPTIONS,
   newModel,
   predictNext,
   sample,
   shareCode,
   toJSON,
-  trainBatch,
+  withD,
   type Config,
   type Model,
 } from './model';
 import Perspective from './Perspective';
 import PositionalView from './PositionalView';
+import { MAX_STEPS, freshStats, type Report, type Snapshot, type Stats } from './trainer';
 import ts from './transformer.module.css';
 
 /* The core idea of GPT-style models: read the words so far and predict the
@@ -53,27 +58,12 @@ import ts from './transformer.module.css';
 
 type Speed = 0 | 1 | 10 | 100;
 
-const BATCH = 8;
 const N_TRAIN = 3000;
 const N_TEST = 150;
-const EVAL_SENTENCES = 50;
-const EVAL_SAMPLES = 40;
-const EVAL_EVERY = 25;
-const MAX_STEPS = 1500;
+const BATCHES = [1, 8, 32, 128];
 const STORE = 'transformer:gpt';
 const START = 'los gatos negros'.split(' ');
 
-interface Stats {
-  steps: number;
-  seen: number;
-  loss: number;
-  points: Point[];
-  /** A few sentences the model wrote at the last check. */
-  samples: string[][];
-  done: '' | 'converged' | 'gaveup';
-}
-
-const freshStats = (): Stats => ({ steps: 0, seen: 0, loss: NaN, points: [], samples: [], done: '' });
 const pct = (p: number) => `${Math.round(p * 100)} %`;
 
 function store(fn: () => void) {
@@ -109,12 +99,35 @@ export default function GptMode({ modeSwitch }: { modeSwitch: React.ReactNode })
   const [lr, setLr] = useState(0.003);
   const [toast, setToast] = useState('');
   const fileInput = useRef<HTMLInputElement>(null);
-  const cursor = useRef(0);
+  const [batch, setBatch] = useState(8);
 
   const say = useCallback((t: string) => {
     setToast(t);
     window.setTimeout(() => setToast((x) => (x === t ? '' : x)), 2600);
   }, []);
+
+  // ── the training worker ──
+
+  const onTick = (t: Tick) => {
+    if (t.stats) setStats(t.stats as Stats);
+    const rep = t.report as Report | undefined;
+    
+    playSounds(t.sounds);
+    const snap = t.snapshot as Snapshot | undefined;
+    const ps_ = model.current.params;
+    if (snap && snap.params.length === ps_.length && snap.params.every((x, i) => x.length === ps_[i].data.length)) {
+      ps_.forEach((p, i) => p.data.set(snap.params[i]));
+      bump();
+    }
+    if (!t.running) setSpeed(0);
+  };
+  const speedRef = useRef<Speed>(0);
+  const trainer = useTrainer(
+    'gpt',
+    () => ({ cfg: model.current.cfg, params: model.current.params.map((p) => p.data), data, lr, stats }),
+    onTick,
+  );
+  const { send } = trainer;
 
   const install = useCallback(
     (next: Model) => {
@@ -124,11 +137,25 @@ export default function GptMode({ modeSwitch }: { modeSwitch: React.ReactNode })
       setStats(freshStats());
       setLayer(0);
       setHead(-1);
-      cursor.current = 0;
+      send({ t: 'set', patch: { cfg: next.cfg, params: next.params.map((p) => p.data), stats: freshStats() } });
       bump();
     },
-    [bump],
+    [bump, send],
   );
+
+  const firstData = useRef(true);
+  useEffect(() => {
+    if (firstData.current) {
+      firstData.current = false;
+      return;
+    }
+    send({ t: 'set', patch: { data, stats: freshStats() } });
+  }, [data, send]);
+  useEffect(() => send({ t: 'set', patch: { lr } }), [lr, send]);
+  useEffect(() => {
+    speedRef.current = speed;
+    send({ t: 'speed', speed });
+  }, [speed, send]);
 
   const reset = (cfg: Config) => {
     sfx.click();
@@ -163,6 +190,8 @@ export default function GptMode({ modeSwitch }: { modeSwitch: React.ReactNode })
 
   useEffect(() => {
     if (speed) return;
+    // Big models do not fit in localStorage (and serialising them would stall the page).
+    if (countParams(model.current) > MAX_AUTOSAVE) return;
     const t = window.setTimeout(() => store(() => window.localStorage.setItem(STORE, toJSON(model.current))), 1500);
     return () => window.clearTimeout(t);
   }, [rev, speed]);
@@ -206,69 +235,34 @@ export default function GptMode({ modeSwitch }: { modeSwitch: React.ReactNode })
 
   // ── training ──
 
-  const statsRef = useRef(stats);
-  statsRef.current = stats;
-  const dataRef = useRef(data);
-  dataRef.current = data;
-
-  const step = useCallback(
-    (s: Stats): boolean => {
-      const d = dataRef.current;
-      const batch = Array.from({ length: BATCH }, () => d.train[cursor.current++ % d.train.length]);
-      const loss = trainBatch(model.current, batch, { lr, warmup: 40 });
-      s.steps++;
-      s.seen += BATCH;
-      s.loss = Number.isNaN(s.loss) ? loss : s.loss * 0.9 + loss * 0.1;
-      if (s.steps % EVAL_EVERY === 0) {
-        const e = lmEvaluate(model.current, d.test.slice(0, EVAL_SENTENCES), EVAL_SAMPLES, s.steps);
-        const prev = s.points[s.points.length - 1];
-        s.points = [...s.points, { seen: s.seen, train: e.next, test: e.generated }];
-        const r = rng(s.steps + 7);
-        s.samples = Array.from({ length: 6 }, () => generate(model.current, [], 1, r));
-        if (e.generated >= 0.9 && (prev?.test ?? 0) >= 0.9) s.done = 'converged';
-        else if (s.steps >= MAX_STEPS) s.done = 'gaveup';
-        if (s.done === 'converged') sfx.win();
-        else sfx.epoch(e.generated);
-      }
-      return !s.done;
-    },
-    [lr],
-  );
-
-  useEffect(() => {
-    if (!speed) return;
-    let budget = 1;
-    const id = window.setInterval(() => {
-      const s = { ...statsRef.current };
-      let go = true;
-      if (speed === 100) {
-        const t0 = performance.now();
-        while (go && performance.now() - t0 < 32) go = step(s);
-      } else {
-        budget += (2 * speed) / 20;
-        while (go && budget >= 1) {
-          budget--;
-          go = step(s);
-        }
-      }
-      setStats(s);
-      bump();
-      if (!go) setSpeed(0);
-    }, 50);
-    return () => window.clearInterval(id);
-  }, [speed, step, bump]);
-
   const play = (s: Speed) => {
     sfx.click();
     setWriting(false);
-    if (stats.done) setStats({ ...stats, done: '' });
+    clearDone();
     setSpeed((cur) => (cur === s ? 0 : s));
   };
+
+  const clearDone = () => {
+    if (!stats.done) return;
+    const st = { ...stats, done: '' as const };
+    setStats(st);
+    send({ t: 'set', patch: { stats: st } });
+  };
+
+  const sizes = useMemo(
+    () => D_OPTIONS.map((d) => ({ value: d, label: `d = ${d}`, weights: paramCount(withD(m.cfg, d)) })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [m.cfg.kind, m.cfg.heads, m.cfg.layers],
+  );
 
   // ── sharing ──
 
   const share = async () => {
     sfx.click();
+    if (countParams(m) > MAX_SHARE) {
+      say(TOO_BIG_TO_SHARE);
+      return;
+    }
     const code = await shareCode(m);
     const url = `${window.location.origin}${window.location.pathname}#m=gpt&w=${code}`;
     window.history.replaceState(null, '', `#m=gpt&w=${code}`);
@@ -566,7 +560,7 @@ export default function GptMode({ modeSwitch }: { modeSwitch: React.ReactNode })
             Tasa de aprendizaje (Adam) = {lr.toFixed(4)}
             <input type="range" min={0.0005} max={0.01} step={0.0005} value={lr} onChange={(e) => setLr(+e.target.value)} />
           </label>
-          <p className={ps.muted}>Lotes de {BATCH} frases; cada paso ajusta todos los pesos con el gradiente medio del lote.</p>
+          <p className={ps.muted}>Lotes de {batch} frases; cada paso ajusta todos los pesos con el gradiente medio del lote.</p>
         </div>
 
         <div className={ps.trainCol}>
@@ -581,11 +575,9 @@ export default function GptMode({ modeSwitch }: { modeSwitch: React.ReactNode })
               onClick={() => {
                 setSpeed(0);
                 setWriting(false);
-                const s = { ...stats, done: '' as const };
-                step(s);
-                setStats(s);
+                clearDone();
+                send({ t: 'step' });
                 sfx.ok();
-                bump();
               }}
               title="Un lote"
             >
@@ -645,6 +637,31 @@ export default function GptMode({ modeSwitch }: { modeSwitch: React.ReactNode })
         </div>
       </section>
 
+      <ComputePanel
+        sizes={sizes}
+        size={m.cfg.d}
+        onSize={(d) => reset(withD(m.cfg, d))}
+        status={trainer.status}
+        onBackend={(b) => {
+          sfx.click();
+          trainer.setCompute(b, batch);
+        }}
+        batch={batch}
+        batches={BATCHES}
+        onBatch={(b) => {
+          setBatch(b);
+          trainer.setCompute(trainer.status.backend, b);
+        }}
+        perf={{ value: trainer.perf, running: speed !== 0 }}
+        bench={trainer.bench}
+        onBench={() => {
+          setSpeed(0);
+          trainer.runBench(D_OPTIONS, batch, ['cpu', 'gpu']);
+        }}
+        onStopBench={trainer.stopBench}
+        unit="frases"
+      />
+
       <details className={ps.howto}>
         <summary>¿Cómo funciona?</summary>
         <ol>
@@ -672,6 +689,12 @@ export default function GptMode({ modeSwitch }: { modeSwitch: React.ReactNode })
             Esto es lo que hacen GPT, Claude o Gemini, con miles de millones de pesos y buena parte de internet como texto. En el
             artículo original (2017) el Transformer traducía: tienes ese modo arriba. Antes vinieron el{' '}
             <a href={perceptronUrl}>perceptrón</a> y las <a href={cnnUrl}>redes convolucionales</a>.
+          </li>
+          <li>
+            Todo el cálculo corre en un <b>Web Worker</b>, un hilo aparte, para que la página no se congele. En «Motor de
+            cálculo» puedes llevarlo a la <b>GPU</b> con WebGPU, agrandar el modelo y comparar: con modelos pequeños gana la CPU
+            (mandar trabajo a la GPU tiene un coste fijo); con modelos grandes y lotes grandes, la GPU. Por eso las redes de
+            verdad se entrenan en miles de GPU.
           </li>
         </ol>
       </details>

@@ -1058,3 +1058,14 @@
 :global(html[data-presentation]) .root {
   max-width: none;
 }
+
+/* Weights of a big retina, drawn as a picture. */
+.weightMap {
+  display: block;
+  width: 100%;
+  max-width: min(100%, calc(100vh * 0.9));
+  margin: 0 auto;
+  image-rendering: pixelated;
+  border-radius: 6px;
+  background: #15171a;
+}

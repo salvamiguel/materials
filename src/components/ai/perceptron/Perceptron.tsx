@@ -14,7 +14,11 @@ import {
   FaVolumeUp,
 } from 'react-icons/fa';
 
-import AccuracyChart, { type Point } from './AccuracyChart';
+import ComputePanel from '../compute/ComputePanel';
+import { MAX_AUTOSAVE, MAX_SHARE, TOO_BIG_TO_SHARE } from '../compute/limits';
+import { playSounds } from '../compute/sounds';
+import { useTrainer, type Tick } from '../compute/useTrainer';
+import AccuracyChart from './AccuracyChart';
 import DrawTools, { CharOptions, SIZES } from './DrawTools';
 import { isMuted, setMuted, sfx } from './chiptune';
 import Knob, { KnobDefs } from './Knob';
@@ -22,22 +26,22 @@ import {
   DIGITS,
   LETTERS,
   MODES,
-  THETA_MAX,
+  SCALES,
   WMAX,
-  accuracy,
   decide,
   fromJSON,
   fromShareCode,
   isClassifier,
   isCorrect,
   knobDims,
-  learn,
   makeClassDataset,
   makeDataset,
+  maxScale,
   newMachine,
   renderGlyph,
   rng,
   shareCode,
+  thetaLimit,
   toJSON,
   type Example,
   type Grid,
@@ -45,6 +49,8 @@ import {
   type Mode,
 } from './model';
 import Retina, { Thumb } from './Retina';
+import { MAX_EPOCHS, freshStats, type Report, type Snapshot, type Stats } from './trainer';
+import WeightMap from './WeightMap';
 import Voltmeter, { Lamp } from './Voltmeter';
 import styles from './perceptron.module.css';
 
@@ -53,27 +59,14 @@ type Speed = 0 | 1 | 10 | 100;
 
 const N_TRAIN = 200;
 const N_TEST = 100;
-const MAX_EPOCHS = 60;
-/** Examples per second at ×1; ×10 and ×100 multiply it. */
-const BASE_RATE = 3;
 const RANGES = [5, 10, 20, 50];
+const BATCHES = [1, 8, 32, 128];
 const STORE = 'perceptron:machine';
 
 interface Data {
   train: Example[];
   test: Example[];
 }
-
-interface Stats {
-  epoch: number;
-  cursor: number;
-  seen: number;
-  epochErrors: number;
-  points: Point[];
-  done: '' | 'converged' | 'gaveup';
-}
-
-const freshStats = (): Stats => ({ epoch: 0, cursor: 0, seen: 0, epochErrors: 0, points: [], done: '' });
 
 interface LastUpdate {
   ch: string;
@@ -111,7 +104,11 @@ export default function Perceptron() {
   const [noise, setNoise] = useState(0);
   const [eta, setEta] = useState(0.1);
   const seed = useRef(1);
-  const [data, setData] = useState<Data | null>(null);
+  const [data, setData] = useState<Data | null>(() => ({
+    train: makeDataset('3', N_TRAIN, 2, { variants: true }),
+    test: makeDataset('3', N_TEST, 3, { variants: true }),
+  }));
+  const [batch, setBatch] = useState(1);
   const [stats, setStats] = useState<Stats>(freshStats);
   const [speed, setSpeed] = useState<Speed>(0);
   const [last, setLast] = useState<LastUpdate | null>(null);
@@ -120,6 +117,46 @@ export default function Perceptron() {
   const fileInput = useRef<HTMLInputElement>(null);
 
   const task: Task = isClassifier(m) ? 'classify' : 'detect';
+
+  // ── the training worker ──
+
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  const onTick = (t: Tick) => {
+    if (t.stats) setStats(t.stats as Stats);
+    const rep = t.report as Report | undefined;
+    const ex = rep && dataRef.current?.train[rep.index];
+    if (rep && ex) {
+      setRetina(ex.grid);
+      setLast({ ch: ex.ch, correct: rep.correct, text: rep.text });
+      if (rep.changed.length) {
+        const u = rep.changed[0].unit;
+        if (rep.input) setFlash({ unit: u, dir: rep.changed[0].dir, input: rep.input });
+        if (isClassifier(machine.current)) setUnit(u);
+      }
+    }
+    playSounds(t.sounds);
+    const snap = t.snapshot as Snapshot | undefined;
+    const mm = machine.current;
+    if (snap && snap.weights.length === mm.weights.length && snap.weights[0].length === mm.weights[0].length) {
+      mm.weights = snap.weights;
+      mm.thetas = snap.thetas;
+      bump();
+    }
+    if (!t.running) setSpeed(0);
+  };
+  const trainer = useTrainer('perceptron', () => ({ machine: machine.current, data, eta, stats }), onTick);
+  const { send } = trainer;
+  /** Send the knobs to the worker, at most once per frame (a knob drag changes them 60 times a second). */
+  const pushQueued = useRef(false);
+  const pushMachine = useCallback(() => {
+    if (pushQueued.current) return;
+    pushQueued.current = true;
+    requestAnimationFrame(() => {
+      pushQueued.current = false;
+      send({ t: 'set', patch: { machine: machine.current } });
+    });
+  }, [send]);
   const say = useCallback((t: string) => {
     setToast(t);
     window.setTimeout(() => setToast((x) => (x === t ? '' : x)), 2600);
@@ -145,15 +182,29 @@ export default function Perceptron() {
       setSpeed(0);
       setUnit(0);
       setStats(freshStats());
+      send({ t: 'set', patch: { machine: next, stats: freshStats() } });
       setLast(null);
       setFlash(null);
       if (!(opts.keepData && sameTask)) setData(makeData(next.classes));
       bump();
     },
-    [bump, makeData],
+    [bump, makeData, send],
   );
 
-  const reset = (mode: Mode, classes: string[]) => install(newMachine(mode, classes), { keepData: true });
+  const reset = (mode: Mode, classes: string[], scale = m.scale) =>
+    install(newMachine(mode, classes, Math.min(scale, maxScale(mode))), { keepData: true });
+
+  // New data (generated or for a new task): the worker gets it with fresh statistics.
+  const firstData = useRef(true);
+  useEffect(() => {
+    if (firstData.current) {
+      firstData.current = false;
+      return;
+    }
+    if (data) send({ t: 'set', patch: { data, stats: freshStats() } });
+  }, [data, send]);
+  useEffect(() => send({ t: 'set', patch: { eta } }), [eta, send]);
+  useEffect(() => send({ t: 'speed', speed }), [speed, send]);
 
   // Restore: a shared link wins over the copy kept in this browser.
   useEffect(() => {
@@ -177,12 +228,13 @@ export default function Perceptron() {
         /* stale format: start fresh */
       }
     }
-    setData(makeData(m.classes));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Keep the knobs in this browser between visits.
   useEffect(() => {
+    // Big models do not fit in localStorage (and serialising them would stall the page).
+    if (machine.current.weights.reduce((a, w) => a + w.length, 0) > MAX_AUTOSAVE) return;
     const t = window.setTimeout(() => store(() => window.localStorage.setItem(STORE, toJSON(machine.current))), 600);
     return () => window.clearTimeout(t);
   }, [rev]);
@@ -193,15 +245,17 @@ export default function Perceptron() {
     (i: number, v: number) => {
       machine.current.weights[unitRef.current][i] = v;
       bump();
+      pushMachine();
     },
-    [bump],
+    [bump, pushMachine],
   );
   const onTheta = useCallback(
     (_: number, v: number) => {
       machine.current.thetas[unitRef.current] = v;
       bump();
+      pushMachine();
     },
-    [bump],
+    [bump, pushMachine],
   );
 
   // ── reading the retina ──
@@ -220,76 +274,6 @@ export default function Perceptron() {
 
   // ── training ──
 
-  const statsRef = useRef(stats);
-  statsRef.current = stats;
-  const dataRef = useRef(data);
-  dataRef.current = data;
-
-  /** Feeds n examples through Rosenblatt's rule. Returns false when training should stop. */
-  const trainSteps = useCallback(
-    (n: number, verbose: boolean): boolean => {
-      const d = dataRef.current;
-      if (!d) return false;
-      const mm = machine.current;
-      const s = { ...statsRef.current, points: statsRef.current.points };
-      let shown: Example | null = null;
-      let lastStep: ReturnType<typeof learn> | null = null;
-      let keepGoing = true;
-      for (let k = 0; k < n && keepGoing; k++) {
-        const ex = d.train[s.cursor];
-        lastStep = learn(mm, ex, eta);
-        shown = ex;
-        if (!lastStep.correct) s.epochErrors++;
-        s.cursor++;
-        s.seen++;
-        const epochEnd = s.cursor >= d.train.length;
-        if (epochEnd || s.seen % 100 === 0) {
-          s.points = [...s.points, { seen: s.seen, train: accuracy(mm, d.train), test: accuracy(mm, d.test) }];
-        }
-        if (epochEnd) {
-          s.epoch++;
-          const clean = s.epochErrors === 0;
-          if (clean) s.done = 'converged';
-          else if (s.epoch >= MAX_EPOCHS) s.done = 'gaveup';
-          if (clean) sfx.win();
-          else if (!verbose) sfx.epoch(s.points[s.points.length - 1].train);
-          s.cursor = 0;
-          s.epochErrors = 0;
-          if (s.done) keepGoing = false;
-        }
-      }
-      if (shown && lastStep) {
-        setRetina(shown.grid);
-        const ch = shown.ch;
-        if (verbose) (lastStep.correct ? sfx.ok : sfx.error)();
-        const c = lastStep.changed;
-        if (c.length) {
-          const u = c[0].unit;
-          setFlash({ unit: u, dir: c[0].dir, input: lastStep.decision.readings[u].input });
-          if (isClassifier(mm)) setUnit(c[0].unit);
-        }
-        setLast({ ch, correct: lastStep.correct, text: describe(mm, lastStep, shown, eta) });
-      }
-      setStats(s);
-      bump();
-      return keepGoing;
-    },
-    [bump, eta],
-  );
-
-  useEffect(() => {
-    if (!speed) return;
-    let budget = 1;
-    const id = window.setInterval(() => {
-      budget += (BASE_RATE * speed) / 20;
-      const n = Math.floor(budget);
-      if (!n) return;
-      budget -= n;
-      if (!trainSteps(n, speed === 1)) setSpeed(0);
-    }, 50);
-    return () => window.clearInterval(id);
-  }, [speed, trainSteps]);
-
   useEffect(() => {
     if (!flash) return;
     const t = window.setTimeout(() => setFlash(null), speed === 1 || speed === 0 ? 450 : 120);
@@ -298,7 +282,11 @@ export default function Perceptron() {
 
   const play = (s: Speed) => {
     sfx.click();
-    if (stats.done) setStats({ ...stats, done: '' });
+    if (stats.done) {
+      const st = { ...stats, done: '' as const };
+      setStats(st);
+      send({ t: 'set', patch: { stats: st } });
+    }
     setSpeed((cur) => (cur === s ? 0 : s));
   };
 
@@ -313,6 +301,10 @@ export default function Perceptron() {
 
   const share = async () => {
     sfx.click();
+    if (m.weights.reduce((a, w) => a + w.length, 0) > MAX_SHARE) {
+      say(TOO_BIG_TO_SHARE);
+      return;
+    }
     const code = await shareCode(m);
     const url = `${window.location.origin}${window.location.pathname}#w=${code}`;
     window.history.replaceState(null, '', `#w=${code}`);
@@ -346,7 +338,18 @@ export default function Perceptron() {
 
   // ── derived view data ──
 
-  const dims = knobDims(m.mode);
+  const dims = knobDims(m.mode, m.scale);
+  const big = m.scale > 1;
+  const ranges = RANGES.map((r) => r * m.scale * m.scale);
+  const sizes = SCALES.map((sc) => {
+    const d = knobDims(m.mode, sc);
+    return {
+      value: sc,
+      label: `×${sc}`,
+      weights: (d.w * d.h + 1) * m.classes.length,
+      disabled: sc > maxScale(m.mode) ? 'El escáner no pasa de ×4: su plantilla ocuparía demasiada memoria' : undefined,
+    };
+  });
   const weights = m.weights[unit];
   const flashFor = flash && flash.unit === unit ? flash : null;
   const modeInfo = MODES.find((x) => x.id === m.mode)!;
@@ -451,7 +454,7 @@ export default function Perceptron() {
             grid={retina}
             onChange={speed ? undefined : setRetina}
             tool={tool}
-            window={m.mode === 'scanner' ? reading.at : undefined}
+            window={m.mode === 'scanner' && reading.at ? { x: reading.at.x / m.scale, y: reading.at.y / m.scale } : undefined}
             label="Retina: dibuja con el ratón o el dedo"
           />
           <DrawTools
@@ -461,7 +464,12 @@ export default function Perceptron() {
             setTool={setTool}
             fromSet={data ? () => setRetina(data.test[Math.floor(Math.random() * data.test.length)].grid) : undefined}
           />
-          {(m.mode === 'centered' || m.mode === 'normalized') && (
+          {big && (
+            <p className={styles.muted}>
+              Retina de {16 * m.scale}×{16 * m.scale} fotocélulas: cada celda del dibujo cubre {m.scale}×{m.scale}.
+            </p>
+          )}
+          {!big && (m.mode === 'centered' || m.mode === 'normalized') && (
             <div className={styles.seen}>
               <Retina grid={reading.input} small label="Lo que llega a los mandos" />
               <p>
@@ -471,7 +479,8 @@ export default function Perceptron() {
           )}
           {m.mode === 'scanner' && reading.at && (
             <p className={styles.muted}>
-              El recuadro marca dónde encaja mejor la plantilla: columna {reading.at.x}, fila {reading.at.y}.
+              El recuadro marca dónde encaja mejor la plantilla: columna {Math.round(reading.at.x / m.scale)}, fila{' '}
+              {Math.round(reading.at.y / m.scale)}.
             </p>
           )}
         </section>
@@ -483,15 +492,20 @@ export default function Perceptron() {
               Pesos {dims.w}×{dims.h}
               {task === 'classify' && <span className={styles.unitTag}>unidad “{m.classes[unit]}”</span>}
             </h2>
-            <div className={styles.seg}>
-              <button className={view === 'knobs' ? styles.segOn : styles.segBtn} onClick={() => setView('knobs')}>
-                Mandos
-              </button>
-              <button className={view === 'map' ? styles.segOn : styles.segBtn} onClick={() => setView('map')}>
-                Mapa
-              </button>
-            </div>
+            {!big && (
+              <div className={styles.seg}>
+                <button className={view === 'knobs' ? styles.segOn : styles.segBtn} onClick={() => setView('knobs')}>
+                  Mandos
+                </button>
+                <button className={view === 'map' ? styles.segOn : styles.segBtn} onClick={() => setView('map')}>
+                  Mapa
+                </button>
+              </div>
+            )}
           </div>
+          {big ? (
+            <WeightMap weights={weights} w={dims.w} h={dims.h} limit={WMAX} label={`Mapa de los ${dims.w * dims.h} pesos`} />
+          ) : (
           <div
             className={`${styles.board} ${m.mode === 'scanner' ? styles.boardScan : ''}`}
             style={{ gridTemplateColumns: `repeat(${dims.w}, minmax(0, 1fr))` }}
@@ -521,9 +535,20 @@ export default function Perceptron() {
                   />
                 ))}
           </div>
+          )}
           <p className={styles.legend}>
-            <span className={styles.legPos} /> suma <span className={styles.legNeg} /> resta <span className={styles.legLit} /> entrada
-            encendida · arrastra, rueda o flechas · doble clic = 0 · Mayús = ajuste fino
+            <span className={styles.legPos} /> suma <span className={styles.legNeg} /> resta{' '}
+            {big ? (
+              <>
+                · {(dims.w * dims.h).toLocaleString('es')} pesos por unidad: demasiados para mandos (vuelve a ×1 para girarlos a
+                mano). Salen en bloques de {m.scale}×{m.scale}: esas fotocélulas ven siempre lo mismo, así que aprenden lo mismo. Más
+                pesos no dan más información, solo más cálculo.
+              </>
+            ) : (
+              <>
+                <span className={styles.legLit} /> entrada encendida · arrastra, rueda o flechas · doble clic = 0 · Mayús = ajuste fino
+              </>
+            )}
           </p>
         </section>
 
@@ -539,7 +564,7 @@ export default function Perceptron() {
               θ = <b>{m.thetas[unit].toFixed(2)}</b>
             </span>
             <span className={styles.rangeSwitch} title="Escala del voltímetro">
-              {RANGES.map((r) => (
+              {ranges.map((r) => (
                 <button key={r} className={range === r ? styles.segOn : styles.segBtn} onClick={() => setRange(r)}>
                   ±{r}
                 </button>
@@ -550,8 +575,8 @@ export default function Perceptron() {
             <Knob
               index={0}
               value={m.thetas[unit]}
-              min={-THETA_MAX}
-              max={THETA_MAX}
+              min={-thetaLimit(m.scale)}
+              max={thetaLimit(m.scale)}
               step={0.1}
               label="Umbral θ"
               format={(v) => v.toFixed(1)}
@@ -680,11 +705,15 @@ export default function Perceptron() {
               className={styles.play}
               onClick={() => {
                 setSpeed(0);
-                if (stats.done) setStats({ ...stats, done: '' });
-                trainSteps(1, true);
+                if (stats.done) {
+                  const st = { ...stats, done: '' as const };
+                  setStats(st);
+                  send({ t: 'set', patch: { stats: st } });
+                }
+                send({ t: 'step' });
               }}
               disabled={!data}
-              title="Un ejemplo"
+              title={batch > 1 ? `Un lote de ${batch}` : 'Un ejemplo'}
             >
               <FaStepForward /> Paso
             </button>
@@ -706,6 +735,7 @@ export default function Perceptron() {
                 m.weights.forEach((w) => w.forEach((_, i) => (w[i] = Math.round((r() * 2 - 1) * 0.5 * 20) / 20)));
                 m.thetas = m.thetas.map(() => 0);
                 setStats(freshStats());
+                send({ t: 'set', patch: { machine: m, stats: freshStats() } });
                 bump();
               }}
               title="Mandos al azar"
@@ -770,6 +800,35 @@ export default function Perceptron() {
         </div>
       </section>
 
+      <ComputePanel
+        sizes={sizes}
+        size={m.scale}
+        onSize={(sc) => {
+          sfx.click();
+          reset(m.mode, m.classes, sc);
+          setRange(20 * sc * sc);
+        }}
+        status={trainer.status}
+        onBackend={(b) => {
+          sfx.click();
+          trainer.setCompute(b, batch);
+        }}
+        batch={batch}
+        batches={BATCHES}
+        onBatch={(b) => {
+          setBatch(b);
+          trainer.setCompute(trainer.status.backend, b);
+        }}
+        perf={{ value: trainer.perf, running: speed !== 0 }}
+        bench={trainer.bench}
+        onBench={() => {
+          setSpeed(0);
+          trainer.runBench(sizes.filter((x) => !x.disabled).map((x) => x.value), batch, ['cpu', 'gpu']);
+        }}
+        onStopBench={trainer.stopBench}
+        unit="ejemplos"
+      />
+
       <details className={styles.howto}>
         <summary>¿Cómo funciona?</summary>
         <ol>
@@ -799,6 +858,12 @@ export default function Perceptron() {
             ¿Y si la máquina aprendiera ella misma ese preprocesado? Es lo que hace una{' '}
             <a href={useBaseUrl('/cnn')}>red convolucional</a>: muchos filtros pequeños que recorren la imagen, apilados en capas.
           </li>
+          <li>
+            Todo el cálculo corre en un <b>Web Worker</b>, un hilo aparte, para que la página no se congele. En «Motor de
+            cálculo» puedes llevarlo a la <b>GPU</b> con WebGPU, agrandar el modelo y comparar: con modelos pequeños gana la CPU
+            (mandar trabajo a la GPU tiene un coste fijo); con modelos grandes y lotes grandes, la GPU. Por eso las redes de
+            verdad se entrenan en miles de GPU.
+          </li>
         </ol>
       </details>
 
@@ -809,19 +874,4 @@ export default function Perceptron() {
       )}
     </div>
   );
-}
-
-function describe(m: Machine, step: ReturnType<typeof learn>, ex: Example, eta: number): string {
-  if (step.correct) {
-    return isClassifier(m)
-      ? `Era «${ex.ch}» y ganó «${ex.ch}»: acierto, los mandos no se tocan.`
-      : `«${ex.ch}» ${ex.target ? 'debía encender' : 'no debía encender'} la lámpara y así fue: acierto, nada cambia.`;
-  }
-  const lit = (u: number) => step.decision.readings[u].input.reduce((a, b) => a + b, 0);
-  if (isClassifier(m)) {
-    const w = m.classes[step.decision.winner];
-    return `Era «${ex.ch}» pero ganó «${w}»: +${eta.toFixed(2)} a ${lit(m.classes.indexOf(ex.ch))} mandos de «${ex.ch}» y −${eta.toFixed(2)} a ${lit(step.decision.winner)} de «${w}».`;
-  }
-  const t = ex.target ? 1 : 0;
-  return `«${ex.ch}»: t = ${t}, y = ${1 - t} → ${t ? '+' : '−'}${eta.toFixed(2)} a ${lit(0)} mandos encendidos, θ ${t ? '−' : '+'}${eta.toFixed(2)}.`;
 }

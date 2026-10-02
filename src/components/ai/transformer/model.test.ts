@@ -15,6 +15,9 @@ import {
   newModel,
   pack,
   pairLoss,
+  paramCount,
+  countParams,
+  withD,
   positionalEncoding,
   shareCode,
   toJSON,
@@ -204,4 +207,9 @@ describe('GPT mode', () => {
       expect(predictNext(back, ['el']).ranked[0].word).toBe(want.word);
     }
   });
+});
+
+test('paramCount matches the built model', () => {
+  for (const cfg of [DEFAULT_CONFIG, GPT_CONFIG, withD(GPT_CONFIG, 128), { ...withD(DEFAULT_CONFIG, 256), layers: 2 }])
+    expect(paramCount(cfg)).toBe(countParams(newModel(cfg)));
 });

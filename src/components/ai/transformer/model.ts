@@ -35,6 +35,9 @@ export interface Config {
 export const DEFAULT_CONFIG: Config = { kind: 'translator', d: 32, heads: 2, ff: 64, layers: 1, posEnc: true };
 export const GPT_CONFIG: Config = { ...DEFAULT_CONFIG, kind: 'gpt', layers: 2 };
 export const HEAD_OPTIONS = [1, 2, 4];
+/** Vector sizes: 32 is the pocket model; the feed-forward layer is always twice as wide. */
+export const D_OPTIONS = [32, 128, 256, 512];
+export const withD = (cfg: Config, d: number): Config => ({ ...cfg, d, ff: 2 * d });
 export const LAYER_OPTIONS = [1, 2];
 
 interface Attn {
@@ -253,31 +256,42 @@ export interface Optim {
 export const DEFAULT_OPTIM: Optim = { lr: 0.003, warmup: 40 };
 
 /** One optimiser step on a mini-batch. Returns the mean loss. */
+/** Backpropagation on one example: adds its gradients to the parameters' `grad`. Returns its loss. */
+export function accumulate(m: Model, p: Pair | string[]): number {
+  const g = new Graph(true);
+  const l = Array.isArray(p) ? lmLoss(g, m, p) : pairLoss(g, m, p);
+  g.backward(l);
+  return l.data[0];
+}
+
+/** Learning-rate schedule: linear warm-up, as in the paper. */
+export const scheduledLr = (opt: Optim, t: number) => opt.lr * Math.min(1, t / opt.warmup);
+
 export function trainBatch(m: Model, batch: (Pair | string[])[], opt: Optim = DEFAULT_OPTIM): number {
   let loss = 0;
-  for (const p of batch) {
-    const g = new Graph(true);
-    const l = Array.isArray(p) ? lmLoss(g, m, p) : pairLoss(g, m, p);
-    loss += l.data[0];
-    g.backward(l);
-  }
+  for (const p of batch) loss += accumulate(m, p);
+  applyAdam(m, batch.length, opt);
+  return loss / batch.length;
+}
+
+/** One Adam step with the mean of the accumulated gradients; clears them. */
+export function applyAdam(m: Model, count: number, opt: Optim = DEFAULT_OPTIM) {
   const A = m.adam;
   A.t++;
-  const lr = opt.lr * Math.min(1, A.t / opt.warmup);
+  const lr = scheduledLr(opt, A.t);
   const b1 = 0.9, b2 = 0.98, eps = 1e-9;
   const c1 = 1 - Math.pow(b1, A.t), c2 = 1 - Math.pow(b2, A.t);
   m.params.forEach((p, k) => {
     const G = p.grad!, M = A.m[k], V = A.v[k];
     for (let i = 0; i < G.length; i++) {
       // Clip each gradient component: a single odd sentence should not throw the model off.
-      const gr = Math.max(-5, Math.min(5, G[i] / batch.length));
+      const gr = Math.max(-5, Math.min(5, G[i] / count));
       M[i] = b1 * M[i] + (1 - b1) * gr;
       V[i] = b2 * V[i] + (1 - b2) * gr * gr;
       p.data[i] -= (lr * (M[i] / c1)) / (Math.sqrt(V[i] / c2) + eps);
     }
     G.fill(0);
   });
-  return loss / batch.length;
 }
 
 // ── translating ──────────────────────────────────────────────────────
@@ -420,6 +434,17 @@ export function lmEvaluate(m: Model, sentences: string[][], samples: number, see
 
 export const countParams = (m: Model) => m.params.reduce((a, p) => a + p.data.length, 0);
 
+/** The same count from the configuration alone, without building the model. */
+export function paramCount(cfg: Config): number {
+  const { d, ff, layers } = cfg;
+  const V = outVocab(cfg).length;
+  const attn = 4 * d * d, norm = 2 * d, ffn = d * ff + ff + ff * d + d;
+  const seq2seq = cfg.kind === 'translator';
+  const enc = seq2seq ? layers * (attn + norm + ffn + norm) : 0;
+  const dec = layers * (attn + norm + (seq2seq ? attn + norm : 0) + ffn + norm);
+  return (seq2seq ? SRC_VOCAB.length * d : 0) + V * d + enc + dec + d * V + V;
+}
+
 // ── saving and sharing ───────────────────────────────────────────────
 
 const MAGIC = 0x54; // 'T'
@@ -448,7 +473,7 @@ function validCfg(c: unknown): c is Config {
   const x = c as Config;
   // Files saved before the GPT mode existed are translators.
   if (x && x.kind === undefined) x.kind = 'translator';
-  return !!x && (x.kind === 'gpt' || x.kind === 'translator') && HEAD_OPTIONS.includes(x.heads) && LAYER_OPTIONS.includes(x.layers) && x.d === DEFAULT_CONFIG.d && x.ff === DEFAULT_CONFIG.ff && typeof x.posEnc === 'boolean';
+  return !!x && (x.kind === 'gpt' || x.kind === 'translator') && HEAD_OPTIONS.includes(x.heads) && LAYER_OPTIONS.includes(x.layers) && D_OPTIONS.includes(x.d) && x.ff === 2 * x.d && typeof x.posEnc === 'boolean';
 }
 
 export function unpack(bytes: Uint8Array): Model {

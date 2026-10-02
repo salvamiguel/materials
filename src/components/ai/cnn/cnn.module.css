@@ -368,3 +368,11 @@
   font-size: 0.74rem;
   color: #9aa3ad;
 }
+
+.more {
+  margin-left: 8px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #7d8590;
+}

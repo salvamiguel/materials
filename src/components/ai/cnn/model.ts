@@ -47,8 +47,13 @@ export interface Layer {
   b: Float32Array;
 }
 
+/** Filter-count multipliers: ×1 is the demo's 4 (→ 8) filters; bigger nets do the same with more of them. */
+export const WIDTHS = [1, 4, 8, 16];
+
 export interface Net {
   arch: ArchId;
+  /** Multiplies every layer's filter count. */
+  width: number;
   classes: string[];
   layers: Layer[];
   /** classes × features. */
@@ -66,10 +71,11 @@ function gauss(r: () => number): number {
 }
 
 /** Random start (He initialisation): a network of zeros would never break symmetry. */
-export function newNet(arch: ArchId, classes: string[], seed = 1): Net {
+export function newNet(arch: ArchId, classes: string[], seed = 1, width = 1): Net {
   const r = rng(seed);
   let cin = 1, size = GRID;
-  const layers: Layer[] = ARCHS[arch].layers.map(({ c, pool }, li) => {
+  const layers: Layer[] = ARCHS[arch].layers.map(({ c: base, pool }, li) => {
+    const c = base * width;
     const sd = Math.sqrt(2 / (9 * cin));
     const w = new Float32Array(c * cin * 9);
     // The first layer's weights sit on knobs: start them on the knobs' 0.05 detents.
@@ -83,7 +89,7 @@ export function newNet(arch: ArchId, classes: string[], seed = 1): Net {
   const dense = new Float32Array(classes.length * features);
   const sd = Math.sqrt(2 / features);
   for (let i = 0; i < dense.length; i++) dense[i] = gauss(r) * sd;
-  return { arch, classes, layers, dense, dbias: new Float32Array(classes.length), features };
+  return { arch, width, classes, layers, dense, dbias: new Float32Array(classes.length), features };
 }
 
 // ── forward pass ─────────────────────────────────────────────────────
@@ -208,8 +214,21 @@ export interface StepResult {
   label: number;
 }
 
-/** One step of stochastic gradient descent on one example; mutates the net. */
-export function trainStep(n: Net, ex: Example, lr: number, opts: { freezeFirst?: boolean } = {}): StepResult {
+/** Gradients of every weight, summed over the examples of a mini-batch. */
+export interface Grads {
+  layers: { w: Float32Array; b: Float32Array }[];
+  dense: Float32Array;
+  dbias: Float32Array;
+}
+
+export const newGrads = (n: Net): Grads => ({
+  layers: n.layers.map((L) => ({ w: new Float32Array(L.w.length), b: new Float32Array(L.cout) })),
+  dense: new Float32Array(n.dense.length),
+  dbias: new Float32Array(n.dbias.length),
+});
+
+/** Backpropagation on one example: adds its gradients to `g` without touching the weights. */
+export function accumulate(n: Net, ex: Example, g: Grads, opts: { freezeFirst?: boolean } = {}): StepResult {
   const act = forward(n, ex.grid);
   const label = n.classes.indexOf(ex.ch);
   const loss = -Math.log(Math.max(act.probs[label], 1e-12));
@@ -224,9 +243,9 @@ export function trainStep(n: Net, ex: Example, lr: number, opts: { freezeFirst?:
     for (let j = 0; j < F; j++) grad[j] += n.dense[c * F + j] * d;
   }
   for (let c = 0; c < C; c++) {
-    const d = dlogit[c] * lr;
-    for (let j = 0; j < F; j++) n.dense[c * F + j] -= d * act.features[j];
-    n.dbias[c] -= d;
+    const d = dlogit[c];
+    for (let j = 0; j < F; j++) g.dense[c * F + j] += d * act.features[j];
+    g.dbias[c] += d;
   }
 
   for (let li = n.layers.length - 1; li >= 0; li--) {
@@ -238,8 +257,8 @@ export function trainStep(n: Net, ex: Example, lr: number, opts: { freezeFirst?:
     const dz = new Float32Array(A.z.length);
     for (let j = 0; j < grad.length; j++) if (A.z[A.arg[j]] > 0) dz[A.arg[j]] += grad[j];
     const dx = li > 0 ? new Float32Array(A.input.length) : null;
-    const dw = new Float32Array(L.w.length);
-    const db = new Float32Array(L.cout);
+    const dw = g.layers[li].w;
+    const db = g.layers[li].b;
     for (let o = 0; o < L.cout; o++)
       for (let y = 0; y < S; y++)
         for (let xx = 0; xx < S; xx++) {
@@ -260,13 +279,47 @@ export function trainStep(n: Net, ex: Example, lr: number, opts: { freezeFirst?:
               }
             }
         }
-    const clamp = li === 0 ? clampK : (v: number) => v;
-    for (let k = 0; k < dw.length; k++) L.w[k] = clamp(L.w[k] - lr * dw[k]);
-    for (let o = 0; o < L.cout; o++) L.b[o] = clamp(L.b[o] - lr * db[o]);
     if (!dx) break;
     grad = dx;
   }
   return { act, loss, correct: act.winner === label, label };
+}
+
+/** Gradient descent with the mean gradient of `count` examples; the first layer keeps its knobs' end stops. */
+export function applyGrads(n: Net, g: Grads, lr: number, count: number, opts: { freezeFirst?: boolean } = {}) {
+  const k = lr / count;
+  for (let i = 0; i < n.dense.length; i++) n.dense[i] -= k * g.dense[i];
+  for (let i = 0; i < n.dbias.length; i++) n.dbias[i] -= k * g.dbias[i];
+  n.layers.forEach((L, li) => {
+    if (li === 0 && opts.freezeFirst) return;
+    const clamp = li === 0 ? clampK : (v: number) => v;
+    const G = g.layers[li];
+    for (let i = 0; i < L.w.length; i++) L.w[i] = clamp(L.w[i] - k * G.w[i]);
+    for (let o = 0; o < L.cout; o++) L.b[o] = clamp(L.b[o] - k * G.b[o]);
+  });
+}
+
+/** One step of stochastic gradient descent (backpropagation) on one example; mutates the net. */
+export function trainStep(n: Net, ex: Example, lr: number, opts: { freezeFirst?: boolean } = {}): StepResult {
+  const g = newGrads(n);
+  const r = accumulate(n, ex, g, opts);
+  applyGrads(n, g, lr, 1, opts);
+  return r;
+}
+
+/** One step on a mini-batch: the mean gradient of its examples. */
+export function trainBatch(n: Net, batch: Example[], lr: number, opts: { freezeFirst?: boolean } = {}): { first: StepResult; loss: number; correct: number } {
+  const g = newGrads(n);
+  let loss = 0, correct = 0;
+  let first: StepResult | null = null;
+  for (const ex of batch) {
+    const r = accumulate(n, ex, g, opts);
+    first ??= r;
+    loss += r.loss;
+    if (r.correct) correct++;
+  }
+  applyGrads(n, g, lr, batch.length, opts);
+  return { first: first!, loss, correct };
 }
 
 export function evaluate(n: Net, set: Example[]): { accuracy: number; loss: number } {
@@ -317,6 +370,13 @@ function validHeader(arch: unknown, classes: unknown): arch is ArchId {
   return typeof arch === 'string' && arch in ARCHS && Array.isArray(classes) && classes.length >= 2;
 }
 
+/** Files from before the size option have no width: they are ×1. */
+function validWidth(w: unknown): number {
+  const v = w === undefined ? 1 : Number(w);
+  if (!WIDTHS.includes(v)) throw new Error('Tamaño de red no válido');
+  return v;
+}
+
 export function pack(n: Net): Uint8Array {
   const ts = tensors(n);
   const scales = ts.map((t) => {
@@ -324,7 +384,7 @@ export function pack(n: Net): Uint8Array {
     for (const v of t) m = Math.max(m, Math.abs(v));
     return m / 127;
   });
-  const header = new TextEncoder().encode(JSON.stringify({ v: 1, arch: n.arch, classes: n.classes, scales }));
+  const header = new TextEncoder().encode(JSON.stringify({ v: 1, arch: n.arch, width: n.width, classes: n.classes, scales }));
   const total = ts.reduce((a, t) => a + t.length, 0);
   const out = new Uint8Array(3 + header.length + total);
   out[0] = MAGIC;
@@ -343,7 +403,7 @@ export function unpack(bytes: Uint8Array): Net {
   const hl = (bytes[1] << 8) | bytes[2];
   const h = JSON.parse(new TextDecoder().decode(bytes.subarray(3, 3 + hl)));
   if (h.v !== 1 || !validHeader(h.arch, h.classes) || !Array.isArray(h.scales)) throw new Error('Formato de pesos desconocido');
-  const n = newNet(h.arch, h.classes.map(String));
+  const n = newNet(h.arch, h.classes.map(String), 1, validWidth(h.width));
   const ts = tensors(n);
   if (bytes.length !== 3 + hl + ts.reduce((a, t) => a + t.length, 0) || h.scales.length !== ts.length)
     throw new Error('El fichero de pesos está incompleto');
@@ -364,6 +424,7 @@ export function toJSON(n: Net): string {
     format: 'cnn',
     v: 1,
     arch: n.arch,
+    width: n.width,
     classes: n.classes,
     layers: n.layers.map((L) => ({ w: Array.from(L.w, r4), b: Array.from(L.b, r4) })),
     dense: Array.from(n.dense, r4),
@@ -374,7 +435,7 @@ export function toJSON(n: Net): string {
 export function fromJSON(text: string): Net {
   const j = JSON.parse(text);
   if (j?.format !== 'cnn' || j.v !== 1 || !validHeader(j.arch, j.classes)) throw new Error('No es un fichero de pesos de la red convolucional');
-  const n = newNet(j.arch, j.classes.map(String));
+  const n = newNet(j.arch, j.classes.map(String), 1, validWidth(j.width));
   const src: unknown[] = [...(j.layers ?? []).flatMap((L: { w: unknown; b: unknown }) => [L?.w, L?.b]), j.dense, j.dbias];
   const ts = tensors(n);
   if (src.length !== ts.length) throw new Error('El fichero de pesos está incompleto');
