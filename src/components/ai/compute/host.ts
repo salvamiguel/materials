@@ -110,6 +110,8 @@ export class Host {
       case 'compute':
         this.serial(async () => {
           try {
+            // Compile the kernels before saying "ready": the page shows "preparing" meanwhile.
+            if (m.compute.backend === 'gpu') await (await getGpu())?.warm();
             const gpu = await this.trainer!.compute(m.compute);
             this.post({ t: 'compute', backend: m.compute.backend, gpu });
           } catch (e) {

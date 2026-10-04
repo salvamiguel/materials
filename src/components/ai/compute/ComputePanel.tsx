@@ -77,14 +77,17 @@ export default function ComputePanel(p: Props) {
                 ['gpu', 'GPU · WebGPU'],
               ] as const
             ).map(([b, label]) => (
-              <button key={b} role="radio" aria-checked={p.status.backend === b} className={p.status.backend === b ? ps.segOn : ps.segBtn} onClick={() => p.onBackend(b)} disabled={p.status.pending}>
+              <button key={b} role="radio" aria-checked={p.status.backend === b} className={p.status.backend === b ? ps.segOn : ps.segBtn} onClick={() => p.onBackend(b)} disabled={p.status.pending} aria-busy={p.status.pending && p.status.target === b}>
+                {p.status.pending && p.status.target === b && <span className={cs.spinner} aria-hidden="true" />}
                 {label}
               </button>
             ))}
           </div>
-          <span className={cs.status}>
+          <span className={cs.status} role="status" aria-live="polite">
             {p.status.pending
-              ? 'Preparando…'
+              ? p.status.target === 'gpu'
+                ? 'Preparando la GPU: abriendo el dispositivo y compilando los kernels…'
+                : 'Pasando a la CPU…'
               : p.status.error
                 ? `GPU no disponible: ${p.status.error} Se usa la CPU.`
                 : gpuOk
