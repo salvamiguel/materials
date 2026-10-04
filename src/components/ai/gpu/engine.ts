@@ -138,6 +138,24 @@ export class Gpu {
     return p;
   }
 
+  private warming: Promise<void> | null = null;
+
+  /** Compile every kernel in the background, once, so the first training step does not stall on it. */
+  warm(): Promise<void> {
+    this.warming ??= Promise.all(
+      [...Object.entries(KERNELS), ['matmul', MATMUL] as const].map(async ([name, code]) => {
+        if (this.pipelines.has(name)) return;
+        try {
+          const p = await this.device.createComputePipelineAsync({ layout: 'auto', compute: { module: this.device.createShaderModule({ code }), entryPoint: 'main' } });
+          if (!this.pipelines.has(name)) this.pipelines.set(name, p);
+        } catch {
+          /* compiled again, and reported, on first use */
+        }
+      }),
+    ).then(() => undefined);
+    return this.warming;
+  }
+
   /** Compile every kernel and report the ones that fail (an invalid kernel would silently void a whole step). */
   async check(): Promise<string[]> {
     const errors: string[] = [];

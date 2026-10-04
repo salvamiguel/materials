@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { startTransition, useRef, useState } from 'react';
 
 import { sfx } from './chiptune';
 import { GRID, SCAN_H, SCAN_W, type Grid } from './model';
@@ -22,23 +22,61 @@ interface Props {
 export default function Retina({ grid, onChange, tool = 'pen', window: win, windowSize = { w: SCAN_W, h: SCAN_H }, small, label }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const paint = useRef<number | null>(null);
+  /** Cell under the pointer at the last event, to fill the gaps of a fast stroke. */
+  const last = useRef<{ x: number; y: number } | null>(null);
+  // While drawing, the stroke lives here and is drawn at once; the page (which
+  // recomputes the whole machine) hears about it at most once a frame, at low
+  // priority, so a busy page can never swallow the stroke.
+  const [stroke, setStroke] = useState<Grid | null>(null);
   const cur = useRef(grid);
-  cur.current = grid;
+  if (paint.current === null) cur.current = grid;
+  const notify = useRef(0);
 
-  const cellAt = (e: React.PointerEvent) => {
+  const cellAt = (e: { clientX: number; clientY: number }) => {
     const r = box.current!.getBoundingClientRect();
-    const x = Math.floor(((e.clientX - r.left) / r.width) * GRID);
-    const y = Math.floor(((e.clientY - r.top) / r.height) * GRID);
-    return x >= 0 && x < GRID && y >= 0 && y < GRID ? y * GRID + x : -1;
+    return { x: Math.floor(((e.clientX - r.left) / r.width) * GRID), y: Math.floor(((e.clientY - r.top) / r.height) * GRID) };
   };
 
-  const put = (i: number) => {
-    if (i < 0 || paint.current === null || cur.current[i] === paint.current) return;
-    const g = cur.current.slice();
-    g[i] = paint.current;
+  const tell = () => {
+    if (notify.current) return;
+    notify.current = requestAnimationFrame(() => {
+      notify.current = 0;
+      const g = cur.current;
+      startTransition(() => onChange!(g));
+    });
+  };
+
+  /** Paint every cell on the segment from the last cell to (x, y). */
+  const lineTo = (x: number, y: number) => {
+    const from = last.current ?? { x, y };
+    last.current = { x, y };
+    const n = Math.max(Math.abs(x - from.x), Math.abs(y - from.y), 1);
+    let g: Grid | null = null;
+    for (let k = 0; k <= n; k++) {
+      const cx = Math.round(from.x + ((x - from.x) * k) / n);
+      const cy = Math.round(from.y + ((y - from.y) * k) / n);
+      if (cx < 0 || cx >= GRID || cy < 0 || cy >= GRID) continue;
+      const i = cy * GRID + cx;
+      const src = g ?? cur.current;
+      if (src[i] === paint.current) continue;
+      g ??= cur.current.slice();
+      g[i] = paint.current!;
+    }
+    if (!g) return;
     cur.current = g;
     sfx.pixel(!!paint.current);
-    onChange!(g);
+    setStroke(g);
+    tell();
+  };
+
+  const end = () => {
+    if (paint.current === null) return;
+    paint.current = null;
+    last.current = null;
+    if (notify.current) cancelAnimationFrame(notify.current);
+    notify.current = 0;
+    onChange!(cur.current);
+    setStroke(null);
   };
 
   const handlers = onChange
@@ -47,17 +85,29 @@ export default function Retina({ grid, onChange, tool = 'pen', window: win, wind
           if (e.button !== 0) return;
           e.preventDefault();
           (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          const i = cellAt(e);
-          if (i < 0) return;
-          paint.current = tool === 'eraser' ? 0 : cur.current[i] ? 0 : 1;
-          put(i);
+          const { x, y } = cellAt(e);
+          if (x < 0 || x >= GRID || y < 0 || y >= GRID) return;
+          paint.current = tool === 'eraser' ? 0 : cur.current[y * GRID + x] ? 0 : 1;
+          last.current = null;
+          lineTo(x, y);
         },
-        onPointerMove: (e: React.PointerEvent) => paint.current !== null && put(cellAt(e)),
-        onPointerUp: () => (paint.current = null),
-        onPointerCancel: () => (paint.current = null),
+        onPointerMove: (e: React.PointerEvent) => {
+          if (paint.current === null) return;
+          // Every position the pointer passed through since the last frame, not only the latest.
+          const all = e.nativeEvent.getCoalescedEvents?.() ?? [];
+          for (const p of all.length ? all : [e]) {
+            const { x, y } = cellAt(p);
+            lineTo(x, y);
+          }
+        },
+        onPointerUp: end,
+        onPointerCancel: end,
+        onLostPointerCapture: end,
+        onDragStart: (e: React.DragEvent) => e.preventDefault(),
       }
     : {};
 
+  const shown = stroke ?? grid;
   return (
     <div
       ref={box}
@@ -66,7 +116,7 @@ export default function Retina({ grid, onChange, tool = 'pen', window: win, wind
       aria-label={label}
       {...handlers}
     >
-      {Array.from(grid, (v, i) => (
+      {Array.from(shown, (v, i) => (
         <span key={i} className={v ? styles.cellOn : styles.cell} />
       ))}
       {win && (

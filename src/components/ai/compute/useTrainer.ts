@@ -15,6 +15,8 @@ export interface EngineStatus {
   /** Training runs in a Web Worker (false: on the page). */
   worker: boolean;
   pending: boolean;
+  /** The engine being prepared while `pending`. */
+  target?: Backend;
 }
 
 export type Tick = Extract<FromHost, { t: 'tick' }>;
@@ -57,7 +59,7 @@ export function useTrainer(demo: string, init: () => Record<string, unknown>, on
   const send = useCallback((m: ToHost) => port.current?.post(m), []);
   const setCompute = useCallback(
     (backend: Backend, batch: number) => {
-      setStatus((s) => ({ ...s, pending: true }));
+      setStatus((s) => ({ ...s, pending: true, target: backend }));
       send({ t: 'compute', compute: { backend, batch } });
     },
     [send],
