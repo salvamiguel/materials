@@ -15,6 +15,8 @@
   --cal-javier-soft: #e1ecf6;
   --cal-salva: #b0552a;
   --cal-salva-soft: #f6e6dc;
+  --cal-moises: #2f7d6b;
+  --cal-moises-soft: #dcefe9;
 
   font-size: 0.95rem;
 }
@@ -34,6 +36,8 @@
   --cal-javier-soft: #172836;
   --cal-salva: #e2966b;
   --cal-salva-soft: #33221a;
+  --cal-moises: #74c9b4;
+  --cal-moises-soft: #15302a;
 }
 
 .mono {
@@ -215,6 +219,17 @@
   white-space: nowrap;
 }
 
+.whoLine {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+.whoLine + .whoLine {
+  margin-top: 0.3rem;
+}
+
 /* ---------- week table ---------- */
 .tableWrap {
   overflow-x: auto;
@@ -309,6 +324,10 @@
   border-top: 3px solid var(--cal-javier);
 }
 
+.blockMoises {
+  border-top: 3px solid var(--cal-moises);
+}
+
 .blockHead {
   display: flex;
   justify-content: space-between;
@@ -329,6 +348,15 @@
 
 .blockJavier .blockWho {
   color: var(--cal-javier);
+}
+
+.blockMoises .blockWho {
+  color: var(--cal-moises);
+}
+
+.blockGroup {
+  font-weight: 500;
+  opacity: 0.75;
 }
 
 .blockWeeks {

@@ -1,12 +1,16 @@
-import { CERTS, SESIONES } from './data';
+import { CERTS, PROF_ONLINE_2, SESIONES, Sesion } from './data';
 
-export type Grupo = 'online' | 'presencial';
+export type Grupo = 'online1' | 'online2' | 'presencial';
 
 export const HORARIO = { inicio: '18:30', fin: '21:00' };
 
 export interface GrupoInfo {
   archivo: string;
+  /** Prefijo de los UID de los eventos; estable para no duplicar eventos en calendarios ya suscritos. */
+  uid: string;
   nombre: string;
+  /** Nombre corto del grupo, p. ej. «Online 1». */
+  etiqueta: string;
   dia: string;
   /** LOCATION del .ics. */
   lugar: string;
@@ -17,15 +21,27 @@ export interface GrupoInfo {
 }
 
 export const GRUPOS: Record<Grupo, GrupoInfo> = {
-  online: {
+  online1: {
     archivo: 'ai-26-27-online.ics',
-    nombre: 'Máster IA 26/27 · Online',
+    uid: 'online',
+    nombre: 'Máster IA 26/27 · Online 1',
+    etiqueta: 'Online 1',
+    dia: 'Martes',
+    lugar: 'Online',
+  },
+  online2: {
+    archivo: 'ai-26-27-online-2.ics',
+    uid: 'online2',
+    nombre: 'Máster IA 26/27 · Online 2',
+    etiqueta: 'Online 2',
     dia: 'Martes',
     lugar: 'Online',
   },
   presencial: {
     archivo: 'ai-26-27-presencial.ics',
+    uid: 'presencial',
     nombre: 'Máster IA 26/27 · Presencial',
+    etiqueta: 'Presencial',
     dia: 'Miércoles',
     lugar: 'Universidad Europea de Valencia, Campus Turia, C/ de Guillem de Castro, 175, Extramurs, 46008 València, Valencia',
     direccion: ['UEV · Campus Turia', 'C/ de Guillem de Castro, 175, 46008 València'],
@@ -38,6 +54,15 @@ export const ICS_DIR = 'calendario';
 
 /** Host público para las URLs de suscripción y los enlaces dentro del .ics (en lugar de `siteConfig.url`). */
 export const ICS_HOST = 'https://salvamiguel.com';
+
+/** Fecha de la sesión para el grupo, o null si ese grupo no tiene clase esa semana. */
+export function fechaGrupo(s: Sesion, grupo: Grupo): string | null {
+  return grupo === 'presencial' ? s.p : s.o;
+}
+
+export function profesorGrupo(s: Sesion, grupo: Grupo): string {
+  return grupo === 'online2' ? PROF_ONLINE_2 : s.prof;
+}
 
 const EVENT_PREFIX = 'Máster AI - Módulo Certificaciones - UEV - ';
 
@@ -104,7 +129,7 @@ export function buildIcs(grupo: Grupo, pageUrl: string): string {
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     `X-WR-CALNAME:${escapeText(g.nombre)}`,
-    `X-WR-CALDESC:${escapeText(`Clases del grupo ${grupo} · ${g.dia} de ${HORARIO.inicio} a ${HORARIO.fin}`)}`,
+    `X-WR-CALDESC:${escapeText(`Clases del grupo ${g.etiqueta.toLowerCase()} · ${g.dia} de ${HORARIO.inicio} a ${HORARIO.fin}`)}`,
     'X-WR-TIMEZONE:Europe/Madrid',
     'REFRESH-INTERVAL;VALUE=DURATION:PT12H',
     'X-PUBLISHED-TTL:PT12H',
@@ -112,12 +137,12 @@ export function buildIcs(grupo: Grupo, pageUrl: string): string {
   ];
 
   SESIONES.forEach((s) => {
-    const fecha = grupo === 'online' ? s.o : s.p;
+    const fecha = fechaGrupo(s, grupo);
     if (!fecha) return;
     const cert = CERTS[s.cert];
     const descripcion = [
-      `Semana ${s.n} · Grupo ${grupo}`,
-      `Profesor: ${s.prof}`,
+      `Semana ${s.n} · Grupo ${g.etiqueta.toLowerCase()}`,
+      `Profesor: ${profesorGrupo(s, grupo)}`,
       `Horario: ${HORARIO.inicio}–${HORARIO.fin}`,
       '',
       `Calendario completo: ${pageUrl}`,
@@ -125,7 +150,7 @@ export function buildIcs(grupo: Grupo, pageUrl: string): string {
 
     lines.push(
       'BEGIN:VEVENT',
-      `UID:ai-2627-${grupo}-sem${String(s.n).padStart(2, '0')}@salvamiguel.com`,
+      `UID:ai-2627-${g.uid}-sem${String(s.n).padStart(2, '0')}@salvamiguel.com`,
       `DTSTAMP:${DTSTAMP}`,
       `DTSTART;TZID=Europe/Madrid:${fechaHora(fecha, HORARIO.inicio)}`,
       `DTEND;TZID=Europe/Madrid:${fechaHora(fecha, HORARIO.fin)}`,

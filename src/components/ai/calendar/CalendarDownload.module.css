@@ -35,9 +35,14 @@
   box-shadow: 0 1px 1px rgba(22, 34, 44, 0.03), 0 18px 40px -26px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
-.online {
+.online1 {
   --accent: #2f6fb0;
   --accent-soft: rgba(47, 111, 176, 0.09);
+}
+
+.online2 {
+  --accent: #2f7d6b;
+  --accent-soft: rgba(47, 125, 107, 0.09);
 }
 
 .presencial {
@@ -55,9 +60,14 @@
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3), 0 12px 32px -24px rgba(0, 0, 0, 0.9);
 }
 
-:global([data-theme='dark']) .online {
+:global([data-theme='dark']) .online1 {
   --accent: #8cbcec;
   --accent-soft: rgba(140, 188, 236, 0.1);
+}
+
+:global([data-theme='dark']) .online2 {
+  --accent: #74c9b4;
+  --accent-soft: rgba(116, 201, 180, 0.1);
 }
 
 :global([data-theme='dark']) .presencial {

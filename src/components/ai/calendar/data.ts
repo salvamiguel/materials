@@ -1,8 +1,11 @@
-// Datos del cronograma del Máster en IA: dos cohortes (online los martes,
-// presencial los miércoles) que comparten el mismo temario de certificación.
+// Datos del cronograma del Máster en IA: tres grupos (online 1 y online 2 los
+// martes, presencial los miércoles) que comparten el mismo temario de certificación.
 
 export type CertKey = 'arranque' | 'aws' | 'dp900' | 'ai901' | 'cierre';
-export type Profesor = 'Salva' | 'Javier';
+export type Profesor = 'Salva' | 'Javier' | 'Moisés';
+
+/** Profesor del grupo Online 2 en todas sus sesiones. */
+export const PROF_ONLINE_2: Profesor = 'Moisés';
 
 export interface CertInfo {
   label: string;
@@ -20,12 +23,13 @@ export const CERTS: Record<CertKey, CertInfo> = {
 
 export interface Sesion {
   n: number;
-  /** Fecha de la sesión online (martes), o null si la cohorte aún no ha empezado. */
+  /** Fecha de las sesiones online 1 y online 2 (martes), o null si la cohorte aún no ha empezado. */
   o: string | null;
   /** Fecha de la sesión presencial (miércoles). */
   p: string;
   cert: CertKey;
   tema: string;
+  /** Profesor de la sesión presencial y de la online 1; la online 2 la da siempre `PROF_ONLINE_2`. */
   prof: Profesor;
   /** Nota de parón que precede a esta semana, si aplica. */
   brk?: string;
@@ -81,5 +85,5 @@ export function parseFecha(d: string): Date {
 }
 
 export function inicial(p: Profesor): string {
-  return p === 'Salva' ? 'S' : 'J';
+  return p.charAt(0);
 }

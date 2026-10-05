@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { CERTS, SESIONES, MESES_CALENDARIO, inicial, CertKey, Profesor } from './data';
+import { CERTS, SESIONES, MESES_CALENDARIO, PROF_ONLINE_2, inicial, CertKey, Profesor } from './data';
 import styles from './calendar.module.css';
 
 interface Marca {
@@ -64,9 +64,15 @@ export default function MonthCalendar(): React.ReactElement {
                         <span
                           className={`${styles.dmark} ${styles.mono}`}
                           style={{ background: CERTS[info.cert].soft, color: CERTS[info.cert].color }}
-                          title={`Semana ${info.n} · ${info.modo === 'presencial' ? 'Presencial' : 'Online'} · ${info.prof}`}
+                          title={
+                            info.modo === 'presencial'
+                              ? `Semana ${info.n} · Presencial · ${info.prof}`
+                              : `Semana ${info.n} · Online 1 · ${info.prof} · Online 2 · ${PROF_ONLINE_2}`
+                          }
                         >
-                          {(info.modo === 'presencial' ? 'P' : 'O') + '·' + inicial(info.prof)}
+                          {info.modo === 'presencial'
+                            ? `P·${inicial(info.prof)}`
+                            : `O·${inicial(info.prof)}/${inicial(PROF_ONLINE_2)}`}
                         </span>
                       )}
                     </div>

@@ -4,7 +4,7 @@ import { FaLaptop, FaUniversity, FaApple, FaGoogle, FaMicrosoft } from 'react-ic
 import { FiDownload, FiArrowUpRight, FiInfo } from 'react-icons/fi';
 
 import { SESIONES, parseFecha } from './data';
-import { GRUPOS, HORARIO, ICS_DIR, ICS_HOST, Grupo } from './ics';
+import { GRUPOS, HORARIO, ICS_DIR, ICS_HOST, Grupo, fechaGrupo, profesorGrupo } from './ics';
 import styles from './CalendarDownload.module.css';
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -17,11 +17,12 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
   const httpsUrl = `${ICS_HOST}${path}`;
   const webcalUrl = httpsUrl.replace(/^https?:\/\//, 'webcal://');
 
-  const fechas = SESIONES.map((s) => (grupo === 'online' ? s.o : s.p))
+  const fechas = SESIONES.map((s) => fechaGrupo(s, grupo))
     .filter((f): f is string => Boolean(f))
     .map(parseFecha);
+  const profesores = [...new Set(SESIONES.filter((s) => fechaGrupo(s, grupo)).map((s) => profesorGrupo(s, grupo)))];
 
-  const Icon = grupo === 'online' ? FaLaptop : FaUniversity;
+  const Icon = grupo === 'presencial' ? FaUniversity : FaLaptop;
   const suscripciones = [
     { label: 'Apple', icon: FaApple, href: webcalUrl, externo: false },
     {
@@ -39,13 +40,13 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
   ];
 
   return (
-    <article className={`${styles.card} ${grupo === 'online' ? styles.online : styles.presencial}`}>
+    <article className={`${styles.card} ${styles[grupo]}`}>
       <header className={styles.header}>
         <span className={styles.badge} aria-hidden="true">
           <Icon />
         </span>
         <div className={styles.intro}>
-          <span className={styles.eyebrow}>Grupo {grupo}</span>
+          <span className={styles.eyebrow}>Grupo {g.etiqueta}</span>
           <h3 className={styles.title}>{g.dia}</h3>
           <span className={styles.time}>
             {HORARIO.inicio} – {HORARIO.fin}
@@ -63,6 +64,10 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
           <dd>
             {fecha(fechas[0])} <span className={styles.muted}>→</span> {fecha(fechas[fechas.length - 1])}
           </dd>
+        </div>
+        <div>
+          <dt>Imparte</dt>
+          <dd>{profesores.join(' y ')}</dd>
         </div>
         <div>
           <dt>Lugar</dt>
@@ -118,8 +123,9 @@ export default function CalendarDownload(): React.ReactElement {
   return (
     <div className={styles.wrapper}>
       <div className={styles.grid}>
-        <GrupoCard grupo="online" />
-        <GrupoCard grupo="presencial" />
+        {(Object.keys(GRUPOS) as Grupo[]).map((grupo) => (
+          <GrupoCard key={grupo} grupo={grupo} />
+        ))}
       </div>
       <p className={styles.note}>
         <FiInfo aria-hidden="true" />
