@@ -3,8 +3,8 @@ VERSION:2.0
 PRODID:-//salvamiguel//Materials Calendario 26-27//ES
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
-X-WR-CALNAME:Máster IA 26/27 · Online 1
-X-WR-CALDESC:Clases del grupo online 1 · Martes de 18:30 a 21:00
+X-WR-CALNAME:Máster IA 26/27 · Online 2
+X-WR-CALDESC:Clases del grupo online 2 · Martes de 18:30 a 21:00
 X-WR-TIMEZONE:Europe/Madrid
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
@@ -27,15 +27,15 @@ RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
 END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
-UID:ai-2627-online-sem03@salvamiguel.com
+UID:ai-2627-online2-sem03@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261103T183000
 DTEND;TZID=Europe/Madrid:20261103T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AWS AIP · Dominio 1 
  · Fundamentos de IA y machine learning (20 %)
-DESCRIPTION:Semana 3 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–2
- 1:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendar
- io
+DESCRIPTION:Semana 3 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
+ –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
+ ndario
 LOCATION:Online
 CATEGORIES:AWS AIP
 URL:https://salvamiguel.com/materials/ai/calendario
@@ -49,15 +49,15 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem04@salvamiguel.com
+UID:ai-2627-online2-sem04@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261110T183000
 DTEND;TZID=Europe/Madrid:20261110T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AWS AIP · Dominio 2 
  · Fundamentos de IA generativa (24 %)
-DESCRIPTION:Semana 4 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–2
- 1:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendar
- io
+DESCRIPTION:Semana 4 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
+ –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
+ ndario
 LOCATION:Online
 CATEGORIES:AWS AIP
 URL:https://salvamiguel.com/materials/ai/calendario
@@ -71,15 +71,15 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem05@salvamiguel.com
+UID:ai-2627-online2-sem05@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261117T183000
 DTEND;TZID=Europe/Madrid:20261117T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AWS AIP · Dominio 3 (
  I) · Aplicaciones de foundation models: prompting y RAG (28 %)
-DESCRIPTION:Semana 5 · Grupo online 1\nProfesor: Javier\nHorario: 18:30–
- 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
- rio
+DESCRIPTION:Semana 5 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
+ –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
+ ndario
 LOCATION:Online
 CATEGORIES:AWS AIP
 URL:https://salvamiguel.com/materials/ai/calendario
@@ -93,15 +93,15 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem06@salvamiguel.com
+UID:ai-2627-online2-sem06@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261124T183000
 DTEND;TZID=Europe/Madrid:20261124T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AWS AIP · Dominio 3 (
  II) · Evaluación\, personalización y Amazon Bedrock (28 %)
-DESCRIPTION:Semana 6 · Grupo online 1\nProfesor: Javier\nHorario: 18:30–
- 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
- rio
+DESCRIPTION:Semana 6 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
+ –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
+ ndario
 LOCATION:Online
 CATEGORIES:AWS AIP
 URL:https://salvamiguel.com/materials/ai/calendario
@@ -115,15 +115,15 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem07@salvamiguel.com
+UID:ai-2627-online2-sem07@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261201T183000
 DTEND;TZID=Europe/Madrid:20261201T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AWS AIP · Dominios 4 
  y 5 · IA responsable\, seguridad\, cumplimiento y gobernanza (28 %)
-DESCRIPTION:Semana 7 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–2
- 1:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendar
- io
+DESCRIPTION:Semana 7 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
+ –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
+ ndario
 LOCATION:Online
 CATEGORIES:AWS AIP
 URL:https://salvamiguel.com/materials/ai/calendario
@@ -137,15 +137,15 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem08@salvamiguel.com
+UID:ai-2627-online2-sem08@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261208T183000
 DTEND;TZID=Europe/Madrid:20261208T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AWS AIP · Repaso gene
  ral AWS AI Practitioner + simulacro de examen
-DESCRIPTION:Semana 8 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–2
- 1:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendar
- io
+DESCRIPTION:Semana 8 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
+ –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
+ ndario
 LOCATION:Online
 CATEGORIES:AWS AIP
 URL:https://salvamiguel.com/materials/ai/calendario
@@ -159,15 +159,15 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem09@salvamiguel.com
+UID:ai-2627-online2-sem09@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261215T183000
 DTEND;TZID=Europe/Madrid:20261215T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - DP-900 · Fundamentos 
  de datos: estructurados\, semiestructurados y no estructurados\; roles
-DESCRIPTION:Semana 9 · Grupo online 1\nProfesor: Javier\nHorario: 18:30–
- 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
- rio
+DESCRIPTION:Semana 9 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
+ –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
+ ndario
 LOCATION:Online
 CATEGORIES:DP-900
 URL:https://salvamiguel.com/materials/ai/calendario
@@ -181,14 +181,14 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem10@salvamiguel.com
+UID:ai-2627-online2-sem10@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270112T183000
 DTEND;TZID=Europe/Madrid:20270112T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - DP-900 · Datos relaci
  onales en Azure: SQL\, normalización\, Azure SQL Database/Managed Instanc
  e
-DESCRIPTION:Semana 10 · Grupo online 1\nProfesor: Javier\nHorario: 18:30
+DESCRIPTION:Semana 10 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
 LOCATION:Online
@@ -204,57 +204,13 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem11@salvamiguel.com
+UID:ai-2627-online2-sem11@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270119T183000
 DTEND;TZID=Europe/Madrid:20270119T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - DP-900 · Datos no rel
  acionales en Azure: Blob/Files/Tables\, Azure Cosmos DB
-DESCRIPTION:Semana 11 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–
- 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
- rio
-LOCATION:Online
-CATEGORIES:DP-900
-URL:https://salvamiguel.com/materials/ai/calendario
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-SEQUENCE:0
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:La clase empieza en 30 minutos
-TRIGGER:-PT30M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ai-2627-online-sem12@salvamiguel.com
-DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270126T183000
-DTEND;TZID=Europe/Madrid:20270126T210000
-SUMMARY:Máster AI - Módulo Certificaciones - UEV - DP-900 · Cargas de tr
- abajo analíticas: ingesta\, batch/streaming\, Power BI
-DESCRIPTION:Semana 12 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–
- 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
- rio
-LOCATION:Online
-CATEGORIES:DP-900
-URL:https://salvamiguel.com/materials/ai/calendario
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-SEQUENCE:0
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:La clase empieza en 30 minutos
-TRIGGER:-PT30M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ai-2627-online-sem13@salvamiguel.com
-DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270202T183000
-DTEND;TZID=Europe/Madrid:20270202T210000
-SUMMARY:Máster AI - Módulo Certificaciones - UEV - DP-900 · Repaso gener
- al DP-900 + simulacro de examen
-DESCRIPTION:Semana 13 · Grupo online 1\nProfesor: Javier\nHorario: 18:30
+DESCRIPTION:Semana 11 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
 LOCATION:Online
@@ -270,14 +226,58 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem14@salvamiguel.com
+UID:ai-2627-online2-sem12@salvamiguel.com
+DTSTAMP:20260901T000000Z
+DTSTART;TZID=Europe/Madrid:20270126T183000
+DTEND;TZID=Europe/Madrid:20270126T210000
+SUMMARY:Máster AI - Módulo Certificaciones - UEV - DP-900 · Cargas de tr
+ abajo analíticas: ingesta\, batch/streaming\, Power BI
+DESCRIPTION:Semana 12 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
+ –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
+ ndario
+LOCATION:Online
+CATEGORIES:DP-900
+URL:https://salvamiguel.com/materials/ai/calendario
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+SEQUENCE:0
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:La clase empieza en 30 minutos
+TRIGGER:-PT30M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ai-2627-online2-sem13@salvamiguel.com
+DTSTAMP:20260901T000000Z
+DTSTART;TZID=Europe/Madrid:20270202T183000
+DTEND;TZID=Europe/Madrid:20270202T210000
+SUMMARY:Máster AI - Módulo Certificaciones - UEV - DP-900 · Repaso gener
+ al DP-900 + simulacro de examen
+DESCRIPTION:Semana 13 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
+ –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
+ ndario
+LOCATION:Online
+CATEGORIES:DP-900
+URL:https://salvamiguel.com/materials/ai/calendario
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+SEQUENCE:0
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:La clase empieza en 30 minutos
+TRIGGER:-PT30M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ai-2627-online2-sem14@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270209T183000
 DTEND;TZID=Europe/Madrid:20270209T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AI-901 · Conceptos de
   IA: IA responsable\, cargas de trabajo\, análisis de texto\, voz y visi
  ón
-DESCRIPTION:Semana 14 · Grupo online 1\nProfesor: Javier\nHorario: 18:30
+DESCRIPTION:Semana 14 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
 LOCATION:Online
@@ -293,15 +293,15 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem15@salvamiguel.com
+UID:ai-2627-online2-sem15@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270216T183000
 DTEND;TZID=Europe/Madrid:20270216T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AI-901 · Microsoft Fo
  undry (I): apps y agentes generativos\, despliegue de modelos\, SDKs
-DESCRIPTION:Semana 15 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–
- 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
- rio
+DESCRIPTION:Semana 15 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
+ –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
+ ndario
 LOCATION:Online
 CATEGORIES:AI-901
 URL:https://salvamiguel.com/materials/ai/calendario
@@ -315,15 +315,15 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem16@salvamiguel.com
+UID:ai-2627-online2-sem16@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270223T183000
 DTEND;TZID=Europe/Madrid:20270223T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AI-901 · Microsoft Fo
  undry (II): texto y voz\, modelos multimodales
-DESCRIPTION:Semana 16 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–
- 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
- rio
+DESCRIPTION:Semana 16 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
+ –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
+ ndario
 LOCATION:Online
 CATEGORIES:AI-901
 URL:https://salvamiguel.com/materials/ai/calendario
@@ -337,14 +337,14 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem17@salvamiguel.com
+UID:ai-2627-online2-sem17@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270302T183000
 DTEND;TZID=Europe/Madrid:20270302T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AI-901 · Microsoft Fo
  undry (III): visión\, generación de imágenes\, extracción de informaci
  ón
-DESCRIPTION:Semana 17 · Grupo online 1\nProfesor: Javier\nHorario: 18:30
+DESCRIPTION:Semana 17 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
 LOCATION:Online
@@ -360,13 +360,13 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem18@salvamiguel.com
+UID:ai-2627-online2-sem18@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270309T183000
 DTEND;TZID=Europe/Madrid:20270309T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AI-901 · Repaso gener
  al AI-901 + simulacro práctico (Python/REST/SDK)
-DESCRIPTION:Semana 18 · Grupo online 1\nProfesor: Javier\nHorario: 18:30
+DESCRIPTION:Semana 18 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
 LOCATION:Online
@@ -382,15 +382,15 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem19@salvamiguel.com
+UID:ai-2627-online2-sem19@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270406T183000
 DTEND;TZID=Europe/Madrid:20270406T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - Cierre · Simulacros c
  ombinados de las tres certificaciones + resolución de dudas
-DESCRIPTION:Semana 19 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–
- 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
- rio
+DESCRIPTION:Semana 19 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
+ –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
+ ndario
 LOCATION:Online
 CATEGORIES:Cierre
 URL:https://salvamiguel.com/materials/ai/calendario
@@ -404,13 +404,13 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem20@salvamiguel.com
+UID:ai-2627-online2-sem20@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20270413T183000
 DTEND;TZID=Europe/Madrid:20270413T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - Cierre · Estrategia d
  e examen\, dudas finales y cierre del módulo
-DESCRIPTION:Semana 20 · Grupo online 1\nProfesor: Javier\nHorario: 18:30
+DESCRIPTION:Semana 20 · Grupo online 2\nProfesor: Moisés\nHorario: 18:30
  –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
  ndario
 LOCATION:Online

@@ -1,6 +1,18 @@
 import React from 'react';
-import { CERTS, SESIONES } from './data';
+import { CERTS, SESIONES, PROF_ONLINE_2, Profesor } from './data';
 import styles from './calendar.module.css';
+
+function Who({ prof, grupos }: { prof: Profesor; grupos: string }): React.ReactElement {
+  const key = prof === 'Salva' ? 'salva' : prof === 'Javier' ? 'javier' : 'moises';
+  return (
+    <span className={styles.whoLine}>
+      <span className={styles.who} style={{ background: `var(--cal-${key}-soft)`, color: `var(--cal-${key})` }}>
+        {prof}
+      </span>
+      <span className={styles.dateTrack}>{grupos}</span>
+    </span>
+  );
+}
 
 export default function WeekTable(): React.ReactElement {
   return (
@@ -35,7 +47,7 @@ export default function WeekTable(): React.ReactElement {
                     {s.o ? (
                       <td className={styles.dateCell}>
                         <span className={styles.mono}>{s.o}</span>
-                        <span className={styles.dateTrack}>martes · online</span>
+                        <span className={styles.dateTrack}>martes · online 1 y 2</span>
                       </td>
                     ) : (
                       <td className={styles.noneCell}>sin sesión online</td>
@@ -52,15 +64,8 @@ export default function WeekTable(): React.ReactElement {
                     </td>
                     <td className={styles.temaCell}>{s.tema}</td>
                     <td>
-                      <span
-                        className={styles.who}
-                        style={{
-                          background: s.prof === 'Salva' ? 'var(--cal-salva-soft)' : 'var(--cal-javier-soft)',
-                          color: s.prof === 'Salva' ? 'var(--cal-salva)' : 'var(--cal-javier)',
-                        }}
-                      >
-                        {s.prof}
-                      </span>
+                      <Who prof={s.prof} grupos={s.o ? 'presencial · online 1' : 'presencial'} />
+                      {s.o && <Who prof={PROF_ONLINE_2} grupos="online 2" />}
                     </td>
                   </tr>
                 </React.Fragment>

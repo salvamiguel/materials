@@ -6,12 +6,13 @@ export default function Stats(): React.ReactElement {
   const stats = useMemo(() => {
     const presenciales = SESIONES.length;
     const online = SESIONES.filter((s) => s.o).length;
-    const total = presenciales + online;
+    const total = presenciales + online * 2;
 
     return [
       { n: total, l: 'sesiones en total' },
       { n: presenciales, l: 'presenciales · miércoles' },
-      { n: online, l: 'online · martes' },
+      { n: online, l: 'online 1 · martes' },
+      { n: online, l: 'online 2 · martes' },
     ];
   }, []);
 
