@@ -21,6 +21,21 @@ El volumen, la variedad y la velocidad de los datos han crecido de forma explosi
 | Column-family | Columnas agrupadas logicamente, analitica escalable | Datos de IoT, logs | Cosmos DB (API de Cassandra) |
 | Grafo | Nodos + aristas = relaciones | Redes sociales, recomendaciones | Cosmos DB (API de Gremlin) |
 
+### Cada tipo con un ejemplo
+
+**Documento:** cada registro es un documento JSON y cada documento puede tener campos distintos. Por ejemplo, dos productos del mismo catalogo:
+
+```json
+{ "id": "p1", "nombre": "Camiseta", "tallas": ["S", "M", "L"], "color": "azul" }
+{ "id": "p2", "nombre": "Auriculares", "bateria_horas": 30, "bluetooth": true }
+```
+
+**Clave-valor:** cada valor se guarda y recupera con una clave unica, y la base de datos no interpreta el valor. Por ejemplo, `sesion:8f3a -> {carrito, idioma, ultima_pagina}`. Las busquedas por clave son rapidisimas, pero no se puede consultar por el contenido del valor.
+
+**Familia de columnas (column-family):** las filas se agrupan en familias de columnas y cada fila solo guarda las columnas que tiene. Por ejemplo, la telemetria de millones de sensores, donde cada sensor reporta medidas distintas y se consulta por rangos de tiempo.
+
+**Grafo:** los datos son **nodos** (entidades) unidos por **aristas** (relaciones). Por ejemplo, `Ana -[sigue a]-> Luis -[compro]-> Libro`. Las consultas recorren relaciones ("amigos de mis amigos que compraron este libro"), algo muy costoso con joins en una base relacional.
+
 ## 3. Diferencias clave frente a lo relacional
 
 | Caracteristica | Relacional | No relacional |
@@ -106,9 +121,49 @@ Azure Cosmos DB es el servicio recomendado para cargas NoSQL globales, multi-reg
 
 Crear una cuenta implica: Azure Portal -> Crear recurso -> Azure Cosmos DB, elegir el modelo de API (Core/SQL, MongoDB, Cassandra, Gremlin, Table), fijar region, grupo de recursos y throughput (RU/s), revisar y crear, y usar el Data Explorer para insertar y consultar documentos JSON.
 
+Para la **monitorizacion**, Azure Monitor recoge metricas de latencia, RU/s consumidas y errores; las **Query Metrics** muestran el coste de cada consulta; los **logs de diagnostico** registran las operaciones; y todo se puede integrar con Log Analytics y Application Insights.
+
 Para el coste, Cosmos DB ofrece modelo **provisionado** (RU/s fijas, coste predecible), **serverless** (pago por solicitud) y **autoscale** (ajusta las RU/s automaticamente), ademas de capacidad reservada con descuentos a 1 o 3 anos. Buena practica: monitorizar el uso de RU/s para dimensionar correctamente.
 
 Para migrar a Cosmos DB existen tres estrategias: **lift & shift** (mover datos con cambios minimos hacia la API de SQL), **re-platform** (adaptar el esquema a documentos JSON) y **re-arquitectura** (redisenar la app para usar modelos de documento, grafo o clave-valor), apoyandose en Azure Database Migration Service o Data Factory.
+
+## Preguntas de repaso
+
+<details>
+<summary>¿Que describe mejor a los datos no relacionales (NoSQL)?</summary>
+
+Datos almacenados sin tablas rigidas ni esquema fijo (documentos JSON, pares clave-valor, grafos, familias de columnas), normalmente con escalado horizontal.
+</details>
+
+<details>
+<summary>¿Que modelo NoSQL es el mas adecuado para la informacion de un catalogo de productos?</summary>
+
+**Documento**: cada producto puede tener atributos distintos.
+</details>
+
+<details>
+<summary>¿Que carga de trabajo encaja mejor con un almacen clave-valor?</summary>
+
+Cache o almacen de **sesiones de usuario**: lecturas y escrituras rapidisimas por clave.
+</details>
+
+<details>
+<summary>¿Que servicio de Azure es principalmente un almacen de objetos para imagenes, videos y archivos?</summary>
+
+**Azure Blob Storage.**
+</details>
+
+<details>
+<summary>¿Que API de Cosmos DB elegirias para migrar una aplicacion MongoDB?</summary>
+
+La **API de MongoDB**.
+</details>
+
+<details>
+<summary>¿Que modelo no relacional representa los datos como nodos y aristas?</summary>
+
+**Grafo** (en Cosmos DB, la API de Gremlin).
+</details>
 
 <MSLearnPath
   tipo="ruta"

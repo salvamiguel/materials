@@ -18,6 +18,10 @@ Una arquitectura de analisis de datos a gran escala incluye, en general, cinco e
 4. **Modelo analitico de datos:** agrupacion previa en cubos para facilitar el reporting y la exploracion (por ejemplo, ventas por region y producto).
 5. **Visualizacion de datos:** dashboards e informes interactivos accesibles tanto para usuarios tecnicos como de negocio.
 
+:::tip Data lake, data warehouse y lakehouse
+Un **data lake** guarda archivos en bruto de cualquier tipo a bajo coste; un **data warehouse** guarda datos relacionales limpios y modelados para consultas. Un **lakehouse** combina ambos: almacena los archivos en un data lake pero permite consultarlos con SQL como si fueran tablas relacionales. Es el modelo que usa Microsoft Fabric.
+:::
+
 ## 2. ETL vs ELT
 
 Ambos son conjuntos de pasos para extraer datos y cargarlos en un destino (data warehouse, data lake, etc.):
@@ -46,7 +50,7 @@ Synapse usa arquitectura **MPP** para las cargas analiticas de gran volumen a tr
 
 ## 4. Microsoft Fabric
 
-Microsoft Fabric es una plataforma unificada de analitica de datos que reune servicios clave como Power BI, Data Factory, Synapse y **OneLake** en un unico entorno. Esta disenada para cubrir todo el ciclo de vida del dato, desde la ingesta hasta la visualizacion, facilita la colaboracion entre equipos de datos con un workspace comun, y es compatible con multiples lenguajes y motores: SQL, Spark, DAX, Power Query.
+Microsoft Fabric es una plataforma unificada de analitica de datos que reune servicios clave como Power BI, Data Factory, Synapse y **OneLake** en un unico entorno. Esta disenada para cubrir todo el ciclo de vida del dato, desde la ingesta hasta la visualizacion, facilita la colaboracion entre equipos de datos con un workspace comun, y es compatible con multiples lenguajes y motores: SQL, Spark, DAX, Power Query. Como motor de procesamiento distribuido open-source incluye **Apache Spark**, y como plataforma SaaS permite crear pipelines de ingesta y procesamiento sin gestionar infraestructura.
 
 ### Flujos de datos en tiempo real (event streams)
 
@@ -56,7 +60,30 @@ Un **event stream** captura, transforma y carga datos desde multiples fuentes, f
 
 **Destinos posibles:** Eventhouse (consultas y analisis en tiempo real con KQL), data lakehouse (transformar y almacenar), derived stream (redirige salidas procesadas a otros event streams), endpoint (envia datos a sistemas externos o APIs propias) y Fabric Activator (automatiza acciones segun condiciones del flujo).
 
-Las consultas en tiempo real usan **Kusto Query Language (KQL)**, aunque tambien existe una alternativa en SQL. Fabric incorpora Copilot para escribir consultas KQL o SQL automaticamente a partir de la intencion del usuario.
+### Consultar datos en tiempo real con KQL
+
+Las consultas en tiempo real usan **Kusto Query Language (KQL)**: se parte de una tabla y se encadenan operadores con el simbolo `|`. Por ejemplo, la temperatura media por dispositivo en la ultima hora:
+
+```kusto
+Telemetry
+| where Timestamp > ago(1h)
+| summarize AvgTemp = avg(Temperature) by DeviceId
+| order by AvgTemp desc
+```
+
+Tambien existe una alternativa en SQL:
+
+```sql
+SELECT DeviceId, AVG(Temperature) AS AvgTemp
+FROM Telemetry
+WHERE Timestamp > DATEADD(hour, -1, GETDATE())
+GROUP BY DeviceId
+ORDER BY AvgTemp DESC;
+```
+
+### Copilot en Fabric
+
+Fabric incorpora **Copilot** para escribir consultas con IA: entiende la intencion del usuario expresada en lenguaje natural ("temperatura media por sensor en la ultima hora") y genera el codigo KQL o SQL automaticamente. Acelera el analisis y permite consultar datos sin dominar los lenguajes.
 
 ## 5. Procesamiento batch vs streaming
 
@@ -96,7 +123,7 @@ Power BI es la solucion de Microsoft para crear informes, desde reportes sencill
 ### Componentes clave
 
 - **Power BI Desktop:** aplicacion de Windows para conectar multiples fuentes, transformar y modelar datos y crear informes interactivos. Gratuita.
-- **Power BI Service:** plataforma en la nube para publicar informes, compartirlos, colaborar y gestionar workspaces.
+- **Power BI Service:** plataforma en la nube para publicar informes, compartirlos, colaborar y gestionar workspaces. Se accede con una cuenta gratuita educativa, profesional o de desarrollador.
 - **Power BI Mobile:** consumo de informes y dashboards adaptados a moviles y tablets.
 
 ### Terminologia clave
@@ -112,6 +139,85 @@ Power BI es la solucion de Microsoft para crear informes, desde reportes sencill
 :::info Importante para el examen
 Un **report** puede tener varias paginas de visualizaciones basadas en un unico dataset; un **dashboard** es una sola pagina con elementos anclados (pinned) que pueden venir de varios informes.
 :::
+
+### El modelo de datos
+
+Antes de visualizar, Power BI organiza los datos en un **modelo analitico**: tablas de **hechos** (las medidas numericas, como las ventas) relacionadas con tablas de **dimensiones** (las entidades por las que se agrupan, como producto, cliente o fecha). Dentro de las dimensiones se definen **jerarquias** (por ejemplo, Año > Trimestre > Mes > Dia, o Pais > Region > Ciudad), que permiten profundizar (*drill down*) desde el total hasta el detalle en un analisis exploratorio.
+
+### Visualizaciones habituales
+
+| Visualizacion | Para que sirve |
+|---|---|
+| Graficos de barras y columnas | Comparar valores entre categorias |
+| Graficos de lineas y de area | Mostrar la evolucion en el tiempo |
+| Graficos circulares | Mostrar la proporcion de cada parte sobre el total |
+| Tarjetas (cards) | Destacar un unico valor clave, como las ventas totales |
+| KPIs | Comparar un valor con su objetivo |
+| Medidores (gauge) | Mostrar el progreso de un valor dentro de un rango |
+| Mapas | Representar datos por ubicacion geografica |
+| Tablas y matrices | Mostrar el detalle de los datos |
+
+## Preguntas de repaso
+
+<details>
+<summary>¿Que termino describe una solucion analitica que combina un data lake con almacenamiento relacional?</summary>
+
+**Lakehouse.**
+</details>
+
+<details>
+<summary>¿Que solucion analitica SaaS puedes usar para crear un pipeline de ingesta y procesamiento de datos?</summary>
+
+**Microsoft Fabric.**
+</details>
+
+<details>
+<summary>¿Que motor de procesamiento distribuido open-source incluye Microsoft Fabric?</summary>
+
+**Apache Spark.**
+</details>
+
+<details>
+<summary>¿Que definicion es correcta para el procesamiento en streaming?</summary>
+
+Los datos se procesan de forma continua, a medida que llegan, en segundos o milisegundos.
+</details>
+
+<details>
+<summary>¿Que herramienta usarias para importar datos de varias fuentes y crear un informe?</summary>
+
+**Power BI Desktop.**
+</details>
+
+<details>
+<summary>¿Que deberias definir en el modelo de datos para permitir un analisis exploratorio en profundidad?</summary>
+
+**Jerarquias**, que permiten bajar del total al detalle (*drill down*).
+</details>
+
+<details>
+<summary>¿Cual de estos servicios NO es de procesamiento batch: Data Factory, Databricks Jobs, Synapse SQL dedicado o Stream Analytics?</summary>
+
+**Azure Stream Analytics**, que es de streaming.
+</details>
+
+<details>
+<summary>¿Que servicio tiene una arquitectura MPP (Massively Parallel Processing)?</summary>
+
+**Azure Synapse Analytics** (pools SQL dedicados).
+</details>
+
+<details>
+<summary>¿Que herramienta puedo usar para crear informes interactivos?</summary>
+
+**Power BI.**
+</details>
+
+<details>
+<summary>Si necesito procesamiento casi en tiempo real, ¿que tipo de procesamiento uso?</summary>
+
+**Streaming.**
+</details>
 
 <MSLearnPath
   tipo="ruta"

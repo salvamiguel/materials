@@ -1,0 +1,225 @@
+---
+sidebar_position: 2
+title: "Deep Learning y Evaluacion de Modelos"
+description: "Overfitting y underfitting, sesgo y varianza, redes neuronales (CNN, RNN), metricas de clasificacion y regresion, y ML sin codigo con AutoML y Designer en Azure Machine Learning."
+---
+
+import MSLearnPath from '@site/src/components/shared/MSLearnPath';
+import CnnLink from '@site/src/components/shared/CnnLink';
+
+# Deep Learning y Evaluacion de Modelos
+
+La sesion anterior explico que es un modelo y como se entrena. Esta da el paso siguiente: **como saber si un modelo es bueno**. Primero vemos que significa que un modelo este bien ajustado, despues como funcionan por dentro las redes neuronales del deep learning, y por ultimo las metricas que se usan para evaluar modelos de clasificacion y de regresion. Cerramos con las herramientas de Azure Machine Learning para crear modelos sin escribir codigo.
+
+## 1. ¿Esta el modelo bien ajustado?
+
+Ajustar bien un modelo es esencial para que funcione con datos que no ha visto. Hay tres situaciones posibles:
+
+- **Overfitting (sobreajuste):** el modelo se adapta demasiado a los datos de entrenamiento, hasta el punto de "memorizar" su ruido. Acierta mucho en entrenamiento pero falla con datos nuevos de evaluacion.
+- **Underfitting (subajuste):** el modelo es demasiado simple para capturar las tendencias de los datos y rinde mal incluso con los datos de entrenamiento.
+- **Equilibrado (balanced):** el punto ideal, donde el modelo **generaliza** bien a datos nuevos.
+
+### Sesgo (bias) y varianza (variance)
+
+Los dos tipos de error que explican el overfitting y el underfitting:
+
+| | Sesgo (bias) | Varianza (variance) |
+|---|---|---|
+| Que es | Error por suposiciones demasiado simplistas del modelo | Error por la sensibilidad del modelo a pequenas fluctuaciones de los datos de entrenamiento |
+| Cuando aparece | El modelo es demasiado simple para la complejidad del dataset | El modelo es demasiado complejo y se adapta en exceso a los datos de entrenamiento |
+| Provoca | **Underfitting** | **Overfitting** |
+| Solucion | Aumentar la complejidad del modelo | Simplificar el modelo, aplicar regularizacion o aumentar el conjunto de entrenamiento |
+
+Un modelo equilibrado tiene a la vez sesgo bajo y varianza baja. Reducir uno suele aumentar el otro, asi que se busca el punto en el que el error total es minimo.
+
+:::info Importante para el examen
+Sesgo alto -> **underfitting** (falla incluso en entrenamiento). Varianza alta -> **overfitting** (acierta en entrenamiento, falla con datos nuevos). Por eso nunca se evalua el modelo final solo con el conjunto de entrenamiento.
+:::
+
+## 2. Deep Learning
+
+El **Deep Learning (DL)** es el subconjunto del Machine Learning basado en redes neuronales, que resuelve tareas como el reconocimiento de voz o de imagenes. Sus rasgos principales:
+
+- Usa arquitecturas con **muchas capas** de neuronas para modelar datos complejos.
+- Necesita **grandes conjuntos de datos** para entrenar modelos precisos.
+- Exige mucha **potencia de computo**, normalmente con GPUs para el entrenamiento (de ahi la importancia de la nube).
+- Casos de uso: reconocimiento de imagenes, procesamiento de lenguaje natural y analisis de voz.
+
+### Como es una red neuronal
+
+Las redes neuronales se inspiran en el cerebro humano: estan formadas por **neuronas artificiales (nodos)** que reciben una o varias entradas, las procesan y producen una salida que pasan (o no) a la capa siguiente. Una red puede tener miles de millones de nodos, organizados en tres tipos de capa:
+
+- **Capa de entrada:** la primera, recibe los datos.
+- **Capas ocultas:** una o varias entre la entrada y la salida; aqui se hace la mayor parte del procesamiento y del aprendizaje.
+- **Capa de salida:** la ultima, produce el resultado del modelo.
+
+La red aprende ajustando sus pesos de forma iterativa a partir de sus errores, lo que le permite aprender representaciones complejas de los datos.
+
+**Ejemplo, reseñas de peliculas:** ante la frase "The movie was incredible and exciting", la capa de entrada convierte el texto en vectores numericos, las capas ocultas identifican patrones y relaciones entre las palabras, y la capa de salida produce una clasificacion binaria: 1 (reseña positiva) o 0 (negativa).
+
+### Redes neuronales convolucionales (CNN)
+
+Las **CNN** son redes profundas disenadas para datos con estructura de cuadricula, como las imagenes. Aplican **filtros (kernels)** que recorren la imagen detectando rasgos locales (bordes, texturas, patrones) y los combinan, capa a capa, en formas y objetos hasta poder decir "perro", "gato" o "capibara". Extraen automaticamente las caracteristicas relevantes, sin necesidad de ingenieria de caracteristicas manual. Son la base de la vision artificial que veremos con Custom Vision y Foundry.
+
+<CnnLink />
+
+### Redes neuronales recurrentes (RNN)
+
+Las **RNN** estan pensadas para datos **secuenciales y temporales**: series temporales, texto o secuencias de video. La salida de cada neurona se realimenta a si misma o a otras neuronas, y esos bucles le permiten "recordar" informacion de entradas anteriores. Son utiles cuando la longitud de la entrada y la salida varia, como en la traduccion o la generacion de texto. Hoy, en lenguaje, han sido sustituidas en gran parte por los **Transformers**, que veremos con los modelos generativos de Foundry.
+
+| Arquitectura | Tipo de dato | Ejemplo |
+|---|---|---|
+| CNN | Imagenes (cuadricula de pixeles) | Clasificar fotos, detectar objetos |
+| RNN | Secuencias (texto, series temporales) | Traduccion, prediccion de demanda |
+
+## 3. Evaluar un modelo de clasificacion
+
+### La matriz de confusion
+
+La **matriz de confusion** resume los aciertos y errores de un modelo de clasificacion en **cuatro** categorias, cruzando el valor real con el predicho:
+
+| | Predicho positivo | Predicho negativo |
+|---|---|---|
+| **Real positivo** | Verdadero positivo (TP) | Falso negativo (FN) |
+| **Real negativo** | Falso positivo (FP) | Verdadero negativo (TN) |
+
+A partir de ella se calculan las metricas de clasificacion:
+
+| Metrica | Formula | Pregunta que responde |
+|---|---|---|
+| **Accuracy** (exactitud) | (TP + TN) / total | ¿Que proporcion de predicciones fue correcta? |
+| **Precision** | TP / (TP + FP) | De lo que predije como positivo, ¿cuanto lo era de verdad? |
+| **Recall** (sensibilidad) | TP / (TP + FN) | De todo lo que era positivo, ¿cuanto detecte? |
+| **F1-score** | 2 · (Precision · Recall) / (Precision + Recall) | Equilibrio entre precision y recall |
+
+### Ejemplo practico: diagnostico de gripe
+
+Un modelo binario predice, a partir de la temperatura, si un paciente tiene gripe. Sobre 10 pacientes:
+
+- **TP = 5:** pacientes con gripe clasificados correctamente como "gripe".
+- **FN = 0:** ningun paciente con gripe se clasifico como "sin gripe".
+- **FP = 1:** un paciente sin gripe se clasifico como "gripe".
+- **TN = 4:** pacientes sin gripe clasificados correctamente.
+
+| Metrica | Calculo | Resultado |
+|---|---|---|
+| Accuracy | (5 + 4) / 10 | 0,90 |
+| Precision | 5 / (5 + 1) | 0,83 |
+| Recall | 5 / (5 + 0) | 1,00 |
+| F1 | 2 · 0,83 · 1 / (0,83 + 1) | ≈ 0,91 |
+
+El recall de 1,00 indica que el modelo no se deja ningun enfermo sin detectar, que es justo lo que importa en un diagnostico; el precio es una falsa alarma (precision de 0,83).
+
+:::tip ¿Precision o recall?
+Si un falso negativo es grave (no detectar una enfermedad o un fraude), prioriza el **recall**. Si un falso positivo es caro (marcar como spam un email legitimo), prioriza la **precision**.
+:::
+
+### AUC-ROC
+
+La **curva ROC** muestra la relacion entre la tasa de verdaderos positivos (sensibilidad) y la tasa de falsos positivos para todos los umbrales de decision posibles. El **AUC** (Area Under the Curve) es el area bajo esa curva y mide la capacidad del modelo para distinguir entre clases:
+
+- **AUC = 1,0:** modelo perfecto.
+- **AUC = 0,5:** sin capacidad de clasificacion, equivalente a tirar una moneda.
+
+Es util para comparar distintos modelos de clasificacion para la misma tarea.
+
+## 4. Evaluar un modelo de regresion
+
+Las metricas de regresion miden lo bien que un modelo predice **valores continuos** (precios, consumos, ventas):
+
+| Metrica | Definicion | Ejemplo |
+|---|---|---|
+| **MSE** (Mean Squared Error) | Media de los errores al cuadrado; penaliza mucho los errores grandes | Al predecir precios de viviendas, un error grande en una casa cara pesa mucho en el MSE |
+| **RMSE** (Root Mean Squared Error) | Raiz cuadrada del MSE; expresa el error en la misma unidad que los datos | Si predices el precio en miles de euros, el RMSE es el error medio en miles de euros |
+| **MAE** (Mean Absolute Error) | Media del valor absoluto de los errores | Al predecir ingresos mensuales, el MAE indica cuantos euros te equivocas de media |
+| **R²** (coeficiente de determinacion) | Proporcion de la variacion de los datos que explica el modelo (1 = la explica toda) | R² = 0,8 en ventas: el modelo explica el 80% de la variacion |
+| **MAPE** (Mean Absolute Percentage Error) | Error absoluto medio expresado como porcentaje del valor real | MAPE = 5%: te equivocas de media un 5% del valor real |
+| **MSLE** (Mean Squared Logarithmic Error) | Como el MSE pero sobre el logaritmo de los valores; mide el error relativo | Util cuando los valores abarcan varios ordenes de magnitud |
+
+**Ejemplo:** un modelo predice el consumo electrico a partir de la temperatura y obtiene MAE = 5,00, RMSE = 5,00 y R² = 0,99. El R² tan cercano a 1 indica que el modelo explica el 99% de la variacion del consumo: se ajusta muy bien a los datos.
+
+:::info Importante para el examen
+Metricas como accuracy, precision, recall, F1 y AUC son de **clasificacion**. MAE, MSE, RMSE y R² son de **regresion**. Un R² cercano a 1 y un AUC cercano a 1 indican buenos modelos; un AUC de 0,5 equivale al azar.
+:::
+
+## 5. Machine Learning sin codigo en Azure
+
+**Azure Machine Learning** ofrece dos formas de crear modelos sin programar:
+
+### Automated Machine Learning (AutoML)
+
+- Automatiza el entrenamiento y la seleccion de modelos.
+- Elige el mejor algoritmo para tareas como clasificacion, regresion o prevision de series temporales.
+- Optimiza automaticamente los **hiperparametros** para mejorar el rendimiento.
+- Preprocesa los datos, limpiandolos y transformandolos de forma automatica.
+- Escala el entrenamiento en la nube de Azure, acelerando el proceso.
+
+### Machine Learning Designer
+
+- Entorno **visual** para crear modelos sin codigo.
+- Se construyen flujos arrastrando y soltando componentes (drag and drop).
+- Permite preprocesar, entrenar y evaluar modelos en una unica interfaz.
+
+| | AutoML | Designer |
+|---|---|---|
+| Quien decide el algoritmo | Azure, probando muchos automaticamente | La persona, eligiendo componentes |
+| Interfaz | Asistente: se indican datos, tarea y metrica | Lienzo visual de arrastrar y soltar |
+| Ideal para | Encontrar rapido un buen modelo | Controlar cada paso del pipeline sin programar |
+
+## Preguntas de repaso
+
+<details>
+<summary>Verdadero o falso: un AUC de 1,0 indica un modelo perfecto.</summary>
+
+**Verdadero.** Un AUC de 0,5 equivale al azar.
+</details>
+
+<details>
+<summary>Verdadero o falso: la matriz de confusion divide los resultados en cinco categorias.</summary>
+
+**Falso.** Son cuatro: TP, FP, TN y FN.
+</details>
+
+<details>
+<summary>¿Que ocurre cuando un modelo sufre overfitting?</summary>
+
+Rinde muy bien con los datos de entrenamiento pero mal con datos nuevos, porque se ha ajustado en exceso (ha memorizado) los datos de entrenamiento.
+</details>
+
+<details>
+<summary>Verdadero o falso: un sesgo alto puede provocar underfitting.</summary>
+
+**Verdadero.** El modelo es demasiado simple para capturar los patrones de los datos.
+</details>
+
+<details>
+<summary>Una varianza alta puede provocar...</summary>
+
+**Overfitting.**
+</details>
+
+<details>
+<summary>¿Cuando se considera que un modelo esta equilibrado?</summary>
+
+Cuando generaliza bien: tiene sesgo y varianza bajos y rinde de forma parecida con los datos de entrenamiento y con datos nuevos.
+</details>
+
+<details>
+<summary>¿Que permite hacer AutoML y que optimiza en sus modelos?</summary>
+
+Entrenar y comparar muchos modelos automaticamente para quedarse con el mejor. Optimiza el algoritmo y sus **hiperparametros**.
+</details>
+
+<details>
+<summary>¿Que permite hacer Machine Learning Designer?</summary>
+
+Crear, entrenar y evaluar modelos de forma visual, arrastrando y soltando componentes, sin escribir codigo.
+</details>
+
+<MSLearnPath
+  tipo="modulo"
+  title="Introduction to machine learning concepts"
+  url="https://learn.microsoft.com/en-us/training/modules/fundamentals-machine-learning/"
+>
+  Modulo gratuito de Microsoft Learn sobre regresion, clasificacion, clustering, deep learning y las metricas para evaluar cada tipo de modelo.
+</MSLearnPath>

@@ -103,6 +103,84 @@ Preguntas tipicas por rol: "quien construye los pipelines ETL" -> **Data Enginee
 - **Azure Data Explorer:** servicio especializado en telemetria y analisis de logs, con consultas rapidas sobre grandes volumenes.
 - **Microsoft Purview:** solucion de gobernanza y catalogo de datos, facilita la trazabilidad y confianza en los datos analiticos.
 
+:::tip Microsoft Purview y la gobernanza
+Purview mantiene un **catalogo** de los datos de la organizacion, los **clasifica** (por ejemplo, detecta datos personales) y registra su **linaje** (*lineage*): de donde viene cada dato y por que transformaciones ha pasado hasta llegar a un informe. Esa trazabilidad es la que permite confiar en la integridad de los datos analiticos.
+:::
+
+## 9. Escenarios tipicos del examen
+
+| Escenario | Respuesta |
+|---|---|
+| Clasificar imagenes, videos, PDFs y audios | Datos no estructurados |
+| Trabajar con archivos JSON o XML | Datos semiestructurados |
+| Guardar datos de clientes con un esquema fijo | Datos estructurados |
+| Transformar y limpiar los datos antes de cargarlos en el warehouse | ETL |
+| Aplicar las transformaciones despues de cargar los datos | ELT |
+| Analizar grandes volumenes de datos historicos | OLAP |
+| Sistema optimizado para transacciones rapidas y frecuentes | OLTP |
+| Una transaccion no afecta a otra transaccion concurrente | Aislamiento (Isolation) |
+| Los datos se conservan tras un fallo | Durabilidad (Durability) |
+| Una transaccion se completa entera o no se aplica | Atomicidad (Atomicity) |
+| Quien crea los pipelines que mueven y transforman datos | Data Engineer |
+| Quien configura disponibilidad, backups y seguridad de la base de datos | DBA |
+| Formato orientado a filas ideal para comprimir y transmitir datos | Avro |
+
+## Preguntas de repaso
+
+<details>
+<summary>¿Que caracteristica distingue a los datos no estructurados de los estructurados y semiestructurados?</summary>
+
+No siguen ningun esquema o modelo de datos predefinido.
+</details>
+
+<details>
+<summary>¿Que caracteristica es esencial en un sistema de procesamiento transaccional (OLTP)?</summary>
+
+Garantizar la integridad de cada transaccion mediante las propiedades **ACID**.
+</details>
+
+<details>
+<summary>¿Que tipo de almacen deberias usar para consultar datos estructurados con fines analiticos?</summary>
+
+Un **data warehouse** relacional, con un esquema optimizado para consultas.
+</details>
+
+<details>
+<summary>Necesitas generar informes financieros mensuales que resuman las ventas de varias regiones. ¿Que tipo de procesamiento usarias?</summary>
+
+**Analitico (OLAP)**, normalmente procesado por lotes (batch).
+</details>
+
+<details>
+<summary>¿Que formato usarias para almacenar una coleccion de imagenes digitales?</summary>
+
+**BLOB** (Binary Large Object).
+</details>
+
+<details>
+<summary>¿Que servicio de Azure se usa principalmente para crear soluciones ETL que ingieren datos de sistemas transaccionales?</summary>
+
+**Azure Data Factory.**
+</details>
+
+<details>
+<summary>¿Cual es la principal ventaja de usar un almacen de datos analitico para generar informes de negocio?</summary>
+
+Que las consultas analiticas no compiten con el sistema transaccional: los datos estan modelados y optimizados para lectura, y los informes no ralentizan las operaciones del dia a dia.
+</details>
+
+<details>
+<summary>¿Que rol aplica rutinas de limpieza de datos para garantizar su calidad antes del analisis?</summary>
+
+El **Data Engineer**.
+</details>
+
+<details>
+<summary>¿Que ofrece Microsoft Purview para garantizar la integridad de los datos?</summary>
+
+Un catalogo de datos con clasificacion y **linaje** (*data lineage*), que permite trazar el origen y las transformaciones de cada dato.
+</details>
+
 <MSLearnPath
   tipo="ruta"
   title="Explore core data concepts"

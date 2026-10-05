@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 title: "IA Generativa y Agentes con Foundry"
 description: "Que es Microsoft Foundry, prompting, desplegar un modelo, construir un cliente de chat con el SDK, y crear y probar un agente."
 ---
@@ -14,6 +14,10 @@ Esta es "Microsoft Foundry (I)" del temario: la primera sesion practica de AI-90
 ## 1. Que es Microsoft Foundry
 
 Microsoft Foundry es la plataforma unificada de Microsoft en Azure para construir y gestionar aplicaciones de IA. Sus areas principales son los **modelos fundacionales** (LLMs, vision, embeddings, etc.), las **Foundry Tools** (vision, voz, lenguaje, busqueda, extraccion de informacion) y los **agentes** que orquestan modelos y herramientas para completar tareas.
+
+:::note Nombre anterior
+Hasta finales de 2025 se llamaba **Azure AI Foundry** (y antes, Azure AI Studio). En materiales y preguntas antiguas puedes encontrar cualquiera de los tres nombres.
+:::
 
 ### Por que Foundry
 
@@ -69,9 +73,35 @@ En el portal de Foundry, crear un agente implica: elegir un modelo base, escribi
 
 Igual que con el chat, una vez el agente funciona en el portal se construye un cliente ligero con el SDK que: se autentica, referencia el agente, le envia la tarea del usuario, y recoge tanto la respuesta final como (si la aplicacion lo necesita) los pasos intermedios que el agente ha ejecutado.
 
-## 6. Grounding y RAG, en una frase
+### Flujos y orquestacion
+
+Para tareas mas complejas, Foundry permite definir **flujos**: pipelines de IA de varios pasos del tipo *recuperar -> razonar -> actuar -> responder*. Un flujo combina componentes como LLMs, busqueda o almacenes vectoriales, APIs externas y llamadas a herramientas. Es lo que permite construir copilots que planifican, usan herramientas y resuelven tareas complejas de principio a fin.
+
+## 6. Grounding y RAG
 
 Cuando un agente o un chat necesita responder con informacion propia de la organizacion (no solo lo que el modelo aprendio en su entrenamiento), se usa **grounding** mediante **Retrieval-Augmented Generation (RAG)**: se recuperan los documentos o fragmentos mas relevantes de una fuente propia (Blob Storage, Data Lake, Fabric...) y se pasan al modelo como contexto adicional junto al prompt, para que la respuesta este anclada en esos datos y no solo en la memoria del modelo.
+
+Ventajas del RAG:
+
+- Respuestas **mas precisas, actualizadas y especificas** de la organizacion, sin reentrenar el modelo.
+- Mas **transparencia**: la respuesta sale de tu contenido, no solo de la memoria del modelo, y se puede citar la fuente.
+
+Aqui se ve la conexion con DP-900: los datos que alimentan el RAG viven en los mismos servicios de almacenamiento y analitica que estudiamos alli.
+
+## 7. Seguridad, gobernanza y monitorizacion
+
+Una aplicacion de IA en produccion necesita los mismos controles que cualquier otra carga de Azure, mas algunos especificos de la IA:
+
+- **Acceso y seguridad:** integracion con Azure RBAC, redes privadas, politicas e identidad.
+- **Filtros de seguridad (content safety):** moderan el contenido y aplican politicas tanto en las entradas como en las salidas del modelo.
+- **Monitorizacion y logs:** seguimiento del uso, la latencia, los errores y señales de calidad de los endpoints y aplicaciones de IA.
+- **IA responsable:** ayuda a aplicar en produccion los principios de IA responsable que vimos en la sesion de conceptos.
+
+## 8. Opciones de despliegue e integracion
+
+- **Endpoints gestionados:** se despliegan APIs para chat, completions o flujos de IA propios.
+- **Patrones de integracion:** apps web y moviles, servicios backend, Logic Apps, Power Apps y Power Automate.
+- **Los mismos principios de Azure:** grupos de recursos, regiones, etiquetas, monitorizacion y gestion de costes, igual que con cualquier otro recurso (lo visto en la sesion de introduccion al cloud).
 
 :::tip AI-901 vs el antiguo AI-900
 El examen AI-900 fue retirado el 30 de junio de 2026. Su sucesor, AI-901, dedica el subdominio con mas peso individual del examen precisamente a esto: construir apps y agentes generativos con Foundry. A diferencia de AI-900, que no exigia saber programar, AI-901 espera sintaxis basica de Python — el flujo de 4 pasos de la seccion 4 es exactamente lo que hay detras del ejercicio practico del examen. El programa del modulo tiene la comparativa completa AI-900 vs AI-901.
