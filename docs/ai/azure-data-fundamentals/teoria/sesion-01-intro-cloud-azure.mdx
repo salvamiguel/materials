@@ -48,8 +48,19 @@ Estas seis ventajas explican por que tantas organizaciones migran cargas de trab
 5. **Dejar de gastar dinero en mantener centros de datos:** los equipos se centran en el negocio, no en la infraestructura fisica.
 6. **Alcance global en minutos:** las aplicaciones se pueden desplegar en multiples regiones del mundo con pocos clics.
 
-:::tip Problemas que resuelve la nube
-La nube resuelve la falta de flexibilidad, los costes altos, la escalabilidad limitada y la lentitud de despliegue. Elasticidad (escalar automaticamente segun demanda) y alta disponibilidad (repartir recursos entre varios centros de datos) son conceptos clave para el examen.
+### Problemas que resuelve la nube
+
+Frente a los problemas de la IT tradicional de la seccion 1, la nube aporta:
+
+- **Flexibilidad:** cambiar el tipo de recurso cuando haga falta.
+- **Coste ajustado:** pago por uso, solo por lo que se consume.
+- **Escalabilidad:** asumir mas carga haciendo el hardware mas potente (**escalado vertical**, *scale up*) o anadiendo mas nodos (**escalado horizontal**, *scale out*).
+- **Elasticidad:** escalar hacia fuera y hacia dentro (*scale out / scale in*) automaticamente segun la demanda.
+- **Alta disponibilidad y tolerancia a fallos:** desplegar en varios centros de datos para que un fallo no tumbe el servicio.
+- **Agilidad:** desarrollar, probar y lanzar aplicaciones rapidamente.
+
+:::tip Escalabilidad vs elasticidad
+La **escalabilidad** es la capacidad de crecer para asumir mas carga; la **elasticidad** es hacerlo (y reducirse) de forma automatica segun la demanda real. Ambos conceptos, junto con la alta disponibilidad, aparecen con frecuencia en el examen.
 :::
 
 ## 4. Tipos de Cloud Computing
@@ -135,9 +146,41 @@ La politica de uso aceptable de Microsoft Online Services prohibe, entre otras c
 - Enviar correo masivo no solicitado (spam).
 - Eliminar o alterar avisos legales o regulatorios incorporados en los servicios.
 
-## Comparativa rapida de proveedores
+## 10. Comparativa rapida de proveedores
 
 Azure, AWS y Google Cloud son los tres grandes proveedores de nube publica. Para el examen no se pide memorizar cuotas de mercado, pero si reconocer que los tres compiten en el mismo espacio con modelos IaaS/PaaS/SaaS equivalentes bajo nombres distintos.
+
+## Preguntas de repaso
+
+<details>
+<summary>Solo quieres gestionar aplicaciones y datos. ¿Que modelo de cloud computing deberias usar?</summary>
+
+**PaaS.** El proveedor gestiona la infraestructura y el sistema operativo; tu te centras en las aplicaciones y los datos.
+</details>
+
+<details>
+<summary>¿Cuales son los tres fundamentos del precio en Azure?</summary>
+
+**Computo, almacenamiento y transferencia de datos de salida.** La entrada de datos a Azure es gratuita.
+</details>
+
+<details>
+<summary>¿Que define el reparto de responsabilidades de seguridad en Azure?</summary>
+
+El **modelo de responsabilidad compartida** (Shared Responsibility Model).
+</details>
+
+<details>
+<summary>¿Que es una region de Azure?</summary>
+
+Un area geografica con uno o varios centros de datos conectados por una red de baja latencia y alto ancho de banda.
+</details>
+
+<details>
+<summary>¿Que afirmacion sobre las Availability Zones es correcta?</summary>
+
+Son ubicaciones fisicas separadas **dentro de una misma region**, cada una con alimentacion, refrigeracion y red independientes. Si una zona falla, las demas siguen funcionando.
+</details>
 
 <MSLearnPath
   tipo="ruta"

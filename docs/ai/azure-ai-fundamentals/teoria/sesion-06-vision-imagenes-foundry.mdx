@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 6
 title: "Vision y Generacion de Imagenes con Foundry"
 description: "Azure Computer Vision, Custom Vision, y como Microsoft Foundry interpreta y genera contenido visual con modelos multimodales."
 ---
@@ -13,21 +13,53 @@ Esta sesion es "Microsoft Foundry (III)" del temario: la primera mitad, centrada
 
 ## 1. Objetivos de la sesion
 
-- Entender los casos de uso de Azure Computer Vision.
+- Entender los casos de uso y las capacidades de Azure AI Vision (OCR, Image Analysis, Face, video).
 - Explicar cuando usar un modelo de vision prediseñado frente a uno personalizado.
 - Describir las capacidades de Azure AI Custom Vision.
 - Entender el flujo basico para entrenar y desplegar un modelo de Custom Vision.
 - Interpretar entradas visuales en prompts usando un modelo multimodal desplegado en Foundry.
 - Generar nuevas salidas visuales con modelos generativos de imagen.
 
-## 2. Servicios de Azure Computer Vision
+## 2. Que es Azure AI Vision
+
+La vision artificial permite identificar y entender objetos y personas en imagenes y video, con aplicaciones en reconocimiento facial, deteccion de objetos o analisis de imagen medica, entre otras. **Azure AI Vision** funciona asi:
+
+- Captura y procesa entradas de camaras y sensores.
+- Usa algoritmos de machine learning y deep learning (sobre todo las CNN que vimos en la [sesion de deep learning](./sesion-02-deep-learning-evaluacion)) para analizarlas.
+- Identifica patrones en los datos visuales para interpretar su contenido.
+- Almacena y procesa grandes volumenes de datos visuales en la nube.
+
+### Capacidades principales
+
+- **Clasificacion de imagenes:** automatiza la categorizacion y el etiquetado de los elementos de una imagen y permite gestionar y analizar al instante grandes volumenes de imagenes.
+- **Reconocimiento optico de caracteres (OCR):** convierte documentos impresos o manuscritos en texto editable y buscable, reduce errores en la entrada de datos y soporta varios idiomas.
+- **Deteccion y analisis facial:** detecta rostros e identifica o verifica personas en imagenes y video, por ejemplo para control de acceso.
+- **Deteccion de objetos:** identifica y localiza objetos en tiempo real en imagenes y video. Util en robotica, retail o gestion urbana.
+- **Seguimiento de objetos (tracking):** sigue un objeto a lo largo de los fotogramas de un video.
+
+| Servicio | Funcionalidad | Ejemplo |
+|---|---|---|
+| OCR | Extraer texto de imagenes | Escanear una nota manuscrita para convertirla en texto editable |
+| Image Analysis | Extraer muchas caracteristicas visuales: objetos, etiquetas, descripciones, contenido para adultos... | Identificar coches, peatones y semaforos en la foto de una calle |
+| Face | Detectar, reconocer y analizar rostros humanos | Comparar los rostros de un evento con una base de datos de personas autorizadas |
+| Video Analysis | Funciones de video como analisis espacial y busqueda en video | Analizar la grabacion de una camara de seguridad para detectar movimientos inusuales |
+
+:::caution Face e IA responsable
+Por sus principios de IA responsable, Microsoft **retiro** de Face la inferencia de emociones y de atributos como genero o edad, y limita el **reconocimiento** facial (identificar quien es alguien) a clientes aprobados. La deteccion de rostros sigue disponible. Si un escenario pide "inferir emociones a partir de la cara", recuerda que ya no es una capacidad abierta del servicio.
+:::
+
+## 3. Prediseñado o personalizado
+
+Dentro de la familia de vision de Azure hay cuatro piezas, y AI-901 se centra en saber elegir la adecuada para cada escenario:
 
 - **Image Analysis:** modelo prediseñado para detectar objetos, escenas, etiquetas y generar descripciones.
 - **OCR / Document Intelligence:** lee y extrae texto y estructura de imagenes y documentos.
 - **Funciones relacionadas con rostros y personas:** detectan y analizan personas o rostros, sujeto a politicas de IA responsable y restricciones regionales.
 - **Custom Vision:** permite construir tus propios modelos de clasificacion de imagenes o deteccion de objetos con etiquetas personalizadas.
 
-## 3. Que es Azure AI Custom Vision
+A veces un modelo prediseñado basta (por ejemplo, etiquetas genericas); cuando el negocio tiene objetos o categorias muy especificos, se pasa a Custom Vision.
+
+## 4. Que es Azure AI Custom Vision
 
 Custom Vision es un servicio de reconocimiento de imagenes basado en la nube: creas tus propios clasificadores de imagenes y detectores de objetos para tus propias categorias. Usa transfer learning por debajo, asi que no se parte de cero, y se expone mediante un portal web, APIs REST y SDKs para integrarlo en aplicaciones.
 
@@ -52,7 +84,7 @@ En la **clasificacion multiclase**, cada imagen pertenece a exactamente una clas
 
 Custom Vision ofrece **dominios**: variantes de modelo pre-optimizadas para tipos de imagen especificos (generico, alimentacion, retail, etc.); se puede cambiar de dominio y reentrenar para ver si mejora la precision. Los **dominios compactos** son modelos mas pequenos, optimizados para exportar a moviles o dispositivos edge, utiles cuando se necesita inferencia offline o en el propio dispositivo.
 
-## 4. El flujo de trabajo de Custom Vision
+## 5. El flujo de trabajo de Custom Vision
 
 1. Crear los recursos de Training y Prediction en Azure.
 2. En el portal de Custom Vision, crear un proyecto (elegir clasificacion/deteccion y dominio).
@@ -79,7 +111,7 @@ En la nube, se publica una iteracion y se obtiene una URL y una clave de predicc
 Precision responde a "de lo que predije como positivo, cuanto era correcto"; recall responde a "de todo lo que era realmente positivo, cuanto detecte". No los confundas.
 :::
 
-## 5. Vision multimodal en Microsoft Foundry
+## 6. Vision multimodal en Microsoft Foundry
 
 AI-901 pone el foco en un enfoque distinto al de Custom Vision: en lugar de entrenar un clasificador propio, se usa un **modelo multimodal** (que entiende texto e imagen a la vez) ya desplegado en Foundry, y se le pasa una imagen dentro del propio prompt.
 

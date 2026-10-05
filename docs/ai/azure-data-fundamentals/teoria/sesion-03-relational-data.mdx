@@ -14,10 +14,11 @@ Los datos relacionales se estructuran en tablas: filas (registros) y columnas (a
 
 ## 2. Elementos clave del modelo relacional
 
-- **Primary Key (clave primaria):** identificador unico de cada fila.
+- **Primary Key (clave primaria):** identificador unico de cada fila; impide registros duplicados. Puede ser una columna (un ID) o una **clave compuesta** formada por varias columnas.
 - **Foreign Key (clave foranea):** impone una relacion entre tablas (integridad referencial).
 - **Relaciones:** uno-a-uno, uno-a-muchos, muchos-a-muchos.
 - **Objetos de base de datos:** tablas, vistas, indices, procedimientos almacenados, triggers.
+- **Restricciones (constraints):** `NOT NULL`, `UNIQUE` o `CHECK` imponen reglas de negocio directamente en la base de datos.
 
 Ejemplo clasico: una tabla `Customer` (con `CustomerID` como clave primaria) y una tabla `Order` con una columna `CustomerID` que actua como clave foranea, enlazando cada pedido con su cliente. Este diseno aporta consultas estructuradas, joins e integridad de los datos.
 
@@ -56,6 +57,8 @@ SQL se divide en tres categorias:
 **OLTP (transaccional):** muchas transacciones cortas y concurrentes (altas, actualizaciones, bajas), baja latencia, consistencia fuerte. Ejemplo: un punto de venta retail.
 
 **OLAP (analitico):** consultas menos frecuentes pero mas complejas, para agregaciones y analisis, habitualmente sobre volumenes de datos mayores y con actualizaciones menos frecuentes. Ejemplo: un sistema de reporting de un data warehouse.
+
+Aunque una base de datos relacional puede usarse para analitica, lo habitual es **separar** la base de datos operacional que usan las aplicaciones del almacen analitico (data warehouse) que se usa para los informes, para que las consultas pesadas no degraden el rendimiento de las transacciones.
 
 ## 6. Rendimiento, escalabilidad, disponibilidad y durabilidad
 
@@ -112,6 +115,50 @@ Los modelos de despliegue disponibles son **base de datos unica** (recurso indep
 - **Conectividad:** endpoint publico con reglas de firewall, o endpoint privado (Azure Private Link) para mayor seguridad; integracion con red virtual (Managed Instance en VNet).
 - **Seguridad:** cifrado en reposo con Transparent Data Encryption (TDE), cifrado en transito con TLS, autenticacion con Azure AD e identidades administradas, auditoria con Azure SQL Auditing.
 - **Continuidad:** backups automaticos con restauracion a un punto en el tiempo (PITR), geo-replicacion con failover groups, y alta disponibilidad integrada sin gestion manual de clustering.
+
+## Preguntas de repaso
+
+<details>
+<summary>¿Para que sirve una clave foranea?</summary>
+
+Para relacionar dos tablas e imponer la **integridad referencial**: no se puede, por ejemplo, crear un pedido de un cliente que no existe.
+</details>
+
+<details>
+<summary>¿A que categoria de SQL pertenece <code>GRANT</code>?</summary>
+
+A **DCL** (Data Control Language).
+</details>
+
+<details>
+<summary>¿Que tipo de comando SQL modifica filas?</summary>
+
+**DML** (`INSERT`, `UPDATE`, `DELETE`).
+</details>
+
+<details>
+<summary>¿Que produce la normalizacion?</summary>
+
+Varias tablas relacionadas, con menos datos duplicados y mejor integridad.
+</details>
+
+<details>
+<summary>Quieres migrar a Azure una app que usa SQL Server on-premises con los minimos cambios. ¿Que servicio eliges?</summary>
+
+**Azure SQL Managed Instance.**
+</details>
+
+<details>
+<summary>Una app existente usa PostgreSQL y quieres llevarla a un servicio gestionado de Azure. ¿Que eliges?</summary>
+
+**Azure Database for PostgreSQL.**
+</details>
+
+<details>
+<summary>Necesitas instalar agentes de terceros y controlar el sistema operativo donde corre SQL Server. ¿Que eliges?</summary>
+
+**SQL Server on Azure Virtual Machines** (IaaS).
+</details>
 
 <MSLearnPath
   tipo="ruta"

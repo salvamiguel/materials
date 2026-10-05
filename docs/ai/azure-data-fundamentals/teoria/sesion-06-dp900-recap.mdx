@@ -76,6 +76,10 @@ El **teorema CAP** dice que un almacen de datos distribuido solo puede garantiza
 
 Para almacenamiento no relacional mas sencillo, **Azure Blob Storage** ofrece almacenamiento de objetos masivamente escalable para datos no estructurados (imagenes, video, backups, logs); **Azure Data Lake Storage Gen2** anade a Blob Storage un namespace jerarquico pensado para analitica de Big Data (y sirve de base a **OneLake** en Microsoft Fabric); **Azure File Storage** expone recursos compartidos de archivos gestionados mediante SMB o NFS; y **Azure Queue Storage** y **Azure Table Storage** cubren, respectivamente, colas de mensajes sencillas y un almacen clave-valor basico para metadatos semiestructurados.
 
+### Data Lake Storage Gen2 y OneLake
+
+**Azure Data Lake Storage Gen2** esta pensado para data lakes: guarda datos estructurados, semiestructurados y no estructurados en su formato original. Combina la escalabilidad y el bajo coste de Blob Storage con un **namespace jerarquico** que trata carpetas y archivos como objetos de primera clase, lo que mejora el rendimiento de la analitica. Se integra con frameworks de Big Data como Apache Spark y Hive, y controla el acceso con permisos de estilo POSIX y listas de control de acceso (ACL). **OneLake**, el data lake logico unico de Microsoft Fabric, se construye sobre ADLS Gen2 y simplifica compartir y gobernar los datos entre proyectos de analitica.
+
 :::info Importante para el examen
 Imagenes/video -> **Blob**. Lago analitico a gran escala -> **Data Lake Gen2**. Metadatos clave-valor simples -> **Table Storage**. Cosmos DB es la respuesta habitual para cargas NoSQL globales y multi-modelo.
 :::
@@ -105,6 +109,12 @@ El corazon de muchas preguntas del examen es traducir un escenario en tres pasos
 | Almacenar grandes volumenes de archivos crudos, logs o datos semiestructurados para analitica posterior | Azure Data Lake Storage Gen2 |
 | Orquestar movimiento y transformacion de datos desde SaaS y fuentes on-premises hacia un warehouse central | Azure Data Factory / Synapse Pipelines |
 | Dashboards interactivos y BI de autoservicio sobre modelos de datos curados | Power BI |
+
+## 8. Recursos para practicar
+
+- [Evaluacion de practica oficial de Microsoft](https://learn.microsoft.com/es-es/credentials/certifications/azure-data-fundamentals/?practice-assessment-type=certification): preguntas del mismo estilo que el examen, gratis.
+- [exams.salvamiguel.com](https://exams.salvamiguel.com/): simulacros de examen del curso.
+- Las **preguntas de repaso** al final de cada sesion de teoria de este modulo.
 
 :::tip Cierre y siguientes pasos
 DP-900 es un examen de nivel fundamentals: se centra en el entendimiento conceptual, no en configuracion practica profunda. Domina el vocabulario (tipos y formatos de datos, OLTP vs OLAP, relacional vs no relacional, y los nombres y roles de los servicios de datos de Azure), practica preguntas basadas en escenarios, y trata de explicar cada concepto con tus propias palabras. Si puedes mapear escenarios a servicios con confianza y describir el flujo de datos de una solucion analitica de extremo a extremo en Azure, estas en muy buena posicion para aprobar.

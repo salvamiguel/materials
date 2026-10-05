@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 title: "IA Responsable y Cargas de Trabajo"
 description: "Los seis principios de IA responsable de Microsoft y como identificar cargas de trabajo de IA: texto, voz y vision."
 ---
@@ -23,7 +23,7 @@ Cuanto mas capaces y accesibles se vuelven los modelos de IA, mas facil es tambi
 - **Transparency (transparencia):** las personas deben poder entender como y por que un sistema de IA toma una decision, y saber cuando estan interactuando con IA en lugar de con una persona.
 - **Accountability (responsabilidad):** debe existir siempre una persona u organizacion que rinda cuentas por como se comporta el sistema de IA, con gobernanza y supervision claras.
 
-:::tip Conectando con la sesion anterior
+:::tip Conectando con lo ya visto
 En la sesion de introduccion a la IA ya vimos "garbage in, garbage out": datos sesgados producen modelos sesgados. Eso es exactamente el principio de **fairness** en la practica — la calidad y representatividad de los datos de entrenamiento es la primera linea de defensa.
 :::
 
@@ -48,15 +48,15 @@ Modelos que generan contenido nuevo (texto, imagenes, codigo) y **agentes** que,
 
 ### Analisis de texto
 
-Tecnicas que extraen significado de texto libre: identificar palabras clave, detectar entidades (personas, lugares, organizaciones, fechas), medir el sentimiento (positivo/negativo/neutro) de una opinion, o resumir un documento largo en pocas frases. Se ve en detalle, junto a voz, en la siguiente sesion.
+Tecnicas que extraen significado de texto libre: identificar palabras clave, detectar entidades (personas, lugares, organizaciones, fechas), medir el sentimiento (positivo/negativo/neutro) de una opinion, o resumir un documento largo en pocas frases. Se ve en detalle, junto a voz, en la [sesion de texto y voz](./sesion-05-texto-voz-foundry).
 
 ### Voz
 
-Convertir voz en texto (speech-to-text, para transcribir o para que un agente entienda una instruccion hablada) y texto en voz (text-to-speech, para que una aplicacion responda hablando). Tambien se ve en detalle en la siguiente sesion.
+Convertir voz en texto (speech-to-text, para transcribir o para que un agente entienda una instruccion hablada) y texto en voz (text-to-speech, para que una aplicacion responda hablando). Tambien se ve en detalle en la [sesion de texto y voz](./sesion-05-texto-voz-foundry).
 
 ### Vision
 
-Interpretar el contenido de imagenes y video (que hay en la imagen, donde esta, que texto contiene) y, cada vez mas, tambien **generar** imagenes nuevas a partir de una descripcion. Se ve en detalle mas adelante, en la sesion dedicada a vision.
+Interpretar el contenido de imagenes y video (que hay en la imagen, donde esta, que texto contiene) y, cada vez mas, tambien **generar** imagenes nuevas a partir de una descripcion. Se ve en detalle mas adelante, en la [sesion dedicada a vision](./sesion-06-vision-imagenes-foundry).
 
 | Carga de trabajo | Pregunta tipica que responde | Ejemplo |
 |---|---|---|
@@ -64,6 +64,34 @@ Interpretar el contenido de imagenes y video (que hay en la imagen, donde esta, 
 | Analisis de texto | "Que dice y que significa este texto" | Sentimiento de una reseña, extraer el nombre de un cliente de un email |
 | Voz | "Que se dijo" / "dilo en voz alta" | Transcribir una llamada, leer una respuesta en voz alta |
 | Vision | "Que hay en esta imagen" / "crea esta imagen" | Describir una foto, generar una ilustracion a partir de un texto |
+
+## 4. Del workload al servicio: el catalogo de Azure AI
+
+Una vez identificada la carga de trabajo, hay que saber que servicio de Azure la resuelve. Los **Azure AI services** acercan la IA a cualquier desarrollador: ofrecen APIs y modelos ya entrenados que se pueden personalizar, y se integran con el resto de servicios de Azure para construir soluciones completas.
+
+:::note Cambios de nombre
+Estos servicios han cambiado de nombre varias veces: primero eran **Cognitive Services** (y **Azure Applied AI Services**), despues se agruparon como **Azure AI services**, y hoy se consumen desde Microsoft Foundry como **Foundry Tools**. En preguntas antiguas o en documentacion puedes encontrar cualquiera de los tres nombres: el servicio es el mismo.
+:::
+
+| Servicio | Que hace | Carga de trabajo |
+|---|---|---|
+| Azure OpenAI | Modelos generativos para una gran variedad de tareas de lenguaje natural | IA generativa |
+| Azure AI Search | Busqueda en la nube potenciada con IA para apps web y moviles; base habitual del RAG | IA generativa / busqueda |
+| Bot Service | Crear bots y conectarlos a distintos canales | IA conversacional |
+| Content Safety | Detectar contenido no deseado o daño en texto e imagenes | IA responsable |
+| Language | Comprension del lenguaje natural: entidades, sentimiento, resumen, clasificacion | Analisis de texto |
+| Translator | Traduccion automatica a mas de 100 idiomas | Analisis de texto |
+| Immersive Reader | Ayudar a leer y entender textos (lectura en voz alta, traduccion, resaltado) | Texto / inclusion |
+| Speech | Voz a texto, texto a voz, traduccion de voz y reconocimiento del hablante | Voz |
+| Vision | Analizar el contenido de imagenes y video | Vision |
+| Custom Vision | Reconocimiento de imagenes personalizado para tu negocio | Vision |
+| Face | Detectar y analizar rostros en imagenes (acceso restringido) | Vision |
+| Video Indexer | Extraer informacion util de videos | Vision / extraccion |
+| Document Intelligence | Convertir documentos en datos estructurados | Extraccion de informacion |
+
+:::info Importante para el examen
+Ante un escenario, primero identifica la **carga de trabajo** (tabla de la seccion 3) y despues el **servicio** (esta tabla). Por ejemplo: "traducir los manuales a 20 idiomas" -> analisis de texto -> **Translator**; "bloquear comentarios ofensivos en un foro" -> **Content Safety**.
+:::
 
 <MSLearnPath
   tipo="modulo"

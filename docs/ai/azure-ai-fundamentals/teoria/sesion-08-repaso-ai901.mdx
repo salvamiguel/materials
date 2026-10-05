@@ -1,5 +1,5 @@
 ---
-sidebar_position: 7
+sidebar_position: 8
 title: "Repaso Final AI-901"
 description: "Repaso integrado de todo el temario AI-901: conceptos, IA responsable, y las cuatro areas de implementacion con Microsoft Foundry."
 ---
@@ -17,6 +17,10 @@ Esta sesion repasa todo el temario de AI-901 y cierra con un simulacro practico 
 **IA** es cualquier tecnica que permite a un ordenador imitar la inteligencia humana; **ML** es el subconjunto de la IA en el que los modelos aprenden patrones a partir de datos; **DL** es el subconjunto de ML que usa redes neuronales profundas; **IA Generativa** son, en general, modelos DL disenados para crear contenido nuevo (texto, imagenes, codigo, audio, video). Un **modelo** es una funcion matematica (estructura + parametros aprendidos) que mapea entradas a salidas; se entrena, valida y prueba con conjuntos de datos separados para evitar el sobreajuste.
 
 Los tres enfoques de aprendizaje son **supervisado** (hay etiquetas: clasificacion o regresion), **no supervisado** (sin etiquetas: clustering, reduccion de dimensionalidad, deteccion de anomalias) y **por refuerzo** (un agente aprende por prueba y error maximizando una recompensa). **RLHF** ajusta modelos grandes usando preferencias humanas convertidas en una senal de recompensa.
+
+### Evaluar modelos
+
+Un modelo **sobreajustado (overfitting, varianza alta)** acierta en entrenamiento y falla con datos nuevos; uno **subajustado (underfitting, sesgo alto)** falla incluso en entrenamiento. El **deep learning** usa redes neuronales de muchas capas: **CNN** para imagenes y **RNN** para secuencias. Los modelos de **clasificacion** se evaluan con la matriz de confusion (TP, FP, TN, FN) y sus metricas: accuracy, **precision** (de lo predicho positivo, cuanto lo era), **recall** (de lo positivo real, cuanto detecte), F1 y AUC (1 = perfecto, 0,5 = azar). Los de **regresion**, con MAE, MSE, RMSE y R². En Azure Machine Learning, **AutoML** prueba algoritmos e hiperparametros automaticamente y **Designer** permite construir el pipeline arrastrando componentes.
 
 ### IA responsable
 
@@ -57,6 +61,10 @@ El dominio "Implement" es donde esta el 55-60% del examen y donde AI-901 se dife
 | Escenario | Area / servicio |
 |---|---|
 | "El modelo penaliza sistematicamente a un grupo de candidatos" | IA responsable — fairness |
+| "El modelo acierta el 99% en entrenamiento pero falla en produccion" | Overfitting (varianza alta) |
+| "No se puede dejar sin detectar ningun caso de fraude" | Priorizar el recall |
+| "Encontrar el mejor modelo de clasificacion sin programar ni elegir el algoritmo" | AutoML (Azure Machine Learning) |
+| "Bloquear comentarios ofensivos en una app" | Content Safety |
 | "Nadie puede explicar por que el sistema tomo esa decision" | IA responsable — transparency |
 | "Clasificar fotos de producto en categorias propias de la empresa" | Custom Vision |
 | "Describir el contenido de una foto sin entrenar nada antes" | Modelo multimodal de vision en Foundry |
@@ -73,6 +81,11 @@ A diferencia de DP-900, el simulacro de AI-901 incluye ejercicios de codigo lige
 - Leer y entender fragmentos de Python que llaman al SDK de Foundry (autenticacion, despliegue, envio de un mensaje, lectura de la respuesta).
 - Reconocer la forma de una llamada REST equivalente (endpoint, cabeceras de autenticacion, cuerpo JSON con el prompt) y de la respuesta JSON que devuelve.
 - Identificar el orden correcto de los pasos de un flujo de integracion (autenticar -> referenciar recurso -> enviar entrada -> procesar salida), incluso si el codigo esta desordenado o incompleto.
+
+## 5. Recursos para practicar
+
+- [Evaluacion de practica oficial de Microsoft](https://learn.microsoft.com/es-es/credentials/certifications/azure-ai-fundamentals/?practice-assessment-type=certification): preguntas del mismo estilo que el examen, gratis.
+- [exams.salvamiguel.com](https://exams.salvamiguel.com/): simulacros de examen del curso.
 
 :::tip Cierre y siguientes pasos
 AI-901 combina conceptos (40-45%) con implementacion practica en Microsoft Foundry (55-60%). Repasa primero el vocabulario y los seis principios de IA responsable, y despues practica el patron de integracion (autenticar, referenciar, enviar, procesar) en los cuatro subdominios de Foundry: genAI/agentes, texto/voz, vision/imagenes y extraccion de informacion. Si puedes reconocer ese patron en cualquiera de los cuatro y elegir el servicio correcto ante un escenario, estas en muy buena posicion para aprobar.
