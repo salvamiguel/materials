@@ -272,3 +272,68 @@ Amazon A2I facilita la implementacion de revision humana de predicciones de Mach
 :::info Clave para el examen
 Para la certificacion AIF-C01, la habilidad mas importante es saber elegir el servicio correcto para cada escenario. Las preguntas suelen describir un caso de uso y pedir que identifiques el servicio de AWS mas adecuado. Enfocate en entender que problema resuelve cada servicio, no en los detalles tecnicos de implementacion.
 :::
+
+---
+
+## 16. El examen AWS Certified AI Practitioner (AIF-C01)
+
+### Aspectos basicos
+
+- El examen se puede realizar **online** o en un centro autorizado de **Pearson VUE**. Si es online, mejor desde un ordenador personal: el software o los firewalls corporativos pueden interferir con el programa del examen.
+- Se necesita una cuenta de **AWS Skills ID**, preferiblemente con un correo personal.
+- Los resultados pueden tardar de 24-72 horas hasta 7 dias, aunque normalmente llegan el mismo dia.
+- Segun el proveedor del examen, puede existir la posibilidad de repetirlo gratis una vez si no se aprueba (consulta las condiciones del tuyo).
+
+### Reglas y tipos de pregunta
+
+| Tipo | Descripcion |
+|------|-------------|
+| Multiple choice | 1 respuesta correcta y 3 incorrectas |
+| Multiple response | Dos o mas respuestas correctas; hay que marcar todas para puntuar |
+| Ordering | Ordenar de 3 a 5 pasos para completar una tarea; todo en el orden correcto |
+| Matching | Emparejar de 3 a 7 respuestas; todas deben ser correctas |
+| Case study | Varias preguntas sobre un mismo escenario |
+
+Son **65 preguntas: 50 puntuables + 15 que no puntuan**, con una escala de 100 a 1000 y **nota de corte de 700**. Las respuestas incorrectas no restan, asi que es mejor contestar que dejar en blanco.
+
+:::tip Consejos para el examen
+- Reserva la fecha con antelacion y haz tantos tests de practica como puedas.
+- Comprueba antes del dia del examen que tu ordenador es compatible.
+- Lee todas las opciones con calma y descarta primero las que no son completamente ciertas.
+- Si todas parecen correctas, elige la mas eficiente (normalmente la mas eficiente en coste).
+- Marca (*flag*) las preguntas dudosas y acuerdate de volver a ellas.
+:::
+
+---
+
+## Preguntas de repaso
+
+<details>
+<summary>¿Que servicio de AWS ayuda a un cliente a leer los datos de sus recibos?</summary>
+
+**Amazon Textract**, que extrae texto, formularios y tablas de documentos escaneados (incluido el analisis especifico de facturas y recibos).
+</details>
+
+<details>
+<summary>¿Donde deben almacenarse los archivos de audio para lanzar un batch job de Amazon Transcribe?</summary>
+
+En **Amazon S3**. Los trabajos por lotes de Transcribe leen el audio desde un bucket de S3.
+</details>
+
+<details>
+<summary>¿Cual es el modelo de pago de Amazon Polly?</summary>
+
+**Por caracter** convertido a voz.
+</details>
+
+<details>
+<summary>¿Que puede conectarse a Amazon Q Business como data connector?</summary>
+
+Servicios de AWS como **S3, RDS, Aurora y WorkDocs**, y terceros como **Microsoft 365, Salesforce, Google Drive, Gmail o Slack**. Los **plugins** (Jira, ServiceNow, Zendesk, Salesforce) permiten ademas ejecutar acciones como crear tickets.
+</details>
+
+<details>
+<summary>Una startup crea una app donde los usuarios suben sus propias imagenes. ¿Como evita imagenes no aptas (NSFW)?</summary>
+
+Con la **content moderation de Amazon Rekognition**, que detecta contenido inapropiado; opcionalmente con **Amazon A2I** para revision humana de los casos dudosos.
+</details>

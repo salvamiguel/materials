@@ -29,6 +29,42 @@ El entrenamiento de un modelo de Machine Learning es el proceso mediante el cual
 
 **Optimizer (Optimizador):** Es el algoritmo que actualiza los parametros del modelo basandose en los gradientes calculados. Los optimizadores mas comunes son SGD (Stochastic Gradient Descent), Adam y AdamW. Cada uno tiene ventajas en diferentes escenarios y sus propios hiperparametros adicionales.
 
+### Model Fit, Bias y Variance
+
+**Model fit** describe lo bien que un modelo aproxima la relacion real entre las features de entrada y la variable objetivo:
+
+- **Underfitting:** el modelo es demasiado simple y no captura los patrones de los datos.
+- **Overfitting:** el modelo es demasiado complejo y captura el ruido en lugar del patron real.
+- **Generalization:** la capacidad del modelo de rendir bien con datos no vistos (el objetivo real).
+
+**Bias** en IA son errores sistematicos del modelo que producen resultados injustos o sesgados:
+
+| Tipo de bias | Descripcion |
+|--------------|-------------|
+| **Algorithmic Bias** | Fallos en el diseño del modelo que refuerzan desigualdades |
+| **Data Bias** | Datos de entrenamiento que no representan a todos los grupos de forma justa |
+| **Selection Bias** | Muestreo que no refleja la diversidad del mundo real |
+| **Confirmation Bias** | El modelo refuerza suposiciones existentes |
+
+- **Causas:** datos historicos con sesgos del pasado, representacion desequilibrada (grupos infrarrepresentados) y seleccion de features correlacionadas con atributos protegidos.
+- **Mitigacion:** recoger datos diversos y representativos, herramientas de deteccion de bias (fairness metrics, adversarial testing), transparencia y explicabilidad del algoritmo, y auditorias periodicas con consideraciones eticas.
+
+**Variance** es la sensibilidad del modelo a pequeños cambios en los datos de entrenamiento, que provoca grandes fluctuaciones en las predicciones:
+
+- **High Variance:** el modelo captura el ruido --> overfitting.
+- **Low Variance:** generaliza bien, pero puede llegar a underfitting.
+- **Causas de alta varianza:** modelos demasiado complejos (demasiados parametros, memorizan en vez de aprender), pocos datos de entrenamiento y falta de regularizacion.
+- **Mitigacion:** Cross-Validation, regularizacion L1/L2, Feature Selection (menos features, menos ruido) y Ensemble Methods (bagging, boosting).
+
+:::info Bias-Variance Tradeoff
+| | Low Variance | High Variance |
+|---|---|---|
+| **Low Bias** | Ideal: buena generalizacion | Overfitting |
+| **High Bias** | Underfitting | Peor caso: impreciso e inestable |
+
+El objetivo es equilibrar la complejidad del modelo para lograr la mejor generalizacion.
+:::
+
 ---
 
 ## 2. Preparacion de Datos de Entrenamiento
@@ -251,3 +287,4 @@ En la mayoria de aplicaciones en produccion, el **coste acumulado de inferencia 
 :::info AWS Skill Builder Labs
 AWS Skill Builder ofrece laboratorios practicos para experimentar con los conceptos de entrenamiento e inferencia en un entorno real de AWS. Estos labs incluyen ejercicios con Amazon Polly (Text-to-Speech), SageMaker (Bring Your Own Model) y configuracion de entornos ML. Son un recurso excelente para la preparacion del examen AIF-C01.
 :::
+

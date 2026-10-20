@@ -13,6 +13,10 @@ import SkillBuilderLab from '@site/src/components/shared/SkillBuilderLab';
 
 AWS proporciona un conjunto completo de servicios de gestion y gobernanza que permiten a las organizaciones operar sus entornos en la nube de forma segura, eficiente y conforme a las mejores practicas. Estos servicios cubren desde la monitorizacion y auditoria hasta la gestion de costes y la automatizacion de infraestructura.
 
+:::caution End-of-life (EOL)
+AWS retira servicios y funcionalidades con el tiempo (por ejemplo, Amazon Forecast, Amazon Fraud Detector o Amazon WorkDocs han dejado de aceptar nuevos clientes). Antes de disenar una solucion conviene revisar el estado del servicio en la documentacion; en el examen pueden seguir apareciendo como opciones validas.
+:::
+
 ---
 
 ## 2. AWS Organizations
@@ -20,6 +24,13 @@ AWS proporciona un conjunto completo de servicios de gestion y gobernanza que pe
 AWS Organizations es un servicio que permite gestionar y gobernar de forma centralizada multiples cuentas de AWS. Con Organizations, se pueden crear cuentas nuevas de manera programatica, agruparlas en Organizational Units (OUs), aplicar politicas de gobierno y consolidar la facturacion en una sola cuenta de gestion (Management Account).
 
 La estructura jerarquica de Organizations permite aplicar politicas a diferentes niveles. Por ejemplo, se puede crear una OU para el departamento de desarrollo y otra para produccion, cada una con sus propias restricciones y permisos. La facturacion consolidada permite beneficiarse de descuentos por volumen al agregar el uso de todas las cuentas miembro.
+
+Ventajas principales de Organizations:
+
+- **Consolidated billing:** una unica factura para todas las cuentas y descuentos por volumen agregado (incluido el uso compartido de Reserved Instances y Savings Plans).
+- **Seguridad y aislamiento:** separar entornos (dev, test, prod) o equipos en cuentas distintas limita el impacto de un incidente.
+- **Gobierno centralizado** mediante Service Control Policies (SCP) aplicadas a OUs o cuentas, y trazabilidad centralizada enviando CloudTrail y CloudWatch Logs a una cuenta de logging.
+- **Creacion de cuentas por API** y comparticion de recursos entre cuentas con RAM.
 
 ---
 
@@ -114,7 +125,20 @@ CloudWatch se complementa con **Amazon Managed Grafana** (servicio gestionado de
 
 **AWS Marketplace** es un mercado digital donde las empresas pueden encontrar, probar, comprar, desplegar y gestionar soluciones de AWS Partners, con facturacion y gestion centralizadas.
 
-**AWS License Manager** facilita la gestion de licencias de software de proveedores como Microsoft, SAP, Oracle e IBM, tanto en entornos AWS como on-premises.
+**AWS License Manager** facilita la gestion de licencias de software de proveedores como Microsoft, SAP, Oracle e IBM, tanto en entornos AWS como on-premises, dando visibilidad y control sobre las licencias para limitar excesos y reducir el riesgo de incumplimiento.
+
+**AWS Trusted Advisor** analiza la cuenta y ofrece recomendaciones en cinco categorias: Cost Optimization, Performance, Security, Fault Tolerance y Service Limits (Service Quotas). Los planes de soporte Business y Enterprise desbloquean el conjunto completo de comprobaciones.
+
+| Servicio | Pregunta que responde |
+|----------|-----------------------|
+| CloudWatch | Como se estan comportando mis recursos? (metricas, logs, alarmas) |
+| CloudTrail | Quien hizo que llamada a la API, cuando y desde donde? |
+| Config | Mis recursos cumplen la configuracion deseada? Como ha cambiado? |
+| Trusted Advisor | Que puedo mejorar en coste, seguridad, rendimiento y limites? |
+| Budgets / Cost Explorer / CUR | Cuanto gasto, en que y voy a superar el presupuesto? |
+| Organizations / Control Tower | Como gobierno muchas cuentas a la vez? |
+| CloudFormation / Service Catalog | Como despliego recursos aprobados de forma repetible? |
+| Systems Manager | Como parcheo y opero mis servidores a escala? |
 
 ---
 
@@ -140,6 +164,67 @@ Las politicas IAM son documentos JSON que definen los permisos de los usuarios y
 - **Statement:** Una o mas declaraciones que incluyen Effect (Allow/Deny), Action (las operaciones de API), Resource (los recursos afectados) y opcionalmente Condition (condiciones adicionales).
 
 Las politicas pueden heredarse a traves de los grupos: cuando se asigna una politica a un grupo, todos los usuarios del grupo heredan esos permisos.
+
+Por ejemplo, si un usuario pertenece a los grupos *Developers* y *Audit*, recibe la union de los permisos de ambos grupos mas las politicas *inline* que tenga asignadas directamente.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Id": "S3-Account-Permissions",
+  "Statement": [
+    {
+      "Sid": "1",
+      "Effect": "Allow",
+      "Principal": { "AWS": ["arn:aws:iam::123456789012:root"] },
+      "Action": ["s3:GetObject", "s3:PutObject"],
+      "Resource": ["arn:aws:s3:::mybucket/*"]
+    }
+  ]
+}
+```
+
+| Elemento | Obligatorio | Significado |
+|----------|-------------|-------------|
+| `Version` | Si | Version del lenguaje de politicas (siempre `2012-10-17`) |
+| `Id` | No | Identificador de la politica |
+| `Statement` | Si | Una o varias declaraciones |
+| `Sid` | No | Identificador de la declaracion |
+| `Effect` | Si | `Allow` o `Deny` |
+| `Principal` | Solo en politicas de recurso | Cuenta, usuario o rol al que se aplica |
+| `Action` | Si | Lista de acciones de API |
+| `Resource` | Si | Lista de recursos (ARN) |
+| `Condition` | No | Cuando se aplica la declaracion |
+
+:::info Evaluacion de permisos
+Por defecto todo esta denegado (*implicit deny*). Un `Allow` explicito concede el permiso, pero un **`Deny` explicito siempre gana** sobre cualquier `Allow`.
+:::
+
+### IAM Roles
+
+Un **rol IAM** es una identidad con permisos que no pertenece a una persona concreta y no tiene credenciales permanentes: quien lo asume recibe **credenciales temporales** (via AWS STS). Se usan para:
+
+- Dar permisos a **servicios de AWS**: una instancia EC2 que lee de S3, una funcion Lambda que escribe en DynamoDB o un *execution role* de SageMaker o Bedrock que accede a los datos de entrenamiento.
+- Acceso **entre cuentas** (cross-account).
+- **Federacion** de identidades externas (Active Directory, SAML, OIDC) y usuarios de IAM Identity Center.
+
+| Identidad | Representa | Credenciales |
+|-----------|------------|--------------|
+| Root user | Propietario de la cuenta | Email + contrasena (proteger con MFA y no usar a diario) |
+| IAM User | Una persona o aplicacion | Permanentes: contrasena y/o access keys |
+| IAM Group | Conjunto de usuarios | No tiene credenciales; solo agrupa permisos |
+| IAM Role | Un servicio, cuenta o identidad federada | Temporales (STS) |
+
+### MFA (Multi-Factor Authentication)
+
+MFA combina algo que sabes (contrasena) con algo que tienes (un dispositivo). Asi, aunque se robe la contrasena, la cuenta sigue protegida. AWS admite:
+
+- **Virtual MFA device:** aplicaciones como Google Authenticator o Authy.
+- **Passkeys y llaves de seguridad FIDO** (por ejemplo, YubiKey).
+- **Hardware TOTP token:** dispositivos fisicos que generan codigos.
+
+### Formas de acceder y credenciales
+
+Los usuarios acceden a AWS mediante la **Management Console** (contrasena + MFA), la **CLI** o los **SDKs** (access keys: Access Key ID + Secret Access Key). Las access keys son secretas como una contrasena y no deben compartirse. Herramientas de auditoria: el **IAM Credentials Report** (a nivel de cuenta) y **IAM Access Advisor** (permisos concedidos a un usuario y cuando se usaron por ultima vez), ademas de **IAM Access Analyzer**.
 
 ### Mejores practicas de IAM
 
@@ -170,6 +255,10 @@ En el [playground de AWS CLI](/aws-playground?escenario=asumir-rol) puedes asume
 ## 14. Service Control Policies (SCP)
 
 Las Service Control Policies son politicas IAM que se aplican a nivel de Organizational Unit (OU) o cuenta dentro de AWS Organizations para restringir lo que los usuarios y roles pueden hacer. Las SCPs no se aplican a la Management Account (que mantiene poder administrativo completo). Es importante entender que las SCPs no conceden permisos por si mismas; establecen los limites maximos de los permisos. Para que una accion este permitida, debe estar autorizada tanto por la SCP como por la politica IAM del usuario.
+
+Igual que IAM, las SCPs no permiten nada por defecto: debe existir un **Allow explicito desde la raiz (Root) a traves de cada OU** del camino directo hasta la cuenta destino. Un Deny en cualquier nivel (raiz, OU o cuenta) bloquea la accion para todas las cuentas que cuelgan de el. Las SCPs restringen a usuarios y roles de las cuentas miembro, incluido el usuario root de esas cuentas, pero nunca a la Management Account.
+
+Los permisos efectivos de una identidad son la **interseccion** de lo que permiten la SCP, el Permission Boundary y la politica IAM.
 
 Los IAM Permission Boundaries son una funcionalidad avanzada similar que permite establecer los permisos maximos que una entidad IAM (usuario o rol, no grupo) puede obtener mediante una politica gestionada.
 
@@ -222,6 +311,17 @@ RAM permite compartir recursos de AWS de forma sencilla y segura entre multiples
 ## 19. Servicios de analitica en AWS
 
 AWS ofrece una gama completa de servicios de analitica que cubren todo el espectro del procesamiento de datos, desde la ingesta en tiempo real hasta la visualizacion y la gobernanza de datos.
+
+| Categoria | Descripcion | Servicios |
+|-----------|-------------|-----------|
+| Streaming | Pipelines de datos en tiempo real sin gestionar infraestructura | Amazon Data Firehose, Amazon Kinesis, Managed Service for Apache Flink, Amazon MSK |
+| Data lakehouse / warehouse / lake | Acceder y analizar todos los datos | Amazon SageMaker Lakehouse, Amazon Redshift, data lake en Amazon S3 |
+| Data processing | Analizar, preparar e integrar datos para analitica e IA con frameworks open source | Amazon Athena, Amazon EMR, AWS Glue, Amazon Managed Workflows for Apache Airflow (MWAA) |
+| Business intelligence | Dashboards interactivos, informes, consultas en lenguaje natural, analitica embebida | Amazon QuickSight |
+| Search analytics | Busqueda, monitorizacion y analisis en tiempo real | Amazon OpenSearch Service |
+| Data & AI governance | Catalogar, descubrir, compartir y gobernar datos de AWS, on-premises y terceros | Amazon DataZone |
+
+**Amazon MWAA** (Managed Workflows for Apache Airflow) ejecuta Apache Airflow gestionado para orquestar pipelines de datos y de ML. **Amazon SageMaker Lakehouse** unifica el acceso a datos de S3 y Redshift con un unico modelo de permisos compatible con Apache Iceberg.
 
 ---
 

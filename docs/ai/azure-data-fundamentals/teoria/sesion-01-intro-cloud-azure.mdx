@@ -150,6 +150,29 @@ La politica de uso aceptable de Microsoft Online Services prohibe, entre otras c
 
 Azure, AWS y Google Cloud son los tres grandes proveedores de nube publica. Para el examen no se pide memorizar cuotas de mercado, pero si reconocer que los tres compiten en el mismo espacio con modelos IaaS/PaaS/SaaS equivalentes bajo nombres distintos.
 
+## 11. Arquitectura, DevOps e Infrastructure as Code
+
+Las soluciones en la nube se construyen combinando bloques de servicios gestionados. Como referencia, una arquitectura tipica agrupa los servicios en estas categorias (el ejemplo de clase usa nombres de AWS, pero Azure tiene equivalentes para todos):
+
+| Categoria | Ejemplos de servicios |
+|---|---|
+| **Storage** | S3, EFS, EBS |
+| **Compute** | EC2, ECR, EKS, Lambda |
+| **Database** | DynamoDB, RDS |
+| **Network & Content Delivery** | VPC, Transit Gateway, Route 53, Direct Connect, VPC Endpoint, ENI, Internet Gateway, Route Table |
+| **Management & Governance** | Systems Manager, CloudWatch Logs, CloudWatch Events |
+| **Security & Identity** | IAM Roles, IAM Policies, SSO, Secrets Manager, KMS, Certificate Manager |
+
+Para desplegar y mantener estas arquitecturas de forma repetible se aplican practicas **DevOps**:
+
+- **IaC (Infrastructure as Code)**: la infraestructura se define en ficheros de codigo versionados en lugar de crearse a mano desde el portal. Herramienta tipica: **Terraform**.
+- **CaC (Configuration as Code)**: la configuracion de servidores y aplicaciones tambien se describe como codigo. Herramienta tipica: **Ansible**.
+- **CI/CD y calidad**: el codigo vive en repositorios (**GitHub**), se construye y despliega con pipelines (**Jenkins**) y se analiza su calidad con herramientas como **SonarQube**.
+
+:::info Fuera del temario
+IaC y DevOps no son objetivos del examen DP-900 ni AI-901, pero son la forma habitual de trabajar con la nube en proyectos reales.
+:::
+
 ## Preguntas de repaso
 
 <details>

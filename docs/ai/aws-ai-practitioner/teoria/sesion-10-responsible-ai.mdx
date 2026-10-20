@@ -268,6 +268,46 @@ Sin gobernanza, las organizaciones se exponen a incidentes que pueden destruir l
 
 ---
 
+## 15. Preparacion del examen
+
+Antes del examen, revisa la guia oficial: [AWS Certified AI Practitioner (AIF-C01) Exam Guide](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html). Recoge los 5 dominios y sus task statements, que son los que estructuran este temario.
+
+<SkillBuilderLab
+  tipo="simulearn"
+  title="AWS SimuLearn: Bias Mitigation for a Translation Service"
+  url="https://skillbuilder.aws/search?searchText=Bias%20Mitigation%20for%20a%20Translation%20Service"
+/>
+
+---
+
+## Preguntas de repaso
+
+<details>
+<summary>¿Que servicio de AWS esta diseñado para convertir voz medica a texto cumpliendo regulaciones sanitarias como HIPAA?</summary>
+
+**Amazon Transcribe Medical** (servicio elegible para HIPAA).
+</details>
+
+<details>
+<summary>Una empresa de medios usa Amazon Bedrock y evalua Guardrails y watermark detection. ¿En que se diferencian?</summary>
+
+**Guardrails for Amazon Bedrock** actua **en tiempo de generacion**: filtra entradas y salidas (temas denegados, contenido dañino, PII, palabras bloqueadas) para evitar contenido inapropiado. **Watermark detection** actua **a posteriori**: detecta si una imagen fue generada por un modelo de Amazon (Titan Image Generator / Nova Canvas) gracias a la marca de agua invisible. Uno previene el mal uso; el otro permite verificar el origen del contenido.
+</details>
+
+<details>
+<summary>Un chatbot de e-commerce sobre Bedrock podria generar contenido inapropiado, sensible o malicioso. ¿Cual es el enfoque mas eficaz para controlarlo?</summary>
+
+Configurar **Guardrails for Amazon Bedrock** (content filters, denied topics, word filters y filtrado de PII) aplicados a entradas y salidas del modelo.
+</details>
+
+<details>
+<summary>Relaciona: A) Amazon Textract, B) Amazon Forecast, C) Amazon Kendra con 1) busqueda empresarial con ML, 2) extraer texto impreso, manuscrito y datos de documentos, 3) predecir resultados de negocio con ML.</summary>
+
+**A-2** (Textract), **B-3** (Forecast), **C-1** (Kendra).
+</details>
+
+---
+
 ## Resumen
 
 Los desafios de la IA Responsable son multiples y requieren un enfoque multidisciplinar. Desde los compromisos entre interpretabilidad y rendimiento hasta la mitigacion de alucinaciones y toxicidad, pasando por el cumplimiento regulatorio y la documentacion mediante Model Cards, el profesional de IA debe ser capaz de navegar un panorama complejo donde la tecnologia, la etica y la regulacion se intersectan. AWS proporciona herramientas como SageMaker Clarify, Guardrails for Bedrock y Model Cards para facilitar este trabajo, pero la responsabilidad ultima de implementar practicas de IA responsables recae en las organizaciones y los profesionales que disenan y despliegan estos sistemas.

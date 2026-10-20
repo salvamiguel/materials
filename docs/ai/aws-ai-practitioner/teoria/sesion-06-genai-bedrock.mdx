@@ -302,3 +302,91 @@ El examen AIF-C01 puede preguntar sobre la diferencia entre Fine-Tuning y Contin
 - **Fine-Tuning**: Adapta el modelo a una tarea especifica con datos etiquetados. Ajusta pesos para mejorar rendimiento en una tarea concreta.
 - **Continued Pre-Training**: Expone el modelo a nuevos datos de dominio para ampliar su conocimiento base. No se enfoca en una tarea especifica sino en mejorar la comprension general del dominio.
 :::
+
+---
+
+## 11. Mecanismos de Evaluacion de Modelos
+
+Evaluar un modelo sirve para **asegurar que generaliza bien a datos no vistos**. Se basa en dividir los datos (**Training Set** para entrenar, **Validation Set** para ajustar hiperparametros y evitar overfitting, **Test Set** para evaluar con datos independientes) y en elegir metricas segun el tipo de tarea.
+
+### Modelos de regresion
+
+| Metrica | Que mide |
+|---------|----------|
+| **MSE (Mean Squared Error)** | Media de los errores al cuadrado entre prediccion y valor real; penaliza mas los errores grandes. (RMSE es su raiz cuadrada.) |
+| **MAE (Mean Absolute Error)** | Media de las diferencias absolutas; medida directa de la magnitud media del error. |
+| **R-squared (R²)** | Proporcion de la varianza de la variable dependiente explicada por el modelo; cuanto mas cerca de 1, mejor ajuste. |
+
+### Modelos de clasificacion
+
+**Confusion Matrix:** tabla que compara clases reales y predichas, base de casi todas las metricas de clasificacion:
+
+| | Predicho positivo | Predicho negativo |
+|---|---|---|
+| **Real positivo** | True Positive (TP) | False Negative (FN) — **error de Tipo II** |
+| **Real negativo** | False Positive (FP) — **error de Tipo I** | True Negative (TN) |
+
+| Metrica | Proposito | Mejor uso |
+|---------|-----------|-----------|
+| **Accuracy** | Correccion global | Puede enganar con datasets desequilibrados |
+| **Precision** | Correccion de las predicciones positivas | Cuando los falsos positivos son costosos |
+| **Recall (Sensitivity)** | Capacidad de detectar los casos positivos | Cuando los falsos negativos son costosos |
+| **F1 Score** | Equilibrio entre precision y recall | Datasets desequilibrados |
+| **Specificity** | Capacidad de detectar los casos negativos (TN / (TN + FP)) | Cuando importa no marcar negativos como positivos |
+
+### Large Language Models
+
+- **Perplexity:** cuanto mas baja, mejor predice el modelo una muestra de texto.
+- **BLEU:** calidad de traduccion automatica frente a traducciones de referencia.
+- **ROUGE:** calidad de resumenes frente a resumenes de referencia.
+- **Human Evaluation:** jueces humanos valoran coherencia, relevancia y fluidez.
+
+:::warning Atencion en el examen
+Accuracy, Precision, Recall o F1 son metricas de **clasificacion**: **no** sirven para evaluar un modelo de regresion (p. ej. prediccion de ventas), que se evalua con MSE/RMSE, MAE o R².
+:::
+
+---
+
+## Preguntas de repaso
+
+<details>
+<summary>Un chatbot LLM produce respuestas muy diversas para el mismo prompt. ¿Que deberias hacer?</summary>
+
+**Bajar la temperature** (y/o reducir Top-p/Top-k) para que la salida sea mas determinista.
+</details>
+
+<details>
+<summary>Un modelo de evaluacion de riesgo de prestamos muestra sesgo contra un grupo de personas en produccion. ¿Que hacer?</summary>
+
+Revisar y **equilibrar los datos de entrenamiento** (mas diversos y representativos), detectar el sesgo con **SageMaker Clarify** y **reentrenar** el modelo, monitorizandolo despues con Model Monitor.
+</details>
+
+<details>
+<summary>Un chatbot cientifico en Bedrock con RAG esta actualizado con los ultimos papers pero tiene problemas con la terminologia cientifica. ¿Que puedes hacer?</summary>
+
+**Continued Pre-Training** del FM con un gran corpus del dominio cientifico, para mejorar su conocimiento base del vocabulario especializado. RAG aporta datos actualizados, pero no enseña el lenguaje del dominio.
+</details>
+
+<details>
+<summary>Un modelo de regresion predice ventas futuras. ¿Cual de estas metricas NO deberias usar: MSE, MAE, R² o F1 Score?</summary>
+
+**F1 Score**, que es una metrica de clasificacion.
+</details>
+
+<details>
+<summary>¿Que metrica usarias para evaluar un modelo por su correccion global?</summary>
+
+**Accuracy** (proporcion de predicciones correctas sobre el total).
+</details>
+
+<details>
+<summary>Quieres que un chatbot elija solo entre los 5 tokens mas probables. ¿Que parametro ajustas?</summary>
+
+**Top-k** = 5.
+</details>
+
+<details>
+<summary>Los accionistas no estan contentos con el tono que usa un chatbot basado en Bedrock con los clientes. ¿Cual es la forma mas EFICIENTE de solucionarlo?</summary>
+
+**Prompt engineering**: indicar el tono deseado en el system prompt/instrucciones. Es mucho mas barato y rapido que hacer fine-tuning o cambiar de modelo.
+</details>

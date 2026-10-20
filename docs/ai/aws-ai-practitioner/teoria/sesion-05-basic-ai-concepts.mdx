@@ -278,3 +278,102 @@ El examen AIF-C01 puede presentar escenarios de negocio y pedir que identifiques
   title="Lab - Detecting Anomalies in Game Transactions with Machine Learning (ML) and Amazon SageMaker"
   url="https://skillbuilder.aws/learn/DPMZVRSZ1K/lab--detecting-anomalies-in-game-transactions-with-machine-learning-ml-and-amazon-sagemaker/NW8T9SE5QE"
 />
+
+---
+
+## 10. Servicios de IA restantes de AWS
+
+Para completar el repaso de los servicios gestionados de ML/IA de la sesion anterior (Comprehend, Translate, Transcribe, Polly, Rekognition, Lex, Textract, Kendra, Augmented AI, Personalize), quedan tres piezas mas:
+
+| Servicio | Que es | Puntos clave |
+|----------|--------|--------------|
+| **Amazon Forecast** | Servicio totalmente gestionado para hacer **predicciones sobre datos de series temporales** (time-series) con ML | Necesita datos historicos de series temporales de tu empresa, que se suben a **Amazon S3**. Crea un modelo Forecast a partir de esos datos y produce previsiones mas precisas en cuestion de horas. |
+| **Amazon Mechanical Turk** | **Marketplace** de tareas sencillas realizadas por **humanos** (fuerza de trabajo virtual distribuida globalmente) | Tareas tipicas: etiquetar imagenes de datasets, clasificacion, procesos de negocio, recopilacion de datos. Se paga por tarea (p. ej. por imagen clasificada). Se integra con **Amazon Augmented AI (A2I)**, **SageMaker Ground Truth** y otros servicios. |
+| **Amazon PartyRock** | No es un servicio de produccion, sino un **playground de demostracion de IA Generativa** (basado en Bedrock) | Permite crear apps de Gen AI con prompts, con multiples entradas y salidas. Gratuito con login. **No es production-grade**. |
+
+:::warning Frameworks de ML obsoletos
+En el material del curso se aclara que **Apache MXNet** ha sido **deprecado** y que **Gluon** (su interfaz de alto nivel) no tiene soporte desde hace anos. Hoy los frameworks de referencia son PyTorch, TensorFlow y JAX.
+:::
+
+---
+
+## 11. Conceptos basicos de IA Generativa
+
+### Pasos de la IA Generativa
+
+1. **Recopilar datos multimodales sin etiquetar** (texto, imagen, audio, codigo...).
+2. **Pre-entrenar un Foundation Model (FM)** con esos datos no etiquetados.
+3. **Adaptar el FM a tareas concretas**: resumen de texto, generacion de imagenes, generacion de texto, etc.
+
+### Foundation Models (FM)
+
+- La IA Generativa se basa en **modelos**; distintos modelos realizan las mismas tareas con distinta precision.
+- Los modelos base se llaman **Foundation Models**, y se entrenan con una enorme variedad de datos.
+- Entrenar un FM cuesta **decenas de millones de dolares**, por eso solo lo hacen grandes compañias: Meta, Google, Amazon, Anthropic, OpenAI...
+- Algunos son **open source** (Meta Llama, Google BERT) y otros tienen **licencia comercial** (OpenAI, Anthropic).
+
+### Large Language Models (LLM)
+
+- Son FMs adaptados para **generar texto similar al humano** (ChatGPT, Gemini, Llama, Claude).
+- Se entrenan con grandes cantidades de texto, publico o privado: libros, prensa, webs...
+- Son modelos enormes, con **miles de millones de parametros**.
+- Realizan una gran variedad de tareas de lenguaje: traduccion, resumen, question answering, creacion de contenido...
+- Se interactua con ellos mediante un **prompt**; el modelo genera una respuesta basada en sus datos de entrenamiento.
+- Son **no deterministas**: la misma entrada puede producir salidas diferentes (el modelo elige la siguiente palabra muestreando entre las mas probables).
+
+### Tokens
+
+Los LLM no trabajan con palabras sino con **tokens**: fragmentos de texto (una palabra, parte de una palabra o un signo de puntuacion) que el **tokenizer** convierte en identificadores numericos. Puedes ver como se trocea un texto con el [Tokenizer de OpenAI](https://platform.openai.com/tokenizer). Los tokens importan porque los limites de contexto y el precio de los modelos se miden en tokens.
+
+---
+
+## 12. Amazon Q Business
+
+**Amazon Q Business** es un asistente/compañero de IA **totalmente gestionado para empleados**, construido sobre **Amazon Bedrock**:
+
+- Usa los **datos de tu empresa** mediante RAG gestionado a traves de **data connectors** (S3, SharePoint, etc.).
+- Puede interactuar con herramientas corporativas (**Jira, ServiceNow, Zendesk, Salesforce**...) mediante plugins.
+- Respeta el **control de acceso** a la informacion (cada usuario solo ve lo que tiene permitido).
+- **Admin Controls (Guardrails)**: reglas de seguridad para bloquear palabras o temas, o para responder **solo con informacion interna**. Hay **global controls** y **topic controls**.
+
+:::info Pregunta del curso
+¿Puedes elegir que FM ejecuta Amazon Q? **No**: Amazon Q gestiona por ti el modelo subyacente de Bedrock; tu solo configuras datos, usuarios y guardrails. Si necesitas elegir el FM, usa Amazon Bedrock directamente.
+:::
+
+### Demo: crear una app de Amazon Q Business
+
+1. Crear una nueva **Amazon Q Business App**, con permisos IAM y acceso de usuarios.
+2. Crear un usuario en **IAM Identity Center** y asignarle acceso a la app (añadir usuarios/grupos y **seleccionar el tier** de suscripcion: Lite o Pro).
+3. Crear un **bucket S3** que servira como data source.
+4. Añadir un **Amazon Q Index** a la app (tipo de aprovisionamiento **Starter**).
+5. Añadir un **data source** al indice seleccionando **S3** y apuntando al bucket; comprobar que se ha creado.
+6. Subir documentos relevantes al bucket y forzar una **sincronizacion manual** (Sync now).
+7. Abrir la **web experience** de la app y hacer preguntas sobre los documentos.
+
+---
+
+## Preguntas de repaso
+
+<details>
+<summary>¿Que tipo de datos utiliza Amazon Forecast?</summary>
+
+**Datos de series temporales** (time-series), almacenados en Amazon S3.
+</details>
+
+<details>
+<summary>¿Con que tipo de datos se pre-entrena un Foundation Model?</summary>
+
+Con grandes volumenes de **datos multimodales sin etiquetar** (texto, imagen, audio, codigo...). Despues se adapta a tareas concretas.
+</details>
+
+<details>
+<summary>¿Se puede elegir el FM que usa Amazon Q Business?</summary>
+
+**No.** Amazon Q es un servicio totalmente gestionado sobre Bedrock que abstrae el modelo; para elegir modelo se usa Amazon Bedrock.
+</details>
+
+<details>
+<summary>¿Que servicio usarias para etiquetar miles de imagenes con trabajadores humanos pagando por tarea?</summary>
+
+**Amazon Mechanical Turk** (integrable con SageMaker Ground Truth y Amazon A2I).
+</details>
