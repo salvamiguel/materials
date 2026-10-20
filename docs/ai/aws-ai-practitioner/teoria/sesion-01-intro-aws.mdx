@@ -57,6 +57,17 @@ AWS identifica seis ventajas fundamentales del Cloud Computing que explican por 
 
 **6. Alcance global en minutos (Go global in minutes):** Las aplicaciones se pueden desplegar en multiples regiones del mundo con unos pocos clics, proporcionando menor latencia y mejor experiencia a los clientes a un coste minimo.
 
+### Problemas que resuelve la nube
+
+| Caracteristica | Significado |
+|----------------|-------------|
+| **Flexibility** | Cambiar el tipo de recurso cuando se necesite |
+| **Cost-Effectiveness** | Pago por uso: solo se paga lo que se consume |
+| **Scalability** | Absorber mas carga haciendo el hardware mas potente (*scale up*, vertical) o anadiendo nodos (*scale out*, horizontal) |
+| **Elasticity** | Capacidad de escalar hacia fuera y hacia dentro (*scale out / scale in*) automaticamente segun la demanda |
+| **High availability y fault tolerance** | Construir sobre varios centros de datos (AZs) para sobrevivir a fallos |
+| **Agility** | Desarrollar, probar y lanzar aplicaciones rapidamente |
+
 :::tip Problemas que resuelve la nube
 La nube resuelve problemas clave como la falta de flexibilidad, los altos costes, la escalabilidad limitada, la baja disponibilidad y la lentitud en el despliegue de nuevos servicios. Conceptos como la elasticidad (escalar automaticamente segun demanda) y la alta disponibilidad (distribuir recursos entre multiples centros de datos) son fundamentales para el examen.
 :::
@@ -184,6 +195,18 @@ El Shared Responsibility Model (Modelo de Responsabilidad Compartida) es un conc
 El Shared Responsibility Model es uno de los temas mas preguntados en las certificaciones de AWS. La regla general es: si puedes configurarlo en la consola de AWS, probablemente es tu responsabilidad como cliente. Si no puedes verlo ni acceder a ello, es responsabilidad de AWS.
 :::
 
+| Responsabilidad | AWS | Cliente |
+|-----------------|-----|---------|
+| Instalaciones fisicas, hardware, red global (Regions, AZs, Edge Locations) | Si | No |
+| Hipervisor y software de los servicios gestionados | Si | No |
+| Sistema operativo invitado y parches en EC2 | No | Si |
+| Datos del cliente y su cifrado (en reposo y en transito) | No | Si |
+| IAM: usuarios, roles, politicas y MFA | No | Si |
+| Configuracion de Security Groups, NACLs y firewalls | No | Si |
+| Controles compartidos: gestion de parches, configuracion, formacion | Infraestructura | Sus sistemas y su personal |
+
+La responsabilidad se desplaza segun el tipo de servicio: en IaaS (EC2) el cliente gestiona mucho mas que en un servicio gestionado o serverless (S3, Lambda, Bedrock), donde AWS se ocupa tambien del sistema operativo y la plataforma.
+
 ---
 
 ## 9. AWS Acceptable Use Policy
@@ -231,4 +254,35 @@ El bloque CIDR de tu VPC no debe solaparse con los rangos de otras redes (por ej
 
 :::tip Pruébalo en la terminal
 En el [playground de AWS CLI](/aws-playground?escenario=vpc) puedes crea una VPC con subred pública y privada, internet gateway y tabla de rutas desde la CLI, en una cuenta simulada que vive en tu navegador (sin credenciales ni costes).
+:::
+
+### Componentes de una VPC
+
+Las diapositivas muestran la arquitectura tipica de una VPC. Estos son los bloques que la componen y que conviene reconocer en el examen:
+
+| Componente | Que es | Detalle clave |
+|------------|--------|---------------|
+| **Subnet** | Rango de IPs (subconjunto del CIDR de la VPC) dentro de **una sola AZ** | AWS reserva 5 IPs de cada subnet (las 4 primeras y la ultima) |
+| **Public subnet** | Subnet cuya tabla de rutas envia `0.0.0.0/0` al Internet Gateway | Para balanceadores, bastiones, servidores web |
+| **Private subnet** | Subnet sin ruta directa a Internet | Para bases de datos y backends |
+| **Internet Gateway (IGW)** | Puerta de enlace que conecta la VPC con Internet | Una por VPC; escala de forma horizontal y es altamente disponible |
+| **NAT Gateway** | Permite que instancias de subnets privadas salgan a Internet sin ser accesibles desde fuera | Se despliega en una subnet publica; servicio gestionado por AWS |
+| **Route Table** | Conjunto de reglas que deciden a donde se envia el trafico de cada subnet | Cada subnet se asocia a una tabla de rutas |
+| **VPC Endpoint** | Conexion privada a servicios de AWS (S3, DynamoDB, Bedrock...) sin pasar por Internet | *Gateway endpoints* (S3, DynamoDB) e *Interface endpoints* (AWS PrivateLink) |
+| **VPC Peering** | Conexion privada entre dos VPCs | No es transitivo y los CIDR no deben solaparse |
+
+### Security Groups vs. Network ACLs
+
+La seguridad de red en una VPC tiene dos capas: los **Security Groups**, a nivel de instancia (ENI), y las **Network ACLs (NACLs)**, a nivel de subnet.
+
+| Caracteristica | Security Group | Network ACL |
+|----------------|----------------|-------------|
+| Nivel | Instancia (interfaz de red) | Subnet |
+| Tipo de reglas | Solo **Allow** | **Allow** y **Deny** |
+| Estado | **Stateful**: el trafico de respuesta se permite automaticamente | **Stateless**: hay que permitir explicitamente la respuesta |
+| Evaluacion | Se evaluan todas las reglas | Se evaluan en orden numerico; gana la primera coincidencia |
+| Por defecto | Deniega todo el trafico entrante y permite todo el saliente | La NACL por defecto permite todo |
+
+:::tip Para el examen
+Si una pregunta pide **bloquear una IP concreta**, la respuesta es una **NACL** (los Security Groups no tienen reglas Deny). Si pide acceder a S3 o a un modelo de Bedrock desde una subnet privada **sin salir a Internet**, la respuesta es un **VPC Endpoint** (PrivateLink).
 :::

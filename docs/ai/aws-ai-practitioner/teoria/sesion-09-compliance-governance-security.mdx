@@ -357,6 +357,166 @@ El algoritmo DeepAR de SageMaker esta disenado para pronosticar datos de series 
 
 ---
 
+## 16. Interpretabilidad y Explicabilidad
+
+:::tip Ampliacion
+Las secciones 16 a 18 resumen la segunda parte de las diapositivas de esta sesion. Se desarrollan en detalle en [IA Responsable: Desafios y Mitigacion](./sesion-10-responsible-ai).
+:::
+
+### Interpretability Trade-Offs
+
+- **Interpretability:** grado en que un humano puede entender la **causa** de una decision. Requiere acceso al interior del sistema para interpretar la salida del modelo y responder al **"por que y como"**.
+- **Explainability:** entender la naturaleza y el comportamiento del modelo mirando sus **entradas y salidas**, sin necesidad de saber exactamente como llego a la conclusion. A menudo la explicabilidad es **suficiente**.
+
+:::info Trade-off
+**Alta transparencia => alta interpretabilidad => peor rendimiento.** Los modelos mas simples (regresion lineal, arboles de decision) son faciles de interpretar pero suelen rendir peor que los modelos complejos (redes neuronales), que son "black box".
+:::
+
+### Alta interpretabilidad: Decision Trees
+
+Algoritmo de **Supervised Learning** para clasificacion y regresion. Divide los datos en ramas segun el valor de las features con reglas simples ("¿la feature es mayor que 5?"). Es facil de interpretar y tiene una representacion visual clara, pero es **propenso al overfitting** si tiene demasiadas ramas.
+
+### Partial Dependence Plots (PDP)
+
+Muestran **como influye una unica feature en el resultado predicho manteniendo constantes las demas**. Son especialmente utiles con modelos "black box" (p. ej. redes neuronales) y ayudan tanto a la interpretabilidad como a la explicabilidad. SageMaker Clarify puede generarlos.
+
+### Human-Centered Design (HCD) para Explainable AI
+
+Enfoque de diseño de sistemas de IA que **prioriza las necesidades humanas**:
+
+| Principio | Que implica |
+|-----------|-------------|
+| **Diseño para decisiones amplificadas** | Minimizar riesgos y errores en entornos estresantes o de alta presion; claridad, simplicidad y usabilidad; reflexividad (reflexionar sobre el proceso de decision) y accountability |
+| **Diseño para decisiones sin sesgo** | Proceso de decision libre de sesgos; formar a quienes deciden para reconocer y mitigar sesgos |
+| **Diseño para el aprendizaje humano y de la IA** | **Cognitive apprenticeship** (la IA aprende de instructores y expertos humanos), **personalizacion** (adaptarse a las necesidades del usuario) y **user-centered design** (accesible para un amplio rango de usuarios) |
+
+---
+
+## 17. Capacidades y Retos de la IA Generativa
+
+| Capacidades | Retos |
+|-------------|-------|
+| Adaptability | Regulatory violations |
+| Responsiveness | Social risks |
+| Simplicity | Data security and privacy concerns |
+| Creativity and exploration | Toxicity |
+| Data efficiency | Hallucinations |
+| Personalization | Interpretability |
+| Scalability | Nondeterminism |
+| | Plagiarism and cheating |
+
+### Toxicity
+
+Generar contenido **ofensivo, perturbador o inapropiado**. Definir que es "toxico" es dificil: hay una frontera delicada entre restringir contenido toxico y la censura (¿y las citas textuales de alguien que pueden considerarse toxicas?).
+
+**Mitigacion:** curar los datos de entrenamiento eliminando de antemano frases ofensivas, y usar **guardrail models** que detecten y filtren el contenido no deseado.
+
+### Hallucinations
+
+Afirmaciones que **suenan ciertas pero son incorrectas**, debidas al muestreo probabilistico de la siguiente palabra que hacen los LLM. Pueden generar contenido que no existe aunque parezca plausible.
+
+**Mitigacion:** educar a los usuarios para que verifiquen el contenido generado, verificarlo con fuentes independientes y **marcar el contenido generado como no verificado**.
+
+### Prompt Misuses
+
+| Ataque | Descripcion |
+|--------|-------------|
+| **Poisoning** | Introduccion intencionada de datos maliciosos o sesgados en el **dataset de entrenamiento**, haciendo que el modelo produzca salidas sesgadas, ofensivas o dañinas |
+| **Hijacking y Prompt Injection** | Incrustar instrucciones especificas dentro de los prompts para **secuestrar el comportamiento** del modelo y alinearlo con las intenciones del atacante (desinformacion, ejecutar codigo malicioso...) |
+| **Exposure** | Riesgo de exponer informacion sensible o confidencial al modelo durante el entrenamiento o la inferencia; el modelo puede revelarla despues (fugas de datos, violaciones de privacidad) |
+| **Prompt Leaking** | Divulgacion no intencionada de los prompts o entradas usados por el modelo, que puede exponer datos protegidos o como funciona el modelo |
+| **Jailbreaking** | Eludir las restricciones eticas y de seguridad con las que se entrena el modelo para obtener acceso o funcionalidad no autorizados (p. ej. *many-shot jailbreaking*, documentado por Anthropic) |
+
+---
+
+## 18. Compliance en IA
+
+### Regulated Workloads
+
+Algunos sectores exigen un nivel extra de compliance: **servicios financieros, sanidad, aeroespacial**. Ejemplos: reportar periodicamente a agencias federales, o resultados regulados como solicitudes de hipotecas y creditos. Si necesitas cumplir marcos regulatorios (auditoria, archivado, requisitos especiales de seguridad...), tienes un **regulated workload**.
+
+### Retos de compliance especificos de la IA
+
+- **Complexity and Opacity:** es dificil auditar como toman decisiones los sistemas.
+- **Dynamism and Adaptability:** los sistemas de IA cambian con el tiempo, no son estaticos.
+- **Emergent Capabilities:** capacidades no previstas que puede tener un sistema.
+- **Unique Risks:** bias algoritmico, violaciones de privacidad, desinformacion...
+  - **Algorithmic Bias:** si los datos estan sesgados (no son representativos), el modelo perpetua el sesgo.
+  - **Human Bias:** los humanos que crean el sistema tambien pueden introducir sesgo.
+- **Algorithm accountability:** los algoritmos deben ser transparentes y explicables. Regulaciones como el **EU Artificial Intelligence Act** y normas en EE. UU. (varios estados y ciudades) promueven la equidad, la no discriminacion y los derechos humanos.
+
+### AWS Compliance
+
+AWS cuenta con **mas de 140 estandares de seguridad y certificaciones de compliance**, entre ellos:
+
+| Estandar | Ambito |
+|----------|--------|
+| **NIST** | National Institute of Standards and Technology |
+| **ENISA** | European Union Agency for Cybersecurity |
+| **ISO** | International Organization for Standardization |
+| **SOC** | AWS System and Organization Controls |
+| **HIPAA** | Health Insurance Portability and Accountability Act (datos sanitarios) |
+| **GDPR** | General Data Protection Regulation (proteccion de datos en la UE) |
+| **PCI DSS** | Payment Card Industry Data Security Standard (datos de tarjetas) |
+
+Los informes de compliance de AWS se descargan desde **AWS Artifact**.
+
+### Model Cards
+
+Formato **estandarizado para documentar los detalles clave de un modelo ML**: uso previsto, risk rating, detalles y metricas de entrenamiento. En IA Generativa pueden incluir **citas de fuentes y documentacion del origen de los datos**: datasets usados, sus fuentes, licencias y sesgos o problemas de calidad conocidos. **SageMaker Model Cards** centraliza esta documentacion y ayuda en las **auditorias**. Las **AWS AI Service Cards** son un ejemplo de este enfoque.
+
+---
+
+## 19. Labs de AWS Skill Builder
+
+<SkillBuilderLab
+  tipo="simulearn"
+  title="Lab 1 - AWS SimuLearn: Provision SageMaker in a Secure Environment"
+  url="https://explore.skillbuilder.aws/learn/courses/20130/aws-simulearn-provision-sagemaker-in-a-secure-environment"
+/>
+
+---
+
+## Preguntas de repaso
+
+<details>
+<summary>¿Puede SageMaker Clarify detectar Observer Bias o Confirmation Bias?</summary>
+
+**No.** Son sesgos cognitivos que surgen del juicio humano, no de patrones estadisticos en datos o modelos.
+</details>
+
+<details>
+<summary>¿Cual de estas NO es una capacidad de la IA Generativa: adaptability, scalability, personalization o nondeterminism?</summary>
+
+**Nondeterminism**: es un reto (la misma entrada puede dar salidas distintas), no una capacidad.
+</details>
+
+<details>
+<summary>¿Que es Responsible AI?</summary>
+
+Asegurar que los sistemas de IA son **transparentes y confiables**, mitigando riesgos y resultados negativos durante todo el ciclo de vida (diseño, desarrollo, despliegue, monitorizacion y evaluacion).
+</details>
+
+<details>
+<summary>¿Que ayuda en los procesos que definen, implementan y hacen cumplir el compliance?</summary>
+
+La **Governance** (politicas, roles y mecanismos de supervision), apoyada en AWS por herramientas como SageMaker Role Manager, Model Cards, Model Dashboard, AWS Config, CloudTrail o Audit Manager.
+</details>
+
+<details>
+<summary>Un modelo decide quien obtiene un prestamo. Preocupa el sesgo y se necesita entender como toma las decisiones. ¿Que dimension de Responsible AI es relevante?</summary>
+
+**Explainability** (entender por que el modelo decide), junto con **Fairness** por la preocupacion sobre el sesgo.
+</details>
+
+<details>
+<summary>¿Donde encuentras informacion sobre las practicas de Responsible AI que AWS ha implementado en sus servicios de IA?</summary>
+
+En las **AWS AI Service Cards**.
+</details>
+
+---
+
 ## Resumen
 
 Los conceptos de cumplimiento, gobernanza y seguridad forman el pilar sobre el que se construyen sistemas de IA confiables en AWS. Desde las dimensiones de Responsible AI hasta las practicas de MLOps, pasando por el Shared Responsibility Model y las herramientas de AWS como SageMaker Clarify y Guardrails for Bedrock, el examen AIF-C01 espera que el candidato comprenda no solo que herramientas existen, sino por que son necesarias y como se integran en un marco de gobernanza organizacional completo.

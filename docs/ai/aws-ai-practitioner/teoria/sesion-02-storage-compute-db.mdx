@@ -53,6 +53,26 @@ S3 puede alojar sitios web estaticos y hacerlos accesibles desde Internet. La UR
 
 S3 ofrece diferentes clases de almacenamiento optimizadas para diferentes patrones de acceso y requisitos de coste. Las politicas de Lifecycle permiten mover automaticamente los objetos entre clases de almacenamiento segun reglas definidas por el usuario, optimizando asi los costes de almacenamiento a lo largo del tiempo.
 
+| Clase | Patron de acceso | Disponibilidad | AZs | Recuperacion | Duracion minima |
+|-------|------------------|----------------|-----|--------------|-----------------|
+| **S3 Standard** | Datos de acceso frecuente | 99,99% | >= 3 | Milisegundos | No |
+| **S3 Intelligent-Tiering** | Patron desconocido o cambiante; mueve objetos entre niveles automaticamente | 99,9% | >= 3 | Milisegundos | No |
+| **S3 Standard-IA** (Infrequent Access) | Acceso poco frecuente pero rapido cuando se necesita | 99,9% | >= 3 | Milisegundos | 30 dias |
+| **S3 One Zone-IA** | Acceso poco frecuente, datos re-creables | 99,5% | 1 | Milisegundos | 30 dias |
+| **S3 Express One Zone** | Latencia de un solo digito de ms (p. ej. entrenamiento ML) | 99,95% | 1 | Milisegundos | No |
+| **S3 Glacier Instant Retrieval** | Archivo consultado una vez por trimestre | 99,9% | >= 3 | Milisegundos | 90 dias |
+| **S3 Glacier Flexible Retrieval** | Archivo consultado 1-2 veces al ano | 99,99% | >= 3 | Minutos a 12 horas (Expedited, Standard, Bulk) | 90 dias |
+| **S3 Glacier Deep Archive** | Archivo a largo plazo (7-10 anos, compliance) | 99,99% | >= 3 | 12 a 48 horas | 180 dias |
+
+Todas las clases estan disenadas para la misma durabilidad de 11 nueves; lo que cambia es la disponibilidad, el coste de almacenamiento y el coste/tiempo de recuperacion.
+
+### Lifecycle, replicacion y cifrado
+
+- **Lifecycle rules:** Reglas que aplican *transition actions* (mover objetos a otra clase tras X dias, por ejemplo de Standard a Standard-IA a los 30 dias y a Glacier a los 90) y *expiration actions* (eliminar objetos o versiones antiguas tras un tiempo). Se pueden filtrar por prefijo o por tags.
+- **Replication:** **CRR** (Cross-Region Replication) copia los objetos a un bucket de otra Region (compliance, menor latencia, recuperacion ante desastres) y **SRR** (Same-Region Replication) a otro bucket de la misma Region (agregar logs, copias entre cuentas). Requiere tener el **versionado activado** en origen y destino, y la copia es asincrona.
+- **Cifrado:** Por defecto todos los objetos nuevos se cifran en reposo con **SSE-S3**. Tambien existen **SSE-KMS** (claves gestionadas en AWS KMS, con auditoria en CloudTrail), **SSE-C** (claves aportadas por el cliente) y el cifrado en el lado del cliente. En transito se usa HTTPS (TLS).
+- **Block Public Access:** Configuracion a nivel de cuenta o de bucket que impide exponer datos publicamente aunque una politica lo permita; esta activada por defecto.
+
 :::tip Para el examen
 S3 es uno de los servicios mas preguntados. Recuerda que S3 es almacenamiento de objetos (no bloques ni archivos), que los nombres de bucket son globalmente unicos, y que la durabilidad es de 11 nueves. Conoce los casos de uso principales: backup y recuperacion, alojamiento de sitios estaticos, data lakes, distribucion de contenido y archivado.
 :::
@@ -79,6 +99,19 @@ EBS es un disco de red, no un disco fisico, lo que significa que utiliza la red 
 
 Los volumenes tienen una capacidad aprovisionada (tamano en GB y IOPS) y se factura por toda la capacidad aprovisionada, independientemente del uso real. La capacidad puede aumentarse con el tiempo segun las necesidades.
 
+La capa gratuita (Free Tier) incluye 30 GB al mes de almacenamiento EBS de tipo General Purpose (SSD) o Magnetic.
+
+| Tipo | Durabilidad | Tamano | Throughput maximo | Multi-Attach | Arranque |
+|------|-------------|--------|-------------------|--------------|----------|
+| gp3 | 99,8% - 99,9% | 1 GiB - 16 TiB | 1.000 MiB/s | No | Si |
+| gp2 | 99,8% - 99,9% | 1 GiB - 16 TiB | 250 MiB/s | No | Si |
+| io2 Block Express | 99,999% | 4 GiB - 64 TiB | 4.000 MiB/s | Si | Si |
+| io1 | 99,8% - 99,9% | 4 GiB - 16 TiB | 1.000 MiB/s | Si | Si |
+| st1 | 99,8% - 99,9% | 125 GiB - 16 TiB | 500 MiB/s | No | No |
+| sc1 | 99,8% - 99,9% | 125 GiB - 16 TiB | 250 MiB/s | No | No |
+
+io2 Block Express esta pensado para cargas que requieren latencia por debajo del milisegundo y mas de 64.000 IOPS o 1.000 MiB/s; io1 para cargas con IOPS sostenidos o mas de 16.000 IOPS.
+
 ### Tipos de volumenes EBS
 
 | Tipo | Categoria | IOPS maximo | Uso recomendado |
@@ -104,6 +137,21 @@ EFS ofrece diferentes clases de almacenamiento para optimizar costes: **EFS Stan
 
 Existen dos tipos de sistema de archivos: **Regional** (datos distribuidos en 3 o mas AZs, maxima durabilidad y disponibilidad) y **One Zone** (datos en una sola AZ, menor coste pero sin resiliencia ante la perdida de esa AZ).
 
+| Clase EFS | Uso | Latencia primer byte | Facturacion minima por archivo | Duracion minima |
+|-----------|-----|----------------------|--------------------------------|-----------------|
+| EFS Standard | Datos activos | Sub-milisegundo | No aplica | No aplica |
+| EFS Infrequent Access | Pocos accesos por trimestre | Decenas de ms | 128 KiB | No aplica |
+| EFS Archive | Pocos accesos al ano o menos | Decenas de ms | 128 KiB | 90 dias |
+
+La disponibilidad (SLA) es del 99,99% para sistemas Regional y del 99,9% para One Zone. EFS ofrece ademas varios **throughput modes** (Elastic, Provisioned y Bursting) para ajustar el rendimiento a la carga, y es la opcion de almacenamiento de archivos compartido para contenedores (ECS, EKS) y funciones serverless (Lambda).
+
+| | EBS | EFS | S3 |
+|-|-----|-----|----|
+| Tipo | Bloques | Archivos (NFS) | Objetos |
+| Alcance | Una AZ | Regional (multi-AZ) o One Zone | Regional |
+| Acceso | Una instancia (salvo Multi-Attach io1/io2) | Miles de instancias a la vez | Via API/HTTP desde cualquier sitio |
+| Facturacion | Capacidad aprovisionada | Uso real (GB almacenados) | Uso real + peticiones + transferencia |
+
 ---
 
 ## 5. Amazon FSx
@@ -119,11 +167,34 @@ Amazon FSx ofrece sistemas de archivos completamente gestionados y de alto rendi
 
 FSx for Lustre destaca por su capacidad de importar y exportar datos automaticamente desde y hacia Amazon S3, lo que lo hace especialmente util para pipelines de Machine Learning que necesitan acceso rapido a grandes datasets almacenados en S3.
 
+Todas las variantes comparten cuatro propiedades: son **completas y totalmente gestionadas**, **altamente disponibles y protegidas** (backups incrementales, snapshots), **eficientes en coste** e **hibridas** (accesibles desde on-premises).
+
+| | NetApp ONTAP | OpenZFS | Windows File Server | Lustre |
+|-|--------------|---------|---------------------|--------|
+| Latencia | < 1 ms | < 0,5 ms | < 1 ms | < 1 ms |
+| Throughput maximo por file system | 72-80 GB/s | 10-21 GB/s | 12-20 GB/s | 1.000 GB/s |
+| Tamano maximo | Practicamente ilimitado (decenas de PB) | 512 TiB | 64 TiB | Varios PB |
+| Clientes | Windows, Linux, macOS | Windows, Linux, macOS | Windows, Linux, macOS | Linux |
+| Despliegue | Single-AZ y Multi-AZ | Single-AZ y Multi-AZ | Single-AZ y Multi-AZ | Single-AZ (Persistent o Scratch) |
+| SLA | 99,99% Multi-AZ / 99,9% Single-AZ | 99,99% / 99,5% | 99,99% / 99,5% | 99,5% |
+| Replicacion entre Regiones | NetApp SnapMirror | Backups cross-region | Backups cross-region | Via replicacion cross-region de S3 |
+
+Todas se pueden usar desde EC2, ECS y EKS.
+
 ---
 
 ## 6. Servicios de computo en AWS
 
 AWS ofrece una variedad de servicios de computo que abarcan desde maquinas virtuales tradicionales hasta funciones serverless, permitiendo a las organizaciones elegir el modelo mas adecuado para cada carga de trabajo.
+
+| Categoria | Servicio | Descripcion |
+|-----------|----------|-------------|
+| Instancias (maquinas virtuales) | Amazon EC2 | Capacidad de computo segura y redimensionable (servidores virtuales) |
+| Instancias | Amazon EC2 Spot | Cargas tolerantes a fallos con hasta un 90% de descuento |
+| Instancias | AWS Batch | Procesamiento por lotes totalmente gestionado a cualquier escala |
+| Contenedores | Amazon ECS | Forma segura, fiable y escalable de ejecutar contenedores |
+| Contenedores | Amazon EKS | Kubernetes totalmente gestionado |
+| Serverless | AWS Lambda | Ejecutar codigo sin pensar en servidores, pagando solo el tiempo de computo |
 
 ---
 
@@ -148,6 +219,16 @@ Al lanzar una instancia EC2, se pueden configurar multiples parametros:
 
 AWS utiliza una convencion de nombres para los tipos de instancias EC2. Por ejemplo, en `m5.2xlarge`: `m` es la clase de instancia (General Purpose), `5` es la generacion y `2xlarge` es el tamano dentro de esa clase. Los tipos se optimizan para diferentes casos de uso: General Purpose, Compute Optimized, Memory Optimized, Storage Optimized y Accelerated Computing.
 
+| Familia | Prefijos tipicos | Uso |
+|---------|------------------|-----|
+| General Purpose | t, m | Equilibrio CPU/memoria/red: servidores web, repositorios de codigo |
+| Compute Optimized | c | Procesamiento batch, HPC, servidores de juegos, inferencia ML intensiva en CPU |
+| Memory Optimized | r, x, z | Bases de datos en memoria, caches, analitica en tiempo real |
+| Storage Optimized | i, d, h | OLTP, data warehouses, alto IOPS sobre almacenamiento local |
+| Accelerated Computing | p, g, trn (Trainium), inf (Inferentia) | Entrenamiento e inferencia de modelos de ML, graficos |
+
+Herramientas como [instances.vantage.sh](https://instances.vantage.sh/) permiten comparar todos los tipos de instancia y sus precios.
+
 ### Security Groups
 
 Los Security Groups son el mecanismo fundamental de seguridad de red en AWS. Funcionan como firewalls virtuales que controlan el trafico entrante y saliente de las instancias EC2. Es importante recordar que los Security Groups solo contienen reglas de tipo "Allow" (permitir); no existen reglas de denegacion explicitas. Las reglas pueden hacer referencia a direcciones IP o a otros Security Groups.
@@ -161,6 +242,8 @@ Los Security Groups son el mecanismo fundamental de seguridad de red en AWS. Fun
 | Savings Plans | Hasta 72% | 1 o 3 anos | Compromiso de gasto por hora |
 | Spot Instances | Hasta 90% | Ninguno (pueden interrumpirse) | Cargas tolerantes a fallos |
 | Dedicated Hosts | Variable | Opcional | Requisitos de licenciamiento o compliance |
+| Dedicated Instances | Ninguno | Ninguno | Hardware no compartido con otros clientes (sin control de la colocacion) |
+| Capacity Reservations | Ninguno | Ninguno (se paga aunque no se use) | Garantizar capacidad en una AZ concreta |
 
 :::tip Spot Instances
 Las Spot Instances ofrecen hasta un 90% de descuento respecto a On-Demand, pero AWS puede reclamarlas en cualquier momento con un aviso de 2 minutos. Son ideales para cargas tolerantes a fallos como procesamiento batch, analisis de datos o renderizado.
@@ -179,6 +262,15 @@ AWS Lambda es un servicio de computo serverless que ejecuta codigo en respuesta 
 Lambda soporta multiples lenguajes de programacion y se integra nativamente con una gran cantidad de servicios de AWS como S3, DynamoDB, API Gateway, Kinesis, CloudWatch y muchos mas. El modelo de precios se basa en el numero de solicitudes y la duracion de la ejecucion, lo que lo convierte en una opcion extremadamente eficiente en costes para cargas de trabajo intermitentes o basadas en eventos.
 
 Un caso de uso comun es el procesamiento automatico de imagenes subidas a S3: cuando un usuario sube una imagen, S3 genera un evento que dispara una funcion Lambda que procesa la imagen (por ejemplo, generando thumbnails) y almacena el resultado de vuelta en S3.
+
+Lenguajes soportados de forma nativa: Node.js, Python, Java, .NET (C#/PowerShell) y Ruby, ademas de cualquier otro lenguaje mediante *custom runtimes* o imagenes de contenedor. Cada ejecucion tiene un tiempo maximo de **15 minutos** y se pueden asignar hasta 10 GB de memoria (la CPU escala proporcionalmente); para trabajos mas largos se usan ECS/Fargate o AWS Batch.
+
+| | EC2 | Lambda |
+|-|-----|--------|
+| Modelo | IaaS: servidores virtuales | Serverless (FaaS): funciones |
+| Ejecucion | Continua | Bajo demanda, disparada por eventos |
+| Escalado | Auto Scaling Groups configurados por el usuario | Automatico |
+| Pago | Por segundo/hora de instancia encendida | Por numero de peticiones y duracion (ms) |
 
 ---
 
@@ -237,6 +329,22 @@ ElastiCache es un servicio completamente gestionado compatible con Valkey, Memca
 | Amazon Timestream | Series temporales | IoT, DevOps, telemetria industrial |
 | Amazon Redshift | Data Warehouse | Analisis de datos a gran escala, BI |
 | Amazon MemoryDB | In-memory (Redis compatible) | Caching de alto rendimiento, aplicaciones de baja latencia |
+
+### Bases de datos y casos de uso de IA generativa
+
+Las diapositivas destacan que casi todas las bases de datos de AWS tienen hoy un papel en aplicaciones de IA generativa:
+
+| Tipo | Servicio | Casos de uso GenAI |
+|------|----------|--------------------|
+| Relacional | Aurora, RDS (pgvector), Redshift | Chatbots con RAG, busqueda por similitud, recomendaciones |
+| Clave-valor | DynamoDB | Busqueda por similitud mediante la integracion zero-ETL con OpenSearch Service |
+| In-memory | ElastiCache, MemoryDB | RAG, *semantic caching*, recomendaciones, deteccion de fraude |
+| Documental | DocumentDB | RAG, busqueda por similitud, recomendaciones |
+| Grafos | Neptune | **GraphRAG**, deteccion de fraude avanzada, descubrimiento de respuestas |
+
+**Neptune ML** utiliza SageMaker y Graph Neural Networks (GNNs), una tecnica de ML disenada especificamente para grafos, para hacer predicciones mas rapidas y precisas sobre datos de grafo: mejora la precision de la mayoria de predicciones en mas de un 50% frente a metodos no basados en grafos (como XGBoost, pensado para datos tabulares).
+
+Amazon Keyspaces es compatible con Apache Cassandra, una base de datos NoSQL de codigo abierto pensada para lecturas y escrituras muy rapidas (perfiles de jugadores, metadatos de dispositivos IoT, registros de eventos). Amazon Timestream ofrece motores de series temporales totalmente gestionados, desde consultas de baja latencia hasta ingesta a gran escala.
 
 :::info Comparativa para el examen
 Para el examen, es importante conocer cuando usar cada tipo de base de datos:
