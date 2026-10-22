@@ -67,7 +67,7 @@ export default function WeekRail(): React.ReactElement {
                     <div
                       key={s.n}
                       className={`${styles.cell} ${styles.cellNone} ${styles.mono}`}
-                      title={`Semana ${s.n} · la cohorte online aún no ha empezado`}
+                      title={`Semana ${s.n} · sin sesión online`}
                     >
                       –
                     </div>
@@ -78,7 +78,7 @@ export default function WeekRail(): React.ReactElement {
                 return (
                   <div
                     key={s.n}
-                    className={`${styles.cell} ${styles.cellOnline} ${styles.mono} ${s.brk ? styles.brk : ''}`}
+                    className={`${styles.cell} ${styles.cellOnline} ${styles.mono} ${s.brkO ? styles.brk : ''}`}
                     style={{ color: cert.color }}
                     title={`Semana ${s.n} · ${s.o} · ${prof}`}
                   >

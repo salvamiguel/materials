@@ -1,5 +1,5 @@
 import React from 'react';
-import { CERTS, SESIONES, PROF_ONLINE_2, Profesor } from './data';
+import { CERTS, SESIONES, PROF_ONLINE_2, Profesor, Sesion } from './data';
 import styles from './calendar.module.css';
 
 function Who({ prof, grupos }: { prof: Profesor; grupos: string }): React.ReactElement {
@@ -12,6 +12,12 @@ function Who({ prof, grupos }: { prof: Profesor; grupos: string }): React.ReactE
       <span className={styles.dateTrack}>{grupos}</span>
     </span>
   );
+}
+
+/** Notas de parón previas a la semana; si presencial y online no coinciden se indica el grupo. */
+function paronesSemana(s: Sesion): string[] {
+  if (s.brk && s.brk === s.brkO) return [s.brk];
+  return [s.brk && `${s.brk} (presencial)`, s.brkO && `${s.brkO} (online)`].filter((n): n is string => Boolean(n));
 }
 
 export default function WeekTable(): React.ReactElement {
@@ -35,13 +41,13 @@ export default function WeekTable(): React.ReactElement {
               const rowClass = s.prof === 'Salva' ? styles.rowSalva : styles.rowJavier;
               return (
                 <React.Fragment key={s.n}>
-                  {s.brk && (
-                    <tr>
+                  {paronesSemana(s).map((nota) => (
+                    <tr key={nota}>
                       <td className={styles.breakNote} colSpan={6}>
-                        · · · {s.brk} · · ·
+                        · · · {nota} · · ·
                       </td>
                     </tr>
-                  )}
+                  ))}
                   <tr className={rowClass}>
                     <td className={styles.mono}>{s.n}</td>
                     {s.o ? (

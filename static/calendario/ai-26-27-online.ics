@@ -163,122 +163,10 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem09@salvamiguel.com
+UID:ai-2627-online-sem14@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261215T183000
 DTEND;TZID=Europe/Madrid:20261215T210000
-SUMMARY:Máster AI - Módulo Certificaciones - UEV - DP-900 · Introducció
- n al cloud y a Azure + fundamentos de datos: tipos\, formatos\, OLTP/OLAP 
- y roles
-DESCRIPTION:Semana 9 · Grupo online 1\nProfesor: Javier\nHorario: 18:30–
- 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
- rio
-LOCATION:Online
-CATEGORIES:DP-900
-URL:https://salvamiguel.com/materials/ai/calendario
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-SEQUENCE:0
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:La clase empieza en 30 minutos
-TRIGGER:-PT30M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ai-2627-online-sem10@salvamiguel.com
-DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270112T183000
-DTEND;TZID=Europe/Madrid:20270112T210000
-SUMMARY:Máster AI - Módulo Certificaciones - UEV - DP-900 · Datos relaci
- onales en Azure: SQL\, normalización\, Azure SQL Database/Managed Instanc
- e
-DESCRIPTION:Semana 10 · Grupo online 1\nProfesor: Javier\nHorario: 18:30
- –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
- ndario
-LOCATION:Online
-CATEGORIES:DP-900
-URL:https://salvamiguel.com/materials/ai/calendario
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-SEQUENCE:0
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:La clase empieza en 30 minutos
-TRIGGER:-PT30M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ai-2627-online-sem11@salvamiguel.com
-DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270119T183000
-DTEND;TZID=Europe/Madrid:20270119T210000
-SUMMARY:Máster AI - Módulo Certificaciones - UEV - DP-900 · Datos no rel
- acionales en Azure: Blob/Files/Tables\, Azure Cosmos DB
-DESCRIPTION:Semana 11 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–
- 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
- rio
-LOCATION:Online
-CATEGORIES:DP-900
-URL:https://salvamiguel.com/materials/ai/calendario
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-SEQUENCE:0
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:La clase empieza en 30 minutos
-TRIGGER:-PT30M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ai-2627-online-sem12@salvamiguel.com
-DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270126T183000
-DTEND;TZID=Europe/Madrid:20270126T210000
-SUMMARY:Máster AI - Módulo Certificaciones - UEV - DP-900 · Cargas de tr
- abajo analíticas: ingesta\, batch/streaming\, Power BI
-DESCRIPTION:Semana 12 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–
- 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
- rio
-LOCATION:Online
-CATEGORIES:DP-900
-URL:https://salvamiguel.com/materials/ai/calendario
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-SEQUENCE:0
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:La clase empieza en 30 minutos
-TRIGGER:-PT30M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ai-2627-online-sem13@salvamiguel.com
-DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270202T183000
-DTEND;TZID=Europe/Madrid:20270202T210000
-SUMMARY:Máster AI - Módulo Certificaciones - UEV - DP-900 · Repaso gener
- al DP-900 + simulacro de examen
-DESCRIPTION:Semana 13 · Grupo online 1\nProfesor: Javier\nHorario: 18:30
- –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
- ndario
-LOCATION:Online
-CATEGORIES:DP-900
-URL:https://salvamiguel.com/materials/ai/calendario
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-SEQUENCE:0
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:La clase empieza en 30 minutos
-TRIGGER:-PT30M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ai-2627-online-sem14@salvamiguel.com
-DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270209T183000
-DTEND;TZID=Europe/Madrid:20270209T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AI-901 · Conceptos de
   IA: ML/deep learning\, evaluación de modelos\, IA responsable y cargas d
  e trabajo
@@ -300,8 +188,8 @@ END:VEVENT
 BEGIN:VEVENT
 UID:ai-2627-online-sem15@salvamiguel.com
 DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270216T183000
-DTEND;TZID=Europe/Madrid:20270216T210000
+DTSTART;TZID=Europe/Madrid:20270112T183000
+DTEND;TZID=Europe/Madrid:20270112T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AI-901 · Microsoft Fo
  undry (I): apps y agentes generativos\, despliegue de modelos\, SDKs
 DESCRIPTION:Semana 15 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–
@@ -322,8 +210,8 @@ END:VEVENT
 BEGIN:VEVENT
 UID:ai-2627-online-sem16@salvamiguel.com
 DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270223T183000
-DTEND;TZID=Europe/Madrid:20270223T210000
+DTSTART;TZID=Europe/Madrid:20270119T183000
+DTEND;TZID=Europe/Madrid:20270119T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AI-901 · Microsoft Fo
  undry (II): texto y voz\, modelos multimodales
 DESCRIPTION:Semana 16 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–
@@ -344,8 +232,8 @@ END:VEVENT
 BEGIN:VEVENT
 UID:ai-2627-online-sem17@salvamiguel.com
 DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270302T183000
-DTEND;TZID=Europe/Madrid:20270302T210000
+DTSTART;TZID=Europe/Madrid:20270126T183000
+DTEND;TZID=Europe/Madrid:20270126T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AI-901 · Microsoft Fo
  undry (III): visión\, Custom Vision\, generación de imágenes\, extracci
  ón de información
@@ -367,8 +255,8 @@ END:VEVENT
 BEGIN:VEVENT
 UID:ai-2627-online-sem18@salvamiguel.com
 DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270309T183000
-DTEND;TZID=Europe/Madrid:20270309T210000
+DTSTART;TZID=Europe/Madrid:20270202T183000
+DTEND;TZID=Europe/Madrid:20270202T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AI-901 · Repaso gener
  al AI-901 + simulacro práctico (Python/REST/SDK)
 DESCRIPTION:Semana 18 · Grupo online 1\nProfesor: Javier\nHorario: 18:30
@@ -389,8 +277,8 @@ END:VEVENT
 BEGIN:VEVENT
 UID:ai-2627-online-sem19@salvamiguel.com
 DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270406T183000
-DTEND;TZID=Europe/Madrid:20270406T210000
+DTSTART;TZID=Europe/Madrid:20270209T183000
+DTEND;TZID=Europe/Madrid:20270209T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - Cierre · Simulacros c
  ombinados de las tres certificaciones + resolución de dudas
 DESCRIPTION:Semana 19 · Grupo online 1\nProfesor: Javier\nHorario: 18:30
@@ -411,8 +299,8 @@ END:VEVENT
 BEGIN:VEVENT
 UID:ai-2627-online-sem20@salvamiguel.com
 DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20270413T183000
-DTEND;TZID=Europe/Madrid:20270413T210000
+DTSTART;TZID=Europe/Madrid:20270216T183000
+DTEND;TZID=Europe/Madrid:20270216T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - Cierre · Estrategia d
  e examen\, dudas finales y cierre del módulo
 DESCRIPTION:Semana 20 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–
