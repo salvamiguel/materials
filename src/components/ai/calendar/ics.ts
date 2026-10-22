@@ -1,4 +1,4 @@
-import { CERTS, PROF_ONLINE_2, SESIONES, Sesion } from './data';
+import { CERTS, PROF_ONLINE_2, SESIONES, Sesion, semana } from './data';
 
 export type Grupo = 'online1' | 'online2' | 'presencial';
 
@@ -141,7 +141,7 @@ export function buildIcs(grupo: Grupo, pageUrl: string): string {
     if (!fecha) return;
     const cert = CERTS[s.cert];
     const descripcion = [
-      `Semana ${s.n} · Grupo ${g.etiqueta.toLowerCase()}`,
+      `Semana ${semana(s)} · Grupo ${g.etiqueta.toLowerCase()}`,
       `Profesor: ${profesorGrupo(s, grupo)}`,
       `Horario: ${HORARIO.inicio}–${HORARIO.fin}`,
       '',

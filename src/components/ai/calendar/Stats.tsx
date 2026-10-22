@@ -4,7 +4,7 @@ import styles from './calendar.module.css';
 
 export default function Stats(): React.ReactElement {
   const stats = useMemo(() => {
-    const presenciales = SESIONES.length;
+    const presenciales = SESIONES.filter((s) => s.p).length;
     const online = SESIONES.filter((s) => s.o).length;
     const total = presenciales + online * 2;
 

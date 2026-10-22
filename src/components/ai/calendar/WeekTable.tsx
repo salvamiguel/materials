@@ -1,5 +1,5 @@
 import React from 'react';
-import { CERTS, SESIONES, PROF_ONLINE_2, Profesor, Sesion } from './data';
+import { CERTS, SESIONES, PROF_ONLINE_2, Profesor, Sesion, semana } from './data';
 import styles from './calendar.module.css';
 
 function Who({ prof, grupos }: { prof: Profesor; grupos: string }): React.ReactElement {
@@ -49,7 +49,7 @@ export default function WeekTable(): React.ReactElement {
                     </tr>
                   ))}
                   <tr className={rowClass}>
-                    <td className={styles.mono}>{s.n}</td>
+                    <td className={styles.mono}>{semana(s)}</td>
                     {s.o ? (
                       <td className={styles.dateCell}>
                         <span className={styles.mono}>{s.o}</span>
@@ -58,10 +58,14 @@ export default function WeekTable(): React.ReactElement {
                     ) : (
                       <td className={styles.noneCell}>sin sesión online</td>
                     )}
-                    <td className={styles.dateCell}>
-                      <span className={styles.mono}>{s.p}</span>
-                      <span className={styles.dateTrack}>miércoles · presencial</span>
-                    </td>
+                    {s.p ? (
+                      <td className={styles.dateCell}>
+                        <span className={styles.mono}>{s.p}</span>
+                        <span className={styles.dateTrack}>miércoles · presencial</span>
+                      </td>
+                    ) : (
+                      <td className={styles.noneCell}>sin sesión presencial</td>
+                    )}
                     <td>
                       <span className={styles.chip} style={{ background: cert.soft, color: cert.color }}>
                         <span className={styles.dot} style={{ background: cert.color }} />
@@ -70,7 +74,7 @@ export default function WeekTable(): React.ReactElement {
                     </td>
                     <td className={styles.temaCell}>{s.tema}</td>
                     <td>
-                      <Who prof={s.prof} grupos={s.o ? 'presencial · online 1' : 'presencial'} />
+                      <Who prof={s.prof} grupos={[s.p && 'presencial', s.o && 'online 1'].filter(Boolean).join(' · ')} />
                       {s.o && <Who prof={PROF_ONLINE_2} grupos="online 2" />}
                     </td>
                   </tr>

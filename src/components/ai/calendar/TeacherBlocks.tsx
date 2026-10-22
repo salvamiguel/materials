@@ -1,5 +1,5 @@
 import React from 'react';
-import { CERTS, SESIONES, PROF_ONLINE_2, Profesor, Sesion, parseFecha } from './data';
+import { CERTS, SESIONES, PROF_ONLINE_2, Profesor, Sesion, parseFecha, semana } from './data';
 import styles from './calendar.module.css';
 
 interface Grupo {
@@ -19,7 +19,7 @@ function agrupar(sesiones: Sesion[]): Grupo[] {
   const grupos: Grupo[] = [];
   sesiones.forEach((s) => {
     const ultimo = grupos[grupos.length - 1];
-    const continua = ultimo && ultimo.prof === s.prof && ultimo.semanas[ultimo.semanas.length - 1].n === s.n - 1;
+    const continua = ultimo && ultimo.prof === s.prof;
     if (continua) {
       ultimo.semanas.push(s);
     } else {
@@ -38,13 +38,14 @@ function rangoFechas(semanas: Sesion[], online2?: boolean): [string, string] {
 
 /** «3–8 · 14–20»: las semanas del bloque agrupadas en tramos consecutivos. */
 function tramosSemanas(semanas: Sesion[]): string {
-  const tramos: Array<[number, number]> = [];
-  semanas.forEach(({ n }) => {
+  const tramos: Array<[Sesion, Sesion]> = [];
+  semanas.forEach((s) => {
     const ultimo = tramos[tramos.length - 1];
-    if (ultimo && ultimo[1] === n - 1) ultimo[1] = n;
-    else tramos.push([n, n]);
+    // Un tramo sigue mientras no falte ninguna semana del cronograma entre medias.
+    if (ultimo && SESIONES.indexOf(s) === SESIONES.indexOf(ultimo[1]) + 1) ultimo[1] = s;
+    else tramos.push([s, s]);
   });
-  const texto = tramos.map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`)).join(' · ');
+  const texto = tramos.map(([a, b]) => (a === b ? semana(a) : `${semana(a)}–${semana(b)}`)).join(' · ');
   return `${semanas.length === 1 ? 'Semana' : 'Semanas'} ${texto}`;
 }
 
@@ -60,7 +61,7 @@ export default function TeacherBlocks(): React.ReactElement {
         {grupos.map((g) => {
           const first = g.semanas[0];
           const [desde, hasta] = rangoFechas(g.semanas, g.online2);
-          const sesiones = g.online2 ? g.semanas.length : g.semanas.reduce((acc, s) => acc + (s.o ? 2 : 1), 0);
+          const sesiones = g.online2 ? g.semanas.length : g.semanas.reduce((acc, s) => acc + (s.o ? 2 : 0) + (s.p ? 1 : 0), 0);
           const blockClass = BLOCK_CLASS[g.prof];
 
           return (
@@ -92,8 +93,9 @@ export default function TeacherBlocks(): React.ReactElement {
                           `${s.o} online 2`
                         ) : (
                           <>
-                            {s.o ? `${s.o} online 1 · ` : ''}
-                            {s.p} presencial
+                            {s.o && `${s.o} online 1`}
+                            {s.o && s.p && ' · '}
+                            {s.p && `${s.p} presencial`}
                           </>
                         )}
                       </span>
