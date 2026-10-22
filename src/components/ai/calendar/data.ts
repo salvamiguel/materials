@@ -23,7 +23,7 @@ export const CERTS: Record<CertKey, CertInfo> = {
 
 export interface Sesion {
   n: number;
-  /** Fecha de las sesiones online 1 y online 2 (martes), o null si la cohorte aún no ha empezado. */
+  /** Fecha de las sesiones online 1 y online 2 (martes), o null si los grupos online no tienen clase esa semana (aún no han empezado o no cursan DP-900). */
   o: string | null;
   /** Fecha de la sesión presencial (miércoles). */
   p: string;
@@ -31,8 +31,12 @@ export interface Sesion {
   tema: string;
   /** Profesor de la sesión presencial y de la online 1; la online 2 la da siempre `PROF_ONLINE_2`. */
   prof: Profesor;
-  /** Nota de parón que precede a esta semana, si aplica. */
+  /** Certificación y tema de los grupos online si difieren del presencial (semana 9: allí empieza DP-900, aquí sigue AWS). */
+  online?: { cert: CertKey; tema: string };
+  /** Nota de parón que precede a esta semana en el grupo presencial, si aplica. */
   brk?: string;
+  /** Nota de parón que precede a esta semana en los grupos online, si aplica. */
+  brkO?: string;
 }
 
 export const SESIONES: Sesion[] = [
@@ -44,18 +48,18 @@ export const SESIONES: Sesion[] = [
   { n: 6, o: '24/11/2026', p: '25/11/2026', cert: 'aws', tema: 'Dominio 2 · Fundamentos de IA generativa, prompting, RAG y Amazon Bedrock (24 %)', prof: 'Javier' },
   { n: 7, o: '01/12/2026', p: '02/12/2026', cert: 'aws', tema: 'Dominio 3 · Aplicaciones de foundation models: entrenamiento, inferencia y Amazon SageMaker (28 %)', prof: 'Salva' },
   { n: 8, o: '08/12/2026', p: '09/12/2026', cert: 'aws', tema: 'Dominios 4 y 5 · IA responsable, seguridad, cumplimiento y gobernanza (28 %) + simulacro AWS', prof: 'Salva' },
-  { n: 9, o: '15/12/2026', p: '16/12/2026', cert: 'dp900', tema: 'Introducción al cloud y a Azure + fundamentos de datos: tipos, formatos, OLTP/OLAP y roles', prof: 'Javier' },
-  { n: 10, o: '12/01/2027', p: '13/01/2027', cert: 'dp900', tema: 'Datos relacionales en Azure: SQL, normalización, Azure SQL Database/Managed Instance', prof: 'Javier', brk: 'Parón de Navidad' },
-  { n: 11, o: '19/01/2027', p: '20/01/2027', cert: 'dp900', tema: 'Datos no relacionales en Azure: Blob/Files/Tables, Azure Cosmos DB', prof: 'Salva' },
-  { n: 12, o: '26/01/2027', p: '27/01/2027', cert: 'dp900', tema: 'Cargas de trabajo analíticas: ingesta, batch/streaming, Power BI', prof: 'Salva' },
-  { n: 13, o: '02/02/2027', p: '03/02/2027', cert: 'dp900', tema: 'Repaso general DP-900 + simulacro de examen', prof: 'Javier' },
-  { n: 14, o: '09/02/2027', p: '10/02/2027', cert: 'ai901', tema: 'Conceptos de IA: ML/deep learning, evaluación de modelos, IA responsable y cargas de trabajo', prof: 'Javier' },
-  { n: 15, o: '16/02/2027', p: '17/02/2027', cert: 'ai901', tema: 'Microsoft Foundry (I): apps y agentes generativos, despliegue de modelos, SDKs', prof: 'Salva' },
-  { n: 16, o: '23/02/2027', p: '24/02/2027', cert: 'ai901', tema: 'Microsoft Foundry (II): texto y voz, modelos multimodales', prof: 'Salva' },
-  { n: 17, o: '02/03/2027', p: '03/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (III): visión, Custom Vision, generación de imágenes, extracción de información', prof: 'Javier' },
-  { n: 18, o: '09/03/2027', p: '10/03/2027', cert: 'ai901', tema: 'Repaso general AI-901 + simulacro práctico (Python/REST/SDK)', prof: 'Javier' },
-  { n: 19, o: '06/04/2027', p: '07/04/2027', cert: 'cierre', tema: 'Simulacros combinados de las tres certificaciones + resolución de dudas', prof: 'Javier', brk: 'Parón de marzo' },
-  { n: 20, o: '13/04/2027', p: '14/04/2027', cert: 'cierre', tema: 'Estrategia de examen, dudas finales y cierre del módulo', prof: 'Salva' },
+  { n: 9, o: '15/12/2026', p: '16/12/2026', cert: 'dp900', tema: 'Introducción al cloud y a Azure + fundamentos de datos: tipos, formatos, OLTP/OLAP y roles', prof: 'Javier', online: { cert: 'aws', tema: 'Repaso general AWS AI Practitioner + simulacro de examen' } },
+  { n: 10, o: null, p: '13/01/2027', cert: 'dp900', tema: 'Datos relacionales en Azure: SQL, normalización, Azure SQL Database/Managed Instance', prof: 'Javier', brk: 'Parón de Navidad' },
+  { n: 11, o: null, p: '20/01/2027', cert: 'dp900', tema: 'Datos no relacionales en Azure: Blob/Files/Tables, Azure Cosmos DB', prof: 'Salva' },
+  { n: 12, o: null, p: '27/01/2027', cert: 'dp900', tema: 'Cargas de trabajo analíticas: ingesta, batch/streaming, Power BI', prof: 'Salva' },
+  { n: 13, o: null, p: '03/02/2027', cert: 'dp900', tema: 'Repaso general DP-900 + simulacro de examen', prof: 'Javier' },
+  { n: 14, o: '12/01/2027', p: '10/02/2027', cert: 'ai901', tema: 'Conceptos de IA: ML/deep learning, evaluación de modelos, IA responsable y cargas de trabajo', prof: 'Javier', brkO: 'Parón de Navidad' },
+  { n: 15, o: '19/01/2027', p: '17/02/2027', cert: 'ai901', tema: 'Microsoft Foundry (I): apps y agentes generativos, despliegue de modelos, SDKs', prof: 'Salva' },
+  { n: 16, o: '26/01/2027', p: '24/02/2027', cert: 'ai901', tema: 'Microsoft Foundry (II): texto y voz, modelos multimodales', prof: 'Salva' },
+  { n: 17, o: '02/02/2027', p: '03/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (III): visión, Custom Vision, generación de imágenes, extracción de información', prof: 'Javier' },
+  { n: 18, o: '09/02/2027', p: '10/03/2027', cert: 'ai901', tema: 'Repaso general AI-901 + simulacro práctico (Python/REST/SDK)', prof: 'Javier' },
+  { n: 19, o: '16/02/2027', p: '07/04/2027', cert: 'cierre', tema: 'Simulacros combinados de las tres certificaciones + resolución de dudas', prof: 'Javier', brk: 'Parón de marzo' },
+  { n: 20, o: '23/02/2027', p: '14/04/2027', cert: 'cierre', tema: 'Estrategia de examen, dudas finales y cierre del módulo', prof: 'Salva' },
 ];
 
 export interface Bloque {
@@ -82,6 +86,11 @@ export const MESES_CALENDARIO: Array<[number, number]> = [
 export function parseFecha(d: string): Date {
   const [dd, mm, yy] = d.split('/').map(Number);
   return new Date(yy, mm - 1, dd);
+}
+
+/** Certificación y tema de la sesión para el grupo: online puede diferir del presencial. */
+export function contenido(s: Sesion, online: boolean): { cert: CertKey; tema: string } {
+  return online && s.online ? s.online : { cert: s.cert, tema: s.tema };
 }
 
 export function inicial(p: Profesor): string {

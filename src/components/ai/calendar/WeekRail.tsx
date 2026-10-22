@@ -1,5 +1,5 @@
 import React from 'react';
-import { CERTS, BLOQUES, SESIONES, PROF_ONLINE_2, Profesor, Sesion, inicial } from './data';
+import { CERTS, BLOQUES, SESIONES, PROF_ONLINE_2, Profesor, Sesion, contenido, inicial } from './data';
 import styles from './calendar.module.css';
 
 const FILAS_ONLINE: Array<{ label: string; prof: (s: Sesion) => Profesor }> = [
@@ -67,18 +67,18 @@ export default function WeekRail(): React.ReactElement {
                     <div
                       key={s.n}
                       className={`${styles.cell} ${styles.cellNone} ${styles.mono}`}
-                      title={`Semana ${s.n} · la cohorte online aún no ha empezado`}
+                      title={`Semana ${s.n} · sin sesión online`}
                     >
                       –
                     </div>
                   );
                 }
-                const cert = CERTS[s.cert];
+                const cert = CERTS[contenido(s, true).cert];
                 const prof = fila.prof(s);
                 return (
                   <div
                     key={s.n}
-                    className={`${styles.cell} ${styles.cellOnline} ${styles.mono} ${s.brk ? styles.brk : ''}`}
+                    className={`${styles.cell} ${styles.cellOnline} ${styles.mono} ${s.brkO ? styles.brk : ''}`}
                     style={{ color: cert.color }}
                     title={`Semana ${s.n} · ${s.o} · ${prof}`}
                   >
