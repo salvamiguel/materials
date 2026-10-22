@@ -1,4 +1,4 @@
-import { CERTS, PROF_ONLINE_2, SESIONES, Sesion, semana } from './data';
+import { CERTS, PROF_ONLINE_2, SESIONES, Sesion, contenido } from './data';
 
 export type Grupo = 'online1' | 'online2' | 'presencial';
 
@@ -139,9 +139,10 @@ export function buildIcs(grupo: Grupo, pageUrl: string): string {
   SESIONES.forEach((s) => {
     const fecha = fechaGrupo(s, grupo);
     if (!fecha) return;
-    const cert = CERTS[s.cert];
+    const { cert: certKey, tema } = contenido(s, grupo !== 'presencial');
+    const cert = CERTS[certKey];
     const descripcion = [
-      `Semana ${semana(s)} · Grupo ${g.etiqueta.toLowerCase()}`,
+      `Semana ${s.n} · Grupo ${g.etiqueta.toLowerCase()}`,
       `Profesor: ${profesorGrupo(s, grupo)}`,
       `Horario: ${HORARIO.inicio}–${HORARIO.fin}`,
       '',
@@ -154,7 +155,7 @@ export function buildIcs(grupo: Grupo, pageUrl: string): string {
       `DTSTAMP:${DTSTAMP}`,
       `DTSTART;TZID=Europe/Madrid:${fechaHora(fecha, HORARIO.inicio)}`,
       `DTEND;TZID=Europe/Madrid:${fechaHora(fecha, HORARIO.fin)}`,
-      `SUMMARY:${escapeText(`${EVENT_PREFIX}${cert.label} · ${s.tema}`)}`,
+      `SUMMARY:${escapeText(`${EVENT_PREFIX}${cert.label} · ${tema}`)}`,
       `DESCRIPTION:${escapeText(descripcion)}`,
       `LOCATION:${escapeText(g.lugar)}`,
       `CATEGORIES:${escapeText(cert.label)}`,

@@ -22,18 +22,17 @@ export const CERTS: Record<CertKey, CertInfo> = {
 };
 
 export interface Sesion {
-  /** Identificador estable de la sesión (también en los UID del .ics). */
   n: number;
-  /** Nombre de la semana si no coincide con `n`, p. ej. «8b» para la clase extra solo online. */
-  label?: string;
   /** Fecha de las sesiones online 1 y online 2 (martes), o null si los grupos online no tienen clase esa semana (aún no han empezado o no cursan DP-900). */
   o: string | null;
-  /** Fecha de la sesión presencial (miércoles), o null si el grupo presencial no tiene clase esa semana (clase extra solo online). */
-  p: string | null;
+  /** Fecha de la sesión presencial (miércoles). */
+  p: string;
   cert: CertKey;
   tema: string;
   /** Profesor de la sesión presencial y de la online 1; la online 2 la da siempre `PROF_ONLINE_2`. */
   prof: Profesor;
+  /** Certificación y tema de los grupos online si difieren del presencial (semana 9: allí empieza DP-900, aquí sigue AWS). */
+  online?: { cert: CertKey; tema: string };
   /** Nota de parón que precede a esta semana en el grupo presencial, si aplica. */
   brk?: string;
   /** Nota de parón que precede a esta semana en los grupos online, si aplica. */
@@ -49,8 +48,7 @@ export const SESIONES: Sesion[] = [
   { n: 6, o: '24/11/2026', p: '25/11/2026', cert: 'aws', tema: 'Dominio 2 · Fundamentos de IA generativa, prompting, RAG y Amazon Bedrock (24 %)', prof: 'Javier' },
   { n: 7, o: '01/12/2026', p: '02/12/2026', cert: 'aws', tema: 'Dominio 3 · Aplicaciones de foundation models: entrenamiento, inferencia y Amazon SageMaker (28 %)', prof: 'Salva' },
   { n: 8, o: '08/12/2026', p: '09/12/2026', cert: 'aws', tema: 'Dominios 4 y 5 · IA responsable, seguridad, cumplimiento y gobernanza (28 %) + simulacro AWS', prof: 'Salva' },
-  { n: 21, label: '8b', o: '15/12/2026', p: null, cert: 'aws', tema: 'Repaso general AWS AI Practitioner + simulacro de examen', prof: 'Javier' },
-  { n: 9, o: null, p: '16/12/2026', cert: 'dp900', tema: 'Introducción al cloud y a Azure + fundamentos de datos: tipos, formatos, OLTP/OLAP y roles', prof: 'Javier' },
+  { n: 9, o: '15/12/2026', p: '16/12/2026', cert: 'dp900', tema: 'Introducción al cloud y a Azure + fundamentos de datos: tipos, formatos, OLTP/OLAP y roles', prof: 'Javier', online: { cert: 'aws', tema: 'Repaso general AWS AI Practitioner + simulacro de examen' } },
   { n: 10, o: null, p: '13/01/2027', cert: 'dp900', tema: 'Datos relacionales en Azure: SQL, normalización, Azure SQL Database/Managed Instance', prof: 'Javier', brk: 'Parón de Navidad' },
   { n: 11, o: null, p: '20/01/2027', cert: 'dp900', tema: 'Datos no relacionales en Azure: Blob/Files/Tables, Azure Cosmos DB', prof: 'Salva' },
   { n: 12, o: null, p: '27/01/2027', cert: 'dp900', tema: 'Cargas de trabajo analíticas: ingesta, batch/streaming, Power BI', prof: 'Salva' },
@@ -66,15 +64,17 @@ export const SESIONES: Sesion[] = [
 
 export interface Bloque {
   cert: CertKey;
+  from: number;
+  to: number;
   label: string;
 }
 
 export const BLOQUES: Bloque[] = [
-  { cert: 'arranque', label: 'Arranque' },
-  { cert: 'aws', label: 'AWS AI Practitioner' },
-  { cert: 'dp900', label: 'DP-900' },
-  { cert: 'ai901', label: 'AI-901' },
-  { cert: 'cierre', label: 'Cierre' },
+  { cert: 'arranque', from: 1, to: 2, label: 'Arranque' },
+  { cert: 'aws', from: 3, to: 8, label: 'AWS AI Practitioner' },
+  { cert: 'dp900', from: 9, to: 13, label: 'DP-900' },
+  { cert: 'ai901', from: 14, to: 18, label: 'AI-901' },
+  { cert: 'cierre', from: 19, to: 20, label: 'Cierre' },
 ];
 
 /** Meses (año, índice 0-based) que cubre el cronograma, de oct-2026 a abr-2027. */
@@ -88,9 +88,9 @@ export function parseFecha(d: string): Date {
   return new Date(yy, mm - 1, dd);
 }
 
-/** Nombre de la semana tal como se muestra («8b» para la clase extra, el número en el resto). */
-export function semana(s: Sesion): string {
-  return s.label ?? String(s.n);
+/** Certificación y tema de la sesión para el grupo: online puede diferir del presencial. */
+export function contenido(s: Sesion, online: boolean): { cert: CertKey; tema: string } {
+  return online && s.online ? s.online : { cert: s.cert, tema: s.tema };
 }
 
 export function inicial(p: Profesor): string {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CERTS, SESIONES, PROF_ONLINE_2, Profesor, Sesion, semana } from './data';
+import { CERTS, SESIONES, PROF_ONLINE_2, Profesor, Sesion, CertKey } from './data';
 import styles from './calendar.module.css';
 
 function Who({ prof, grupos }: { prof: Profesor; grupos: string }): React.ReactElement {
@@ -20,6 +20,16 @@ function paronesSemana(s: Sesion): string[] {
   return [s.brk && `${s.brk} (presencial)`, s.brkO && `${s.brkO} (online)`].filter((n): n is string => Boolean(n));
 }
 
+function Chip({ cert }: { cert: CertKey }): React.ReactElement {
+  const c = CERTS[cert];
+  return (
+    <span className={styles.chip} style={{ background: c.soft, color: c.color }}>
+      <span className={styles.dot} style={{ background: c.color }} />
+      {c.label}
+    </span>
+  );
+}
+
 export default function WeekTable(): React.ReactElement {
   return (
     <div className={styles.calWrapper}>
@@ -37,7 +47,6 @@ export default function WeekTable(): React.ReactElement {
           </thead>
           <tbody>
             {SESIONES.map((s) => {
-              const cert = CERTS[s.cert];
               const rowClass = s.prof === 'Salva' ? styles.rowSalva : styles.rowJavier;
               return (
                 <React.Fragment key={s.n}>
@@ -49,7 +58,7 @@ export default function WeekTable(): React.ReactElement {
                     </tr>
                   ))}
                   <tr className={rowClass}>
-                    <td className={styles.mono}>{semana(s)}</td>
+                    <td className={styles.mono}>{s.n}</td>
                     {s.o ? (
                       <td className={styles.dateCell}>
                         <span className={styles.mono}>{s.o}</span>
@@ -58,23 +67,37 @@ export default function WeekTable(): React.ReactElement {
                     ) : (
                       <td className={styles.noneCell}>sin sesión online</td>
                     )}
-                    {s.p ? (
-                      <td className={styles.dateCell}>
-                        <span className={styles.mono}>{s.p}</span>
-                        <span className={styles.dateTrack}>miércoles · presencial</span>
-                      </td>
-                    ) : (
-                      <td className={styles.noneCell}>sin sesión presencial</td>
-                    )}
-                    <td>
-                      <span className={styles.chip} style={{ background: cert.soft, color: cert.color }}>
-                        <span className={styles.dot} style={{ background: cert.color }} />
-                        {cert.label}
-                      </span>
+                    <td className={styles.dateCell}>
+                      <span className={styles.mono}>{s.p}</span>
+                      <span className={styles.dateTrack}>miércoles · presencial</span>
                     </td>
-                    <td className={styles.temaCell}>{s.tema}</td>
                     <td>
-                      <Who prof={s.prof} grupos={[s.p && 'presencial', s.o && 'online 1'].filter(Boolean).join(' · ')} />
+                      {s.online ? (
+                        <>
+                          <span className={styles.dateTrack}>online</span>
+                          <Chip cert={s.online.cert} />
+                          <span className={styles.dateTrack}>presencial</span>
+                          <Chip cert={s.cert} />
+                        </>
+                      ) : (
+                        <Chip cert={s.cert} />
+                      )}
+                    </td>
+                    <td className={styles.temaCell}>
+                      {s.online ? (
+                        <>
+                          <span className={styles.dateTrack}>Online · </span>
+                          {s.online.tema}
+                          <br />
+                          <span className={styles.dateTrack}>Presencial · </span>
+                          {s.tema}
+                        </>
+                      ) : (
+                        s.tema
+                      )}
+                    </td>
+                    <td>
+                      <Who prof={s.prof} grupos={s.o ? 'presencial · online 1' : 'presencial'} />
                       {s.o && <Who prof={PROF_ONLINE_2} grupos="online 2" />}
                     </td>
                   </tr>

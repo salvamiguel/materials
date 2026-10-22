@@ -163,15 +163,15 @@ TRIGGER:-PT30M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ai-2627-online-sem21@salvamiguel.com
+UID:ai-2627-online-sem09@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261215T183000
 DTEND;TZID=Europe/Madrid:20261215T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AWS AIP · Repaso gene
  ral AWS AI Practitioner + simulacro de examen
-DESCRIPTION:Semana 8b · Grupo online 1\nProfesor: Javier\nHorario: 18:30
- –21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/cale
- ndario
+DESCRIPTION:Semana 9 · Grupo online 1\nProfesor: Javier\nHorario: 18:30–
+ 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
+ rio
 LOCATION:Online
 CATEGORIES:AWS AIP
 URL:https://salvamiguel.com/materials/ai/calendario

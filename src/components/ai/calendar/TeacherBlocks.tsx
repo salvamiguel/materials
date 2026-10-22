@@ -1,5 +1,5 @@
 import React from 'react';
-import { CERTS, SESIONES, PROF_ONLINE_2, Profesor, Sesion, parseFecha, semana } from './data';
+import { CERTS, SESIONES, PROF_ONLINE_2, Profesor, Sesion, CertKey, contenido, parseFecha } from './data';
 import styles from './calendar.module.css';
 
 interface Grupo {
@@ -19,7 +19,7 @@ function agrupar(sesiones: Sesion[]): Grupo[] {
   const grupos: Grupo[] = [];
   sesiones.forEach((s) => {
     const ultimo = grupos[grupos.length - 1];
-    const continua = ultimo && ultimo.prof === s.prof;
+    const continua = ultimo && ultimo.prof === s.prof && ultimo.semanas[ultimo.semanas.length - 1].n === s.n - 1;
     if (continua) {
       ultimo.semanas.push(s);
     } else {
@@ -38,15 +38,36 @@ function rangoFechas(semanas: Sesion[], online2?: boolean): [string, string] {
 
 /** «3–8 · 14–20»: las semanas del bloque agrupadas en tramos consecutivos. */
 function tramosSemanas(semanas: Sesion[]): string {
-  const tramos: Array<[Sesion, Sesion]> = [];
-  semanas.forEach((s) => {
+  const tramos: Array<[number, number]> = [];
+  semanas.forEach(({ n }) => {
     const ultimo = tramos[tramos.length - 1];
-    // Un tramo sigue mientras no falte ninguna semana del cronograma entre medias.
-    if (ultimo && SESIONES.indexOf(s) === SESIONES.indexOf(ultimo[1]) + 1) ultimo[1] = s;
-    else tramos.push([s, s]);
+    if (ultimo && ultimo[1] === n - 1) ultimo[1] = n;
+    else tramos.push([n, n]);
   });
-  const texto = tramos.map(([a, b]) => (a === b ? semana(a) : `${semana(a)}–${semana(b)}`)).join(' · ');
+  const texto = tramos.map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`)).join(' · ');
   return `${semanas.length === 1 ? 'Semana' : 'Semanas'} ${texto}`;
+}
+
+interface Item {
+  key: string;
+  cert: CertKey;
+  tema: string;
+  meta: string;
+}
+
+/** Líneas de la lista del bloque; una semana con contenido distinto en online y presencial da dos líneas. */
+function itemsBloque(g: Grupo): Item[] {
+  return g.semanas.flatMap((s): Item[] => {
+    const key = String(s.n);
+    if (g.online2) return [{ key, ...contenido(s, true), meta: `${s.o} online 2` }];
+    if (s.online && s.o) {
+      return [
+        { key: `${key}-o`, ...s.online, meta: `${s.o} online 1` },
+        { key: `${key}-p`, cert: s.cert, tema: s.tema, meta: `${s.p} presencial` },
+      ];
+    }
+    return [{ key, cert: s.cert, tema: s.tema, meta: `${s.o ? `${s.o} online 1 · ` : ''}${s.p} presencial` }];
+  });
 }
 
 export default function TeacherBlocks(): React.ReactElement {
@@ -61,7 +82,7 @@ export default function TeacherBlocks(): React.ReactElement {
         {grupos.map((g) => {
           const first = g.semanas[0];
           const [desde, hasta] = rangoFechas(g.semanas, g.online2);
-          const sesiones = g.online2 ? g.semanas.length : g.semanas.reduce((acc, s) => acc + (s.o ? 2 : 0) + (s.p ? 1 : 0), 0);
+          const sesiones = g.online2 ? g.semanas.length : g.semanas.reduce((acc, s) => acc + (s.o ? 2 : 1), 0);
           const blockClass = BLOCK_CLASS[g.prof];
 
           return (
@@ -79,26 +100,16 @@ export default function TeacherBlocks(): React.ReactElement {
                 {desde} → {hasta} · {sesiones} sesiones
               </div>
               <ul className={styles.blockList}>
-                {g.semanas.map((s) => {
-                  const cert = CERTS[s.cert];
+                {itemsBloque(g).map((item) => {
+                  const cert = CERTS[item.cert];
                   return (
-                    <li key={s.n} className={styles.blockItem}>
+                    <li key={item.key} className={styles.blockItem}>
                       <span className={styles.chip} style={{ background: cert.soft, color: cert.color }}>
                         <span className={styles.dot} style={{ background: cert.color }} />
                         {cert.label}
                       </span>
-                      <span>{s.tema}</span>
-                      <span className={`${styles.blockItemMeta} ${styles.mono}`}>
-                        {g.online2 ? (
-                          `${s.o} online 2`
-                        ) : (
-                          <>
-                            {s.o && `${s.o} online 1`}
-                            {s.o && s.p && ' · '}
-                            {s.p && `${s.p} presencial`}
-                          </>
-                        )}
-                      </span>
+                      <span>{item.tema}</span>
+                      <span className={`${styles.blockItemMeta} ${styles.mono}`}>{item.meta}</span>
                     </li>
                   );
                 })}

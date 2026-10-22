@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
-import { CERTS, SESIONES, MESES_CALENDARIO, PROF_ONLINE_2, inicial, semana, CertKey, Profesor } from './data';
+import { CERTS, SESIONES, MESES_CALENDARIO, PROF_ONLINE_2, inicial, contenido, CertKey, Profesor } from './data';
 import styles from './calendar.module.css';
 
 interface Marca {
   modo: 'online' | 'presencial';
   cert: CertKey;
   prof: Profesor;
-  n: string;
+  n: number;
 }
 
 function clave(dt: Date): string {
@@ -22,8 +22,8 @@ export default function MonthCalendar(): React.ReactElement {
   const marcas = useMemo(() => {
     const map = new Map<string, Marca>();
     SESIONES.forEach((s) => {
-      if (s.o) map.set(s.o, { modo: 'online', cert: s.cert, prof: s.prof, n: semana(s) });
-      if (s.p) map.set(s.p, { modo: 'presencial', cert: s.cert, prof: s.prof, n: semana(s) });
+      if (s.o) map.set(s.o, { modo: 'online', cert: contenido(s, true).cert, prof: s.prof, n: s.n });
+      map.set(s.p, { modo: 'presencial', cert: s.cert, prof: s.prof, n: s.n });
     });
     return map;
   }, []);

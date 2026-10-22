@@ -1,5 +1,5 @@
 import React from 'react';
-import { CERTS, BLOQUES, SESIONES, PROF_ONLINE_2, Profesor, Sesion, inicial, semana } from './data';
+import { CERTS, BLOQUES, SESIONES, PROF_ONLINE_2, Profesor, Sesion, contenido, inicial } from './data';
 import styles from './calendar.module.css';
 
 const FILAS_ONLINE: Array<{ label: string; prof: (s: Sesion) => Profesor }> = [
@@ -11,18 +11,17 @@ export default function WeekRail(): React.ReactElement {
   return (
     <div className={styles.calWrapper}>
       <div className={styles.railWrap}>
-        <div className={styles.rail} style={{ '--semanas': SESIONES.length } as React.CSSProperties}>
+        <div className={styles.rail}>
           <div className={styles.railLine}>
             <div />
             {BLOQUES.map((b) => {
               const cert = CERTS[b.cert];
-              const semanas = SESIONES.filter((s) => s.cert === b.cert).length;
               return (
                 <div
                   key={b.label}
                   className={styles.blk}
                   style={{
-                    gridColumn: `span ${semanas}`,
+                    gridColumn: `span ${b.to - b.from + 1}`,
                     background: cert.soft,
                     color: cert.color,
                   }}
@@ -37,7 +36,7 @@ export default function WeekRail(): React.ReactElement {
             <div className={styles.railLabel} />
             {SESIONES.map((s) => (
               <div key={s.n} className={`${styles.railWeek} ${styles.mono}`}>
-                {semana(s)}
+                {s.n}
               </div>
             ))}
           </div>
@@ -45,24 +44,13 @@ export default function WeekRail(): React.ReactElement {
           <div className={styles.railLine}>
             <div className={styles.railLabel}>Presencial · miércoles</div>
             {SESIONES.map((s) => {
-              if (!s.p) {
-                return (
-                  <div
-                    key={s.n}
-                    className={`${styles.cell} ${styles.cellNone} ${styles.mono}`}
-                    title={`Semana ${semana(s)} · sin sesión presencial`}
-                  >
-                    –
-                  </div>
-                );
-              }
               const cert = CERTS[s.cert];
               return (
                 <div
                   key={s.n}
                   className={`${styles.cell} ${styles.cellPresencial} ${styles.mono} ${s.brk ? styles.brk : ''}`}
                   style={{ background: cert.color }}
-                  title={`Semana ${semana(s)} · ${s.p} · ${s.prof}`}
+                  title={`Semana ${s.n} · ${s.p} · ${s.prof}`}
                 >
                   {inicial(s.prof)}
                 </div>
@@ -79,20 +67,20 @@ export default function WeekRail(): React.ReactElement {
                     <div
                       key={s.n}
                       className={`${styles.cell} ${styles.cellNone} ${styles.mono}`}
-                      title={`Semana ${semana(s)} · sin sesión online`}
+                      title={`Semana ${s.n} · sin sesión online`}
                     >
                       –
                     </div>
                   );
                 }
-                const cert = CERTS[s.cert];
+                const cert = CERTS[contenido(s, true).cert];
                 const prof = fila.prof(s);
                 return (
                   <div
                     key={s.n}
                     className={`${styles.cell} ${styles.cellOnline} ${styles.mono} ${s.brkO ? styles.brk : ''}`}
                     style={{ color: cert.color }}
-                    title={`Semana ${semana(s)} · ${s.o} · ${prof}`}
+                    title={`Semana ${s.n} · ${s.o} · ${prof}`}
                   >
                     {inicial(prof)}
                   </div>
