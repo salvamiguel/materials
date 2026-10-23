@@ -1,5 +1,5 @@
 import React from 'react';
-import { CERTS, SESIONES, PROF_ONLINE_2, Profesor, Sesion, CertKey, contenido, parseFecha } from './data';
+import { CERTS, SESIONES, PROF_ONLINE_2, Profesor, Sesion, parseFecha } from './data';
 import styles from './calendar.module.css';
 
 interface Grupo {
@@ -48,28 +48,6 @@ function tramosSemanas(semanas: Sesion[]): string {
   return `${semanas.length === 1 ? 'Semana' : 'Semanas'} ${texto}`;
 }
 
-interface Item {
-  key: string;
-  cert: CertKey;
-  tema: string;
-  meta: string;
-}
-
-/** Líneas de la lista del bloque; una semana con contenido distinto en online y presencial da dos líneas. */
-function itemsBloque(g: Grupo): Item[] {
-  return g.semanas.flatMap((s): Item[] => {
-    const key = String(s.n);
-    if (g.online2) return [{ key, ...contenido(s, true), meta: `${s.o} online 2` }];
-    if (s.online && s.o) {
-      return [
-        { key: `${key}-o`, ...s.online, meta: `${s.o} online 1` },
-        { key: `${key}-p`, cert: s.cert, tema: s.tema, meta: `${s.p} presencial` },
-      ];
-    }
-    return [{ key, cert: s.cert, tema: s.tema, meta: `${s.o ? `${s.o} online 1 · ` : ''}${s.p} presencial` }];
-  });
-}
-
 export default function TeacherBlocks(): React.ReactElement {
   const grupos = [
     ...agrupar(SESIONES),
@@ -100,16 +78,25 @@ export default function TeacherBlocks(): React.ReactElement {
                 {desde} → {hasta} · {sesiones} sesiones
               </div>
               <ul className={styles.blockList}>
-                {itemsBloque(g).map((item) => {
-                  const cert = CERTS[item.cert];
+                {g.semanas.map((s) => {
+                  const cert = CERTS[s.cert];
                   return (
-                    <li key={item.key} className={styles.blockItem}>
+                    <li key={s.n} className={styles.blockItem}>
                       <span className={styles.chip} style={{ background: cert.soft, color: cert.color }}>
                         <span className={styles.dot} style={{ background: cert.color }} />
                         {cert.label}
                       </span>
-                      <span>{item.tema}</span>
-                      <span className={`${styles.blockItemMeta} ${styles.mono}`}>{item.meta}</span>
+                      <span>{s.tema}</span>
+                      <span className={`${styles.blockItemMeta} ${styles.mono}`}>
+                        {g.online2 ? (
+                          `${s.o} online 2`
+                        ) : (
+                          <>
+                            {s.o ? `${s.o} online 1 · ` : ''}
+                            {s.p} presencial
+                          </>
+                        )}
+                      </span>
                     </li>
                   );
                 })}

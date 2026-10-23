@@ -1,5 +1,5 @@
 import React from 'react';
-import { CERTS, BLOQUES, SESIONES, PROF_ONLINE_2, Profesor, Sesion, contenido, inicial } from './data';
+import { CERTS, BLOQUES, SESIONES, PROF_ONLINE_2, Profesor, Sesion, inicial } from './data';
 import styles from './calendar.module.css';
 
 const FILAS_ONLINE: Array<{ label: string; prof: (s: Sesion) => Profesor }> = [
@@ -73,7 +73,7 @@ export default function WeekRail(): React.ReactElement {
                     </div>
                   );
                 }
-                const cert = CERTS[contenido(s, true).cert];
+                const cert = CERTS[s.cert];
                 const prof = fila.prof(s);
                 return (
                   <div
