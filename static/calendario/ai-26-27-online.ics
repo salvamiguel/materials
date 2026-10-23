@@ -27,6 +27,28 @@ RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
 END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
+UID:ai-2627-online-sem02@salvamiguel.com
+DTSTAMP:20260901T000000Z
+DTSTART;TZID=Europe/Madrid:20261027T183000
+DTEND;TZID=Europe/Madrid:20261027T210000
+SUMMARY:Máster AI - Módulo Certificaciones - UEV - Arranque · Nivelació
+ n técnica: datos\, Python/notebooks y consolas cloud para las prácticas
+DESCRIPTION:Semana 2 · Grupo online 1\nProfesor: Javier\nHorario: 18:30–
+ 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
+ rio
+LOCATION:Online
+CATEGORIES:Arranque
+URL:https://salvamiguel.com/materials/ai/calendario
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+SEQUENCE:0
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:La clase empieza en 30 minutos
+TRIGGER:-PT30M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:ai-2627-online-sem03@salvamiguel.com
 DTSTAMP:20260901T000000Z
 DTSTART;TZID=Europe/Madrid:20261103T183000
@@ -142,36 +164,14 @@ END:VEVENT
 BEGIN:VEVENT
 UID:ai-2627-online-sem08@salvamiguel.com
 DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20261208T183000
-DTEND;TZID=Europe/Madrid:20261208T210000
+DTSTART;TZID=Europe/Madrid:20261215T183000
+DTEND;TZID=Europe/Madrid:20261215T210000
 SUMMARY:Máster AI - Módulo Certificaciones - UEV - AWS AIP · Dominios 4 
  y 5 · IA responsable\, seguridad\, cumplimiento y gobernanza (28 %) + sim
  ulacro AWS
 DESCRIPTION:Semana 8 · Grupo online 1\nProfesor: Salva\nHorario: 18:30–2
  1:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calendar
  io
-LOCATION:Online
-CATEGORIES:AWS AIP
-URL:https://salvamiguel.com/materials/ai/calendario
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-SEQUENCE:0
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:La clase empieza en 30 minutos
-TRIGGER:-PT30M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ai-2627-online-sem09@salvamiguel.com
-DTSTAMP:20260901T000000Z
-DTSTART;TZID=Europe/Madrid:20261215T183000
-DTEND;TZID=Europe/Madrid:20261215T210000
-SUMMARY:Máster AI - Módulo Certificaciones - UEV - AWS AIP · Repaso gene
- ral AWS AI Practitioner + simulacro de examen
-DESCRIPTION:Semana 9 · Grupo online 1\nProfesor: Javier\nHorario: 18:30–
- 21:00\n\nCalendario completo: https://salvamiguel.com/materials/ai/calenda
- rio
 LOCATION:Online
 CATEGORIES:AWS AIP
 URL:https://salvamiguel.com/materials/ai/calendario
