@@ -3,8 +3,8 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import { FaLaptop, FaUniversity, FaApple, FaGoogle, FaMicrosoft } from 'react-icons/fa';
 import { FiDownload, FiArrowUpRight, FiInfo } from 'react-icons/fi';
 
-import { SESIONES, parseFecha } from './data';
-import { GRUPOS, HORARIO, ICS_DIR, ICS_HOST, Grupo, fechaGrupo, profesorGrupo } from './ics';
+import { parseFecha } from './data';
+import { GRUPOS, HORARIO, ICS_DIR, ICS_HOST, Grupo, profesorGrupo, sesionesGrupo } from './ics';
 import styles from './CalendarDownload.module.css';
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -17,10 +17,9 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
   const httpsUrl = `${ICS_HOST}${path}`;
   const webcalUrl = httpsUrl.replace(/^https?:\/\//, 'webcal://');
 
-  const fechas = SESIONES.map((s) => fechaGrupo(s, grupo))
-    .filter((f): f is string => Boolean(f))
-    .map(parseFecha);
-  const profesores = [...new Set(SESIONES.filter((s) => fechaGrupo(s, grupo)).map((s) => profesorGrupo(s, grupo)))];
+  const sesiones = sesionesGrupo(grupo);
+  const fechas = sesiones.map((s) => parseFecha(s.f));
+  const profesores = [...new Set(sesiones.map((s) => profesorGrupo(s, grupo)))];
 
   const Icon = grupo === 'presencial' ? FaUniversity : FaLaptop;
   const suscripciones = [

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { CERTS, SESIONES, MESES_CALENDARIO, PROF_ONLINE_2, inicial, CertKey, Profesor } from './data';
+import { CERTS, ONLINE, PRESENCIAL, MESES_CALENDARIO, PROF_ONLINE_2, inicial, CertKey, Profesor } from './data';
 import styles from './calendar.module.css';
 
 interface Marca {
@@ -21,10 +21,8 @@ const DIAS_SEMANA = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 export default function MonthCalendar(): React.ReactElement {
   const marcas = useMemo(() => {
     const map = new Map<string, Marca>();
-    SESIONES.forEach((s) => {
-      if (s.o) map.set(s.o, { modo: 'online', cert: s.cert, prof: s.prof, n: s.n });
-      map.set(s.p, { modo: 'presencial', cert: s.cert, prof: s.prof, n: s.n });
-    });
+    ONLINE.forEach((s) => map.set(s.f, { modo: 'online', cert: s.cert, prof: s.prof, n: s.n }));
+    PRESENCIAL.forEach((s) => map.set(s.f, { modo: 'presencial', cert: s.cert, prof: s.prof, n: s.n }));
     return map;
   }, []);
 
@@ -66,8 +64,8 @@ export default function MonthCalendar(): React.ReactElement {
                           style={{ background: CERTS[info.cert].soft, color: CERTS[info.cert].color }}
                           title={
                             info.modo === 'presencial'
-                              ? `Semana ${info.n} · Presencial · ${info.prof}`
-                              : `Semana ${info.n} · Online 1 · ${info.prof} · Online 2 · ${PROF_ONLINE_2}`
+                              ? `Clase ${info.n} · Presencial · ${info.prof}`
+                              : `Clase ${info.n} · Online 1 · ${info.prof} · Online 2 · ${PROF_ONLINE_2}`
                           }
                         >
                           {info.modo === 'presencial'

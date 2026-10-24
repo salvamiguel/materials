@@ -1,94 +1,80 @@
 import React from 'react';
-import { CERTS, BLOQUES, SESIONES, PROF_ONLINE_2, Profesor, Sesion, inicial } from './data';
+import { CERTS, ONLINE, PRESENCIAL, PROF_ONLINE_2, Profesor, Sesion, bloques, inicial } from './data';
 import styles from './calendar.module.css';
 
-const FILAS_ONLINE: Array<{ label: string; prof: (s: Sesion) => Profesor }> = [
-  { label: 'Online 1 · martes', prof: (s) => s.prof },
-  { label: 'Online 2 · martes', prof: () => PROF_ONLINE_2 },
+interface Fila {
+  label: string;
+  modo: 'presencial' | 'online';
+  prof: (s: Sesion) => Profesor;
+}
+
+const FILAS_PRESENCIAL: Fila[] = [{ label: 'Presencial · miércoles', modo: 'presencial', prof: (s) => s.prof }];
+
+const FILAS_ONLINE: Fila[] = [
+  { label: 'Online 1 · martes', modo: 'online', prof: (s) => s.prof },
+  { label: 'Online 2 · martes', modo: 'online', prof: () => PROF_ONLINE_2 },
 ];
+
+/** Una modalidad: tramos por certificación, numeración y una fila por grupo. */
+function Rail({ sesiones, filas }: { sesiones: Sesion[]; filas: Fila[] }): React.ReactElement {
+  return (
+    <div className={styles.rail} style={{ '--semanas': sesiones.length } as React.CSSProperties}>
+      <div className={styles.railLine}>
+        <div />
+        {bloques(sesiones).map((b, i) => {
+          const cert = CERTS[b.cert];
+          return (
+            <div
+              key={`${b.cert}-${i}`}
+              className={styles.blk}
+              title={b.label}
+              style={{ gridColumn: `span ${b.n}`, background: cert.soft, color: cert.color }}
+            >
+              {b.n > 1 ? b.label : ''}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className={styles.railLine}>
+        <div className={styles.railLabel} />
+        {sesiones.map((s) => (
+          <div key={s.n} className={`${styles.railWeek} ${styles.mono}`}>
+            {s.n}
+          </div>
+        ))}
+      </div>
+
+      {filas.map((fila) => (
+        <div key={fila.label} className={styles.railLine}>
+          <div className={styles.railLabel}>{fila.label}</div>
+          {sesiones.map((s) => {
+            const cert = CERTS[s.cert];
+            const prof = fila.prof(s);
+            const presencial = fila.modo === 'presencial';
+            return (
+              <div
+                key={s.n}
+                className={`${styles.cell} ${presencial ? styles.cellPresencial : styles.cellOnline} ${styles.mono} ${s.brk ? styles.brk : ''}`}
+                style={presencial ? { background: cert.color } : { color: cert.color }}
+                title={`Clase ${s.n} · ${s.f} · ${prof}`}
+              >
+                {inicial(prof)}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function WeekRail(): React.ReactElement {
   return (
     <div className={styles.calWrapper}>
       <div className={styles.railWrap}>
-        <div className={styles.rail}>
-          <div className={styles.railLine}>
-            <div />
-            {BLOQUES.map((b) => {
-              const cert = CERTS[b.cert];
-              return (
-                <div
-                  key={b.label}
-                  className={styles.blk}
-                  style={{
-                    gridColumn: `span ${b.to - b.from + 1}`,
-                    background: cert.soft,
-                    color: cert.color,
-                  }}
-                >
-                  {b.label}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className={styles.railLine}>
-            <div className={styles.railLabel} />
-            {SESIONES.map((s) => (
-              <div key={s.n} className={`${styles.railWeek} ${styles.mono}`}>
-                {s.n}
-              </div>
-            ))}
-          </div>
-
-          <div className={styles.railLine}>
-            <div className={styles.railLabel}>Presencial · miércoles</div>
-            {SESIONES.map((s) => {
-              const cert = CERTS[s.cert];
-              return (
-                <div
-                  key={s.n}
-                  className={`${styles.cell} ${styles.cellPresencial} ${styles.mono} ${s.brk ? styles.brk : ''}`}
-                  style={{ background: cert.color }}
-                  title={`Semana ${s.n} · ${s.p} · ${s.prof}`}
-                >
-                  {inicial(s.prof)}
-                </div>
-              );
-            })}
-          </div>
-
-          {FILAS_ONLINE.map((fila) => (
-            <div key={fila.label} className={styles.railLine}>
-              <div className={styles.railLabel}>{fila.label}</div>
-              {SESIONES.map((s) => {
-                if (!s.o) {
-                  return (
-                    <div
-                      key={s.n}
-                      className={`${styles.cell} ${styles.cellNone} ${styles.mono}`}
-                      title={`Semana ${s.n} · sin sesión online`}
-                    >
-                      –
-                    </div>
-                  );
-                }
-                const cert = CERTS[s.cert];
-                const prof = fila.prof(s);
-                return (
-                  <div
-                    key={s.n}
-                    className={`${styles.cell} ${styles.cellOnline} ${styles.mono} ${s.brkO ? styles.brk : ''}`}
-                    style={{ color: cert.color }}
-                    title={`Semana ${s.n} · ${s.o} · ${prof}`}
-                  >
-                    {inicial(prof)}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+        <Rail sesiones={ONLINE} filas={FILAS_ONLINE} />
+        <Rail sesiones={PRESENCIAL} filas={FILAS_PRESENCIAL} />
       </div>
 
       <div className={styles.legend}>

@@ -1,4 +1,4 @@
-import { CERTS, PROF_ONLINE_2, SESIONES, Sesion } from './data';
+import { CERTS, ONLINE, PRESENCIAL, PROF_ONLINE_2, Sesion } from './data';
 
 export type Grupo = 'online1' | 'online2' | 'presencial';
 
@@ -55,9 +55,9 @@ export const ICS_DIR = 'calendario';
 /** Host público para las URLs de suscripción y los enlaces dentro del .ics (en lugar de `siteConfig.url`). */
 export const ICS_HOST = 'https://salvamiguel.com';
 
-/** Fecha de la sesión para el grupo, o null si ese grupo no tiene clase esa semana. */
-export function fechaGrupo(s: Sesion, grupo: Grupo): string | null {
-  return grupo === 'presencial' ? s.p : s.o;
+/** Sesiones del grupo: online 1 y online 2 comparten calendario; el presencial tiene el suyo. */
+export function sesionesGrupo(grupo: Grupo): Sesion[] {
+  return grupo === 'presencial' ? PRESENCIAL : ONLINE;
 }
 
 export function profesorGrupo(s: Sesion, grupo: Grupo): string {
@@ -136,12 +136,14 @@ export function buildIcs(grupo: Grupo, pageUrl: string): string {
     ...VTIMEZONE_MADRID,
   ];
 
-  SESIONES.forEach((s) => {
-    const fecha = fechaGrupo(s, grupo);
-    if (!fecha) return;
+  const sesiones = sesionesGrupo(grupo);
+  sesiones.forEach((s) => {
+    const fecha = s.f;
     const cert = CERTS[s.cert];
     const descripcion = [
-      `Semana ${s.n} · Grupo ${g.etiqueta.toLowerCase()}`,
+      grupo === 'presencial'
+        ? `Semana ${s.n} · Grupo ${g.etiqueta.toLowerCase()}`
+        : `Clase ${s.n} de ${sesiones.length} · Grupo ${g.etiqueta.toLowerCase()}`,
       `Profesor: ${profesorGrupo(s, grupo)}`,
       `Horario: ${HORARIO.inicio}–${HORARIO.fin}`,
       '',
