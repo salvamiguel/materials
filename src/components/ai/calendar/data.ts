@@ -1,5 +1,6 @@
 // Datos del cronograma del Máster en IA: tres grupos (online 1 y online 2 los
-// martes, presencial los miércoles) que comparten el mismo temario de certificación.
+// martes, presencial los miércoles). Cada modalidad tiene su propio temario y numeración:
+// el presencial cursa AWS AIP + DP-900 + AI-901 y el online AWS AIP + AI-901.
 
 export type CertKey = 'arranque' | 'aws' | 'dp900' | 'ai901' | 'cierre';
 export type Profesor = 'Salva' | 'Javier' | 'Moisés';
@@ -22,58 +23,91 @@ export const CERTS: Record<CertKey, CertInfo> = {
 };
 
 export interface Sesion {
+  /** Número de sesión dentro de su modalidad (online y presencial se numeran por separado). */
   n: number;
-  /** Fecha de las sesiones online 1 y online 2 (martes), o null si los grupos online no tienen clase esa semana (aún no han empezado o no cursan DP-900). */
-  o: string | null;
-  /** Fecha de la sesión presencial (miércoles). */
-  p: string;
+  /** Fecha de la sesión (dd/mm/aaaa). */
+  f: string;
   cert: CertKey;
   tema: string;
   /** Profesor de la sesión presencial y de la online 1; la online 2 la da siempre `PROF_ONLINE_2`. */
   prof: Profesor;
-  /** Nota de parón que precede a esta semana en el grupo presencial, si aplica. */
+  /** Nota de parón o festivo que precede a esta sesión, si aplica. */
   brk?: string;
-  /** Nota de parón que precede a esta semana en los grupos online, si aplica. */
-  brkO?: string;
 }
 
-export const SESIONES: Sesion[] = [
-  { n: 1, o: null, p: '21/10/2026', cert: 'arranque', tema: 'Presentación del módulo, mapa de las tres certificaciones y alta de cuentas AWS/Azure', prof: 'Salva' },
-  { n: 2, o: '27/10/2026', p: '28/10/2026', cert: 'arranque', tema: 'Nivelación técnica: datos, Python/notebooks y consolas cloud para las prácticas', prof: 'Javier' },
-  { n: 3, o: '03/11/2026', p: '04/11/2026', cert: 'aws', tema: 'Fundamentos de AWS (I): cloud, infraestructura global, cómputo (EC2, Lambda), almacenamiento (S3, EBS, EFS) y bases de datos', prof: 'Salva' },
-  { n: 4, o: '10/11/2026', p: '11/11/2026', cert: 'aws', tema: 'Fundamentos de AWS (II): VPC, IAM, gestión, seguridad y analítica + servicios de IA/ML de AWS', prof: 'Salva' },
-  { n: 5, o: '17/11/2026', p: '18/11/2026', cert: 'aws', tema: 'Dominio 1 · Fundamentos de IA y machine learning (20 %)', prof: 'Javier' },
-  { n: 6, o: '24/11/2026', p: '25/11/2026', cert: 'aws', tema: 'Dominio 2 · Fundamentos de IA generativa, prompting, RAG y Amazon Bedrock (24 %)', prof: 'Javier' },
-  { n: 7, o: '01/12/2026', p: '02/12/2026', cert: 'aws', tema: 'Dominio 3 · Aplicaciones de foundation models: entrenamiento, inferencia y Amazon SageMaker (28 %)', prof: 'Salva' },
-  { n: 8, o: '15/12/2026', p: '09/12/2026', cert: 'aws', tema: 'Dominios 4 y 5 · IA responsable, seguridad, cumplimiento y gobernanza (28 %) + simulacro AWS', prof: 'Salva' },
-  { n: 9, o: null, p: '16/12/2026', cert: 'dp900', tema: 'Introducción al cloud y a Azure + fundamentos de datos: tipos, formatos, OLTP/OLAP y roles', prof: 'Javier' },
-  { n: 10, o: null, p: '13/01/2027', cert: 'dp900', tema: 'Datos relacionales en Azure: SQL, normalización, Azure SQL Database/Managed Instance', prof: 'Javier', brk: 'Parón de Navidad' },
-  { n: 11, o: null, p: '20/01/2027', cert: 'dp900', tema: 'Datos no relacionales en Azure: Blob/Files/Tables, Azure Cosmos DB', prof: 'Salva' },
-  { n: 12, o: null, p: '27/01/2027', cert: 'dp900', tema: 'Cargas de trabajo analíticas: ingesta, batch/streaming, Power BI', prof: 'Salva' },
-  { n: 13, o: null, p: '03/02/2027', cert: 'dp900', tema: 'Repaso general DP-900 + simulacro de examen', prof: 'Javier' },
-  { n: 14, o: '12/01/2027', p: '10/02/2027', cert: 'ai901', tema: 'Conceptos de IA: ML/deep learning, evaluación de modelos, IA responsable y cargas de trabajo', prof: 'Javier', brkO: 'Parón de Navidad' },
-  { n: 15, o: '19/01/2027', p: '17/02/2027', cert: 'ai901', tema: 'Microsoft Foundry (I): apps y agentes generativos, despliegue de modelos, SDKs', prof: 'Salva' },
-  { n: 16, o: '26/01/2027', p: '24/02/2027', cert: 'ai901', tema: 'Microsoft Foundry (II): texto y voz, modelos multimodales', prof: 'Salva' },
-  { n: 17, o: '02/02/2027', p: '03/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (III): visión, Custom Vision, generación de imágenes, extracción de información', prof: 'Javier' },
-  { n: 18, o: '09/02/2027', p: '10/03/2027', cert: 'ai901', tema: 'Repaso general AI-901 + simulacro práctico (Python/REST/SDK)', prof: 'Javier' },
-  { n: 19, o: '16/02/2027', p: '07/04/2027', cert: 'cierre', tema: 'Simulacros combinados de las tres certificaciones + resolución de dudas', prof: 'Javier', brk: 'Parón de marzo' },
-  { n: 20, o: '23/02/2027', p: '14/04/2027', cert: 'cierre', tema: 'Estrategia de examen, dudas finales y cierre del módulo', prof: 'Salva' },
+/** Grupo presencial (miércoles). */
+export const PRESENCIAL: Sesion[] = [
+  { n: 1, f: '21/10/2026', cert: 'arranque', tema: 'Presentación del módulo, mapa de las tres certificaciones y alta de cuentas AWS/Azure', prof: 'Salva' },
+  { n: 2, f: '28/10/2026', cert: 'arranque', tema: 'Nivelación técnica: datos, Python/notebooks y consolas cloud para las prácticas', prof: 'Javier' },
+  { n: 3, f: '04/11/2026', cert: 'aws', tema: 'Fundamentos de AWS (I): cloud, infraestructura global, cómputo (EC2, Lambda), almacenamiento (S3, EBS, EFS) y bases de datos', prof: 'Salva' },
+  { n: 4, f: '11/11/2026', cert: 'aws', tema: 'Fundamentos de AWS (II): VPC, IAM, gestión, seguridad y analítica + servicios de IA/ML de AWS', prof: 'Salva' },
+  { n: 5, f: '18/11/2026', cert: 'aws', tema: 'Dominio 1 · Fundamentos de IA y machine learning (20 %)', prof: 'Javier' },
+  { n: 6, f: '25/11/2026', cert: 'aws', tema: 'Dominio 2 · Fundamentos de IA generativa, prompting, RAG y Amazon Bedrock (24 %)', prof: 'Javier' },
+  { n: 7, f: '02/12/2026', cert: 'aws', tema: 'Dominio 3 · Aplicaciones de foundation models: entrenamiento, inferencia y Amazon SageMaker (28 %)', prof: 'Salva' },
+  { n: 8, f: '09/12/2026', cert: 'aws', tema: 'Dominios 4 y 5 · IA responsable, seguridad, cumplimiento y gobernanza (28 %) + simulacro AWS', prof: 'Salva' },
+  { n: 9, f: '16/12/2026', cert: 'dp900', tema: 'Introducción al cloud y a Azure + fundamentos de datos: tipos, formatos, OLTP/OLAP y roles', prof: 'Javier' },
+  { n: 10, f: '13/01/2027', cert: 'dp900', tema: 'Datos relacionales en Azure: SQL, normalización, Azure SQL Database/Managed Instance', prof: 'Javier', brk: 'Parón de Navidad' },
+  { n: 11, f: '20/01/2027', cert: 'dp900', tema: 'Datos no relacionales en Azure: Blob/Files/Tables, Azure Cosmos DB', prof: 'Salva' },
+  { n: 12, f: '27/01/2027', cert: 'dp900', tema: 'Cargas de trabajo analíticas: ingesta, batch/streaming, Power BI', prof: 'Salva' },
+  { n: 13, f: '03/02/2027', cert: 'dp900', tema: 'Repaso general DP-900 + simulacro de examen', prof: 'Javier' },
+  { n: 14, f: '10/02/2027', cert: 'ai901', tema: 'Conceptos de IA: ML/deep learning, evaluación de modelos, IA responsable y cargas de trabajo', prof: 'Javier' },
+  { n: 15, f: '17/02/2027', cert: 'ai901', tema: 'Microsoft Foundry (I): apps y agentes generativos, despliegue de modelos, SDKs', prof: 'Salva' },
+  { n: 16, f: '24/02/2027', cert: 'ai901', tema: 'Microsoft Foundry (II): texto y voz, modelos multimodales', prof: 'Salva' },
+  { n: 17, f: '03/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (III): visión, Custom Vision, generación de imágenes, extracción de información', prof: 'Javier' },
+  { n: 18, f: '10/03/2027', cert: 'ai901', tema: 'Repaso general AI-901 + simulacro práctico (Python/REST/SDK)', prof: 'Javier' },
+  { n: 19, f: '07/04/2027', cert: 'cierre', tema: 'Simulacros combinados de las tres certificaciones + resolución de dudas', prof: 'Javier', brk: 'Parón de marzo' },
+  { n: 20, f: '14/04/2027', cert: 'cierre', tema: 'Estrategia de examen, dudas finales y cierre del módulo', prof: 'Salva' },
 ];
 
+/** Grupos online 1 y online 2 (martes): mismas fechas y temario; el online 2 siempre con `PROF_ONLINE_2`. */
+export const ONLINE: Sesion[] = [
+  { n: 1, f: '03/11/2026', cert: 'arranque', tema: 'Presentación del módulo y mapa de las dos certificaciones (AWS AIF-C01 y AI-901), alta de cuentas AWS/Azure y nivelación técnica: Python/notebooks y consolas cloud', prof: 'Salva' },
+  { n: 2, f: '10/11/2026', cert: 'aws', tema: 'Fundamentos de AWS (I): cloud, infraestructura global, cómputo (EC2, Lambda), almacenamiento (S3, EBS, EFS) y bases de datos', prof: 'Salva' },
+  { n: 3, f: '17/11/2026', cert: 'aws', tema: 'Fundamentos de AWS (II): VPC, IAM, gestión, seguridad y analítica + servicios de IA/ML de AWS', prof: 'Salva' },
+  { n: 4, f: '24/11/2026', cert: 'aws', tema: 'Dominio 1 · Fundamentos de IA y machine learning (20 %)', prof: 'Javier' },
+  { n: 5, f: '01/12/2026', cert: 'aws', tema: 'Dominio 2 · Fundamentos de IA generativa, prompting, RAG y Amazon Bedrock (24 %)', prof: 'Javier' },
+  { n: 6, f: '15/12/2026', cert: 'aws', tema: 'Dominio 3 (I) · Aplicaciones de foundation models: entrenamiento, fine-tuning e inferencia (28 %)', prof: 'Salva', brk: 'Festivo 8/12 (Inmaculada)' },
+  { n: 7, f: '12/01/2027', cert: 'aws', tema: 'Dominio 3 (II) · Amazon SageMaker y evaluación de foundation models (28 %)', prof: 'Salva', brk: 'Parón de Navidad' },
+  { n: 8, f: '19/01/2027', cert: 'aws', tema: 'Dominio 4 · Directrices para una IA responsable (14 %)', prof: 'Salva' },
+  { n: 9, f: '26/01/2027', cert: 'aws', tema: 'Dominio 5 · Seguridad, cumplimiento y gobernanza de soluciones de IA (14 %)', prof: 'Salva' },
+  { n: 10, f: '02/02/2027', cert: 'aws', tema: 'Repaso AIF-C01 + simulacro de examen AWS', prof: 'Javier' },
+  { n: 11, f: '09/02/2027', cert: 'ai901', tema: 'Conceptos de IA: ML, deep learning e IA generativa', prof: 'Javier' },
+  { n: 12, f: '16/02/2027', cert: 'ai901', tema: 'Deep learning y evaluación de modelos', prof: 'Javier' },
+  { n: 13, f: '23/02/2027', cert: 'ai901', tema: 'IA responsable y cargas de trabajo de IA en Azure', prof: 'Javier' },
+  { n: 14, f: '02/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (I): apps y agentes generativos, despliegue de modelos, SDKs', prof: 'Salva' },
+  { n: 15, f: '09/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (II): texto y voz, modelos multimodales', prof: 'Salva' },
+  { n: 16, f: '16/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (III): visión, Custom Vision y generación de imágenes', prof: 'Javier' },
+  { n: 17, f: '23/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (IV): extracción de información', prof: 'Javier' },
+  { n: 18, f: '06/04/2027', cert: 'ai901', tema: 'Repaso general AI-901 + simulacro práctico (Python/REST/SDK)', prof: 'Javier', brk: 'Parón de Semana Santa' },
+  { n: 19, f: '13/04/2027', cert: 'cierre', tema: 'Simulacros combinados de AWS AIF-C01 y AI-901 + resolución de dudas', prof: 'Javier' },
+  { n: 20, f: '20/04/2027', cert: 'cierre', tema: 'Estrategia de examen, dudas finales y cierre del módulo', prof: 'Salva' },
+];
+
+/** Tramo consecutivo de sesiones de una misma certificación. */
 export interface Bloque {
   cert: CertKey;
-  from: number;
-  to: number;
   label: string;
+  /** Nº de sesiones del tramo. */
+  n: number;
 }
 
-export const BLOQUES: Bloque[] = [
-  { cert: 'arranque', from: 1, to: 2, label: 'Arranque' },
-  { cert: 'aws', from: 3, to: 8, label: 'AWS AI Practitioner' },
-  { cert: 'dp900', from: 9, to: 13, label: 'DP-900' },
-  { cert: 'ai901', from: 14, to: 18, label: 'AI-901' },
-  { cert: 'cierre', from: 19, to: 20, label: 'Cierre' },
-];
+const BLOQUE_LABEL: Record<CertKey, string> = {
+  arranque: 'Arranque',
+  aws: 'AWS AI Practitioner',
+  dp900: 'DP-900',
+  ai901: 'AI-901',
+  cierre: 'Cierre',
+};
+
+export function bloques(sesiones: Sesion[]): Bloque[] {
+  const out: Bloque[] = [];
+  sesiones.forEach((s) => {
+    const ultimo = out[out.length - 1];
+    if (ultimo && ultimo.cert === s.cert) ultimo.n += 1;
+    else out.push({ cert: s.cert, label: BLOQUE_LABEL[s.cert], n: 1 });
+  });
+  return out;
+}
 
 /** Meses (año, índice 0-based) que cubre el cronograma, de oct-2026 a abr-2027. */
 export const MESES_CALENDARIO: Array<[number, number]> = [

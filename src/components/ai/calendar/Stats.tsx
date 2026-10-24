@@ -1,18 +1,16 @@
 import React, { useMemo } from 'react';
-import { SESIONES } from './data';
+import { ONLINE, PRESENCIAL } from './data';
 import styles from './calendar.module.css';
 
 export default function Stats(): React.ReactElement {
   const stats = useMemo(() => {
-    const presenciales = SESIONES.length;
-    const online = SESIONES.filter((s) => s.o).length;
-    const total = presenciales + online * 2;
+    const total = PRESENCIAL.length + ONLINE.length * 2;
 
     return [
       { n: total, l: 'sesiones en total' },
-      { n: presenciales, l: 'presenciales · miércoles' },
-      { n: online, l: 'online 1 · martes' },
-      { n: online, l: 'online 2 · martes' },
+      { n: PRESENCIAL.length, l: 'presenciales · miércoles' },
+      { n: ONLINE.length, l: 'online 1 · martes' },
+      { n: ONLINE.length, l: 'online 2 · martes' },
     ];
   }, []);
 

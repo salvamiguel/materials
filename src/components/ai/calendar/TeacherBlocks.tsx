@@ -1,12 +1,17 @@
 import React from 'react';
-import { CERTS, SESIONES, PROF_ONLINE_2, Profesor, Sesion, parseFecha } from './data';
+import { CERTS, ONLINE, PRESENCIAL, PROF_ONLINE_2, Profesor, Sesion, parseFecha } from './data';
 import styles from './calendar.module.css';
 
-interface Grupo {
+interface Bloque {
   prof: Profesor;
-  semanas: Sesion[];
-  /** true para el bloque del grupo Online 2, que solo cuenta las sesiones online. */
-  online2?: boolean;
+  sesiones: Sesion[];
+}
+
+interface Modalidad {
+  titulo: string;
+  /** Texto que acompaña a la fecha de cada sesión en la lista. */
+  meta: string;
+  bloques: Bloque[];
 }
 
 const BLOCK_CLASS: Record<Profesor, string> = {
@@ -15,96 +20,72 @@ const BLOCK_CLASS: Record<Profesor, string> = {
   Moisés: styles.blockMoises,
 };
 
-function agrupar(sesiones: Sesion[]): Grupo[] {
-  const grupos: Grupo[] = [];
+/** Tramos consecutivos de sesiones con el mismo profesor. */
+function agrupar(sesiones: Sesion[], prof: (s: Sesion) => Profesor): Bloque[] {
+  const bloques: Bloque[] = [];
   sesiones.forEach((s) => {
-    const ultimo = grupos[grupos.length - 1];
-    const continua = ultimo && ultimo.prof === s.prof && ultimo.semanas[ultimo.semanas.length - 1].n === s.n - 1;
-    if (continua) {
-      ultimo.semanas.push(s);
-    } else {
-      grupos.push({ prof: s.prof, semanas: [s] });
-    }
+    const ultimo = bloques[bloques.length - 1];
+    if (ultimo && ultimo.prof === prof(s)) ultimo.sesiones.push(s);
+    else bloques.push({ prof: prof(s), sesiones: [s] });
   });
-  return grupos;
+  return bloques;
 }
 
-/** Primera y última fecha del bloque; online y presencial ya no van al mismo ritmo, así que se comparan todas. */
-function rangoFechas(semanas: Sesion[], online2?: boolean): [string, string] {
-  const fechas = semanas.flatMap((s) => (online2 ? [s.o] : [s.o, s.p])).filter((f): f is string => Boolean(f));
-  fechas.sort((a, b) => parseFecha(a).getTime() - parseFecha(b).getTime());
-  return [fechas[0], fechas[fechas.length - 1]];
-}
+const MODALIDADES: Modalidad[] = [
+  { titulo: 'Online 1 · martes', meta: 'online 1', bloques: agrupar(ONLINE, (s) => s.prof) },
+  { titulo: 'Online 2 · martes', meta: 'online 2', bloques: agrupar(ONLINE, () => PROF_ONLINE_2) },
+  { titulo: 'Presencial · miércoles', meta: 'presencial', bloques: agrupar(PRESENCIAL, (s) => s.prof) },
+];
 
-/** «3–8 · 14–20»: las semanas del bloque agrupadas en tramos consecutivos. */
-function tramosSemanas(semanas: Sesion[]): string {
-  const tramos: Array<[number, number]> = [];
-  semanas.forEach(({ n }) => {
-    const ultimo = tramos[tramos.length - 1];
-    if (ultimo && ultimo[1] === n - 1) ultimo[1] = n;
-    else tramos.push([n, n]);
-  });
-  const texto = tramos.map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`)).join(' · ');
-  return `${semanas.length === 1 ? 'Semana' : 'Semanas'} ${texto}`;
+function tramo(sesiones: Sesion[]): string {
+  const [a, b] = [sesiones[0].n, sesiones[sesiones.length - 1].n];
+  return a === b ? `Clase ${a}` : `Clases ${a}–${b}`;
 }
 
 export default function TeacherBlocks(): React.ReactElement {
-  const grupos = [
-    ...agrupar(SESIONES),
-    { prof: PROF_ONLINE_2, semanas: SESIONES.filter((s) => s.o), online2: true },
-  ];
-
   return (
     <div className={styles.calWrapper}>
-      <div className={styles.blocks}>
-        {grupos.map((g) => {
-          const first = g.semanas[0];
-          const [desde, hasta] = rangoFechas(g.semanas, g.online2);
-          const sesiones = g.online2 ? g.semanas.length : g.semanas.reduce((acc, s) => acc + (s.o ? 2 : 1), 0);
-          const blockClass = BLOCK_CLASS[g.prof];
-
-          return (
-            <div key={`${g.prof}-${first.n}`} className={`${styles.block} ${blockClass}`}>
-              <div className={styles.blockHead}>
-                <span className={styles.blockWho}>
-                  {g.prof}
-                  {g.online2 && <span className={styles.blockGroup}> · Online 2</span>}
-                </span>
-                <span className={`${styles.blockWeeks} ${styles.mono}`}>
-                  {tramosSemanas(g.semanas)}
-                </span>
-              </div>
-              <div className={`${styles.blockDates} ${styles.mono}`}>
-                {desde} → {hasta} · {sesiones} sesiones
-              </div>
-              <ul className={styles.blockList}>
-                {g.semanas.map((s) => {
-                  const cert = CERTS[s.cert];
-                  return (
-                    <li key={s.n} className={styles.blockItem}>
-                      <span className={styles.chip} style={{ background: cert.soft, color: cert.color }}>
-                        <span className={styles.dot} style={{ background: cert.color }} />
-                        {cert.label}
-                      </span>
-                      <span>{s.tema}</span>
-                      <span className={`${styles.blockItemMeta} ${styles.mono}`}>
-                        {g.online2 ? (
-                          `${s.o} online 2`
-                        ) : (
-                          <>
-                            {s.o ? `${s.o} online 1 · ` : ''}
-                            {s.p} presencial
-                          </>
-                        )}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          );
-        })}
-      </div>
+      {MODALIDADES.map((m) => (
+        <section key={m.titulo}>
+          <h3>{m.titulo}</h3>
+          <div className={styles.blocks}>
+            {m.bloques.map((b) => {
+              const fechas = b.sesiones.map((s) => parseFecha(s.f));
+              const desde = b.sesiones[0].f;
+              const hasta = b.sesiones[b.sesiones.length - 1].f;
+              return (
+                <div key={`${b.prof}-${desde}`} className={`${styles.block} ${BLOCK_CLASS[b.prof]}`}>
+                  <div className={styles.blockHead}>
+                    <span className={styles.blockWho}>{b.prof}</span>
+                    <span className={`${styles.blockWeeks} ${styles.mono}`}>{tramo(b.sesiones)}</span>
+                  </div>
+                  <div className={`${styles.blockDates} ${styles.mono}`}>
+                    {fechas.length === 1 ? desde : `${desde} → ${hasta}`} · {b.sesiones.length}{' '}
+                    {b.sesiones.length === 1 ? 'sesión' : 'sesiones'}
+                  </div>
+                  <ul className={styles.blockList}>
+                    {b.sesiones.map((s) => {
+                      const cert = CERTS[s.cert];
+                      return (
+                        <li key={s.n} className={styles.blockItem}>
+                          <span className={styles.chip} style={{ background: cert.soft, color: cert.color }}>
+                            <span className={styles.dot} style={{ background: cert.color }} />
+                            {cert.label}
+                          </span>
+                          <span>{s.tema}</span>
+                          <span className={`${styles.blockItemMeta} ${styles.mono}`}>
+                            {s.f} {m.meta}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

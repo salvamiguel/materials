@@ -92,9 +92,13 @@
   gap: 3px;
 }
 
+.rail + .rail {
+  margin-top: 1.1rem;
+}
+
 .railLine {
   display: grid;
-  grid-template-columns: 120px repeat(20, minmax(28px, 1fr));
+  grid-template-columns: 120px repeat(var(--semanas, 20), minmax(28px, 1fr));
   gap: 3px;
   align-items: stretch;
 }
