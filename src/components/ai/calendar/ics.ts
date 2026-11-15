@@ -12,6 +12,8 @@ export interface GrupoInfo {
   /** Nombre corto del grupo, p. ej. «Online 1». */
   etiqueta: string;
   dia: string;
+  /** Modalidad que aparece en el título de los eventos («Clase Online», «Clase Presencial»). */
+  modalidad: 'Online' | 'Presencial';
   /** LOCATION del .ics. */
   lugar: string;
   /** Líneas de dirección para mostrar en la tarjeta; sin ella se muestra `lugar`. */
@@ -27,6 +29,7 @@ export const GRUPOS: Record<Grupo, GrupoInfo> = {
     nombre: 'Máster IA 26/27 · Online 1',
     etiqueta: 'Online 1',
     dia: 'Martes',
+    modalidad: 'Online',
     lugar: 'Online',
   },
   online2: {
@@ -35,6 +38,7 @@ export const GRUPOS: Record<Grupo, GrupoInfo> = {
     nombre: 'Máster IA 26/27 · Online 2',
     etiqueta: 'Online 2',
     dia: 'Martes',
+    modalidad: 'Online',
     lugar: 'Online',
   },
   presencial: {
@@ -43,6 +47,7 @@ export const GRUPOS: Record<Grupo, GrupoInfo> = {
     nombre: 'Máster IA 26/27 · Presencial',
     etiqueta: 'Presencial',
     dia: 'Miércoles',
+    modalidad: 'Presencial',
     lugar: 'Universidad Europea de Valencia, Campus Turia, C/ de Guillem de Castro, 175, Extramurs, 46008 València, Valencia',
     direccion: ['UEV · Campus Turia', 'C/ de Guillem de Castro, 175, 46008 València'],
     mapa: 'Universidad Europea de Valencia Campus Turia, C/ de Guillem de Castro, 175, 46008 València',
@@ -66,8 +71,10 @@ export function profesorGrupo(s: Sesion, grupo: Grupo): string {
 
 const EVENT_PREFIX = 'Máster AI - Módulo Certificaciones - UEV - ';
 
-// Fijo para que el fichero generado sea idéntico entre builds si no cambian los datos.
-const DTSTAMP = '20260901T000000Z';
+// Fijos para que el fichero generado sea idéntico entre builds si no cambian los datos. Al cambiar el
+// contenido de los eventos hay que subir ambos, o los calendarios que los importaron no se actualizan.
+const DTSTAMP = '20261115T000000Z';
+const SEQUENCE = 1;
 
 const VTIMEZONE_MADRID = [
   'BEGIN:VTIMEZONE',
@@ -156,14 +163,14 @@ export function buildIcs(grupo: Grupo, pageUrl: string): string {
       `DTSTAMP:${DTSTAMP}`,
       `DTSTART;TZID=Europe/Madrid:${fechaHora(fecha, HORARIO.inicio)}`,
       `DTEND;TZID=Europe/Madrid:${fechaHora(fecha, HORARIO.fin)}`,
-      `SUMMARY:${escapeText(`${EVENT_PREFIX}${cert.label} · ${s.tema}`)}`,
+      `SUMMARY:${escapeText(`${profesorGrupo(s, grupo)} - Clase ${g.modalidad} - ${EVENT_PREFIX}${cert.label} · ${s.tema}`)}`,
       `DESCRIPTION:${escapeText(descripcion)}`,
       `LOCATION:${escapeText(g.lugar)}`,
       `CATEGORIES:${escapeText(cert.label)}`,
       `URL:${pageUrl}`,
       'STATUS:CONFIRMED',
       'TRANSP:OPAQUE',
-      'SEQUENCE:0',
+      `SEQUENCE:${SEQUENCE}`,
       'BEGIN:VALARM',
       'ACTION:DISPLAY',
       'DESCRIPTION:La clase empieza en 30 minutos',

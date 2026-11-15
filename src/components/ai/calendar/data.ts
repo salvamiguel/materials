@@ -76,11 +76,11 @@ export const ONLINE: Sesion[] = [
   { n: 13, f: '23/02/2027', cert: 'ai901', tema: 'IA responsable y cargas de trabajo de IA en Azure', prof: 'Javier' },
   { n: 14, f: '02/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (I): apps y agentes generativos, despliegue de modelos, SDKs', prof: 'Salva' },
   { n: 15, f: '09/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (II): texto y voz, modelos multimodales', prof: 'Salva' },
-  { n: 16, f: '16/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (III): visión, Custom Vision y generación de imágenes', prof: 'Javier' },
-  { n: 17, f: '23/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (IV): extracción de información', prof: 'Javier' },
-  { n: 18, f: '06/04/2027', cert: 'ai901', tema: 'Repaso general AI-901 + simulacro práctico (Python/REST/SDK)', prof: 'Javier', brk: 'Parón de Semana Santa' },
-  { n: 19, f: '13/04/2027', cert: 'cierre', tema: 'Simulacros combinados de AWS AIF-C01 y AI-901 + resolución de dudas', prof: 'Javier' },
-  { n: 20, f: '20/04/2027', cert: 'cierre', tema: 'Estrategia de examen, dudas finales y cierre del módulo', prof: 'Salva' },
+  { n: 16, f: '23/03/2027', cert: 'ai901', tema: 'Microsoft Foundry (III): visión, Custom Vision y generación de imágenes', prof: 'Javier' },
+  { n: 17, f: '13/04/2027', cert: 'ai901', tema: 'Microsoft Foundry (IV): extracción de información', prof: 'Javier', brk: 'Parón de Semana Santa' },
+  { n: 18, f: '20/04/2027', cert: 'ai901', tema: 'Repaso general AI-901 + simulacro práctico (Python/REST/SDK)', prof: 'Javier' },
+  { n: 19, f: '27/04/2027', cert: 'cierre', tema: 'Simulacros combinados de AWS AIF-C01 y AI-901 + resolución de dudas', prof: 'Javier' },
+  { n: 20, f: '04/05/2027', cert: 'cierre', tema: 'Estrategia de examen, dudas finales y cierre del módulo', prof: 'Salva' },
 ];
 
 /** Tramo consecutivo de sesiones de una misma certificación. */
@@ -109,10 +109,10 @@ export function bloques(sesiones: Sesion[]): Bloque[] {
   return out;
 }
 
-/** Meses (año, índice 0-based) que cubre el cronograma, de oct-2026 a abr-2027. */
+/** Meses (año, índice 0-based) que cubre el cronograma, de oct-2026 a may-2027. */
 export const MESES_CALENDARIO: Array<[number, number]> = [
   [2026, 9], [2026, 10], [2026, 11],
-  [2027, 0], [2027, 1], [2027, 2], [2027, 3],
+  [2027, 0], [2027, 1], [2027, 2], [2027, 3], [2027, 4],
 ];
 
 export function parseFecha(d: string): Date {
