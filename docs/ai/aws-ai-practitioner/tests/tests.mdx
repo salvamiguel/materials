@@ -1,0 +1,25 @@
+---
+sidebar_position: 1
+title: "Autoevaluación y tests"
+description: "Tests interactivos para preparar el examen AWS Certified AI Practitioner (AIF-C01): fundamentos de AWS, servicios de IA y los cinco dominios del examen."
+---
+
+import ModuleTest from '@site/src/components/test/ModuleTest';
+import { testCloud, testInfra, testGestion, testServiciosIA, testDominio1, testDominio2, testDominio3, testDominio4, testDominio5, testSimulacro } from './test-data';
+
+# Tests de AWS AI Practitioner (AIF-C01)
+
+Evalúa tus conocimientos con estos tests interactivos, organizados como el temario: primero los fundamentos de AWS y los servicios de IA, después los cinco dominios del examen y, para terminar, un simulacro de repaso mixto. Tu progreso se guarda automáticamente en el navegador.
+
+<ModuleTest title='AWS AI Practitioner (AIF-C01)' tests={[
+  { id: 'aif-cloud', title: 'Fundamentos de Cloud y AWS', config: testCloud },
+  { id: 'aif-infra', title: 'Almacenamiento, cómputo y bases de datos', config: testInfra },
+  { id: 'aif-gestion', title: 'Gestión, IAM y analítica', config: testGestion },
+  { id: 'aif-servicios-ia', title: 'Servicios de IA y ML de AWS', config: testServiciosIA },
+  { id: 'aif-d1', title: 'Dominio 1 · Fundamentos de IA y ML (20 %)', config: testDominio1 },
+  { id: 'aif-d2', title: 'Dominio 2 · IA generativa y Amazon Bedrock (24 %)', config: testDominio2 },
+  { id: 'aif-d3', title: 'Dominio 3 · Entrenamiento, inferencia y SageMaker (28 %)', config: testDominio3 },
+  { id: 'aif-d4', title: 'Dominio 4 · IA responsable (14 %)', config: testDominio4 },
+  { id: 'aif-d5', title: 'Dominio 5 · Seguridad, cumplimiento y gobernanza (14 %)', config: testDominio5 },
+  { id: 'aif-simulacro', title: 'Simulacro AIF-C01: repaso mixto', config: testSimulacro },
+]} />
